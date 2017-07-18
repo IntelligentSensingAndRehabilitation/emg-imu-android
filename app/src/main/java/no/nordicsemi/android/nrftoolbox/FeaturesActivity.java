@@ -51,7 +51,7 @@ import java.util.List;
 
 import no.nordicsemi.android.nrftoolbox.adapter.AppAdapter;
 
-import org.sralab.emgimu.R;
+import org.sralab.emgimu.service.R;
 
 public class FeaturesActivity extends AppCompatActivity {
 	private static final String NRF_CONNECT_CATEGORY = "no.nordicsemi.android.nrftoolbox.LAUNCHER";
@@ -126,11 +126,9 @@ public class FeaturesActivity extends AppCompatActivity {
 			return true;
 		}
 
-		switch (item.getItemId()) {
-		case R.id.action_about:
+		if (item.getItemId() == R.id.action_about) {
 			final AppHelpFragment fragment = AppHelpFragment.getInstance(R.string.about_text, true);
 			fragment.show(getSupportFragmentManager(), null);
-			break;
 		}
 		return true;
 	}

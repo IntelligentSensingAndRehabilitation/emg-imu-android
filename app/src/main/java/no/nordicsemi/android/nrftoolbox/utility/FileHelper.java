@@ -33,7 +33,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.sralab.emgimu.R;
+import org.sralab.emgimu.service.R;
+
 
 public class FileHelper {
 	private static final String TAG = "FileHelper";

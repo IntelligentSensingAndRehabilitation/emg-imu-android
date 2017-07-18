@@ -32,6 +32,10 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 
+import org.sralab.emgimu.service.EmgImuManager;
+import org.sralab.emgimu.service.EmgImuManagerCallbacks;
+import org.sralab.emgimu.service.EmgImuService;
+
 import java.util.UUID;
 
 import no.nordicsemi.android.nrftoolbox.profile.multiconnect.BleMulticonnectProfileService;

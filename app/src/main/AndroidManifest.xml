@@ -94,7 +94,7 @@
 
 
 		<service
-			android:name="org.sralab.emgimu.EmgImuService"
+			android:name="org.sralab.emgimu.service.EmgImuService"
 			android:label="@string/emgimu_feature_title" />
 
 		<activity

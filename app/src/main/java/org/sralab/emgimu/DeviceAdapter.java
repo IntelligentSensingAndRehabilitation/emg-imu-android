@@ -41,7 +41,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
 
-import org.sralab.emgimu.R;
+import org.sralab.emgimu.service.EmgImuService;
 
 public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder> {
 	private final EmgImuService.EmgImuBinder mService;
