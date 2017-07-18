@@ -39,7 +39,10 @@ import android.text.TextUtils;
 
 import java.util.List;
 
+import no.nordicsemi.android.log.ILogSession;
+import no.nordicsemi.android.log.LocalLogSession;
 import no.nordicsemi.android.log.LogContract;
+import no.nordicsemi.android.log.Logger;
 import no.nordicsemi.android.nrftoolbox.FeaturesActivity;
 import no.nordicsemi.android.nrftoolbox.profile.BleManager;
 import no.nordicsemi.android.nrftoolbox.profile.multiconnect.BleMulticonnectProfileService;
@@ -134,6 +137,11 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
             final EmgImuManager manager = (EmgImuManager) getBleManager(device);
             return manager.getStreamingMode();
         }
+
+        public int getLoggerProfileTitle() {
+            //return R.string.emgimu_feature_title;
+            return 0; // Use the line above to enable logging, but this slows down application
+        }
 	}
 
 	@Override
@@ -173,7 +181,6 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 					mBinder.log(device, LogContract.Log.Level.INFO, "[Notification] SILENT action pressed");
 					break;
 			}
-			//mBinder.toggleImmediateAlert(device);
 			createNotificationForConnectedDevice(device);
 		}
 	};
@@ -198,8 +205,6 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 
 		// Close the GATT server. If it hasn't been opened this method does nothing
 		mServerManager.closeGattServer();
-
-		//releaseAlarm();
 
 		unregisterReceiver(mDisconnectActionBroadcastReceiver);
 		unregisterReceiver(mToggleAlarmActionBroadcastReceiver);
@@ -279,7 +284,6 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 	@Override
 	public void onLinklossOccur(final BluetoothDevice device) {
 		mServerManager.cancelConnection(device);
-		//stopAlarm(device);
 		super.onLinklossOccur(device);
 
 		if (!mBinded) {
@@ -294,7 +298,6 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 	@Override
 	public void onDeviceDisconnected(final BluetoothDevice device) {
 		mServerManager.cancelConnection(device);
-		//stopAlarm(device);
 		super.onDeviceDisconnected(device);
 
 		if (!mBinded) {
@@ -317,16 +320,26 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
         editor.commit();
 	}
 
-    private void loadAndConnectSavedDevices() {
+	private ILogSession getLogger(final BluetoothDevice device) {
+        final int titleId = mBinder.getLoggerProfileTitle();
+        ILogSession logSession = null;
+        if (titleId > 0) {
+            logSession = Logger.newSession(getApplicationContext(), getString(titleId), device.getAddress(), device.getName());
+        }
+        return logSession;
+	}
+
+	private void loadAndConnectSavedDevices() {
         SharedPreferences sharedPref = this.getSharedPreferences(SERVICE_PREFERENCES, Context.MODE_PRIVATE);
         String deviceList_s = sharedPref.getString(DEVICE_PREFERENCE, "[]");
         final BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+
         try {
             JSONArray names = new JSONArray(deviceList_s);
             for (int i = 0; i < names.length(); i++) {
                 String device_mac = names.getString(i);
                 BluetoothDevice device = bluetoothAdapter.getRemoteDevice(device_mac);
-                mBinder.connect(device);
+                mBinder.connect(device,  getLogger(device));
             }
         } catch (JSONException e) {
             e.printStackTrace();

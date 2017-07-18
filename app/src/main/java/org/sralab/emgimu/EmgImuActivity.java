@@ -102,7 +102,10 @@ public class EmgImuActivity extends BleMulticonnectProfileServiceReadyActivity<E
 
 	@Override
 	protected int getLoggerProfileTitle() {
-		return R.string.emgimu_feature_title;
+		if (getService() != null)
+		    return getService().getLoggerProfileTitle();
+        else
+            return 0;
 	}
 
 	@Override
