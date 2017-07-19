@@ -242,10 +242,6 @@ public class Game extends EmgImuBaseActivity {
         view = new GameView(this);
         setContentView(view);
         view.resume();
-
-        View decorView = getWindow().getDecorView();
-        int uiOptions = View.SYSTEM_UI_FLAG_FULLSCREEN;
-        decorView.setSystemUiVisibility(uiOptions);
     }
 
     public void newGame() {
