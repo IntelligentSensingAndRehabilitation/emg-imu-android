@@ -315,7 +315,7 @@ public abstract class BleMulticonnectProfileServiceReadyActivity<E extends BleMu
 	/**
 	 * Called after the view and the toolbar has been created.
 	 */
-	protected final void setUpView() {
+	protected void setUpView() {
 		// set GUI
 		getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 	}

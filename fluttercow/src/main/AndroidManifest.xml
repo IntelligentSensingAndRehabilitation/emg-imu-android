@@ -1,14 +1,37 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-          
-    package="com.example.fluttercow"
-    >
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    @author Lars Harmsen
+    Copyright (c) <2014> <Lars Harmsen - Quchen>
+-->
 
-    <application android:allowBackup="true"
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="org.sralab.fluttercow">
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_fluttercow_launcher"
         android:label="@string/app_name"
-        android:icon="@mipmap/ic_launcher"
-        android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
+
+        <activity
+            android:name=".Game"
+            android:label="@string/app_name"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|screenLayout|fontScale|uiMode|orientation|screenSize|smallestScreenSize|layoutDirection"
+            android:screenOrientation="portrait" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="com.quchen.flappycow.Game" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="org.sralab.emgimu.LAUNCHER" />
+            </intent-filter>
+        </activity>
 
     </application>
 
