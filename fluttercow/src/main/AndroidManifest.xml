@@ -5,6 +5,7 @@
 -->
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    android:sharedUserId="org.sralab.emgimu"
     package="org.sralab.fluttercow">
 
     <application
@@ -32,6 +33,10 @@
                 <category android:name="org.sralab.emgimu.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <service
+            android:name="org.sralab.emgimu.service.EmgImuService"
+            android:label="@string/emgimu_feature_title" />
 
     </application>
 
