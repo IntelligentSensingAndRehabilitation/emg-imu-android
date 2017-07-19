@@ -19,8 +19,6 @@ import android.widget.Toast;
 
 import android.view.View;
 
-import android.util.Log;
-
 import org.sralab.emgimu.EmgImuBaseActivity;
 import org.sralab.emgimu.service.EmgImuService;
 
@@ -80,16 +78,12 @@ public class Game extends EmgImuBaseActivity {
     @Override
     protected void onCreateView(Bundle savedInstanceState) {
         accomplishmentBox = new AccomplishmentBox();
-        view = new GameView(this);
         gameOverDialog = new GameOverDialog(this);
         handler = new MyHandler(this);
-        setContentView(view);
         initMusicPlayer();
         loadCoins();
 
-        View decorView = getWindow().getDecorView();
-        int uiOptions = View.SYSTEM_UI_FLAG_FULLSCREEN;
-        decorView.setSystemUiVisibility(uiOptions);
+        resetView();
     }
 
     @Override
@@ -243,7 +237,8 @@ public class Game extends EmgImuBaseActivity {
         }
     }
 
-    public void newGame() {
+
+    private void resetView() {
         view = new GameView(this);
         setContentView(view);
         view.resume();
@@ -251,6 +246,19 @@ public class Game extends EmgImuBaseActivity {
         View decorView = getWindow().getDecorView();
         int uiOptions = View.SYSTEM_UI_FLAG_FULLSCREEN;
         decorView.setSystemUiVisibility(uiOptions);
+    }
+
+    public void newGame() {
+
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                resetView();
+            }
+        });
+
+        accomplishmentBox.points = 0;
+        this.view.getPlayer().upgradeBitmap(accomplishmentBox.points);
     }
 
     /**

@@ -126,8 +126,10 @@ public class GameView extends SurfaceView{
     }
 
     public void tap() {
-        this.player.onTap();
+        if (!player.isDead())
+            this.player.onTap();
     }
+
     /**
      * content of the timertask
      */
