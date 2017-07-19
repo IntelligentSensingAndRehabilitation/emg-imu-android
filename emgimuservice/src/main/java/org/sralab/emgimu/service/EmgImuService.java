@@ -31,6 +31,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.support.v4.app.NotificationManagerCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
@@ -308,7 +309,15 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 	}
 
 	private void updateSavedDevices() {
-		SharedPreferences sharedPref = this.getSharedPreferences(SERVICE_PREFERENCES, Context.MODE_PRIVATE);
+		// Need to access context this way so all apps using service (and with the sharedUserId)
+		// have the same preferences and connect to the same devices
+        Context mContext = null;
+        try {
+            mContext = this.createPackageContext("org.sralab.emgimu", Context.CONTEXT_RESTRICTED);
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
+        }
+        SharedPreferences sharedPref = mContext.getSharedPreferences(SERVICE_PREFERENCES, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPref.edit();
         JSONArray names = new JSONArray();
 		for (BluetoothDevice device : getManagedDevices()) {
@@ -328,7 +337,15 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 	}
 
 	private void loadAndConnectSavedDevices() {
-        SharedPreferences sharedPref = this.getSharedPreferences(SERVICE_PREFERENCES, Context.MODE_PRIVATE);
+		// Need to access context this way so all apps using service (and with the sharedUserId)
+		// have the same preferences and connect to the same devices
+        Context mContext = null;
+        try {
+            mContext = this.createPackageContext("org.sralab.emgimu", Context.CONTEXT_RESTRICTED);
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
+        }
+        SharedPreferences sharedPref = mContext.getSharedPreferences(SERVICE_PREFERENCES, Context.MODE_PRIVATE);
         String deviceList_s = sharedPref.getString(DEVICE_PREFERENCE, "[]");
         final BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
