@@ -59,6 +59,17 @@ public abstract class PlayableCharacter extends Sprite {
         this.speedY = getTabSpeed();
         this.y += getPosTabIncrease();
     }
+
+    /**
+     * Set the character height directly
+     */
+    public void setHeight(double val) {
+        speedY = 0;
+        if (val < 0) val = 0;
+        else if (val > 1.0) val = 1.0;
+
+        y = (int) ((1.0 - val) * view.getHeight());
+    }
     
     /**
      * Falling speed limit

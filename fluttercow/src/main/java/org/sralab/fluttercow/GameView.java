@@ -15,6 +15,7 @@ import java.util.TimerTask;
 
 import org.sralab.fluttercow.Game.MyHandler;
 import org.sralab.fluttercow.sprites.Background;
+import org.sralab.fluttercow.sprites.BarGraph;
 import org.sralab.fluttercow.sprites.Coin;
 import org.sralab.fluttercow.sprites.Cow;
 import org.sralab.fluttercow.sprites.Frontground;
@@ -50,6 +51,7 @@ public class GameView extends SurfaceView{
     private PlayableCharacter player;
     private Background background;
     private Frontground frontground;
+    public BarGraph emgPwrBarGraph;
     private List<Obstacle> obstacles = new ArrayList<Obstacle>();
     private List<PowerUp> powerUps = new ArrayList<PowerUp>();
     
@@ -70,6 +72,7 @@ public class GameView extends SurfaceView{
         frontground = new Frontground(this, game);
         pauseButton = new PauseButton(this, game);
         tutorial = new Tutorial(this, game);
+        emgPwrBarGraph = new BarGraph(this, game);
     }
     
     private void startTimer() {
@@ -159,6 +162,7 @@ public class GameView extends SurfaceView{
         drawCanvas(canvas, true);
         tutorial.move();
         tutorial.draw(canvas);
+        emgPwrBarGraph.draw(canvas);
         holder.unlockCanvasAndPost(canvas);
     }
     
@@ -216,6 +220,8 @@ public class GameView extends SurfaceView{
         }
         frontground.draw(canvas);
         pauseButton.draw(canvas);
+
+        emgPwrBarGraph.draw(canvas);
         
         // Score Text
         Paint paint = new Paint();

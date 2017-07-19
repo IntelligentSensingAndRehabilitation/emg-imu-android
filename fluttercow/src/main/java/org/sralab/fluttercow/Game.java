@@ -115,16 +115,52 @@ public class Game extends EmgImuBaseActivity {
     private final int HIGH_THRESHOLD = 50;
     private final int LOW_THRESHOLD = 30;
 
+    private double last_rescaled;
+
+    //! Rescale the EMG power into a usable range
+    private double rescaleEmgPwr(int value) {
+        double rescaled;
+        if (value < 0x10)
+            rescaled = 0.3;
+        else if (value > 0x40)
+            rescaled = 0.9;
+        else
+            rescaled = 0.3 + (0.6 / 0x30) * (value - 0x10);
+
+        // Simple smoothing
+        rescaled = last_rescaled * 0.9 + rescaled * 0.1;
+        last_rescaled = rescaled;
+
+        return rescaled;
+    }
+
+    //! Output true when EMG power goes over threshold
+    private boolean thresholdEmgPwr(int value) {
+        if (value > HIGH_THRESHOLD && overThreshold == false) {
+            overThreshold = true;
+            return true;
+        } else if (value < LOW_THRESHOLD && overThreshold == true) {
+            overThreshold = false;
+        }
+        return false;
+    }
+
     @Override
     public void onEmgPwrReceived(final BluetoothDevice device, int value)
     {
+        view.emgPwrBarGraph.setPower((double) value / (double) 0x40);
+        final boolean CONTROL_CONTINUOUS = true;
 
-        // Implement a simple hysteresis on the EMG power
-        if (value > HIGH_THRESHOLD && overThreshold == false) {
-            view.tap();
-            overThreshold = true;
-        } else if (value < LOW_THRESHOLD && overThreshold == true) {
-            overThreshold = false;
+        double level = rescaleEmgPwr(value);
+
+        if (CONTROL_CONTINUOUS) {
+
+            if (!view.getPlayer().isDead())
+                view.getPlayer().setHeight(level);
+        } else {
+            // Implement a simple hysteresis on the EMG power
+            if(thresholdEmgPwr(value))
+                view.tap();
         }
     }
 
