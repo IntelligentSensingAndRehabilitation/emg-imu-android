@@ -117,10 +117,21 @@ public class Game extends EmgImuBaseActivity {
         // Do nothing
     }
 
+    private boolean overThreshold = false;
+    private final int HIGH_THRESHOLD = 50;
+    private final int LOW_THRESHOLD = 30;
+
     @Override
     public void onEmgPwrReceived(final BluetoothDevice device, int value)
     {
-        Log.d("Game", "Received EMG power");
+
+        // Implement a simple hysteresis on the EMG power
+        if (value > HIGH_THRESHOLD && overThreshold == false) {
+            view.tap();
+            overThreshold = true;
+        } else if (value < LOW_THRESHOLD && overThreshold == true) {
+            overThreshold = false;
+        }
     }
 
     @Override

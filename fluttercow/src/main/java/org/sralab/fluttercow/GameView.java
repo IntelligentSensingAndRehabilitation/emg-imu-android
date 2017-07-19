@@ -113,18 +113,21 @@ public class GameView extends SurfaceView{
                 // dismiss tutorial
                 tutorialIsShown = false;
                 resume();
-                this.player.onTap();
+                tap();
             }else if(paused){
                 resume();
             }else if(pauseButton.isTouching((int) event.getX(), (int) event.getY()) && !this.paused){
                 pause();
             }else{
-                this.player.onTap();
+                tap();
             }
         }
         return true;
     }
-    
+
+    public void tap() {
+        this.player.onTap();
+    }
     /**
      * content of the timertask
      */
