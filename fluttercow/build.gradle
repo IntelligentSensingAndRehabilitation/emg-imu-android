@@ -2,7 +2,7 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 25
-    buildToolsVersion '25.0.3'
+    buildToolsVersion '26.0.0'
 
     defaultConfig {
         applicationId "org.sralab.fluttercow"
@@ -17,6 +17,16 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+    productFlavors {
+        fastBuild {
+            // Switching the flavor to fastBuild accelerates te build speed (works only with Android 7+ devices)
+            minSdkVersion 21
+            versionName "Instant Run"
+        }
+        releaseBuild {
+            minSdkVersion 18
+        }
+    }
 }
 
 dependencies {
@@ -25,7 +35,6 @@ dependencies {
     compile 'com.android.support:design:25.4.0'
     compile 'no.nordicsemi.android.support.v18:scanner:1.0.0'
     compile 'no.nordicsemi.android:log:2.1.0'
-    compile 'com.google.android.gms:play-services:8.1.0'
     compile project(':common')
     compile project(':emgimuservice')
 }
