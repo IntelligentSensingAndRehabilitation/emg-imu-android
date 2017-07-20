@@ -7,6 +7,7 @@
 
 package org.sralab.fluttercow;
 
+import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.SharedPreferences;
 import android.media.AudioManager;
@@ -17,12 +18,16 @@ import android.os.Handler;
 import android.os.Message;
 import android.widget.Toast;
 
-import android.view.View;
+import java.util.List;
+import android.util.Log;
 
 import org.sralab.emgimu.EmgImuBaseActivity;
 import org.sralab.emgimu.service.EmgImuService;
+import org.sralab.fluttercow.sprites.PlayableCharacter;
 
 public class Game extends EmgImuBaseActivity {
+    private static final String TAG = "Game";
+
     /** Name of the SharedPreference that saves the medals */
     public static final String coin_save = "coin_save";
     
@@ -74,7 +79,9 @@ public class Game extends EmgImuBaseActivity {
     
     /** The dialog displayed when the game is over*/
     GameOverDialog gameOverDialog;
-    
+
+    private boolean mFirstStart = false;
+
     @Override
     protected void onCreateView(Bundle savedInstanceState) {
         accomplishmentBox = new AccomplishmentBox();
@@ -83,7 +90,8 @@ public class Game extends EmgImuBaseActivity {
         initMusicPlayer();
         loadCoins();
 
-        resetView();
+        view = new GameView(this);
+        setContentView(view);
     }
 
     @Override
@@ -91,9 +99,17 @@ public class Game extends EmgImuBaseActivity {
         // Override this from parent to stop it trying to use the toolbar
     }
 
+    /****** Handle the bluetooth service events ********/
+
+    private List <BluetoothDevice> mDevices;
+    private EmgImuService.EmgImuBinder mService;
+
     @Override
     protected void onServiceBinded(final EmgImuService.EmgImuBinder binder) {
         // Do nothing
+        Log.d(TAG, "onServiceBinded");
+        mDevices = binder.getManagedDevices();
+        mService = binder;
     }
 
     @Override
@@ -102,23 +118,57 @@ public class Game extends EmgImuBaseActivity {
     }
 
     @Override
-    public void onDeviceDisconnected(final BluetoothDevice device) {
-        // Do nothing
+    public void onDeviceConnecting(final BluetoothDevice device) {
+        Log.d(TAG, "onDeviceConnecting");
     }
 
     @Override
     public void onDeviceConnected(final BluetoothDevice device) {
-        // Do nothing
+        Log.d(TAG, "onDeviceConnecting");
     }
 
+    private boolean mReady = false;
+    @Override
+    public void onDeviceReady(final BluetoothDevice device) {
+        mReady = true;
+        Log.d(TAG, "onDeviceReady");
+    }
+
+    @Override
+    public void onDeviceDisconnecting(final BluetoothDevice device) {
+        Log.d(TAG, "onDeviceDisconnecting");
+        view.pause();
+    }
+
+    @Override
+    public void onDeviceDisconnected(final BluetoothDevice device) {
+        Log.d(TAG, "onDeviceDisconnected");
+    }
+
+    @Override
+    public void onDeviceNotSupported(final BluetoothDevice device) {
+        Log.d(TAG, "onDeviceNotSupported");
+        super.onDeviceNotSupported(device);
+    }
+
+    @Override
+    public void onLinklossOccur(final BluetoothDevice device) {
+
+        // The link loss may also be called when Bluetooth adapter was disabled
+        if (BluetoothAdapter.getDefaultAdapter().isEnabled()) {
+            // Do nothing. We could notify the user here.
+            Log.d(TAG, "onLinklossOccur");
+        }
+    }
     private boolean overThreshold = false;
     private final int HIGH_THRESHOLD = 50;
     private final int LOW_THRESHOLD = 30;
 
-    private double last_rescaled;
+    private double last_rescaled = 0.5;
 
     //! Rescale the EMG power into a usable range
     private double rescaleEmgPwr(int value) {
+
         double rescaled;
         if (value < 0x10)
             rescaled = 0.3;
@@ -148,6 +198,39 @@ public class Game extends EmgImuBaseActivity {
     @Override
     public void onEmgPwrReceived(final BluetoothDevice device, int value)
     {
+        if (mDevices == null || device == null) // should not happen
+            return;
+
+        if (!mReady)
+            return;
+
+        final int position = mDevices.indexOf(device);
+
+        // For this simple game only responding to the first wearable sensor in our list
+        if (position != 0) {
+            Log.d(TAG, "Power received but not for the first element");
+            return;
+        }
+
+
+        if (!mFirstStart) {
+            // First EMG update resumes game
+            value = mService.getEmgPwrValue(device);
+            double init_height = rescaleEmgPwr(value);
+            view.drawOnce();
+            view.getPlayer().setHeight(init_height);
+            view.getPlayer().setX(view.getWidth() / 6);
+            last_rescaled = init_height;
+            view.resume();
+
+            mFirstStart = true;
+            return;
+        }
+
+        // Query the power from the service. Really we can use the value passed
+        // but this provides
+        value = mService.getEmgPwrValue(device);
+
         view.emgPwrBarGraph.setPower((double) value / (double) 0x40);
         final boolean CONTROL_CONTINUOUS = true;
 
@@ -168,6 +251,8 @@ public class Game extends EmgImuBaseActivity {
     protected int getAboutTextId() {
         return R.string.cow_about_text;
     }
+
+    /************ various methods required for the game play ***************/
 
     /**
      * Initializes the player with the nyan cat song
