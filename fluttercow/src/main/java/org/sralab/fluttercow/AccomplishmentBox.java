@@ -8,9 +8,6 @@
 
 package org.sralab.fluttercow;
 
-import com.google.android.gms.games.Games;
-import com.google.android.gms.common.api.GoogleApiClient;
-
 import android.app.Activity;
 import android.content.SharedPreferences;
 import android.widget.Toast;
@@ -76,66 +73,7 @@ public class AccomplishmentBox{
         
         editor.commit();
     }
-    
-    /**
-     * Uploads accomplishments to Google Play Services
-     * @param activity
-     * @param apiClient
-     */
-    public void submitScore(Activity activity, GoogleApiClient apiClient){
-        Games.Leaderboards.submitScore(apiClient, activity.getResources().getString(R.string.leaderboard_highscore), this.points);
-        
-        if(this.achievement_50_coins){
-            Games.Achievements.unlock(apiClient, activity.getResources().getString(R.string.achievement_50_coins));
-        }
-        if(this.achievement_toastification){
-            Games.Achievements.unlock(apiClient, activity.getResources().getString(R.string.achievement_toastification));
-        }
-        if(this.achievement_bronze){
-            Games.Achievements.unlock(apiClient, activity.getResources().getString(R.string.achievement_bronze));
-        }
-        if(this.achievement_silver){
-            Games.Achievements.unlock(apiClient, activity.getResources().getString(R.string.achievement_silver));
-        }
-        if(this.achievement_gold){
-            Games.Achievements.unlock(apiClient, activity.getResources().getString(R.string.achievement_gold));
-        }
-        
-        AccomplishmentBox.savesAreOnline(activity);
-        
-        Toast.makeText(activity.getApplicationContext(), "Uploaded", Toast.LENGTH_SHORT).show();
-    }
-    
-    /**
-     * reads the local stored data
-     * @param activity activity that is needed for shared preferences
-     * @return local stored score and achievements
-     */
-    public static AccomplishmentBox getLocal(Activity activity){
-        AccomplishmentBox box = new AccomplishmentBox();
-        SharedPreferences saves = activity.getSharedPreferences(SAVE_NAME, 0);
-        
-        box.points = saves.getInt(KEY_POINTS, 0);
-        box.achievement_50_coins = saves.getBoolean(ACHIEVEMENT_KEY_50_COINS, false);
-        box.achievement_toastification = saves.getBoolean(ACHIEVEMENT_KEY_TOASTIFICATION, false);
-        box.achievement_bronze = saves.getBoolean(ACHIEVEMENT_KEY_BRONZE, false);
-        box.achievement_silver = saves.getBoolean(ACHIEVEMENT_KEY_SILVER, false);
-        box.achievement_gold = saves.getBoolean(ACHIEVEMENT_KEY_GOLD, false);
-        
-        return box;
-    }
-    
-    /**
-     * marks the data as online
-     * @param activity activity that is needed for shared preferences
-     */
-    public static void savesAreOnline(Activity activity){
-        SharedPreferences saves = activity.getSharedPreferences(SAVE_NAME, 0);
-        SharedPreferences.Editor editor = saves.edit();
-        editor.putBoolean(ONLINE_STATUS_KEY, true);
-        editor.commit();
-    }
-    
+
     /**
      * marks the data as offline
      * @param activity activity that is needed for shared preferences
@@ -146,13 +84,5 @@ public class AccomplishmentBox{
         editor.putBoolean(ONLINE_STATUS_KEY, false);
         editor.commit();
     }
-    
-    /**
-     * checks if the last data is already uploaded
-     * @param activity activity that is needed for shared preferences
-     * @return wheater the last data is already uploaded
-     */
-    public static boolean isOnline(Activity activity){
-        return activity.getSharedPreferences(SAVE_NAME, 0).getBoolean(ONLINE_STATUS_KEY, true);
-    }
+
 }
