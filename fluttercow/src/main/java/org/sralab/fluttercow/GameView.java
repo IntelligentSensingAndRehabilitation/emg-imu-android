@@ -25,7 +25,6 @@ import org.sralab.fluttercow.sprites.PauseButton;
 import org.sralab.fluttercow.sprites.PlayableCharacter;
 import org.sralab.fluttercow.sprites.PowerUp;
 import org.sralab.fluttercow.sprites.Toast;
-import org.sralab.fluttercow.sprites.Tutorial;
 
 import android.content.Context;
 import android.graphics.Canvas;
@@ -57,9 +56,6 @@ public class GameView extends SurfaceView{
     
     private PauseButton pauseButton;
     volatile private boolean paused = true;
-    
-    private Tutorial tutorial;
-    private boolean tutorialIsShown = true;
 
     public GameView(Context context) {
         super(context);
@@ -71,7 +67,6 @@ public class GameView extends SurfaceView{
         background = new Background(this, game);
         frontground = new Frontground(this, game);
         pauseButton = new PauseButton(this, game);
-        tutorial = new Tutorial(this, game);
         emgPwrBarGraph = new BarGraph(this, game);
     }
     
@@ -112,12 +107,7 @@ public class GameView extends SurfaceView{
         performClick();
         if(event.getAction() == MotionEvent.ACTION_DOWN  // Only for "touchdowns"
                 && !this.player.isDead()){ // No support for dead players
-            if(tutorialIsShown){
-                // dismiss tutorial
-                tutorialIsShown = false;
-                resume();
-                tap();
-            }else if(paused){
+            if(paused){
                 resume();
             }else if(pauseButton.isTouching((int) event.getX(), (int) event.getY()) && !this.paused){
                 pause();
@@ -146,44 +136,20 @@ public class GameView extends SurfaceView{
         draw();
     }
     
-    /**
-     * Draw Tutorial
-     */
-    public void showTutorial(){
-        player.move();
-        pauseButton.move();
-        
-        while(!holder.getSurface().isValid()){
-            /*wait*/
-            try { Thread.sleep(10); } catch (InterruptedException e) { e.printStackTrace(); }
-        }
-        
-        Canvas canvas = holder.lockCanvas();
-        drawCanvas(canvas, true);
-        tutorial.move();
-        tutorial.draw(canvas);
-        emgPwrBarGraph.draw(canvas);
-        holder.unlockCanvasAndPost(canvas);
-    }
-    
     public void pause(){
         stopTimer();
         paused = true;
     }
-    
+
     public void drawOnce(){
         (new Thread(new Runnable() {
             @Override
             public void run() {
-                if(tutorialIsShown){
-                    showTutorial();
-                } else {
-                    draw();
-                }
+                draw();
             }
         })).start();
     }
-    
+
     public void resume(){
         paused = false;
         startTimer();
