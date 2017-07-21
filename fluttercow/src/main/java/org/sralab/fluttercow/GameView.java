@@ -25,6 +25,7 @@ import org.sralab.fluttercow.sprites.PauseButton;
 import org.sralab.fluttercow.sprites.PlayableCharacter;
 import org.sralab.fluttercow.sprites.PowerUp;
 import org.sralab.fluttercow.sprites.Toast;
+import org.sralab.fluttercow.sprites.ToggleButton;
 
 import android.content.Context;
 import android.graphics.Canvas;
@@ -55,6 +56,7 @@ public class GameView extends SurfaceView{
     private List<PowerUp> powerUps = new ArrayList<PowerUp>();
     
     private PauseButton pauseButton;
+    private ToggleButton modeButton;
     volatile private boolean paused = true;
 
     public GameView(Context context) {
@@ -68,6 +70,9 @@ public class GameView extends SurfaceView{
         frontground = new Frontground(this, game);
         pauseButton = new PauseButton(this, game);
         emgPwrBarGraph = new BarGraph(this, game);
+
+        modeButton = new ToggleButton(this, game);
+        modeButton.setMode(game.getMode());
     }
     
     private void startTimer() {
@@ -109,9 +114,12 @@ public class GameView extends SurfaceView{
                 && !this.player.isDead()){ // No support for dead players
             if(paused){
                 resume();
-            }else if(pauseButton.isTouching((int) event.getX(), (int) event.getY()) && !this.paused){
+            } else if(pauseButton.isTouching((int) event.getX(), (int) event.getY()) && !this.paused) {
                 pause();
-            }else{
+            } else if(modeButton.isTouching((int) event.getX(), (int) event.getY()) && !this.paused) {
+                game.toggleMode();
+                modeButton.setMode(game.getMode());
+            } else{
                 tap();
             }
         }
@@ -186,6 +194,7 @@ public class GameView extends SurfaceView{
         }
         frontground.draw(canvas);
         pauseButton.draw(canvas);
+        modeButton.draw(canvas);
 
         emgPwrBarGraph.draw(canvas);
         
@@ -311,8 +320,10 @@ public class GameView extends SurfaceView{
         
         frontground.setSpeedX(-getSpeedX()*4/3);
         frontground.move();
-        
+
+        // Put them in their static locations
         pauseButton.move();
+        modeButton.move();
         
         player.move();
     }

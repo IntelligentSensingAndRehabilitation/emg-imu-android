@@ -41,6 +41,16 @@ public class Game extends EmgImuBaseActivity {
     /** Counts number of played games */
     private static int gameOverCounter = 1;
 
+    // Handle toggling the control mode
+    public enum CONTROL_MODE { LINEAR, THRESHOLD };
+    private CONTROL_MODE mMode = CONTROL_MODE.LINEAR;
+    public void toggleMode() {
+        mMode = (mMode == CONTROL_MODE.LINEAR) ? CONTROL_MODE.THRESHOLD : CONTROL_MODE.LINEAR;
+    }
+    public CONTROL_MODE getMode() {
+        return mMode;
+    }
+
     /**
      * Will play songs like:
      * nyan nyan nyan nyan nyan nyan nyan nyan nyan nyan nyan nyan nyan nyan nyan nyan nyan nyan nyan nyan
@@ -232,18 +242,20 @@ public class Game extends EmgImuBaseActivity {
         value = mService.getEmgPwrValue(device);
 
         view.emgPwrBarGraph.setPower((double) value / (double) 0x40);
-        final boolean CONTROL_CONTINUOUS = true;
 
         double level = rescaleEmgPwr(value);
 
-        if (CONTROL_CONTINUOUS) {
-
-            if (!view.getPlayer().isDead())
-                view.getPlayer().setHeight(level);
-        } else {
-            // Implement a simple hysteresis on the EMG power
-            if(thresholdEmgPwr(value))
-                view.tap();
+        switch (mMode) {
+            case LINEAR:
+                // Dirty making everything understand game mechanics here. This game
+                // is not that cleanly implemented in MVC architecture, though.
+                if (!view.getPlayer().isDead())
+                    view.getPlayer().setHeight(level);
+                break;
+            case THRESHOLD:
+                // Implement a simple hysteresis on the EMG power
+                if(thresholdEmgPwr(value))
+                    view.tap();
         }
     }
 

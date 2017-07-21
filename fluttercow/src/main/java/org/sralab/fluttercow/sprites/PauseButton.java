@@ -19,6 +19,7 @@ public class PauseButton extends Sprite{
         this.bitmap = Util.getScaledBitmapAlpha8(game, R.drawable.pause_button);
         this.width = this.bitmap.getWidth();
         this.height = this.bitmap.getHeight();
+        move(); // set initial position
     }
     
     /**
