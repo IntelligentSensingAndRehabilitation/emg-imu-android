@@ -22,14 +22,17 @@
 package no.nordicsemi.android.nrftoolbox.scanner;
 
 import android.Manifest;
-import android.app.Activity;
 import android.app.Dialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
 import android.content.DialogInterface;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.ParcelUuid;
@@ -146,6 +149,7 @@ public class ScannerFragment extends DialogFragment {
 		super.onDestroyView();
 	}
 
+	private boolean mInitialScan = false;
 	@NonNull
     @Override
 	public Dialog onCreateDialog(final Bundle savedInstanceState) {
@@ -186,10 +190,18 @@ public class ScannerFragment extends DialogFragment {
 
 		addBondedDevices();
 		if (savedInstanceState == null)
-			startScan();
+		    mInitialScan = true;
 		return dialog;
 	}
 
+	@Override
+    public void onStart() {
+        super.onStart();
+        if (mInitialScan) {
+            mInitialScan = false;
+            startScan();
+        }
+    }
 	@Override
 	public void onCancel(DialogInterface dialog) {
 		super.onCancel(dialog);
@@ -213,6 +225,59 @@ public class ScannerFragment extends DialogFragment {
 		}
 	}
 
+    /**
+     * Check it location is enabled. If it is returns true. If not presents dialog to
+     * allow user to do so and returns false.
+     */
+	private boolean checkAndEnableLocation() {
+        final Context context = getActivity();
+
+        LocationManager lm = (LocationManager)context.getSystemService(Context.LOCATION_SERVICE);
+
+        boolean gps_enabled = false;
+        boolean network_enabled = false;
+
+        gps_enabled = lm.isProviderEnabled(LocationManager.GPS_PROVIDER);
+        network_enabled = lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
+
+        // Detect when location manager state is changed
+        final BroadcastReceiver mGpsSwitchStateReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                if (intent.getAction().matches("android.location.PROVIDERS_CHANGED")) {
+                    startScan();
+                    getActivity().unregisterReceiver(this);
+                }
+            }
+        };
+
+        if(!gps_enabled && !network_enabled) {
+            // notify user
+            AlertDialog.Builder builder = new AlertDialog.Builder(context);
+            builder.setMessage(context.getResources().getString(R.string.enable_location_permission_rationale));
+            builder.setPositiveButton(context.getResources().getString(R.string.yes), new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface paramDialogInterface, int paramInt) {
+                    getActivity().registerReceiver(mGpsSwitchStateReceiver, new IntentFilter(LocationManager.PROVIDERS_CHANGED_ACTION));
+                    Intent myIntent = new Intent( android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                    context.startActivity(myIntent);
+                }
+            });
+            builder.setNegativeButton(context.getString(R.string.cancel), new DialogInterface.OnClickListener() {
+
+                @Override
+                public void onClick(DialogInterface paramDialogInterface, int paramInt) {
+                    paramDialogInterface.cancel();
+                }
+            });
+            AlertDialog dialog = builder.create();
+            dialog.show();
+
+            return false;
+        }
+
+        return true;
+    }
 	/**
 	 * Scan for 5 seconds and then stop scanning when a BluetoothLE device is found then mLEScanCallback is activated This will perform regular scan for custom BLE Service UUID and then filter out.
 	 * using class ScannerServiceParser
@@ -231,6 +296,12 @@ public class ScannerFragment extends DialogFragment {
 			requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, REQUEST_PERMISSION_REQ_CODE);
 			return;
 		}
+
+		if (!checkAndEnableLocation()) {
+            // If location is not currently enabled, we need to wait for it to be turned
+            // on before bothering to scan
+            return;
+        }
 
 		// Hide the rationale message, we don't need it anymore.
 		if (mPermissionRationale != null)
