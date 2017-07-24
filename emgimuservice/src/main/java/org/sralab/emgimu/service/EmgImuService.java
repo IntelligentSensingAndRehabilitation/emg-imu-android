@@ -62,6 +62,7 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
     public static final String BROADCAST_EMG_RAW = "org.sralab.emgimu.BROADCAST_EMG_RAW";
     public static final String BROADCAST_EMG_PWR = "org.sralab.emgimu.BROADCAST_EMG_PWR";
     public static final String BROADCAST_EMG_BUFF = "org.sralab.emgimu.BROADCAST_EMG_BUFF";
+    public static final String BROADCAST_EMG_CLICK = "org.sralab.emgimu.BROADCAST_EMG_CLICK";
 
     public static final String EXTRA_EMG_RAW = "org.sralab.emgimu.EXTRA_EMG_RAW";
     public static final String EXTRA_EMG_PWR = "org.sralab.emgimu.EXTRA_EMG_PWR";
@@ -104,6 +105,16 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
         public int getEmgPwrValue(final BluetoothDevice device) {
             final EmgImuManager manager = (EmgImuManager) getBleManager(device);
             return manager.getEmgPwr();
+        }
+
+        /**
+         * Returns the last received EMG PWR rescaled.
+         * @param device the device of which battery level should be returned
+         * @return emg value or -1 if no value was received or characteristic was not found
+         */
+        public double getEmgPwrRescaled(final BluetoothDevice device) {
+            final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+            return manager.getEmgPwrScaled();
         }
 
         /**
@@ -505,6 +516,12 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
         final Intent broadcast = new Intent(BROADCAST_EMG_BUFF);
         broadcast.putExtra(EXTRA_DEVICE, device);
         broadcast.putExtra(EXTRA_EMG_BUFF, value);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(broadcast);
+    }
+
+    public void onEmgClick(final BluetoothDevice device) {
+        final Intent broadcast = new Intent(BROADCAST_EMG_CLICK);
+        broadcast.putExtra(EXTRA_DEVICE, device);
         LocalBroadcastManager.getInstance(this).sendBroadcast(broadcast);
     }
 

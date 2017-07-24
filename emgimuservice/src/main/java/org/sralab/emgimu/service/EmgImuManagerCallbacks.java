@@ -28,4 +28,5 @@ public interface EmgImuManagerCallbacks extends BleManagerCallbacks {
     public void onEmgRawReceived(final BluetoothDevice device, int value);
     public void onEmgBuffReceived(final BluetoothDevice device, int [] value);
     public void onEmgPwrReceived(final BluetoothDevice device, int value);
+    public void onEmgClick(final BluetoothDevice device);
 }

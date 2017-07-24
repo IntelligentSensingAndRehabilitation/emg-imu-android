@@ -126,20 +126,22 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 		@Override
         public void onCharacteristicNotified(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic) {
 
+            final BluetoothDevice device = gatt.getDevice();
             switch(getCharacteristicType(characteristic)) {
                 case EMG_RAW:
                     // Have to manually combine to get the endian right
                     int raw_val = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0) +
                             characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1) * 256;
                     mEmgRaw = raw_val;
-                    mCallbacks.onEmgRawReceived(gatt.getDevice(), mEmgRaw);
+                    mCallbacks.onEmgRawReceived(device, mEmgRaw);
                     break;
                 case EMG_PWR:
                     // Have to manually combine to get the endian right
                     int pwr_val = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0) +
                             characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1) * 256;
                     mEmgPwr = pwr_val;
-                    mCallbacks.onEmgPwrReceived(gatt.getDevice(), mEmgPwr);
+                    mCallbacks.onEmgPwrReceived(device, mEmgPwr);
+                    checkEmgClick(gatt.getDevice(), pwr_val);
                     break;
                 case EMG_BUFF:
                     // Have to manually combine to get the endian right
@@ -148,7 +150,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                     for (int i = 0; i < EMG_BUFFER_LEN; i++)
                         parsed[i] = buffer[i * 2] * 256 + buffer[i];
                     mEmgBuff = parsed;
-                    mCallbacks.onEmgBuffReceived(gatt.getDevice(), mEmgBuff);
+                    mCallbacks.onEmgBuffReceived(device, mEmgBuff);
                     break;
                 case UNKNOWN:
                     Logger.a(mLogSession, "Received unknown characteristic: \"" + characteristic + "\"");
@@ -211,6 +213,45 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
     // Accessors for the EMG power
     private int mEmgPwr = -1;
     public int getEmgPwr() { return mEmgPwr; }
+
+    private double MAX_SCALE = 0x1500; // TODO: this should be user calibrate-able, or automatic
+    private double MIN_SCALE = 0x0000; // TODO: this should be user calibrate-able, or automatic
+
+    // Scale EMG from 0 to 1.0 using configurable endpoints
+    public double getEmgPwrScaled() {
+        double val = (mEmgPwr - MIN_SCALE) / (MAX_SCALE - MIN_SCALE);
+        if (val > 1.0)
+            val = 1.0;
+        else if (val < 0.0)
+            val = 0.0;
+        return val;
+    }
+
+    //! Output true when EMG power goes over threshold
+    // TODO: these should be in preferences or automatic
+    private long THRESHOLD_TIME_NS = 500 * (int)1e6; // 500 ms
+    private final int HIGH_THRESHOLD = 2000;
+    private final int LOW_THRESHOLD = 1000;
+    private long mThresholdTime = 0;
+    private boolean overThreshold;
+
+    /**
+     * Check if a click event happened when EMG goes ovre threshold with hysteresis and
+     * refractory period.
+     */
+    public void checkEmgClick(final BluetoothDevice device, int value) {
+        // Have a refractory time to prevent noise making multiple events
+        long eventTime = System.nanoTime();
+        boolean refractory = (eventTime - mThresholdTime) > THRESHOLD_TIME_NS;
+
+        if (value > HIGH_THRESHOLD && overThreshold == false && refractory) {
+            mThresholdTime = eventTime; // Store this time
+            overThreshold = true;
+            mCallbacks.onEmgClick(device);
+        } else if (value < LOW_THRESHOLD && overThreshold == true) {
+            overThreshold = false;
+        }
+    }
 
     //! Return if this is the EMG PWR characteristic
     private boolean isEmgPwrCharacteristic(final BluetoothGattCharacteristic characteristic) {

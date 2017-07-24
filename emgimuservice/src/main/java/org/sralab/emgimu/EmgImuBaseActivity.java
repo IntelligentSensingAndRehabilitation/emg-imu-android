@@ -39,9 +39,13 @@ public abstract class EmgImuBaseActivity extends BleMulticonnectProfileServiceRe
                     break;
                 }
                 case EmgImuService.BROADCAST_EMG_BUFF: {
-                    final int [] value = intent.getIntArrayExtra(EmgImuService.EXTRA_EMG_BUFF);
+                    final int[] value = intent.getIntArrayExtra(EmgImuService.EXTRA_EMG_BUFF);
                     if (value != null)
                         onEmgBuffReceived(bluetoothDevice, value);
+                    break;
+                }
+                case EmgImuService.BROADCAST_EMG_CLICK: {
+                    onEmgClick(bluetoothDevice);
                     break;
                 }
             }
@@ -66,6 +70,7 @@ public abstract class EmgImuBaseActivity extends BleMulticonnectProfileServiceRe
         intentFilter.addAction(EmgImuService.BROADCAST_EMG_RAW);
         intentFilter.addAction(EmgImuService.BROADCAST_EMG_PWR);
         intentFilter.addAction(EmgImuService.BROADCAST_EMG_BUFF);
+        intentFilter.addAction(EmgImuService.BROADCAST_EMG_CLICK);
         return intentFilter;
     }
 
@@ -91,6 +96,12 @@ public abstract class EmgImuBaseActivity extends BleMulticonnectProfileServiceRe
 
     @Override
     public void onEmgBuffReceived(final BluetoothDevice device, int [] value) {
+        // Do nothing
+    }
+
+
+    @Override
+    public void onEmgClick(final BluetoothDevice device) {
         // Do nothing
     }
 
