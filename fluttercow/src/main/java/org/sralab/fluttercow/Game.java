@@ -170,47 +170,16 @@ public class Game extends EmgImuBaseActivity {
             Log.d(TAG, "onLinklossOccur");
         }
     }
-    private boolean overThreshold = false;
-    private final int HIGH_THRESHOLD = 50;
-    private final int LOW_THRESHOLD = 30;
 
     private double last_rescaled = 0.5;
-
     //! Rescale the EMG power into a usable range
-    private double rescaleEmgPwr(int value) {
-
-        double rescaled;
-        if (value < 0x10)
-            rescaled = 0.3;
-        else if (value > 0x40)
-            rescaled = 0.9;
-        else
-            rescaled = 0.3 + (0.6 / 0x30) * (value - 0x10);
-
-        // Simple smoothing
-        rescaled = last_rescaled * 0.9 + rescaled * 0.1;
+    private double smoothEmgPwr(final BluetoothDevice device) {
+        final double TAU = 0.9;
+        double rescaled = mService.getEmgPwrRescaled(device);
+        rescaled = last_rescaled * TAU + rescaled * (1.0-TAU);
         last_rescaled = rescaled;
 
         return rescaled;
-    }
-
-    //! Output true when EMG power goes over threshold
-    private long mThresholdTime = 0;
-    private long THRESHOLD_TIME_NS = 500 * (int)1e6; // 500 ms
-    private boolean thresholdEmgPwr(int value) {
-
-        // Have a refractory time to prevent noise making multiple events
-        long eventTime = System.nanoTime();
-        boolean refractory = (eventTime - mThresholdTime) > THRESHOLD_TIME_NS;
-
-        if (value > HIGH_THRESHOLD && overThreshold == false && refractory) {
-            mThresholdTime = eventTime; // Store this time
-            overThreshold = true;
-            return true;
-        } else if (value < LOW_THRESHOLD && overThreshold == true) {
-            overThreshold = false;
-        }
-        return false;
     }
 
     @Override
@@ -230,40 +199,51 @@ public class Game extends EmgImuBaseActivity {
             return;
         }
 
+        double level = mService.getEmgPwrRescaled(device);
 
         if (!mFirstStart) {
-            // First EMG update resumes game
-            value = mService.getEmgPwrValue(device);
-            double init_height = rescaleEmgPwr(value);
+            // Initialize smoothing filter
+            last_rescaled = level;
+
             view.drawOnce();
-            view.getPlayer().setHeight(init_height);
+            view.getPlayer().setHeight(0.2 + level * 0.8);
             view.getPlayer().setX(view.getWidth() / 6);
-            last_rescaled = init_height;
             view.resume();
 
             mFirstStart = true;
             return;
         }
 
-        // Query the power from the service. Really we can use the value passed
-        // but this provides
-        value = mService.getEmgPwrValue(device);
+        view.emgPwrBarGraph.setPower(0.2 + level * 0.8);
 
-        view.emgPwrBarGraph.setPower((double) value / (double) 0x40);
-
-        double level = rescaleEmgPwr(value);
+        // Apply same rescaling and also apply smoothing
+        double rescaled = 0.2 + smoothEmgPwr(device) * 0.8;
 
         switch (mMode) {
             case LINEAR:
                 // Dirty making everything understand game mechanics here. This game
                 // is not that cleanly implemented in MVC architecture, though.
                 if (!view.getPlayer().isDead())
-                    view.getPlayer().setHeight(level);
+                    view.getPlayer().setHeight(rescaled);
                 break;
+        }
+    }
+
+
+    @Override
+    public void onEmgClick(final BluetoothDevice device) {
+        if (mDevices == null || device == null) // should not happen
+            return;
+
+        if (!mReady)
+            return;
+
+        if (!mFirstStart)
+            return;
+
+        switch (mMode) {
             case THRESHOLD:
-                // Implement a simple hysteresis on the EMG power
-                if(thresholdEmgPwr(value))
-                    view.tap();
+                view.tap();
         }
     }
 
