@@ -195,8 +195,16 @@ public class Game extends EmgImuBaseActivity {
     }
 
     //! Output true when EMG power goes over threshold
+    private long mThresholdTime = 0;
+    private long THRESHOLD_TIME_NS = 500 * (int)1e6; // 500 ms
     private boolean thresholdEmgPwr(int value) {
-        if (value > HIGH_THRESHOLD && overThreshold == false) {
+
+        // Have a refractory time to prevent noise making multiple events
+        long eventTime = System.nanoTime();
+        boolean refractory = (eventTime - mThresholdTime) > THRESHOLD_TIME_NS;
+
+        if (value > HIGH_THRESHOLD && overThreshold == false && refractory) {
+            mThresholdTime = eventTime; // Store this time
             overThreshold = true;
             return true;
         } else if (value < LOW_THRESHOLD && overThreshold == true) {
