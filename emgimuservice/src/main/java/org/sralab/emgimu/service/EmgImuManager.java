@@ -129,14 +129,15 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
             switch(getCharacteristicType(characteristic)) {
                 case EMG_RAW:
                     // Have to manually combine to get the endian right
-                    int raw_val = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0) * 256 +
-                            characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1);
+                    int raw_val = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0) +
+                            characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1) * 256;
                     mEmgRaw = raw_val;
                     mCallbacks.onEmgRawReceived(gatt.getDevice(), mEmgRaw);
                     break;
                 case EMG_PWR:
                     // Have to manually combine to get the endian right
-                    int pwr_val = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0);
+                    int pwr_val = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0) +
+                            characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1) * 256;
                     mEmgPwr = pwr_val;
                     mCallbacks.onEmgPwrReceived(gatt.getDevice(), mEmgPwr);
                     break;
