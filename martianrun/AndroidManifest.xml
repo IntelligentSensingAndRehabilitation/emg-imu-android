@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.gamestudio24.martianrun.android"
+    package="org.sralab.martianrun.android"
+    android:sharedUserId="org.sralab.emgimu"
     android:installLocation="auto">
 
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -28,6 +29,11 @@
                 <category android:name="org.sralab.emgimu.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <service
+            android:name="org.sralab.emgimu.service.EmgImuService"
+            android:label="@string/emgimu_feature_title" />
+
     </application>
 
 </manifest>
