@@ -17,6 +17,8 @@
 package org.sralab.martianrun;
 
 import com.badlogic.gdx.Game;
+
+import org.sralab.emgimu.service.EmgImuServiceHolder;
 import org.sralab.martianrun.screens.GameScreen;
 import org.sralab.martianrun.utils.AssetsManager;
 import org.sralab.martianrun.utils.AudioUtils;
@@ -25,14 +27,18 @@ import org.sralab.martianrun.utils.GameManager;
 
 public class MartianRun extends Game {
 
-    public MartianRun(GameEventListener listener) {
+    private EmgImuServiceHolder mService;
+
+    public MartianRun(GameEventListener listener, final EmgImuServiceHolder serviceHolder) {
         GameManager.getInstance().setGameEventListener(listener);
+        mService = serviceHolder;
     }
 
     @Override
     public void create() {
+
         AssetsManager.loadAssets();
-        setScreen(new GameScreen());
+        setScreen(new GameScreen(mService));
     }
 
     @Override

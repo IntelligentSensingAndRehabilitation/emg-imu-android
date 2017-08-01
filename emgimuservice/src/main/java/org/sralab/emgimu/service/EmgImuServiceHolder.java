@@ -28,7 +28,6 @@ import no.nordicsemi.android.log.LocalLogSession;
 import no.nordicsemi.android.log.LogContract;
 import no.nordicsemi.android.log.Logger;
 import no.nordicsemi.android.nrftoolbox.profile.multiconnect.BleMulticonnectProfileService;
-import no.nordicsemi.android.nrftoolbox.profile.multiconnect.BleMulticonnectProfileServiceReadyActivity;
 import no.nordicsemi.android.nrftoolbox.scanner.ScannerFragment;
 import no.nordicsemi.android.nrftoolbox.utility.DebugLogger;
 
@@ -192,7 +191,7 @@ public class EmgImuServiceHolder<E extends EmgImuService.EmgImuBinder> implement
     };
 
     //! Must be called by users onCreate
-    protected final void onCreate(final Bundle savedInstanceState) {
+    public final void onCreate() {
         mManagedDevices = new ArrayList<>();
 
         ensureBLESupported();
@@ -204,7 +203,7 @@ public class EmgImuServiceHolder<E extends EmgImuService.EmgImuBinder> implement
     }
 
     //! Must be called by users onResume
-    protected void onResume() {
+    public void onResume() {
 		/*
 		 * In comparison to BleProfileServiceReadyActivity this activity always starts the service when started.
 		 * Connecting to a device is done by calling mService.connect(BluetoothDevice) method, not startService(...) like there.
@@ -216,7 +215,7 @@ public class EmgImuServiceHolder<E extends EmgImuService.EmgImuBinder> implement
     }
 
     //! Must be called by users onPause
-    protected void onPause() {
+    public void onPause() {
 
         if (mService != null) {
             // We don't want to perform some operations (e.g. disable Battery Level notifications) in the service if we are just rotating the screen.
@@ -234,7 +233,7 @@ public class EmgImuServiceHolder<E extends EmgImuService.EmgImuBinder> implement
     }
 
     //! Must be called by users onDestroy
-    protected void onDestroy() {
+    public void onDestroy() {
         LocalBroadcastManager.getInstance(mContext).unregisterReceiver(mCommonBroadcastReceiver);
     }
 
@@ -478,11 +477,24 @@ public class EmgImuServiceHolder<E extends EmgImuService.EmgImuBinder> implement
 
     @Override
     public void onEmgPwrReceived(BluetoothDevice device, int value) {
-
+        android.util.Log.d(TAG, "Update");
+        if  (mCallbacks != null) {
+            mCallbacks.onEmgPwrReceived(device, value);
+        }
     }
 
     @Override
     public void onEmgClick(BluetoothDevice device) {
-
+        android.util.Log.d(TAG, "Click");
+        if  (mCallbacks != null) {
+            mCallbacks.onEmgClick(device);
+        }
     }
+
+    public interface Callbacks {
+        public void onEmgPwrReceived(final BluetoothDevice device, int value);
+        public void onEmgClick(final BluetoothDevice device);
+    }
+    private Callbacks mCallbacks;
+    public void setCallbacks(Callbacks c) { mCallbacks = c; }
 }

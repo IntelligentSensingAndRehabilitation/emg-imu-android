@@ -16,6 +16,7 @@
 
 package org.sralab.martianrun.android;
 
+import android.bluetooth.BluetoothDevice;
 import android.os.Bundle;
 import android.view.View;
 import android.view.Window;
@@ -31,6 +32,8 @@ import org.sralab.emgimu.service.EmgImuServiceHolder;
 
 public class AndroidLauncher extends AndroidApplication implements
         GameEventListener {
+
+    private static String TAG = "AndroidLauncher";
 
     private static String SAVED_LEADERBOARD_REQUESTED = "SAVED_LEADERBOARD_REQUESTED";
     private static String SAVED_ACHIEVEMENTS_REQUESTED = "SAVED_ACHIEVEMENTS_REQUESTED";
@@ -59,7 +62,7 @@ public class AndroidLauncher extends AndroidApplication implements
         mServiceHolder.onCreate();
 
         // Game view
-        View gameView = initializeForView(new MartianRun(this), config);
+        View gameView = initializeForView(new MartianRun(this, mServiceHolder), config);
         layout.addView(gameView);
         
         setContentView(layout);
@@ -103,17 +106,6 @@ public class AndroidLauncher extends AndroidApplication implements
         super.onRestoreInstanceState(savedInstanceState);
         mLeaderboardRequested = savedInstanceState.getBoolean(SAVED_LEADERBOARD_REQUESTED, false);
         mAchievementsRequested = savedInstanceState.getBoolean(SAVED_ACHIEVEMENTS_REQUESTED, false);
-    }
-
-
-    private RelativeLayout.LayoutParams getAdParams() {
-        RelativeLayout.LayoutParams adParams = new RelativeLayout.LayoutParams(
-                RelativeLayout.LayoutParams.MATCH_PARENT,
-                RelativeLayout.LayoutParams.WRAP_CONTENT);
-
-        adParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
-
-        return adParams;
     }
 
     @Override

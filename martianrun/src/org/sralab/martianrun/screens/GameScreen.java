@@ -19,14 +19,16 @@ package org.sralab.martianrun.screens;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.GL20;
+
+import org.sralab.emgimu.service.EmgImuServiceHolder;
 import org.sralab.martianrun.stages.GameStage;
 
 public class GameScreen implements Screen {
 
     private GameStage stage;
 
-    public GameScreen() {
-        stage = new GameStage();
+    public GameScreen(final EmgImuServiceHolder serviceHolder) {
+        stage = new GameStage(serviceHolder);
     }
 
     @Override

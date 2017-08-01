@@ -16,6 +16,8 @@
 
 package org.sralab.martianrun.stages;
 
+import android.bluetooth.BluetoothDevice;
+
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.math.Rectangle;
@@ -25,6 +27,8 @@ import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Scaling;
 import com.badlogic.gdx.utils.viewport.ScalingViewport;
+
+import org.sralab.emgimu.service.EmgImuServiceHolder;
 import org.sralab.martianrun.actors.*;
 import org.sralab.martianrun.actors.menu.*;
 import org.sralab.martianrun.enums.Difficulty;
@@ -63,7 +67,9 @@ public class GameStage extends Stage implements ContactListener {
 
     private Vector3 touchPoint;
 
-    public GameStage() {
+    private EmgImuServiceHolder mServiceHolder;
+
+    public GameStage(final EmgImuServiceHolder serviceHolder) {
         super(new ScalingViewport(Scaling.stretch, VIEWPORT_WIDTH, VIEWPORT_HEIGHT,
                 new OrthographicCamera(VIEWPORT_WIDTH, VIEWPORT_HEIGHT)));
         setUpCamera();
@@ -74,6 +80,22 @@ public class GameStage extends Stage implements ContactListener {
         Gdx.input.setInputProcessor(this);
         AudioUtils.getInstance().init();
         onGameOver();
+
+        mServiceHolder = serviceHolder;
+        mServiceHolder.setCallbacks(new EmgImuServiceHolder.Callbacks() {
+
+            @Override
+            public void onEmgPwrReceived(BluetoothDevice device, int value) {
+                android.util.Log.d("GameStage", "Update received");
+            }
+
+            @Override
+            public void onEmgClick(BluetoothDevice device) {
+                android.util.Log.d("GameStage", "Click");
+                if (runner != null)
+                    runner.jump();
+            }
+        });
     }
 
     private void setUpStageBase() {
@@ -333,6 +355,7 @@ public class GameStage extends Stage implements ContactListener {
 
         return super.touchDown(x, y, pointer, button);
     }
+
 
     @Override
     public boolean touchUp(int screenX, int screenY, int pointer, int button) {
