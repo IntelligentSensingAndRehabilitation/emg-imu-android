@@ -148,7 +148,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                     byte [] buffer = characteristic.getValue();
                     int [] parsed = new int[EMG_BUFFER_LEN];
                     for (int i = 0; i < EMG_BUFFER_LEN; i++)
-                        parsed[i] = buffer[i * 2] * 256 + buffer[i];
+                        parsed[i] = buffer[i + 1] * 256 + buffer[i];
                     mEmgBuff = parsed;
                     mCallbacks.onEmgBuffReceived(device, mEmgBuff);
                     break;
