@@ -32,11 +32,20 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.support.annotation.NonNull;
 import android.support.v4.app.NotificationManagerCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.NotificationCompat;
+
 import android.text.TextUtils;
+import android.util.Log;
+
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.AuthResult;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 import java.util.List;
 
@@ -81,6 +90,8 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 
 	private int mAttempt;
 	private final static int MAX_ATTEMPTS = 1;
+
+	private FirebaseAuth mAuth;
 
 	/**
 	 * This local binder is an interface for the bonded activity to operate with the proximity sensor
@@ -207,6 +218,35 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 		filter.addAction(ACTION_FIND);
 		filter.addAction(ACTION_SILENT);
 		registerReceiver(mToggleAlarmActionBroadcastReceiver, filter);
+
+        mAuth = FirebaseAuth.getInstance();
+
+        // Check if user is signed in (non-null) and update UI accordingly.
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+        Log.d(TAG, "User ID: " + currentUser);
+        if (currentUser == null) {
+            mAuth.signInAnonymously()
+                    .addOnCompleteListener(new OnCompleteListener<AuthResult>() {
+                        @Override
+                        public void onComplete(@NonNull Task<AuthResult> task) {
+                            if (task.isSuccessful()) {
+                                // Sign in success, update UI with the signed-in user's information
+                                FirebaseUser user = mAuth.getCurrentUser();
+
+                                Log.d(TAG, "signInAnonymously:success. UID:" + user.getUid());
+                                //updateUI(user);
+                            } else {
+                                // If sign in fails, display a message to the user.
+                                Log.w(TAG, "signInAnonymously:failure", task.getException());
+                                //Toast.makeText(AnonymousAuthActivity.this, "Authentication failed.",
+                                //        Toast.LENGTH_SHORT).show();
+                                //updateUI(null);
+                            }
+                        }
+                    });
+        } else {
+            Log.d(TAG, "Prior logged in user: " + currentUser.getUid());
+        }
 	}
 
 	@Override
