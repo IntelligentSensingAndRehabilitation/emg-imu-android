@@ -2,7 +2,7 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 25
-    buildToolsVersion '26.0.0'
+    buildToolsVersion '26.0.2'
 
     defaultConfig {
         applicationId "org.sralab.emgimu"
@@ -15,16 +15,6 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-        }
-    }
-    productFlavors {
-        fastBuild {
-            // Switching the flavor to fastBuild accelerates te build speed (works only with Android 7+ devices)
-            minSdkVersion 21
-            versionName "Instant Run"
-        }
-        releaseBuild {
-            minSdkVersion 18
         }
     }
 }
