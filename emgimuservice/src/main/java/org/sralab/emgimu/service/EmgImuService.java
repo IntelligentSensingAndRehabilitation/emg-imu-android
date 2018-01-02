@@ -32,6 +32,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.NotificationManagerCompat;
 import android.support.v4.content.ContextCompat;
@@ -43,6 +44,7 @@ import android.util.Log;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.analytics.FirebaseAnalytics;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -94,6 +96,7 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 	private final static int MAX_ATTEMPTS = 1;
 
 	private FirebaseAuth mAuth;
+    private FirebaseAnalytics mFirebaseAnalytics;
 
 	/**
 	 * This local binder is an interface for the bonded activity to operate with the proximity sensor
@@ -250,6 +253,13 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
             Log.d(TAG, "Prior logged in user: " + currentUser.getUid());
         }
 
+        // Obtain the FirebaseAnalytics instance.
+        mFirebaseAnalytics = FirebaseAnalytics.getInstance(this);
+
+        Bundle bundle = new Bundle();
+        bundle.putString(FirebaseAnalytics.Param.ITEM_ID, "EMG_IMU_SERVICE_CREATED");
+        mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.SELECT_CONTENT, bundle);
+
         // Test write
         EmgLogManager l = new EmgLogManager();
         long t0 = new Date().getTime();
@@ -271,7 +281,11 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 		unregisterReceiver(mToggleAlarmActionBroadcastReceiver);
 
 		super.onServiceStopped();
-	}
+
+        Bundle bundle = new Bundle();
+        bundle.putString(FirebaseAnalytics.Param.ITEM_ID, "EMG_IMU_SERVICE_STOPPED");
+        mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.SELECT_CONTENT, bundle);
+    }
 
 	@Override
 	protected void onBluetoothEnabled() {
@@ -331,6 +345,11 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 		if (!mBinded) {
 			createBackgroundNotification();
 		}
+
+        Bundle bundle = new Bundle();
+        bundle.putString(FirebaseAnalytics.Param.ITEM_ID, "EMG_IMU_SERVICE_CONNECTED");
+        bundle.putString(FirebaseAnalytics.Param.ITEM_NAME, device.getName());
+        mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.SELECT_CONTENT, bundle);
 
         // Save this list of devices for later
         updateSavedDevices();

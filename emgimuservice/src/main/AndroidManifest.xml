@@ -2,9 +2,14 @@
     android:sharedUserId="org.sralab.emgimu"
     package="org.sralab.emgimu.service">
 
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
+    <!-- Required for analytics -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <application android:allowBackup="true" android:label="@string/app_name"
         android:supportsRtl="true">
