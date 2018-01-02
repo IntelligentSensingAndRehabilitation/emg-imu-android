@@ -21,6 +21,8 @@ import android.widget.Toast;
 import java.util.List;
 import android.util.Log;
 
+import com.google.firebase.analytics.FirebaseAnalytics;
+
 import org.sralab.emgimu.EmgImuBaseActivity;
 import org.sralab.emgimu.service.EmgImuService;
 import org.sralab.fluttercow.sprites.PlayableCharacter;
@@ -92,6 +94,8 @@ public class Game extends EmgImuBaseActivity {
 
     private boolean mFirstStart = false;
 
+    private FirebaseAnalytics mFirebaseAnalytics;
+
     @Override
     protected void onCreateView(Bundle savedInstanceState) {
         accomplishmentBox = new AccomplishmentBox();
@@ -102,6 +106,14 @@ public class Game extends EmgImuBaseActivity {
 
         view = new GameView(this);
         setContentView(view);
+
+        // Obtain the FirebaseAnalytics instance.
+        mFirebaseAnalytics = FirebaseAnalytics.getInstance(this);
+
+        Bundle bundle = new Bundle();
+        bundle.putString(FirebaseAnalytics.Param.ITEM_ID, "FLUTTERCOW_CREATED");
+        mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.SELECT_CONTENT, bundle);
+
     }
 
     @Override
