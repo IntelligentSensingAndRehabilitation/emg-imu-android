@@ -7,6 +7,7 @@ import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.crash.FirebaseCrash;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 public class EmgLogManager {
@@ -69,6 +70,7 @@ public class EmgLogManager {
                     @Override
                     public void onFailure(@NonNull Exception e) {
                         Log.w(TAG, "Error adding document", e);
+                        FirebaseCrash.report(new Exception("Failed to store log"));
                     }
                 });
     }
@@ -89,6 +91,7 @@ public class EmgLogManager {
             try {
                 addSample(timestamp, emgPower);
             } catch (Exception e) {
+                FirebaseCrash.report(e);
                 // This should never happen
                 e.printStackTrace();
             }
