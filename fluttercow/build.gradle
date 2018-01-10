@@ -17,15 +17,20 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+    compileOptions {
+        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_1_8
+    }
 }
 
 dependencies {
     implementation 'com.google.firebase:firebase-crash:11.8.0'
+    implementation project(':ble')
     compile fileTree(include: ['*.jar'], dir: 'libs')
     compile 'com.android.support:appcompat-v7:25.4.0'
     compile 'com.android.support:design:25.4.0'
     compile 'no.nordicsemi.android.support.v18:scanner:1.0.0'
-    compile 'no.nordicsemi.android:log:2.1.0'
+    compile 'no.nordicsemi.android:log:2.1.1'
     compile project(':common')
     compile project(':emgimuservice')
     compile 'com.google.firebase:firebase-core:11.8.0'

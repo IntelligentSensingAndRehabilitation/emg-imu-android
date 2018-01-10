@@ -23,7 +23,7 @@ package org.sralab.emgimu.service;
 
 import android.bluetooth.BluetoothDevice;
 
-import no.nordicsemi.android.nrftoolbox.profile.BleManagerCallbacks;
+import no.nordicsemi.android.ble.BleManagerCallbacks;
 
 public interface EmgImuServerManagerCallbacks extends BleManagerCallbacks {
 	//void onAlarmTriggered(final BluetoothDevice device);

@@ -32,7 +32,7 @@ import java.util.LinkedList;
 import java.util.UUID;
 
 import no.nordicsemi.android.log.Logger;
-import no.nordicsemi.android.nrftoolbox.profile.BleManager;
+import no.nordicsemi.android.ble.BleManager;
 
 public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 	private final String TAG = "EmgImuManager";
@@ -165,7 +165,8 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
     }
 
     private final boolean disableEmgPwrNotifications() {
-        return enqueue(Request.newDisableNotificationsRequest(mEmgPwrCharacteristic));
+        return false;
+        // TODO: fix this. return enqueue(Request.newDisableNotificationsRequest(mEmgPwrCharacteristic));
     }
 
     private final boolean enableEmgBuffNotifications() {
@@ -173,7 +174,8 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
     }
 
     private final boolean disableEmgBuffNotifications() {
-        return enqueue(Request.newDisableNotificationsRequest(mEmgBuffCharacteristic));
+        return false;
+        // TODO: fix this. return enqueue(Request.newDisableNotificationsRequest(mEmgBuffCharacteristic));
     }
 
     // Handle the two streaming modes for EMG data (raw buffered data or processed power)

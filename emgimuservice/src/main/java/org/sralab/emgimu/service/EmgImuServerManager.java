@@ -39,7 +39,7 @@ import java.util.UUID;
 import no.nordicsemi.android.error.GattError;
 import no.nordicsemi.android.log.LogContract;
 import no.nordicsemi.android.nrftoolbox.profile.multiconnect.IDeviceLogger;
-import no.nordicsemi.android.nrftoolbox.utility.ParserUtils;
+import no.nordicsemi.android.ble.utils.ParserUtils;
 
 public class EmgImuServerManager {
 	private final String TAG = "EmgImuServerManager";
@@ -251,7 +251,7 @@ public class EmgImuServerManager {
 				value = offsetValue;
 			}
 			if (value != null)
-				mLogger.log(device, LogContract.Log.Level.DEBUG, "server.sendResponse(GATT_SUCCESS, value=" + ParserUtils.parseDebug(value) + ")");
+				mLogger.log(device, LogContract.Log.Level.DEBUG, "server.sendResponse(GATT_SUCCESS, value=" + ParserUtils.parse(value) + ")");
 			else
 				mLogger.log(device, LogContract.Log.Level.DEBUG, "server.sendResponse(GATT_SUCCESS, value=null)");
 			mBluetoothGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, value);
@@ -262,7 +262,7 @@ public class EmgImuServerManager {
 		public void onCharacteristicWriteRequest(final BluetoothDevice device, final int requestId, final BluetoothGattCharacteristic characteristic, final boolean preparedWrite,
 												 final boolean responseNeeded, final int offset, final byte[] value) {
 			mLogger.log(device, LogContract.Log.Level.DEBUG, "[Server callback] Write request to characteristic " + characteristic.getUuid()
-					+ " (requestId=" + requestId + ", prepareWrite=" + preparedWrite + ", responseNeeded=" + responseNeeded + ", offset=" + offset + ", value=" + ParserUtils.parseDebug(value) + ")");
+					+ " (requestId=" + requestId + ", prepareWrite=" + preparedWrite + ", responseNeeded=" + responseNeeded + ", offset=" + offset + ", value=" + ParserUtils.parse(value) + ")");
 			final String writeType = !responseNeeded ? "WRITE NO RESPONSE" : "WRITE COMMAND";
 			mLogger.log(device, LogContract.Log.Level.INFO, "[Server] " + writeType + " request for characteristic " + characteristic.getUuid() + " received, value: " + ParserUtils.parse(value));
 
@@ -286,7 +286,7 @@ public class EmgImuServerManager {
 				}*/
 			}
 
-			mLogger.log(device, LogContract.Log.Level.DEBUG, "server.sendResponse(GATT_SUCCESS, offset=" + offset + ", value=" + ParserUtils.parseDebug(value) + ")");
+			mLogger.log(device, LogContract.Log.Level.DEBUG, "server.sendResponse(GATT_SUCCESS, offset=" + offset + ", value=" + ParserUtils.parse(value) + ")");
 			mBluetoothGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, null);
 			mLogger.log(device, LogContract.Log.Level.VERBOSE, "[Server] Response sent");
 		}
