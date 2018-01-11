@@ -165,8 +165,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
     }
 
     private final boolean disableEmgPwrNotifications() {
-        return false;
-        // TODO: fix this. return enqueue(Request.newDisableNotificationsRequest(mEmgPwrCharacteristic));
+        return enqueue(Request.newDisableNotificationsRequest(mEmgPwrCharacteristic));
     }
 
     private final boolean enableEmgBuffNotifications() {
@@ -174,8 +173,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
     }
 
     private final boolean disableEmgBuffNotifications() {
-        return false;
-        // TODO: fix this. return enqueue(Request.newDisableNotificationsRequest(mEmgBuffCharacteristic));
+        return enqueue(Request.newDisableNotificationsRequest(mEmgBuffCharacteristic));
     }
 
     // Handle the two streaming modes for EMG data (raw buffered data or processed power)
