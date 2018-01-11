@@ -89,13 +89,15 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
     public static final String EXTRA_EMG_PWR = "org.sralab.emgimu.EXTRA_EMG_PWR";
     public static final String EXTRA_EMG_BUFF = "org.sralab.emgimu.EXTRA_EMG_BUFF";
 
-    private static final String SERVICE_PREFERENCES = "org.sralab.emgimu.PREFERENCES";
-	private static final String DEVICE_PREFERENCE = "org.sralab.emgimu.DEVICE_LIST";
+    public static final String SERVICE_PREFERENCES = "org.sralab.emgimu.PREFERENCES";
+    public static final String DEVICE_PREFERENCE = "org.sralab.emgimu.DEVICE_LIST";
 
 	private final static String EMGIMU_GROUP_ID = "emgimu_connected_sensors";
 	private final static int NOTIFICATION_ID = 1000;
 	private final static int OPEN_ACTIVITY_REQ = 0;
 	private final static int DISCONNECT_REQ = 1;
+
+	private final static int LOG_FETCH_PERIOD_M = 1;
 
 	private final EmgImuBinder mBinder = new EmgImuBinder();
 	private EmgImuServerManager mServerManager;
@@ -226,18 +228,7 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 
         loadAndConnectSavedDevices();
 
-		// Create a new dispatcher using the Google Play driver.
-		FirebaseJobDispatcher dispatcher = new FirebaseJobDispatcher(new GooglePlayDriver(this));
-		Job myJob = dispatcher.newJobBuilder()
-				.setService(EmgLogFetchJobService.class) // the JobService that will be called
-				.setTag(EmgLogFetchJobService.JOB_TAG)        // uniquely identifies the job
-				.setTrigger(Trigger.executionWindow(0,1))
-				.setLifetime(Lifetime.FOREVER)                       // run after boot
-                .setRecurring(true)                                  // tasks reoccurs
-                .setRetryStrategy(RetryStrategy.DEFAULT_EXPONENTIAL) // default strategy
-				.setReplaceCurrent(true)
-				.build();
-		dispatcher.mustSchedule(myJob);
+        configureLoggingSavedDevices();
 
 		registerReceiver(mDisconnectActionBroadcastReceiver, new IntentFilter(ACTION_DISCONNECT));
 		final IntentFilter filter = new IntentFilter();
@@ -374,6 +365,9 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 
         // Save this list of devices for later
         updateSavedDevices();
+
+        // And make sure we will be getting the logs from it
+        configureLoggingSavedDevices();
     }
 
 	@Override
@@ -408,6 +402,9 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 
 		// Save this list of devices for later
         updateSavedDevices();
+
+		// Update the list of devices to fetch lgos from
+		configureLoggingSavedDevices();
 	}
 
 	private void updateSavedDevices() {
@@ -438,6 +435,47 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
         return logSession;
 	}
 
+	private void configureLoggingSavedDevices() {
+
+        // Create a new dispatcher using the Google Play driver.
+        FirebaseJobDispatcher dispatcher = new FirebaseJobDispatcher(new GooglePlayDriver(this));
+
+        dispatcher.cancel(EmgLogFetchJobService.JOB_TAG);
+
+
+        // Need to access context this way so all apps using service (and with the sharedUserId)
+        // have the same preferences and connect to the same devices
+        Context mContext = null;
+        try {
+            mContext = this.createPackageContext("org.sralab.emgimu", Context.CONTEXT_RESTRICTED);
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
+        }
+        SharedPreferences sharedPref = mContext.getSharedPreferences(SERVICE_PREFERENCES, Context.MODE_PRIVATE);
+        String deviceList_s = sharedPref.getString(DEVICE_PREFERENCE, "[]");
+
+        try {
+            JSONArray names = new JSONArray(deviceList_s);
+            for (int i = 0; i < names.length(); i++) {
+                Bundle jobInfo = new Bundle();
+                jobInfo.putString("device_mac", names.getString(i));
+
+                Job myJob = dispatcher.newJobBuilder()
+                        .setService(EmgLogFetchJobService.class)             // the JobService that will be called
+                        .setTag(EmgLogFetchJobService.JOB_TAG)               // uniquely identifies the job
+                        .setTrigger(Trigger.executionWindow(0,LOG_FETCH_PERIOD_M))
+                        .setLifetime(Lifetime.FOREVER)                       // run after boot
+                        .setRecurring(true)                                  // tasks reoccurs
+                        .setRetryStrategy(RetryStrategy.DEFAULT_EXPONENTIAL) // default strategy
+                        .setReplaceCurrent(true)
+                        .setExtras(jobInfo)                                  // store the mac address
+                        .build();
+                dispatcher.mustSchedule(myJob);
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
 	private void loadAndConnectSavedDevices() {
 		// Need to access context this way so all apps using service (and with the sharedUserId)
 		// have the same preferences and connect to the same devices
