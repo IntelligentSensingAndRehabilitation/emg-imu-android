@@ -42,6 +42,13 @@ import android.support.v7.app.NotificationCompat;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.firebase.jobdispatcher.Constraint;
+import com.firebase.jobdispatcher.FirebaseJobDispatcher;
+import com.firebase.jobdispatcher.GooglePlayDriver;
+import com.firebase.jobdispatcher.Job;
+import com.firebase.jobdispatcher.Lifetime;
+import com.firebase.jobdispatcher.RetryStrategy;
+import com.firebase.jobdispatcher.Trigger;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.analytics.FirebaseAnalytics;
@@ -60,6 +67,7 @@ import no.nordicsemi.android.nrftoolbox.profile.multiconnect.BleMulticonnectProf
 
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.sralab.emgimu.logging.EmgLogFetchJobService;
 import org.sralab.emgimu.logging.EmgLogManager;
 
 public class EmgImuService extends BleMulticonnectProfileService implements EmgImuManagerCallbacks, EmgImuServerManagerCallbacks {
@@ -217,6 +225,19 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 		mServerManager.setLogger(mBinder);
 
         loadAndConnectSavedDevices();
+
+		// Create a new dispatcher using the Google Play driver.
+		FirebaseJobDispatcher dispatcher = new FirebaseJobDispatcher(new GooglePlayDriver(this));
+		Job myJob = dispatcher.newJobBuilder()
+				.setService(EmgLogFetchJobService.class) // the JobService that will be called
+				.setTag(EmgLogFetchJobService.JOB_TAG)        // uniquely identifies the job
+				.setTrigger(Trigger.executionWindow(0,1))
+				.setLifetime(Lifetime.FOREVER)                       // run after boot
+                .setRecurring(true)                                  // tasks reoccurs
+                .setRetryStrategy(RetryStrategy.DEFAULT_EXPONENTIAL) // default strategy
+				.setReplaceCurrent(true)
+				.build();
+		dispatcher.mustSchedule(myJob);
 
 		registerReceiver(mDisconnectActionBroadcastReceiver, new IntentFilter(ACTION_DISCONNECT));
 		final IntentFilter filter = new IntentFilter();
