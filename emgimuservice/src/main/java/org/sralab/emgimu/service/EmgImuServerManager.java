@@ -44,13 +44,6 @@ import no.nordicsemi.android.ble.utils.ParserUtils;
 public class EmgImuServerManager {
 	private final String TAG = "EmgImuServerManager";
 
-	/** EMG Service UUID **/
-	public final static UUID EMG_SERVICE_UUID = UUID.fromString("00001234-1212-EFDE-1523-785FEF13D123");
-	public final static UUID EMG_BUFF_CHAR_UUID = UUID.fromString("00001236-1212-EFDE-1523-785FEF13D123");
-	public final static UUID EMG_PWR_CHAR_UUID = UUID.fromString("00001237-1212-EFDE-1523-785FEF13D123");
-	/** IMU Service UUID **/
-	public final static UUID IMU_SERVICE_UUID = UUID.fromString("00002234-1212-EFDE-1523-785FEF13D123");
-	public final static UUID IMU_ACCEL_CHAR_UUID = UUID.fromString("00002235-1212-EFDE-1523-785FEF13D123");
 
 	private BluetoothGattServer mBluetoothGattServer;
 	private EmgImuServerManagerCallbacks mCallbacks;

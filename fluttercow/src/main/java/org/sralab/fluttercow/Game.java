@@ -25,6 +25,7 @@ import com.google.firebase.analytics.FirebaseAnalytics;
 
 import org.sralab.emgimu.EmgImuBaseActivity;
 import org.sralab.emgimu.service.EmgImuService;
+import org.sralab.emgimu.service.EmgLogRecord;
 import org.sralab.fluttercow.sprites.PlayableCharacter;
 
 public class Game extends EmgImuBaseActivity {
@@ -258,6 +259,49 @@ public class Game extends EmgImuBaseActivity {
                 view.tap();
         }
     }
+
+    /**** Methods required to use the EMG logging via RACP ****/
+    @Override
+    public void onEmgLogRecordReceived(BluetoothDevice device, EmgLogRecord record) {
+
+    }
+
+    @Override
+    public void onOperationStarted(BluetoothDevice device) {
+
+    }
+
+    @Override
+    public void onOperationCompleted(BluetoothDevice device) {
+
+    }
+
+    @Override
+    public void onOperationFailed(BluetoothDevice device) {
+
+    }
+
+    @Override
+    public void onOperationAborted(BluetoothDevice device) {
+
+    }
+
+    @Override
+    public void onOperationNotSupported(BluetoothDevice device) {
+
+    }
+
+    @Override
+    public void onDatasetClear(BluetoothDevice device) {
+
+    }
+
+    @Override
+    public void onNumberOfRecordsRequested(BluetoothDevice device, int value) {
+
+    }
+
+    /**** End of methods required to use the EMG logging via RACP ****/
 
     @Override
     protected int getAboutTextId() {

@@ -29,4 +29,19 @@ public interface EmgImuManagerCallbacks extends BleManagerCallbacks {
     public void onEmgBuffReceived(final BluetoothDevice device, int [] value);
     public void onEmgPwrReceived(final BluetoothDevice device, int value);
     public void onEmgClick(final BluetoothDevice device);
+
+    // TODO: consider splitting this into two sets of callbacks since not
+    // all listeners need to be able to handle retrieving logs
+    /**
+     * Called when new CGM value has been obtained from the sensor.
+     */
+    void onEmgLogRecordReceived(final BluetoothDevice device, final EmgLogRecord record);
+    void onOperationStarted(final BluetoothDevice device);
+    void onOperationCompleted(final BluetoothDevice device);
+    void onOperationFailed(final BluetoothDevice device);
+    void onOperationAborted(final BluetoothDevice device);
+    void onOperationNotSupported(final BluetoothDevice device);
+    void onDatasetClear(final BluetoothDevice device);
+    void onNumberOfRecordsRequested(final BluetoothDevice device, final int value);
+
 }

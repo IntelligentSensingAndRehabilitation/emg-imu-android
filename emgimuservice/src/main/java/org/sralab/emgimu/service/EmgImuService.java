@@ -654,7 +654,50 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
         LocalBroadcastManager.getInstance(this).sendBroadcast(broadcast);
     }
 
-	private String getDeviceName(final BluetoothDevice device) {
+    /******** These callbacks are for managing the EMG logging via RACP ********/
+    @Override
+    public void onEmgLogRecordReceived(BluetoothDevice device, EmgLogRecord record) {
+
+    }
+
+    @Override
+    public void onOperationStarted(BluetoothDevice device) {
+
+    }
+
+    @Override
+    public void onOperationCompleted(BluetoothDevice device) {
+
+    }
+
+    @Override
+    public void onOperationFailed(BluetoothDevice device) {
+
+    }
+
+    @Override
+    public void onOperationAborted(BluetoothDevice device) {
+
+    }
+
+    @Override
+    public void onOperationNotSupported(BluetoothDevice device) {
+
+    }
+
+    @Override
+    public void onDatasetClear(BluetoothDevice device) {
+
+    }
+
+    @Override
+    public void onNumberOfRecordsRequested(BluetoothDevice device, int value) {
+
+    }
+
+    /********* End EMG Logging RACP callbacks ********/
+
+    private String getDeviceName(final BluetoothDevice device) {
 		String name = device.getName();
 		if (TextUtils.isEmpty(name))
 			name = getString(R.string.emgimu_default_device_name);

@@ -21,9 +21,12 @@ import org.json.JSONException;
 import org.sralab.emgimu.service.EmgImuManager;
 import org.sralab.emgimu.service.EmgImuManagerCallbacks;
 import org.sralab.emgimu.service.EmgImuService;
+import org.sralab.emgimu.service.EmgLogRecord;
 import org.sralab.emgimu.service.R;
 
 import android.support.v4.util.SimpleArrayMap;
+
+import java.util.List;
 
 import no.nordicsemi.android.log.ILogSession;
 import no.nordicsemi.android.log.Logger;
@@ -121,26 +124,84 @@ public class EmgLogFetchJobService extends JobService implements EmgImuManagerCa
         return logSession;
     }
 
+    /**** These are when using real time control or streaming ****/
     @Override
-    public void onEmgRawReceived(BluetoothDevice device, int value) {
+    public void onEmgRawReceived(BluetoothDevice device, int value) {}
 
+    @Override
+    public void onEmgBuffReceived(BluetoothDevice device, int[] value) {}
+
+    @Override
+    public void onEmgPwrReceived(BluetoothDevice device, int value) {}
+
+    @Override
+    public void onEmgClick(BluetoothDevice device) {}
+
+    /**** These are for downloading logging data from RACP ****/
+
+    @Override
+    public void onDeviceReady(BluetoothDevice device) {
+        Log.d(TAG, "onDeviceReady()");
+        EmgImuManager deviceManager = getManagerForDevice(device);
+        deviceManager.getAllRecords();
     }
 
     @Override
-    public void onEmgBuffReceived(BluetoothDevice device, int[] value) {
-
+    public void onOperationCompleted(BluetoothDevice device) {
+        Log.i(TAG, "Operation completed");
+        EmgImuManager deviceManager = getManagerForDevice(device);
+        List<EmgLogRecord> records = deviceManager.getRecords();
+        Log.i(TAG, "Received " + records.size() + " entries");
+        deviceManager.disconnect();
     }
 
     @Override
-    public void onEmgPwrReceived(BluetoothDevice device, int value) {
-
+    public void onDeviceDisconnected(BluetoothDevice device) {
+        Log.i(TAG, "onDeviceDisconnected(" + device.getAddress() + ")");
+        JobParameters job = getJobFroDevice(device);
+        EmgImuManager deviceManager = getManagerForDevice(device);
+        deviceManager.close();
+        jobFinished(job, false);
     }
 
     @Override
-    public void onEmgClick(BluetoothDevice device) {
-
+    public void onOperationStarted(BluetoothDevice device) {
+        Log.i(TAG, "Operation started");
     }
 
+    @Override
+    public void onDatasetClear(BluetoothDevice device) {
+        Log.i(TAG, "Dataset cleared before fetch");
+    }
+
+    @Override
+    public void onNumberOfRecordsRequested(BluetoothDevice device, int value) {
+        Log.i(TAG, "Number of records available is: " + value);
+    }
+
+    @Override
+    public void onEmgLogRecordReceived(BluetoothDevice device, EmgLogRecord record)
+    {
+        Log.i(TAG, "Received record with " + record.emgPwr);
+    }
+
+    @Override
+    public void onOperationFailed(BluetoothDevice device) {
+        Log.e(TAG, "Fetching records failed");
+    }
+
+    @Override
+    public void onOperationAborted(BluetoothDevice device) {
+        Log.e(TAG, "Fetching records aborted");
+    }
+
+    @Override
+    public void onOperationNotSupported(BluetoothDevice device) {
+        Log.e(TAG, "Operation not supported");
+    }
+
+
+    /**** These are core methods for anything using a BleManager ****/
     @Override
     public void onDeviceConnecting(BluetoothDevice device) {
 
@@ -149,22 +210,11 @@ public class EmgLogFetchJobService extends JobService implements EmgImuManagerCa
     @Override
     public void onDeviceConnected(BluetoothDevice device) {
         Log.i(TAG, "onDeviceConnected(" + device.getAddress() + ")");
-        EmgImuManager deviceManager = getManagerForDevice(device);
-        deviceManager.disconnect();
     }
 
     @Override
     public void onDeviceDisconnecting(BluetoothDevice device) {
 
-    }
-
-    @Override
-    public void onDeviceDisconnected(BluetoothDevice device) {
-        Log.i(TAG, "onDeviceDisconnected(" + device.getAddress() + ")"");
-        JobParameters job = getJobFroDevice(device);
-        EmgImuManager deviceManager = getManagerForDevice(device);
-        deviceManager.close();
-        jobFinished(job, false);
     }
 
     @Override
@@ -174,12 +224,7 @@ public class EmgLogFetchJobService extends JobService implements EmgImuManagerCa
 
     @Override
     public void onServicesDiscovered(BluetoothDevice device, boolean optionalServicesFound) {
-
-    }
-
-    @Override
-    public void onDeviceReady(BluetoothDevice device) {
-
+        Log.d(TAG, "onServicesDiscovered()");
     }
 
     @Override
