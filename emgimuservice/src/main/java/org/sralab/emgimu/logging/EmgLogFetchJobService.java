@@ -10,11 +10,13 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.AsyncTask;
+import android.os.Bundle;
 import android.util.Log;
 
 import com.firebase.jobdispatcher.Job;
 import com.firebase.jobdispatcher.JobParameters;
 import com.firebase.jobdispatcher.JobService;
+import com.google.firebase.analytics.FirebaseAnalytics;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -26,12 +28,15 @@ import org.sralab.emgimu.service.R;
 
 import android.support.v4.util.SimpleArrayMap;
 
+import java.util.Date;
 import java.util.List;
 
 import no.nordicsemi.android.log.ILogSession;
 import no.nordicsemi.android.log.Logger;
 
-public class EmgLogFetchJobService extends JobService implements EmgImuManagerCallbacks {
+public class EmgLogFetchJobService extends JobService implements
+        EmgImuManagerCallbacks, FirebaseEmgLogger.FirebaseLogProducerCallbacks
+{
 
     private static String TAG = EmgLogFetchJobService.class.getName();
     public static String JOB_TAG = "emg-log-fetch";
@@ -108,6 +113,59 @@ public class EmgLogFetchJobService extends JobService implements EmgImuManagerCa
         return true; // Answers the question: "Should this job be retried?"
     }
 
+    private final SimpleArrayMap<FirebaseEmgLogger, List<EmgLogRecord>> recordStores =
+            new SimpleArrayMap<>();
+
+    private void storeRecordsToDb(List<EmgLogRecord> records, BluetoothDevice device) {
+        Log.d(TAG, "storeRecordsToDb");
+
+        int numSamples = 0;
+        for (EmgLogRecord r : records) {
+            numSamples += r.emgPwr.size();
+        }
+        // ms since a fixed date
+        float dt = 5000;
+        long T0 = new Date().getTime() - (long) (dt * numSamples);
+
+        FirebaseEmgLogger fireLogger = new FirebaseEmgLogger(device.getAddress(), this);
+        synchronized (recordStores) {
+            recordStores.put(fireLogger, records);
+        }
+        fireLogger.prepareLog(T0);
+    }
+
+    @Override
+    public void firebaseLogReady(FirebaseEmgLogger logger) {
+        Log.d(TAG, "Log ready");
+
+        List<EmgLogRecord> records = recordStores.get(logger);
+
+        int numSamples = 0;
+        for (EmgLogRecord r : records) {
+            numSamples += r.emgPwr.size();
+        }
+
+        // ms since a fixed date
+        float dt = 5000;
+        long T0 = new Date().getTime() - (long) (dt * numSamples);
+        int i = 0;
+
+        for (EmgLogRecord r : records) {
+            for (Integer pwr : r.emgPwr) {
+                logger.addSample(T0 + (long) (i * dt), pwr);
+                i = i + 1;
+            }
+        }
+
+        Log.d(TAG, "Entries added.");
+
+        logger.updateDb();
+        synchronized (recordStores) {
+            recordStores.remove(logger);
+        }
+    }
+
+
     /***** Everything below here is infrastructure required to use a BleManager ******/
 
     public int getLoggerProfileTitle() {
@@ -153,6 +211,20 @@ public class EmgLogFetchJobService extends JobService implements EmgImuManagerCa
         List<EmgLogRecord> records = deviceManager.getRecords();
         Log.i(TAG, "Received " + records.size() + " entries");
         deviceManager.disconnect();
+
+        // write these to the database, which will then sync with cloud
+        storeRecordsToDb(records, device);
+
+        // Record analytic data that might be useful
+        // Obtain the FirebaseAnalytics instance.
+        FirebaseAnalytics mFirebaseAnalytics = FirebaseAnalytics.getInstance(this);
+
+        Bundle bundle = new Bundle();
+        bundle.putString("DEVICE_NAME", device.getName());
+        bundle.putString("DEVICE_MAC", device.getAddress());
+        bundle.putString("NUM_RECORDS", Integer.toString(records.size()));
+        // TODO: store battery value once this is obtained
+        mFirebaseAnalytics.logEvent("DOWNLOAD_SENSOR_LOG", bundle);
     }
 
     @Override
@@ -161,7 +233,7 @@ public class EmgLogFetchJobService extends JobService implements EmgImuManagerCa
         JobParameters job = getJobFroDevice(device);
         EmgImuManager deviceManager = getManagerForDevice(device);
         deviceManager.close();
-        jobFinished(job, false);
+        jobFinished(job, true);
     }
 
     @Override

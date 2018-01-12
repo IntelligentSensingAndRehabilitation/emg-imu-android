@@ -42,7 +42,6 @@ import android.support.v7.app.NotificationCompat;
 import android.text.TextUtils;
 import android.util.Log;
 
-import com.firebase.jobdispatcher.Constraint;
 import com.firebase.jobdispatcher.FirebaseJobDispatcher;
 import com.firebase.jobdispatcher.GooglePlayDriver;
 import com.firebase.jobdispatcher.Job;
@@ -56,7 +55,6 @@ import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
-import java.util.Date;
 import java.util.List;
 
 import no.nordicsemi.android.log.ILogSession;
@@ -68,7 +66,6 @@ import no.nordicsemi.android.nrftoolbox.profile.multiconnect.BleMulticonnectProf
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.sralab.emgimu.logging.EmgLogFetchJobService;
-import org.sralab.emgimu.logging.EmgLogManager;
 
 public class EmgImuService extends BleMulticonnectProfileService implements EmgImuManagerCallbacks, EmgImuServerManagerCallbacks {
 	@SuppressWarnings("unused")
@@ -97,7 +94,10 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 	private final static int OPEN_ACTIVITY_REQ = 0;
 	private final static int DISCONNECT_REQ = 1;
 
-	private final static int LOG_FETCH_PERIOD_M = 1;
+	// TODO: optimize for device battery life, handle condition
+    // when sensor is not detected (does not influence battery)
+    private final static int LOG_FETCH_PERIOD_MIN_S = 1*60;
+    private final static int LOG_FETCH_PERIOD_MAX_S = 15*60;
 
 	private final EmgImuBinder mBinder = new EmgImuBinder();
 	private EmgImuServerManager mServerManager;
@@ -271,15 +271,6 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
         Bundle bundle = new Bundle();
         bundle.putString(FirebaseAnalytics.Param.ITEM_ID, "EMG_IMU_SERVICE_CREATED");
         mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.SELECT_CONTENT, bundle);
-
-        // Test write
-        EmgLogManager l = new EmgLogManager();
-        long t0 = new Date().getTime();
-        double Fs = 1000.0 / 1.0; // Sampling rate of sensor (1 Hz logs)
-        for (int i = 0 ; i < (60 * 60 * 3 + 5); i++) {
-            // Simulate three hours of data
-            l.addSample(t0 + (long) Fs * i, (double) i);
-        }
 	}
 
 	@Override
@@ -463,7 +454,7 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
                 Job myJob = dispatcher.newJobBuilder()
                         .setService(EmgLogFetchJobService.class)             // the JobService that will be called
                         .setTag(EmgLogFetchJobService.JOB_TAG)               // uniquely identifies the job
-                        .setTrigger(Trigger.executionWindow(0,LOG_FETCH_PERIOD_M))
+                        .setTrigger(Trigger.executionWindow(LOG_FETCH_PERIOD_MIN_S,LOG_FETCH_PERIOD_MAX_S))
                         .setLifetime(Lifetime.FOREVER)                       // run after boot
                         .setRecurring(true)                                  // tasks reoccurs
                         .setRetryStrategy(RetryStrategy.DEFAULT_EXPONENTIAL) // default strategy

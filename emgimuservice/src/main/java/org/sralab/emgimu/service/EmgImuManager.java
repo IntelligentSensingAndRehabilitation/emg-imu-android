@@ -161,11 +161,9 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                 mEmgPwrCharacteristic  = llService.getCharacteristic(EMG_PWR_CHAR_UUID);
                 mRecordAccessControlPointCharacteristic = llService.getCharacteristic(EMG_RACP_CHAR_UUID);
                 mEmgLogCharacteristic = llService.getCharacteristic(EMG_LOG_CHAR_UUID);
-                Log.d(TAG, "RACP is " + mRecordAccessControlPointCharacteristic);
-                Log.d(TAG, "LOG is " + mEmgLogCharacteristic);
 
                 for (BluetoothGattCharacteristic c : llService.getCharacteristics() ) {
-                    Log.d(TAG, "Found: " + c.getUuid());
+                    Log.v(TAG, "Found: " + c.getUuid());
                 }
             }
 			return (mEmgRawCharacteristic != null) && (mEmgPwrCharacteristic != null) && (mEmgBuffCharacteristic != null)
@@ -179,7 +177,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                 mImuAccelCharacteristic = iaService.getCharacteristic(IMU_ACCEL_CHAR_UUID);
 			}
             for (BluetoothGattCharacteristic c : iaService.getCharacteristics() ) {
-                Log.d(TAG, "Optional Char Found: " + c.getUuid());
+                Log.v(TAG, "Optional Char Found: " + c.getUuid());
             }
 			return mImuAccelCharacteristic != null;
 		}
