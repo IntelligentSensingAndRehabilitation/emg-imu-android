@@ -67,7 +67,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.sralab.emgimu.logging.EmgLogFetchJobService;
 
-public class EmgImuService extends BleMulticonnectProfileService implements EmgImuManagerCallbacks, EmgImuServerManagerCallbacks {
+public class EmgImuService extends BleMulticonnectProfileService implements EmgImuManagerCallbacks {
 	@SuppressWarnings("unused")
 	private static final String TAG = "EmgImuService";
 
@@ -97,10 +97,9 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 	// TODO: optimize for device battery life, handle condition
     // when sensor is not detected (does not influence battery)
     private final static int LOG_FETCH_PERIOD_MIN_S = 1*60;
-    private final static int LOG_FETCH_PERIOD_MAX_S = 15*60;
+    private final static int LOG_FETCH_PERIOD_MAX_S = 5*60;
 
 	private final EmgImuBinder mBinder = new EmgImuBinder();
-	private EmgImuServerManager mServerManager;
 
 	private int mAttempt;
 	private final static int MAX_ATTEMPTS = 1;
@@ -223,8 +222,7 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 
 	@Override
 	protected void onServiceCreated() {
-		mServerManager = new EmgImuServerManager(this);
-		mServerManager.setLogger(mBinder);
+	    Log.d(TAG, "onServiceCreated");
 
         loadAndConnectSavedDevices();
 
@@ -275,10 +273,9 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 
 	@Override
 	public void onServiceStopped() {
-		cancelNotifications();
+        Log.d(TAG, "onServiceStopped");
 
-		// Close the GATT server. If it hasn't been opened this method does nothing
-		mServerManager.closeGattServer();
+		cancelNotifications();
 
 		unregisterReceiver(mDisconnectActionBroadcastReceiver);
 		unregisterReceiver(mToggleAlarmActionBroadcastReceiver);
@@ -291,46 +288,6 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
     }
 
 	@Override
-	protected void onBluetoothEnabled() {
-		mAttempt = 0;
-		getHandler().post(new Runnable() {
-			@Override
-			public void run() {
-				final Runnable that = this;
-				// Start the GATT Server only if Bluetooth is enabled
-				mServerManager.openGattServer(EmgImuService.this, new EmgImuServerManager.OnServerOpenCallback() {
-					@Override
-					public void onGattServerOpen() {
-						// We are now ready to reconnect devices
-						EmgImuService.super.onBluetoothEnabled();
-					}
-
-					@Override
-					public void onGattServerFailed(final int error) {
-						mServerManager.closeGattServer();
-
-						if (mAttempt < MAX_ATTEMPTS) {
-							mAttempt++;
-							getHandler().postDelayed(that, 2000);
-						} else {
-							showToast(getString(R.string.emgimu_server_error, error));
-							// GATT server failed to start, but we may connect as a client
-							EmgImuService.super.onBluetoothEnabled();
-						}
-					}
-				});
-			}
-		});
-	}
-
-	@Override
-	protected void onBluetoothDisabled() {
-		super.onBluetoothDisabled();
-		// Close the GATT server
-		mServerManager.closeGattServer();
-	}
-
-	@Override
 	protected void onRebind() {
 		// When the activity rebinds to the service, remove the notification
 		cancelNotifications();
@@ -338,11 +295,14 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 
 	@Override
 	public void onUnbind() {
-		createBackgroundNotification();
+        Log.d(TAG, "onUnbind");
+        createBackgroundNotification();
 	}
 
 	@Override
 	public void onDeviceConnected(final BluetoothDevice device) {
+        Log.d(TAG, "onDeviceConnected()");
+
 		super.onDeviceConnected(device);
 
 		if (!mBinded) {
@@ -362,28 +322,7 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
     }
 
 	@Override
-	public void onServicesDiscovered(final BluetoothDevice device, final boolean optionalServicesFound) {
-		super.onServicesDiscovered(device, optionalServicesFound);
-		mServerManager.openConnection(device);
-	}
-
-	@Override
-	public void onLinklossOccur(final BluetoothDevice device) {
-		mServerManager.cancelConnection(device);
-		super.onLinklossOccur(device);
-
-		if (!mBinded) {
-			createBackgroundNotification();
-			if (BluetoothAdapter.getDefaultAdapter().isEnabled()) {
-				// Do nothing
-			} else
-				cancelNotification(device);
-		}
-	}
-
-	@Override
 	public void onDeviceDisconnected(final BluetoothDevice device) {
-		mServerManager.cancelConnection(device);
 		super.onDeviceDisconnected(device);
 
 		if (!mBinded) {
@@ -431,6 +370,7 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
         // Create a new dispatcher using the Google Play driver.
         FirebaseJobDispatcher dispatcher = new FirebaseJobDispatcher(new GooglePlayDriver(this));
 
+        Log.d(TAG, "Canceling log fetching jobs");
         dispatcher.cancel(EmgLogFetchJobService.JOB_TAG);
 
 
