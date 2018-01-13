@@ -52,6 +52,7 @@ public class EmgLogFetchJobService extends JobService implements
     public boolean onStartJob(JobParameters job) {
 
         Log.i(TAG, "onStartJob: " + job.toString() + " " + job.getExtras().toString());
+        Log.i(TAG, "onStartJob TID: " + android.os.Process.myTid());
 
         String device_mac = job.getExtras().getString("device_mac");
         if (device_mac == null) {
@@ -125,13 +126,17 @@ public class EmgLogFetchJobService extends JobService implements
         }
         // ms since a fixed date
         float dt = 5000;
-        long T0 = new Date().getTime() - (long) (dt * numSamples);
+        long now = new Date().getTime();
+        long T0 = now - (long) (dt * numSamples);
 
         FirebaseEmgLogger fireLogger = new FirebaseEmgLogger(device.getAddress(), this);
         synchronized (recordStores) {
             recordStores.put(fireLogger, records);
         }
         fireLogger.prepareLog(T0);
+
+        long device_ts_ms = records.get(records.size()-1).timestamp * (1000 / 8);
+        Log.d(TAG, "Delta TS for device " + device.getAddress() + " is " + (now - device_ts_ms));
     }
 
     @Override
@@ -139,10 +144,18 @@ public class EmgLogFetchJobService extends JobService implements
         Log.d(TAG, "Log ready");
 
         List<EmgLogRecord> records = recordStores.get(logger);
+        List<Long> timestamps = new ArrayList<>();
 
         int numSamples = 0;
         for (EmgLogRecord r : records) {
             numSamples += r.emgPwr.size();
+            timestamps.add(new Long(r.timestamp));
+        }
+
+        if (timestamps.size() > 1) {
+            long dt_l = (timestamps.get(1) - timestamps.get(0));
+            double dt_s = dt_l / 8.0 / records.get(0).emgPwr.size();
+            Log.d(TAG, "timestamp diff: " + dt_s);
         }
 
         // ms since a fixed date
@@ -200,6 +213,7 @@ public class EmgLogFetchJobService extends JobService implements
     @Override
     public void onDeviceReady(BluetoothDevice device) {
         Log.d(TAG, "onDeviceReady()");
+        Log.i(TAG, "onDeviceReady TID: " + android.os.Process.myTid());
         EmgImuManager deviceManager = getManagerForDevice(device);
         deviceManager.getAllRecords();
     }

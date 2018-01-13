@@ -25,10 +25,10 @@ import android.bluetooth.BluetoothDevice;
 import no.nordicsemi.android.ble.BleManagerCallbacks;
 
 public interface EmgImuManagerCallbacks extends BleManagerCallbacks {
-    public void onEmgRawReceived(final BluetoothDevice device, int value);
-    public void onEmgBuffReceived(final BluetoothDevice device, int [] value);
-    public void onEmgPwrReceived(final BluetoothDevice device, int value);
-    public void onEmgClick(final BluetoothDevice device);
+    void onEmgRawReceived(final BluetoothDevice device, int value);
+    void onEmgBuffReceived(final BluetoothDevice device, int [] value);
+    void onEmgPwrReceived(final BluetoothDevice device, int value);
+    void onEmgClick(final BluetoothDevice device);
 
     // TODO: consider splitting this into two sets of callbacks since not
     // all listeners need to be able to handle retrieving logs

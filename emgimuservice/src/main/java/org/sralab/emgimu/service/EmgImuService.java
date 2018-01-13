@@ -391,14 +391,15 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
                 Bundle jobInfo = new Bundle();
                 jobInfo.putString("device_mac", names.getString(i));
 
+                Log.d(TAG, "Scheduling log fetching jobs for " + names.getString(i));
+
                 Job myJob = dispatcher.newJobBuilder()
                         .setService(EmgLogFetchJobService.class)             // the JobService that will be called
-                        .setTag(EmgLogFetchJobService.JOB_TAG)               // uniquely identifies the job
+                        .setTag(EmgLogFetchJobService.JOB_TAG + "_" + names.getString(i))               // uniquely identifies the job
                         .setTrigger(Trigger.executionWindow(LOG_FETCH_PERIOD_MIN_S,LOG_FETCH_PERIOD_MAX_S))
                         .setLifetime(Lifetime.FOREVER)                       // run after boot
                         .setRecurring(true)                                  // tasks reoccurs
-                        .setRetryStrategy(RetryStrategy.DEFAULT_EXPONENTIAL) // default strategy
-                        .setReplaceCurrent(true)
+                        .setRetryStrategy(RetryStrategy.DEFAULT_LINEAR) // default strategy
                         .setExtras(jobInfo)                                  // store the mac address
                         .build();
                 dispatcher.mustSchedule(myJob);
