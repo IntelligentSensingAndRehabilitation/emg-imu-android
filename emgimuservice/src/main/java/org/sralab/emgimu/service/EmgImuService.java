@@ -96,13 +96,10 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 
 	// TODO: optimize for device battery life, handle condition
     // when sensor is not detected (does not influence battery)
-    private final static int LOG_FETCH_PERIOD_MIN_S = 1*60;
-    private final static int LOG_FETCH_PERIOD_MAX_S = 5*60;
+    private final static int LOG_FETCH_PERIOD_MIN_S = 10; //2*60;
+    private final static int LOG_FETCH_PERIOD_MAX_S = 30; //5*60;
 
 	private final EmgImuBinder mBinder = new EmgImuBinder();
-
-	private int mAttempt;
-	private final static int MAX_ATTEMPTS = 1;
 
 	private FirebaseAuth mAuth;
     private FirebaseAnalytics mFirebaseAnalytics;
