@@ -14,7 +14,7 @@ import org.sralab.emgimu.service.EmgImuService;
 public class EmgLogFetchJobService extends JobService
 {
 
-    private static String TAG = EmgLogFetchJobService.class.getName();
+    private static String TAG = EmgLogFetchJobService.class.getSimpleName();
     public static String JOB_TAG = "emg-log-fetch";
 
     @Override

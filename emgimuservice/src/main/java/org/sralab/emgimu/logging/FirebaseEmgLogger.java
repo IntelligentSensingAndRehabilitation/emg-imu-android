@@ -18,7 +18,7 @@ import java.security.InvalidParameterException;
 
 public class FirebaseEmgLogger {
 
-    private String TAG = FirebaseEmgLogger.class.getName();
+    private String TAG = FirebaseEmgLogger.class.getSimpleName();
 
     private FirebaseAuth mAuth;
 
@@ -123,8 +123,10 @@ public class FirebaseEmgLogger {
         // this is the first sample, which means we likely need to load the prior
         // log from the database and begin appending to it.
 
-        if (log == null) {
+        if (log != null) {
             Log.d(TAG, "Log already prepared. Doing nothing.");
+            mProducer.firebaseLogReady(FirebaseEmgLogger.this);
+            return;
         }
         String DN = FirebaseEmgLogEntry.FilenameFromTimestamp(timestamp);
 

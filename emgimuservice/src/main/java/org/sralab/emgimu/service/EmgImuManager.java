@@ -285,9 +285,8 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> implements
                             long now = new Date().getTime();
                             long T0 = now - (long) (dt * number);
 
-                            fireLogger.prepareLog(T0);
-
                             Log.d(TAG, "There are " + number + " records. Preparing log for T0: " + T0);
+                            fireLogger.prepareLog(T0);
                         } else {
                             Log.d(TAG, "No records found");
                             mCallbacks.onOperationCompleted(gatt.getDevice());
