@@ -26,12 +26,17 @@ import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
 import android.content.Context;
+import android.os.Bundle;
 import android.util.Log;
 import android.util.SparseArray;
 
+import com.google.firebase.analytics.FirebaseAnalytics;
+
+import org.sralab.emgimu.logging.FirebaseEmgLogger;
 import org.sralab.emgimu.parser.RecordAccessControlPointParser;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
@@ -40,7 +45,7 @@ import java.util.UUID;
 import no.nordicsemi.android.log.Logger;
 import no.nordicsemi.android.ble.BleManager;
 
-public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
+public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> implements FirebaseEmgLogger.FirebaseLogProducerCallbacks {
 	private final String TAG = "EmgImuManager";
 
 	/** EMG Service UUID **/
@@ -288,9 +293,10 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 
                         switch (responseCode) {
                             case RESPONSE_SUCCESS:
-                                if (!mAbort)
+                                if (!mAbort) {
+                                    storeRecordsToDb();
                                     mCallbacks.onOperationCompleted(gatt.getDevice());
-                                else
+                                } else
                                     mCallbacks.onOperationAborted(gatt.getDevice());
                                 break;
                             case RESPONSE_NO_RECORDS_FOUND:
@@ -615,4 +621,76 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 
         return CHARACTERISTIC_TYPE.UNKNOWN;
     }
+
+    /**** code for downloading logs and uploading to firestore ****/
+
+
+    List<EmgLogRecord> recordStores;
+    private void storeRecordsToDb() {
+        Log.d(TAG, "storeRecordsToDb");
+
+        int numSamples = 0;
+        for (EmgLogRecord r : mRecords) {
+            numSamples += r.emgPwr.size();
+        }
+        // ms since a fixed date
+        float dt = 5000;
+        long now = new Date().getTime();
+        long T0 = now - (long) (dt * numSamples);
+
+        FirebaseEmgLogger fireLogger = new FirebaseEmgLogger(mBluetoothDevice.getAddress(), this);
+        recordStores = mRecords;
+        fireLogger.prepareLog(T0);
+
+        long device_ts_ms = mRecords.get(mRecords.size()-1).timestamp * (1000 / 8);
+        Log.d(TAG, "Delta TS for device " + mBluetoothDevice.getAddress() + " is " + (now - device_ts_ms));
+
+        // Record analytic data that might be useful
+        // Obtain the FirebaseAnalytics instance.
+        FirebaseAnalytics mFirebaseAnalytics = FirebaseAnalytics.getInstance(getContext());
+
+        Bundle bundle = new Bundle();
+        bundle.putString("DEVICE_NAME", mBluetoothDevice.getName());
+        bundle.putString("DEVICE_MAC", mBluetoothDevice.getAddress());
+        bundle.putString("NUM_RECORDS", Integer.toString(mRecords.size()));
+        // TODO: store battery value once this is obtained
+        mFirebaseAnalytics.logEvent("DOWNLOAD_SENSOR_LOG", bundle);
+    }
+
+    @Override
+    public void firebaseLogReady(FirebaseEmgLogger logger) {
+        Log.d(TAG, "Log ready");
+
+        List<Long> timestamps = new ArrayList<>();
+
+        int numSamples = 0;
+        for (EmgLogRecord r : mRecords) {
+            numSamples += r.emgPwr.size();
+            timestamps.add(new Long(r.timestamp));
+        }
+
+        if (timestamps.size() > 1) {
+            long dt_l = (timestamps.get(1) - timestamps.get(0));
+            double dt_s = dt_l / 8.0 / mRecords.get(0).emgPwr.size();
+            Log.d(TAG, "timestamp diff: " + dt_s);
+        }
+
+        // ms since a fixed date
+        float dt = 5000;
+        long T0 = new Date().getTime() - (long) (dt * numSamples);
+        int i = 0;
+
+        for (EmgLogRecord r : mRecords) {
+            for (Integer pwr : r.emgPwr) {
+                logger.addSample(T0 + (long) (i * dt), pwr);
+                i = i + 1;
+            }
+        }
+
+        Log.d(TAG, "Entries added.");
+
+        logger.updateDb();
+    }
+
+
 }

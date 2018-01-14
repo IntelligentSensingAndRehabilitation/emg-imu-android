@@ -34,6 +34,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.support.annotation.StringRes;
 import android.support.v4.content.LocalBroadcastManager;
+import android.util.Log;
 import android.widget.Toast;
 
 import java.util.ArrayList;
@@ -247,12 +248,13 @@ public abstract class BleMulticonnectProfileService extends Service implements B
 
 	@Override
 	public IBinder onBind(final Intent intent) {
+		Log.d(TAG, "onBind()");
 		mBinded = true;
 		return getBinder();
 	}
 
 	@Override
-	public final void onRebind(final Intent intent) {
+	public void onRebind(final Intent intent) {
 		mBinded = true;
 
 		if (!mActivityIsChangingConfiguration) {
@@ -308,6 +310,7 @@ public abstract class BleMulticonnectProfileService extends Service implements B
 
 	@Override
 	public void onCreate() {
+		Log.d(TAG, "onCreate()");
 		super.onCreate();
 
 		mHandler = new Handler();

@@ -33,10 +33,12 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.support.v4.app.NotificationManagerCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
+import android.support.v4.util.SimpleArrayMap;
 import android.support.v7.app.NotificationCompat;
 
 import android.text.TextUtils;
@@ -55,6 +57,8 @@ import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import no.nordicsemi.android.log.ILogSession;
@@ -86,6 +90,9 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
     public static final String EXTRA_EMG_PWR = "org.sralab.emgimu.EXTRA_EMG_PWR";
     public static final String EXTRA_EMG_BUFF = "org.sralab.emgimu.EXTRA_EMG_BUFF";
 
+    public static final String INTENT_FETCH_LOG = "org.sralab.INTENT_FETCH_LOG";
+    public static final String INTENT_DEVICE_MAC = "org.sralab.INTENT_DEVICE_MAC";
+
     public static final String SERVICE_PREFERENCES = "org.sralab.emgimu.PREFERENCES";
     public static final String DEVICE_PREFERENCE = "org.sralab.emgimu.DEVICE_LIST";
 
@@ -96,8 +103,8 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 
 	// TODO: optimize for device battery life, handle condition
     // when sensor is not detected (does not influence battery)
-    private final static int LOG_FETCH_PERIOD_MIN_S = 10; //2*60;
-    private final static int LOG_FETCH_PERIOD_MAX_S = 30; //5*60;
+    private final static int LOG_FETCH_PERIOD_MIN_S = 0; //2*60;
+    private final static int LOG_FETCH_PERIOD_MAX_S = 5; //5*60;
 
 	private final EmgImuBinder mBinder = new EmgImuBinder();
 
@@ -198,15 +205,16 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 		}
 	};
 
+
 	@Override
+    /**
+     * Always called when service started, either by binding or startService. call from
+     * parent onCreate prior to startign bluetooth
+     */
 	protected void onServiceCreated() {
 	    Log.d(TAG, "onServiceCreated");
 
-        loadAndConnectSavedDevices();
-
-        //configureLoggingSavedDevices();
-
-		registerReceiver(mDisconnectActionBroadcastReceiver, new IntentFilter(ACTION_DISCONNECT));
+	    registerReceiver(mDisconnectActionBroadcastReceiver, new IntentFilter(ACTION_DISCONNECT));
 
         mAuth = FirebaseAuth.getInstance();
 
@@ -245,7 +253,62 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
         mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.SELECT_CONTENT, bundle);
 	}
 
-	@Override
+
+	private final SimpleArrayMap<String, Integer> logFetchStartId = new SimpleArrayMap<>();
+
+	private boolean fetchingLog = false;
+	// TODO: this variable existing is an anti-pattern
+	private int fetchStartId;
+
+    @Override
+    public int onStartCommand(final Intent intent, final int flags, final int startId) {
+	    // parent method is stub, so no need to replicate
+
+        Log.d(TAG, "onStartCommand: " + intent + " " + flags + " " + startId);
+
+        if (intent.getBooleanExtra(EmgImuService.INTENT_FETCH_LOG, false)) {
+            String device_mac = intent.getStringExtra(INTENT_DEVICE_MAC);
+
+            Log.d(TAG, "Service started to fetch a log: " + device_mac);
+            loadAndConnectSavedDevices();
+            fetchingLog = true;
+            fetchStartId = startId;
+
+            synchronized (logFetchStartId) {
+                logFetchStartId.put(device_mac, startId);
+            }
+        } else {
+            Log.e(TAG, "Service started without binding or special intent. Not meant to be used this way");
+        }
+        //configureLoggingSavedDevices();
+
+
+        return START_NOT_STICKY;
+    }
+
+    @Override
+    public void onDeviceReady(BluetoothDevice device) {
+        super.onDeviceReady(device);
+        if(fetchingLog) {
+            Log.d(TAG, "onDeviceReady()");
+            final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+            manager.getAllRecords();
+        }
+    }
+
+    @Override
+    public IBinder onBind(final Intent intent) {
+        Log.d(TAG, "onBind: " + intent);
+
+        fetchingLog = false;
+
+        loadAndConnectSavedDevices();
+        //configureLoggingSavedDevices();
+
+        return super.onBind(intent);
+    }
+
+    @Override
 	public void onServiceStopped() {
         Log.d(TAG, "onServiceStopped");
 
@@ -260,7 +323,14 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
         mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.SELECT_CONTENT, bundle);
     }
 
-	@Override
+    @Override
+    public final void onRebind(final Intent intent) {
+        Log.d(TAG, "onRebind: " + intent);
+        super.onRebind(intent);
+
+    }
+
+    @Override
 	protected void onRebind() {
 		// When the activity rebinds to the service, remove the notification
 		cancelNotifications();
@@ -290,6 +360,7 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
         // Save this list of devices for later
         updateSavedDevices();
 
+        // TODO: change the timing on when this is called
         // And make sure we will be getting the logs from it
         configureLoggingSavedDevices();
     }
@@ -343,8 +414,8 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
         // Create a new dispatcher using the Google Play driver.
         FirebaseJobDispatcher dispatcher = new FirebaseJobDispatcher(new GooglePlayDriver(this));
 
-        Log.d(TAG, "Canceling log fetching jobs");
-        dispatcher.cancel(EmgLogFetchJobService.JOB_TAG);
+        //Log.d(TAG, "Canceling log fetching jobs");
+        //dispatcher.cancel(EmgLogFetchJobService.JOB_TAG);
 
 
         // Need to access context this way so all apps using service (and with the sharedUserId)
@@ -374,6 +445,7 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
                         .setRecurring(true)                                  // tasks reoccurs
                         .setRetryStrategy(RetryStrategy.DEFAULT_LINEAR) // default strategy
                         .setExtras(jobInfo)                                  // store the mac address
+                        .setReplaceCurrent(true)
                         .build();
                 dispatcher.mustSchedule(myJob);
             }
@@ -399,6 +471,7 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
             for (int i = 0; i < names.length(); i++) {
                 String device_mac = names.getString(i);
                 BluetoothDevice device = bluetoothAdapter.getRemoteDevice(device_mac);
+                Log.d(TAG, "Connecting to: " + device);
                 mBinder.connect(device,  getLogger(device));
             }
         } catch (JSONException e) {
@@ -573,6 +646,16 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
     @Override
     public void onOperationCompleted(BluetoothDevice device) {
 
+        Log.d(TAG, "onOperationCompleted");
+        synchronized (logFetchStartId) {
+            Integer startThreadId = logFetchStartId.get(device.getAddress());
+            if (startThreadId != null) {
+                Log.d(TAG, "Found corresponding thread ID. Stopping service");
+
+                stopSelf(startThreadId);
+                logFetchStartId.remove(device.getAddress());
+            }
+        }
     }
 
     @Override
