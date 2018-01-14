@@ -105,6 +105,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> implements
     private final static int RESPONSE_PROCEDURE_NOT_COMPLETED = 8;
     private final static int RESPONSE_OPERAND_NOT_SUPPORTED = 9;
 
+    private FirebaseEmgLogger fireLogger;
     private List<EmgLogRecord> mRecords = new ArrayList<>();
     private boolean mAbort;
 
@@ -137,6 +138,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> implements
     public void connect(final BluetoothDevice device) {
         createBond();
         super.connect(device);
+        fireLogger = new FirebaseEmgLogger(mBluetoothDevice.getAddress(), this);
     }
 
 	/**
@@ -278,12 +280,16 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> implements
 
                         // Request the records
                         if (number > 0) {
-                            Log.d(TAG, "There are " + number + " records. Requesting all");
-                            Logger.d(mLogSession, "Request all records sent");
-                            final BluetoothGattCharacteristic racpCharacteristic = mRecordAccessControlPointCharacteristic;
-                            setOpCode(racpCharacteristic, OP_CODE_REPORT_STORED_RECORDS, OPERATOR_ALL_RECORDS);
-                            writeCharacteristic(racpCharacteristic);
+                            // ms since a fixed date
+                            float dt = 5000;
+                            long now = new Date().getTime();
+                            long T0 = now - (long) (dt * number);
+
+                            fireLogger.prepareLog(T0);
+
+                            Log.d(TAG, "There are " + number + " records. Preparing log for T0: " + T0);
                         } else {
+                            Log.d(TAG, "No records found");
                             mCallbacks.onOperationCompleted(gatt.getDevice());
                         }
                     } else if (opCode == OP_CODE_RESPONSE_CODE) {
@@ -624,42 +630,8 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> implements
 
     /**** code for downloading logs and uploading to firestore ****/
 
-
-    List<EmgLogRecord> recordStores;
     private void storeRecordsToDb() {
         Log.d(TAG, "storeRecordsToDb");
-
-        int numSamples = 0;
-        for (EmgLogRecord r : mRecords) {
-            numSamples += r.emgPwr.size();
-        }
-        // ms since a fixed date
-        float dt = 5000;
-        long now = new Date().getTime();
-        long T0 = now - (long) (dt * numSamples);
-
-        FirebaseEmgLogger fireLogger = new FirebaseEmgLogger(mBluetoothDevice.getAddress(), this);
-        recordStores = mRecords;
-        fireLogger.prepareLog(T0);
-
-        long device_ts_ms = mRecords.get(mRecords.size()-1).timestamp * (1000 / 8);
-        Log.d(TAG, "Delta TS for device " + mBluetoothDevice.getAddress() + " is " + (now - device_ts_ms));
-
-        // Record analytic data that might be useful
-        // Obtain the FirebaseAnalytics instance.
-        FirebaseAnalytics mFirebaseAnalytics = FirebaseAnalytics.getInstance(getContext());
-
-        Bundle bundle = new Bundle();
-        bundle.putString("DEVICE_NAME", mBluetoothDevice.getName());
-        bundle.putString("DEVICE_MAC", mBluetoothDevice.getAddress());
-        bundle.putString("NUM_RECORDS", Integer.toString(mRecords.size()));
-        // TODO: store battery value once this is obtained
-        mFirebaseAnalytics.logEvent("DOWNLOAD_SENSOR_LOG", bundle);
-    }
-
-    @Override
-    public void firebaseLogReady(FirebaseEmgLogger logger) {
-        Log.d(TAG, "Log ready");
 
         List<Long> timestamps = new ArrayList<>();
 
@@ -675,6 +647,11 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> implements
             Log.d(TAG, "timestamp diff: " + dt_s);
         }
 
+        long now = new Date().getTime();
+        long device_ts_ms = mRecords.get(mRecords.size()-1).timestamp * (1000 / 8);
+        Log.d(TAG, "Delta TS for device " + mBluetoothDevice.getAddress() + " is " + (now - device_ts_ms));
+
+
         // ms since a fixed date
         float dt = 5000;
         long T0 = new Date().getTime() - (long) (dt * numSamples);
@@ -682,14 +659,34 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> implements
 
         for (EmgLogRecord r : mRecords) {
             for (Integer pwr : r.emgPwr) {
-                logger.addSample(T0 + (long) (i * dt), pwr);
+                fireLogger.addSample(T0 + (long) (i * dt), pwr);
                 i = i + 1;
             }
         }
 
         Log.d(TAG, "Entries added.");
 
-        logger.updateDb();
+        fireLogger.updateDb();
+        // Record analytic data that might be useful
+        // Obtain the FirebaseAnalytics instance.
+        FirebaseAnalytics mFirebaseAnalytics = FirebaseAnalytics.getInstance(getContext());
+
+        Bundle bundle = new Bundle();
+        bundle.putString("DEVICE_NAME", mBluetoothDevice.getName());
+        bundle.putString("DEVICE_MAC", mBluetoothDevice.getAddress());
+        bundle.putString("NUM_RECORDS", Integer.toString(mRecords.size()));
+        // TODO: store battery value once this is obtained
+        mFirebaseAnalytics.logEvent("DOWNLOAD_SENSOR_LOG", bundle);
+    }
+
+    @Override
+    public void firebaseLogReady(FirebaseEmgLogger logger) {
+        Log.d(TAG, "Log ready. Requesting records from device");
+
+        Logger.d(mLogSession, "Request all records sent");
+        final BluetoothGattCharacteristic racpCharacteristic = mRecordAccessControlPointCharacteristic;
+        setOpCode(racpCharacteristic, OP_CODE_REPORT_STORED_RECORDS, OPERATOR_ALL_RECORDS);
+        writeCharacteristic(racpCharacteristic);
     }
 
 

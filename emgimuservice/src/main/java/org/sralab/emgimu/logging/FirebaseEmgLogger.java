@@ -123,6 +123,9 @@ public class FirebaseEmgLogger {
         // this is the first sample, which means we likely need to load the prior
         // log from the database and begin appending to it.
 
+        if (log == null) {
+            Log.d(TAG, "Log already prepared. Doing nothing.");
+        }
         String DN = FirebaseEmgLogEntry.FilenameFromTimestamp(timestamp);
 
         Log.d(TAG, "Looking for document named: " + DN);
