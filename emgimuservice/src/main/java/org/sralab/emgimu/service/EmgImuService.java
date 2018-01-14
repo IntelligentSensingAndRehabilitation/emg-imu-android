@@ -198,38 +198,15 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 		}
 	};
 
-	/**
-	 * This broadcast receiver listens for {@link #ACTION_FIND} or {@link #ACTION_SILENT} that may be fired by pressing Find me action button on the notification.
-	 */
-	private final BroadcastReceiver mToggleAlarmActionBroadcastReceiver = new BroadcastReceiver() {
-		@Override
-		public void onReceive(final Context context, final Intent intent) {
-			final BluetoothDevice device = intent.getParcelableExtra(EXTRA_DEVICE);
-			switch (intent.getAction()) {
-				case ACTION_FIND:
-					mBinder.log(device, LogContract.Log.Level.INFO, "[Notification] FIND action pressed");
-					break;
-				case ACTION_SILENT:
-					mBinder.log(device, LogContract.Log.Level.INFO, "[Notification] SILENT action pressed");
-					break;
-			}
-			createNotificationForConnectedDevice(device);
-		}
-	};
-
 	@Override
 	protected void onServiceCreated() {
 	    Log.d(TAG, "onServiceCreated");
 
         loadAndConnectSavedDevices();
 
-        configureLoggingSavedDevices();
+        //configureLoggingSavedDevices();
 
 		registerReceiver(mDisconnectActionBroadcastReceiver, new IntentFilter(ACTION_DISCONNECT));
-		final IntentFilter filter = new IntentFilter();
-		filter.addAction(ACTION_FIND);
-		filter.addAction(ACTION_SILENT);
-		registerReceiver(mToggleAlarmActionBroadcastReceiver, filter);
 
         mAuth = FirebaseAuth.getInstance();
 
@@ -275,7 +252,6 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 		cancelNotifications();
 
 		unregisterReceiver(mDisconnectActionBroadcastReceiver);
-		unregisterReceiver(mToggleAlarmActionBroadcastReceiver);
 
 		super.onServiceStopped();
 
