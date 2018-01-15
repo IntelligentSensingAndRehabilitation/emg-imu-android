@@ -1,5 +1,7 @@
 package org.sralab.emgimu.logging;
 
+import android.os.Handler;
+import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
@@ -7,6 +9,7 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -15,6 +18,7 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.security.InvalidParameterException;
+import java.util.concurrent.ExecutionException;
 
 public class FirebaseEmgLogger {
 
@@ -102,21 +106,24 @@ public class FirebaseEmgLogger {
 
         Log.d(TAG, "Writing entry for User ID: " + currentUser + " Document: " + DN);
 
-        // Add a new document with a generated ID
-        db.collection("emgLogs").document(currentUser.getUid()).collection(mSensorName).document(DN).set(log)
-                .addOnSuccessListener(new OnSuccessListener<Void>() {
-                    @Override
-                    public void onSuccess(Void aVoid) {
-                        Log.d(TAG, "Document successfully added");
-                    }
-                })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        Log.w(TAG, "Error adding document", e);
-                        FirebaseCrash.report(new Exception("Failed to store log"));
-                    }
-                });
+        Handler mainHandler = new Handler(Looper.getMainLooper());
+        mainHandler.post(()-> {
+            // Add a new document with a generated ID
+            db.collection("emgLogs").document(currentUser.getUid()).collection(mSensorName).document(DN).set(log)
+                    .addOnSuccessListener(new OnSuccessListener<Void>() {
+                        @Override
+                        public void onSuccess(Void aVoid) {
+                            Log.d(TAG, "Document successfully added");
+                        }
+                    })
+                    .addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            Log.w(TAG, "Error adding document", e);
+                            FirebaseCrash.report(new Exception("Failed to store log"));
+                        }
+                    });
+        });
     }
 
     public void prepareLog(long timestamp) {
@@ -138,34 +145,37 @@ public class FirebaseEmgLogger {
             Log.e(TAG, "Should have a user assigned here");
         }
 
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
-        db.collection("emgLogs").document(currentUser.getUid()).collection(mSensorName).document(DN).get()
-            .addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
-                @Override
-                public void onSuccess(DocumentSnapshot documentSnapshot) {
-                    if (documentSnapshot.exists()) {
-                        Log.d(TAG, "Loaded previous document");
-                        log = documentSnapshot.toObject(FirebaseEmgLogEntry.class);
-                    } else {
-                        Log.d(TAG, "No document found. Creating new one.");
-                        log = new FirebaseEmgLogEntry();
-                    }
-                    mProducer.firebaseLogReady(FirebaseEmgLogger.this);
+        Log.d(TAG, "Sensor: " + mSensorName + " PID: " + android.os.Process.myPid() + " TID " + android.os.Process.myTid() + " UID " + android.os.Process.myUid());
 
-                }
-            })
-            .addOnFailureListener(new OnFailureListener() {
-                @Override
-                public void onFailure(@NonNull Exception e) {
-                    Log.d(TAG, "Unable to load previous log");
-                    log = new FirebaseEmgLogEntry();
-                    mProducer.firebaseLogReady(FirebaseEmgLogger.this);
-                }
-            });
+        // Run query on main thread to avoid database lock issues
+        Handler mainHandler = new Handler(Looper.getMainLooper());
+        mainHandler.post(()->{
+            FirebaseFirestore db = FirebaseFirestore.getInstance();
+            Task<DocumentSnapshot> task = db.collection("emgLogs").document(currentUser.getUid()).collection(mSensorName).document(DN).get()
+                    .addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
+                        @Override
+                        public void onSuccess(DocumentSnapshot documentSnapshot) {
+                            if (documentSnapshot.exists()) {
+                            } else {
+                                Log.d(TAG, "No document found. Creating new one.");
+                                log = new FirebaseEmgLogEntry();
+                            }
+                            mProducer.firebaseLogReady(FirebaseEmgLogger.this);
 
+                        }
+                    })
+                    .addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            Log.d(TAG, "Unable to load previous log");
+                            log = new FirebaseEmgLogEntry();
+                            mProducer.firebaseLogReady(FirebaseEmgLogger.this);
+                        }
+                    });
+        });
     }
 
-    public void addSample(long timestamp, double emgPower) {
+    public void addSample(long timestamp, double emgPower) throws InvalidParameterException {
 
         if (log == null) {
             throw new InvalidParameterException("Need to prepare log");
