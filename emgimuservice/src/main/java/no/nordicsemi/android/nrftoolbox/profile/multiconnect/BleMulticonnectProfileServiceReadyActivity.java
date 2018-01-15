@@ -219,8 +219,7 @@ public abstract class BleMulticonnectProfileServiceReadyActivity<E extends BleMu
 		 * The service will stop itself when all devices it manages were disconnected and unmanaged and the last activity unbinds from it.
 		 */
 		final Intent service = new Intent(this, getServiceClass());
-		startService(service);
-		bindService(service, mServiceConnection, 0);
+		bindService(service, mServiceConnection, Context.BIND_AUTO_CREATE);
 	}
 
 	@Override
