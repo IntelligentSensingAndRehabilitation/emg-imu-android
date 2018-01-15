@@ -45,7 +45,7 @@ import java.util.UUID;
 import no.nordicsemi.android.log.Logger;
 import no.nordicsemi.android.ble.BleManager;
 
-public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> implements FirebaseEmgLogger.FirebaseLogProducerCallbacks {
+public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 	private final String TAG = "EmgImuManager";
 
 	/** EMG Service UUID **/
@@ -138,7 +138,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> implements
     public void connect(final BluetoothDevice device) {
         createBond();
         super.connect(device);
-        fireLogger = new FirebaseEmgLogger(mBluetoothDevice.getAddress(), this);
+        fireLogger = new FirebaseEmgLogger(this);
     }
 
 	/**
@@ -248,7 +248,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> implements
                         emgPwr.add(val);
                         offset += 2;
                     }
-                    Log.d(TAG, "Log record received with " + emgPwr.size() + " samples");
+                    Log.d(TAG, getAddress() + " Log record received with " + emgPwr.size() + " samples");
                     Logger.d(mLogSession, "Log record received with " + emgPwr.size() + " samples");
                     final EmgLogRecord emgRecord = new EmgLogRecord(timestamp, emgPwr);
                     mRecords.add(emgRecord);
@@ -285,7 +285,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> implements
                             long now = new Date().getTime();
                             long T0 = now - (long) (dt * number);
 
-                            Log.d(TAG, "There are " + number + " records. Preparing log for T0: " + T0);
+                            Log.d(TAG, getAddress() + " There are " + number + " records. Preparing log for T0: " + T0);
                             fireLogger.prepareLog(T0);
                         } else {
                             Log.d(TAG, "No records found");
@@ -299,8 +299,8 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> implements
                         switch (responseCode) {
                             case RESPONSE_SUCCESS:
                                 if (!mAbort) {
+                                    // Defer operation complete operator until log is saved
                                     storeRecordsToDb();
-                                    mCallbacks.onOperationCompleted(gatt.getDevice());
                                 } else
                                     mCallbacks.onOperationAborted(gatt.getDevice());
                                 break;
@@ -630,7 +630,8 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> implements
     /**** code for downloading logs and uploading to firestore ****/
 
     private void storeRecordsToDb() {
-        Log.d(TAG, "storeRecordsToDb");
+        Log.d(TAG, getAddress() + " storeRecordsToDb");
+        Logger.d(mLogSession, "storeRecordsToDb");
 
         List<Long> timestamps = new ArrayList<>();
 
@@ -678,14 +679,24 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> implements
         mFirebaseAnalytics.logEvent("DOWNLOAD_SENSOR_LOG", bundle);
     }
 
-    @Override
+    public String getAddress() {
+        if (mBluetoothDevice == null)
+            return "";
+        return mBluetoothDevice.getAddress();
+    }
+
     public void firebaseLogReady(FirebaseEmgLogger logger) {
-        Log.d(TAG, "Log ready. Requesting records from device");
+        Log.d(TAG, getAddress() + " Log ready. Requesting records from device");
 
         Logger.d(mLogSession, "Request all records sent");
         final BluetoothGattCharacteristic racpCharacteristic = mRecordAccessControlPointCharacteristic;
         setOpCode(racpCharacteristic, OP_CODE_REPORT_STORED_RECORDS, OPERATOR_ALL_RECORDS);
         writeCharacteristic(racpCharacteristic);
+    }
+
+    public void firebaseLogWritten() {
+        Log.d(TAG, getAddress() + " Log written");
+        mCallbacks.onOperationCompleted(mBluetoothDevice);
     }
 
 

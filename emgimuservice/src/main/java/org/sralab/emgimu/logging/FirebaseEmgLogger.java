@@ -14,17 +14,24 @@ import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.crash.FirebaseCrash;
+import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
+import org.sralab.emgimu.service.EmgImuManager;
+
 import java.security.InvalidParameterException;
 import java.util.concurrent.ExecutionException;
+
+import no.nordicsemi.android.log.LogContract;
 
 public class FirebaseEmgLogger {
 
     private String TAG = FirebaseEmgLogger.class.getSimpleName();
 
+    private FirebaseUser mUser;
     private FirebaseAuth mAuth;
+    private FirebaseFirestore mDb;
 
     /**
      * Manages the set of EMG Logs that will be synchronized to the database. These are
@@ -49,71 +56,53 @@ public class FirebaseEmgLogger {
      */
 
     private FirebaseEmgLogEntry log = null;
+    private EmgImuManager mManager;
 
-    private String mSensorName;
-
-    public interface FirebaseLogProducerCallbacks {
-        void firebaseLogReady(FirebaseEmgLogger logger);
-    }
-
-    private FirebaseLogProducerCallbacks mProducer;
-
-    public FirebaseEmgLogger(String sensorName, FirebaseLogProducerCallbacks producer) {
-        mSensorName = sensorName;
-        mProducer = producer;
+    public FirebaseEmgLogger(EmgImuManager manager) {
+        mManager = manager;
 
         mAuth = FirebaseAuth.getInstance();
+        mUser = mAuth.getCurrentUser(); // Log in performed by main service
 
-        // Check if user is signed in (non-null) and update UI accordingly.
-        FirebaseUser currentUser = mAuth.getCurrentUser();
-        Log.d(TAG, "User ID: " + currentUser);
-        if (currentUser == null) {
-            mAuth.signInAnonymously()
-                .addOnCompleteListener(new OnCompleteListener<AuthResult>() {
-                    @Override
-                    public void onComplete(@NonNull Task<AuthResult> task) {
-                        if (task.isSuccessful()) {
-                            // Sign in success, update UI with the signed-in user's information
-                            FirebaseUser user = mAuth.getCurrentUser();
-                            Log.d(TAG, "signInAnonymously:success. UID:" + user.getUid());
-                        } else {
-                            Log.e(TAG, "signInAnonymously:failure", task.getException());
-                        }
-                    }
-                });
-        } else {
-            Log.d(TAG, "Prior logged in user: " + currentUser.getUid());
+        if (mUser == null) {
+            Log.e(TAG, "Should have a user assigned here");
+            throw new InvalidParameterException("No FirebaseUser");
         }
+
+        mDb = FirebaseFirestore.getInstance();
+        if (mDb == null) {
+            Log.e(TAG, "Unable to get Firestore DB");
+            throw new InvalidParameterException("No Firestore DB");
+        }
+    }
+
+    private DocumentReference getDocument(String DN) {
+        return mDb.collection("emgLogs").document(mUser.getUid()).collection(mManager.getAddress()).document(DN);
+    }
+
+    private DocumentReference getDocument() {
+        String DN = log.DocumentName();
+        return getDocument(DN);
     }
 
     public void updateDb() {
+
         if (log == null) {
             Log.e(TAG, "Someone is trying to update a log that isn't valid");
-            return;
+            throw new InvalidParameterException("Trying to update a null log");
         }
 
-        String DN = log.DocumentName();
-
-        mAuth = FirebaseAuth.getInstance();
-
-        // Check if user is signed in (non-null) and update UI accordingly.
-        FirebaseUser currentUser = mAuth.getCurrentUser();
-        if (currentUser == null) {
-            Log.e(TAG, "Should have a user assigned here");
-        }
-
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
-
-        Log.d(TAG, "Writing entry for User ID: " + currentUser + " Document: " + DN);
+        mManager.log(LogContract.Log.Level.INFO, "Writing to Firestore: " + getDocument().getPath());
 
         Handler mainHandler = new Handler(Looper.getMainLooper());
         mainHandler.post(()-> {
             // Add a new document with a generated ID
-            db.collection("emgLogs").document(currentUser.getUid()).collection(mSensorName).document(DN).set(log)
+            getDocument().set(log)
                     .addOnSuccessListener(new OnSuccessListener<Void>() {
                         @Override
                         public void onSuccess(Void aVoid) {
-                            Log.d(TAG, "Document successfully added");
+                            Log.d(TAG, mManager.getAddress() + " Document successfully saved");
+                            mManager.firebaseLogWritten();;
                         }
                     })
                     .addOnFailureListener(new OnFailureListener() {
@@ -132,44 +121,39 @@ public class FirebaseEmgLogger {
 
         if (log != null) {
             Log.d(TAG, "Log already prepared. Doing nothing.");
-            mProducer.firebaseLogReady(FirebaseEmgLogger.this);
+            mManager.firebaseLogReady(FirebaseEmgLogger.this);
             return;
         }
+
         String DN = FirebaseEmgLogEntry.FilenameFromTimestamp(timestamp);
+        Log.d(TAG, "Fetching log for " + DN + " Sensor: " + mManager.getAddress() + " PID: " + android.os.Process.myPid() + " TID " + android.os.Process.myTid() + " UID " + android.os.Process.myUid());
 
-        Log.d(TAG, "Looking for document named: " + DN);
-
-        // Check if user is signed in (non-null) and update UI accordingly.
-        FirebaseUser currentUser = mAuth.getCurrentUser();
-        if (currentUser == null) {
-            Log.e(TAG, "Should have a user assigned here");
-        }
-
-        Log.d(TAG, "Sensor: " + mSensorName + " PID: " + android.os.Process.myPid() + " TID " + android.os.Process.myTid() + " UID " + android.os.Process.myUid());
+        mManager.log(LogContract.Log.Level.INFO, "Preparing Firestore DB: " + getDocument(DN).getPath());
 
         // Run query on main thread to avoid database lock issues
         Handler mainHandler = new Handler(Looper.getMainLooper());
         mainHandler.post(()->{
             FirebaseFirestore db = FirebaseFirestore.getInstance();
-            Task<DocumentSnapshot> task = db.collection("emgLogs").document(currentUser.getUid()).collection(mSensorName).document(DN).get()
+            Task<DocumentSnapshot> task = getDocument(DN).get()
                     .addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
                         @Override
                         public void onSuccess(DocumentSnapshot documentSnapshot) {
                             if (documentSnapshot.exists()) {
+                                Log.d(TAG, "Loaded previous document");
+                                log = documentSnapshot.toObject(FirebaseEmgLogEntry.class);
                             } else {
                                 Log.d(TAG, "No document found. Creating new one.");
                                 log = new FirebaseEmgLogEntry();
                             }
-                            mProducer.firebaseLogReady(FirebaseEmgLogger.this);
-
+                            mManager.firebaseLogReady(FirebaseEmgLogger.this);
                         }
                     })
                     .addOnFailureListener(new OnFailureListener() {
                         @Override
                         public void onFailure(@NonNull Exception e) {
-                            Log.d(TAG, "Unable to load previous log");
+                            Log.e(TAG, "Unable to load previous log");
                             log = new FirebaseEmgLogEntry();
-                            mProducer.firebaseLogReady(FirebaseEmgLogger.this);
+                            mManager.firebaseLogReady(FirebaseEmgLogger.this);
                         }
                     });
         });

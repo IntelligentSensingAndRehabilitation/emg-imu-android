@@ -289,11 +289,13 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
                     if (!isConnected(d)) {
                         manager.log(LogContract.Log.Level.INFO, "Requesting logs from connected device");
                         Log.d(TAG, d.getAddress() + " Requesting logs from connected device.");
+                        manager.getAllRecords();
                     } else {
-                        manager.log(LogContract.Log.Level.WARNING, "Requesting log from device. It is in managed device list but not connected. This likely means we are trying to reconnect.");
-                        Log.w(TAG, d.getAddress() + " Requesting log from device. It is in managed device list but not connected. This likely means we are trying to reconnect. This query may fail.");
+                        manager.log(LogContract.Log.Level.WARNING, "Requesting log from device. It is in managed device list but not connected. This likely means we are trying to reconnect. Forcing connect/disconnect.");
+                        Log.w(TAG, d.getAddress() + " Requesting log from device. It is in managed device list but not connected. This likely means we are trying to reconnect. This query may fail. Forcing connect/disconnect.");
+                        mBinder.disconnect(d);
+                        mBinder.connect(d);
                     }
-                    manager.getAllRecords();
                     return START_NOT_STICKY;
                 }
             }
