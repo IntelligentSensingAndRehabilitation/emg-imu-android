@@ -176,8 +176,14 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
         }
 
         public int getLoggerProfileTitle() {
-            //return R.string.emgimu_feature_title;
-            return 0; // Use the line above to enable logging, but this slows down application
+            return R.string.emgimu_feature_title;
+            //return 0; // Use the line above to enable logging, but this slows down application
+        }
+
+        public void updateSavedDevices() {
+            Log.d(TAG, "updateSavedDevices called on binder");
+            serviceUpdateSavedDevices();
+            configureLoggingSavedDevices();
         }
 	}
 
@@ -409,9 +415,6 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
         bundle.putString(FirebaseAnalytics.Param.ITEM_ID, "EMG_IMU_SERVICE_CONNECTED");
         bundle.putString(FirebaseAnalytics.Param.ITEM_NAME, device.getName());
         mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.SELECT_CONTENT, bundle);
-
-        // Save this list of devices for later
-        updateSavedDevices();
     }
 
 	@Override
@@ -422,15 +425,10 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 			cancelNotification(device);
 			createBackgroundNotification();
 		}
-
-		// Save this list of devices for later
-        updateSavedDevices();
-
-		// Update the list of devices to fetch lgos from
-		configureLoggingSavedDevices();
 	}
 
-	private void updateSavedDevices() {
+	private void serviceUpdateSavedDevices
+            () {
 		// Need to access context this way so all apps using service (and with the sharedUserId)
 		// have the same preferences and connect to the same devices
         Context mContext = null;

@@ -165,4 +165,11 @@ public class EmgImuActivity extends EmgImuBaseActivity {
 	public void onNumberOfRecordsRequested(BluetoothDevice device, int value) {
 
 	}
+
+    @Override
+    public void onDeviceSelected(final BluetoothDevice device, final String name) {
+	    super.onDeviceSelected(device, name);
+	    getService().updateSavedDevices();
+    }
+
 }
