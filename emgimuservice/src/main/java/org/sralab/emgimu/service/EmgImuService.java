@@ -282,26 +282,26 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
                 logFetchStartId.put(device_mac, startId);
             }
 
-            Log.d(TAG, "Service started to fetch a log: " + device_mac);
             List<BluetoothDevice> devices = getManagedDevices();
             for (BluetoothDevice d : devices) {
                 if (d.getAddress().equals(device_mac)) {
-                    Log.d(TAG, "Device " + device_mac + " already in managed devices");
-                    if (isConnected(d)) {
-                        final EmgImuManager manager = (EmgImuManager) getBleManager(d);
-                        manager.log(LogContract.Log.Level.INFO, "Requesting logs");
-                        manager.getAllRecords();
-                        return START_NOT_STICKY;
+                    final EmgImuManager manager = (EmgImuManager) getBleManager(d);
+                    if (!isConnected(d)) {
+                        manager.log(LogContract.Log.Level.INFO, "Requesting logs from connected device");
+                        Log.d(TAG, d.getAddress() + " Requesting logs from connected device.");
+                    } else {
+                        manager.log(LogContract.Log.Level.WARNING, "Requesting log from device. It is in managed device list but not connected. This likely means we are trying to reconnect.");
+                        Log.w(TAG, d.getAddress() + " Requesting log from device. It is in managed device list but not connected. This likely means we are trying to reconnect. This query may fail.");
                     }
+                    manager.getAllRecords();
+                    return START_NOT_STICKY;
                 }
             }
 
-            Log.d(TAG, "Device not connected. Connecting to devices");
+            Log.d(TAG, "Device not in managed devices. Connecting to device.");
 
-            // Device is not connected. Connect to devices
-            // TODO: this could be more granular
-            loadAndConnectSavedDevices();
-
+            BluetoothDevice device = bluetoothAdapter.getRemoteDevice(device_mac);
+            mBinder.connect(device,  getLogger(device));
         } else {
             Log.e(TAG, "Service started without binding or special intent. Not meant to be used this way");
         }
@@ -309,6 +309,53 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
         return START_NOT_STICKY;
     }
 
+    /**
+     * Handles stopping service based on the thread ID. This is a bit complicated because
+     * it will stopSelf(threadId) will stop if it is the most recent (greatest) thread ID
+     * but we want to only stop when it is the last one.
+     */
+    private void smartStop(BluetoothDevice device) {
+        synchronized(logFetchStartId) {
+            Integer startThreadId = logFetchStartId.get(device.getAddress());
+
+            // If there is only one thread remaining, then appropriate to stop it
+            if (logFetchStartId.size() == 1) {
+                final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+                manager.log(LogContract.Log.Level.DEBUG, "One thread found so stopping service: " + logFetchStartId);
+                Log.d(TAG, device.getAddress() + " One thread found so stopping service: " + logFetchStartId);
+
+                logFetchStartId.remove(device.getAddress());
+                stopSelf(startThreadId);
+                return;
+            }
+
+            // Work out the maximum thread Id
+            Integer maxThreadId = 0;
+            for (int i = 0; i < logFetchStartId.size(); i++) {
+                if (logFetchStartId.valueAt(i) > maxThreadId) {
+                    maxThreadId = logFetchStartId.valueAt(i);
+                }
+            }
+
+            if (startThreadId >= maxThreadId) {
+                final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+                manager.log(LogContract.Log.Level.DEBUG, "Multiple threads and this is the greatest. Just removing element " + startThreadId + " " + logFetchStartId);
+                Log.d(TAG, device.getAddress() + " Multiple threads and this is the greatest. Just removing element " + startThreadId + " " + logFetchStartId);
+
+                // If there are multiple threads and this one is the highest number we should
+                // only remove its ID
+                logFetchStartId.remove(device.getAddress());
+            } else {
+                final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+                manager.log(LogContract.Log.Level.DEBUG, "This is not the lowest thread. Service should not stop after " + startThreadId + " " + logFetchStartId);
+                Log.d(TAG, device.getAddress() + " This is not the lowest thread. Service should not stop after " + startThreadId + " " + logFetchStartId);
+
+                // This call to stopSelf should make no functional difference
+                stopSelf(startThreadId);
+                logFetchStartId.remove(device.getAddress());
+            }
+        }
+    }
     @Override
     public void onDeviceReady(BluetoothDevice device) {
         super.onDeviceReady(device);
@@ -319,13 +366,13 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
             startThreadId = logFetchStartId.get(device.getAddress());
         }
 
+        final EmgImuManager manager = (EmgImuManager) getBleManager(device);
         if(startThreadId != null) {
             Log.d(TAG, "onDeviceReady()");
-            final EmgImuManager manager = (EmgImuManager) getBleManager(device);
             manager.log(LogContract.Log.Level.INFO, "onDeviceReady. requesting log download");
             manager.getAllRecords();
         } else {
-            mBinder.log(device, LogContract.Log.Level.WARNING, "onDeviceReady. no log request active.");
+            manager.log(LogContract.Log.Level.WARNING, "onDeviceReady. no log request active.");
         }
     }
 
@@ -334,20 +381,17 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
     public void onError(BluetoothDevice device, String message, int errorCode) {
         super.onError(device, message, errorCode);
 
+        final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+        manager.log(LogContract.Log.Level.WARNING, "onError: " + message);
+
         Log.e(TAG, "Error : " + message + " " + errorCode);
 
         // See if a log fetch has been requested
-        Integer startThreadId;
-        synchronized (logFetchStartId) {
-            Log.d(TAG, "Unable to download log");
-            startThreadId = logFetchStartId.get(device.getAddress());
-            if (startThreadId != null) {
-                logFetchStartId.remove(device.getAddress());
-                stopSelf(startThreadId);
-            }
+        Integer startThreadId = logFetchStartId.get(device.getAddress());
+        if (startThreadId != null) {
+            Log.d(TAG, "Unable to download log from " + device.getAddress() + " list of threads " + logFetchStartId);
+            smartStop(device);
         }
-
-        logFetchStartId.remove(device.getAddress());
     }
 
 
@@ -508,6 +552,7 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
         }
     }
 	private void loadAndConnectSavedDevices() {
+        Log.e(TAG, "LoadAndConnectSaveDevices");
 		// Need to access context this way so all apps using service (and with the sharedUserId)
 		// have the same preferences and connect to the same devices
         Context mContext = null;
@@ -700,15 +745,17 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
     @Override
     public void onOperationCompleted(BluetoothDevice device) {
 
-        Log.d(TAG, "onOperationCompleted");
-        synchronized (logFetchStartId) {
-            Integer startThreadId = logFetchStartId.get(device.getAddress());
-            if (startThreadId != null) {
-                Log.d(TAG, "Found corresponding thread ID. Stopping service");
-
-                stopSelf(startThreadId);
-                logFetchStartId.remove(device.getAddress());
-            }
+        Log.d(TAG, "onOperationCompleted: " + logFetchStartId);
+        Integer startThreadId = logFetchStartId.get(device.getAddress());
+        if (startThreadId != null) {
+            Log.d(TAG, "Found corresponding thread ID " + startThreadId + ". Stopping service");
+            final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+            manager.log(LogContract.Log.Level.INFO, "Log retrieval complete");
+            smartStop(device);
+        } else {
+            Log.w(TAG, device.getAddress() + " onOperationCompleted without log fetch intent");
+            final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+            manager.log(LogContract.Log.Level.WARNING, "onOperationCompleted without log fetch intent");
         }
     }
 
