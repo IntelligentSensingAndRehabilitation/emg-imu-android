@@ -440,6 +440,10 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
                 // If there are multiple threads and this one is the highest number we should
                 // only remove its ID
                 logFetchStartId.remove(device.getAddress());
+
+                // However later stop needs to use this maxThreadId which we removed. Arbitrarily
+                // assign to the first device..
+                logFetchStartId.setValueAt(0, maxThreadId);
             } else {
                 mBinder.log(device, LogContract.Log.Level.DEBUG, "This is not the lowest thread. Service should not stop after " + startThreadId + " " + logFetchStartId);
 
