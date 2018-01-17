@@ -581,9 +581,6 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 		if (!currentNames.equals(names)) {
             editor.putString(DEVICE_PREFERENCE, names.toString());
             editor.commit();
-
-            // Update the set of jobs for logging devices
-            configureLoggingSavedDevices();
         }
 	}
 
