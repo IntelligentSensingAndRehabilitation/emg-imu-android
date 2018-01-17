@@ -17,14 +17,19 @@ public class FirebaseEmgLogEntry {
     private static int MAX_LOG_SIZE_MS = (60 * 60 * 1000); // ms in an hour
 
     private long T0;
-
     private ArrayList<Double> timestamps;
     private ArrayList<Double> emgPower;
 
     public FirebaseEmgLogEntry() {
         this.timestamps = new ArrayList<Double>();
         this.emgPower = new ArrayList<Double>();
+    }
 
+    // Copy constructor
+    public FirebaseEmgLogEntry(FirebaseEmgLogEntry base) {
+        this.T0 = base.getT0().getTime();
+        this.timestamps = new ArrayList<>(base.getTimestamps());
+        this.emgPower = new ArrayList<>(base.getEmgPower());
     }
 
     public static Date DateFromTimestamp(long timestamp) {

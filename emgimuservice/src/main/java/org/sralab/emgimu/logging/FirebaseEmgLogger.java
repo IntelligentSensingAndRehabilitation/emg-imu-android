@@ -92,23 +92,28 @@ public class FirebaseEmgLogger {
             throw new InvalidParameterException("Trying to update a null log");
         }
 
-        mManager.log(LogContract.Log.Level.INFO, "Writing to Firestore: " + getDocument().getPath());
+        // Need to make a copy of this object because it will be replaced immediately after
+        // and this thread may not post for some time
+        FirebaseEmgLogEntry mLog = new FirebaseEmgLogEntry(log);
+        String DN = mLog.DocumentName();
+
+        mManager.log(LogContract.Log.Level.INFO, "Writing to Firestore: " + DN);
 
         Handler mainHandler = new Handler(Looper.getMainLooper());
         mainHandler.post(()-> {
             // Add a new document with a generated ID
-            getDocument().set(log)
+            getDocument(DN).set(mLog)
                     .addOnSuccessListener(new OnSuccessListener<Void>() {
                         @Override
                         public void onSuccess(Void aVoid) {
-                            Log.d(TAG, mManager.getAddress() + " Document successfully saved");
+                            Log.d(TAG, mManager.getAddress() + " Document " + DN + " successfully saved");
                         }
                     })
                     .addOnFailureListener(new OnFailureListener() {
                         @Override
                         public void onFailure(@NonNull Exception e) {
-                            Log.w(TAG, "Error adding document", e);
-                            FirebaseCrash.report(new Exception("Failed to store log"));
+                            Log.w(TAG, "Error adding document " + DN, e);
+                            FirebaseCrash.report(new Exception("Error adding document " + DN));
                         }
                     });
         });
@@ -119,7 +124,7 @@ public class FirebaseEmgLogger {
         // log from the database and begin appending to it.
 
         if (log != null) {
-            Log.d(TAG, "Log already prepared. Doing nothing.");
+            Log.d(TAG, "Log already prepared (" + log.DocumentName() + ". Doing nothing.");
             mManager.firebaseLogReady(FirebaseEmgLogger.this);
             return;
         }
@@ -132,16 +137,15 @@ public class FirebaseEmgLogger {
         // Run query on main thread to avoid database lock issues
         Handler mainHandler = new Handler(Looper.getMainLooper());
         mainHandler.post(()->{
-            FirebaseFirestore db = FirebaseFirestore.getInstance();
             Task<DocumentSnapshot> task = getDocument(DN).get()
                     .addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
                         @Override
                         public void onSuccess(DocumentSnapshot documentSnapshot) {
                             if (documentSnapshot.exists()) {
-                                Log.d(TAG, "Loaded previous document");
+                                Log.d(TAG, "Loaded previous document: " + DN);
                                 log = documentSnapshot.toObject(FirebaseEmgLogEntry.class);
                             } else {
-                                Log.d(TAG, "No document found. Creating new one.");
+                                Log.d(TAG, "No document found. Creating new one: " + DN);
                                 log = new FirebaseEmgLogEntry();
                             }
                             mManager.firebaseLogReady(FirebaseEmgLogger.this);
@@ -150,7 +154,7 @@ public class FirebaseEmgLogger {
                     .addOnFailureListener(new OnFailureListener() {
                         @Override
                         public void onFailure(@NonNull Exception e) {
-                            Log.e(TAG, "Unable to load previous log");
+                            Log.e(TAG, "Unable to load previous log: " + DN);
                             log = new FirebaseEmgLogEntry();
                             mManager.firebaseLogReady(FirebaseEmgLogger.this);
                         }

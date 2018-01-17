@@ -28,7 +28,6 @@ import android.bluetooth.BluetoothGattService;
 import android.content.Context;
 import android.os.Bundle;
 import android.util.Log;
-import android.util.SparseArray;
 
 import com.google.firebase.analytics.FirebaseAnalytics;
 
@@ -36,7 +35,6 @@ import org.sralab.emgimu.logging.FirebaseEmgLogger;
 import org.sralab.emgimu.parser.RecordAccessControlPointParser;
 
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.Deque;
 import java.util.GregorianCalendar;
@@ -255,7 +253,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                         offset += 2;
                     }
                     Log.d(TAG, getAddress() + " Log record received with " + emgPwr.size() + " samples and timestamp " + new Date(timestamp));
-                    Logger.d(mLogSession, "Log record received with " + emgPwr.size() + " samples");
+                    Logger.d(mLogSession, "Log record received with " + emgPwr.size() + " samples and timestamp " + new Date(timestamp));
                     final EmgLogRecord emgRecord = new EmgLogRecord(timestamp, emgPwr);
                     mRecords.add(emgRecord);
                     mCallbacks.onEmgLogRecordReceived(device, emgRecord);
@@ -293,14 +291,20 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                             long now = new Date().getTime();
                             long T0 = now - (long) (dt * number);
 
-                            Log.d(TAG, getAddress() + " There are " + number + " records. Preparing log for T0: " + T0);
+                            Log.d(TAG, getAddress() + " There are " + number + " records. Preparing firebase log for T0: " + T0);
+                            Logger.d(mLogSession, "There are " + number + " records. Preparing firebase log for T0: " + T0);
+
                             fireLogger.prepareLog(T0);
                         } else {
                             Log.d(TAG, "No records found");
+                            Logger.d(mLogSession, "No records found");
                             mCallbacks.onOperationCompleted(gatt.getDevice());
                         }
                     } else if (opCode == OP_CODE_SET_TIMESTAMP_COMPLETE) {
+                        // Now the timestamp has been acknowledged, we can fetch the records
+
                         Log.d(TAG, "Timestamp set");
+                        Logger.d(mLogSession, "Timestamp set. Requesting all records.");
 
                         clear();
                         mCallbacks.onOperationStarted(mBluetoothDevice);
@@ -489,6 +493,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         if (mRecordAccessControlPointCharacteristic == null)
             return;
 
+        Log.d(TAG, "getAllRecords()");
         syncDevice();
     }
 
@@ -706,6 +711,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         }
 
         Log.d(TAG, "Entries added.");
+        Logger.d(mLogSession,"Entries added.");
 
         fireLogger.updateDb();
 
@@ -732,8 +738,8 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 
     public void firebaseLogReady(FirebaseEmgLogger logger) {
         Log.d(TAG, getAddress() + " Log ready. Requesting records from device");
+        Logger.d(mLogSession, "Log ready. Requesting records from device");
 
-        Logger.d(mLogSession, "Request all records sent");
         final BluetoothGattCharacteristic racpCharacteristic = mRecordAccessControlPointCharacteristic;
         setOpCode(racpCharacteristic, OP_CODE_REPORT_STORED_RECORDS, OPERATOR_ALL_RECORDS);
         writeCharacteristic(racpCharacteristic);
