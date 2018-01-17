@@ -36,8 +36,10 @@ import org.sralab.emgimu.logging.FirebaseEmgLogger;
 import org.sralab.emgimu.parser.RecordAccessControlPointParser;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Deque;
+import java.util.GregorianCalendar;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
@@ -73,6 +75,8 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
     private final static int OP_CODE_REPORT_NUMBER_OF_RECORDS = 4;
     private final static int OP_CODE_NUMBER_OF_STORED_RECORDS_RESPONSE = 5;
     private final static int OP_CODE_RESPONSE_CODE = 6;
+    private final static int OP_CODE_SET_TIMESTAMP = 7;
+    private final static int OP_CODE_SET_TIMESTAMP_COMPLETE = 8;
 
     private final static int OPERATOR_NULL = 0;
     private final static int OPERATOR_ALL_RECORDS = 1;
@@ -81,6 +85,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
     private final static int OPERATOR_WITHING_RANGE = 4;
     private final static int OPERATOR_FIRST_RECORD = 5;
     private final static int OPERATOR_LAST_RECORD = 6;
+
 
 
     /**
@@ -238,6 +243,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                 case EMG_LOG:
                     int totalSize = characteristic.getValue().length;
                     long timestamp = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 0);
+                    timestamp = timestampToReal(timestamp);
                     if (totalSize < 6) {
                         throw new NegativeArraySizeException("Log characteristic too short to contain any values");
                     }
@@ -248,7 +254,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                         emgPwr.add(val);
                         offset += 2;
                     }
-                    Log.d(TAG, getAddress() + " Log record received with " + emgPwr.size() + " samples");
+                    Log.d(TAG, getAddress() + " Log record received with " + emgPwr.size() + " samples and timestamp " + new Date(timestamp));
                     Logger.d(mLogSession, "Log record received with " + emgPwr.size() + " samples");
                     final EmgLogRecord emgRecord = new EmgLogRecord(timestamp, emgPwr);
                     mRecords.add(emgRecord);
@@ -280,6 +286,8 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 
                         // Request the records
                         if (number > 0) {
+                            // TODO: this could be made more precise. It ignores the timestamp on device
+
                             // ms since a fixed date
                             float dt = 5000;
                             long now = new Date().getTime();
@@ -291,6 +299,14 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                             Log.d(TAG, "No records found");
                             mCallbacks.onOperationCompleted(gatt.getDevice());
                         }
+                    } else if (opCode == OP_CODE_SET_TIMESTAMP_COMPLETE) {
+                        Log.d(TAG, "Timestamp set");
+
+                        clear();
+                        mCallbacks.onOperationStarted(mBluetoothDevice);
+
+                        setOpCode(mRecordAccessControlPointCharacteristic, OP_CODE_REPORT_NUMBER_OF_RECORDS, OPERATOR_ALL_RECORDS);
+                        writeCharacteristic(mRecordAccessControlPointCharacteristic);
                     } else if (opCode == OP_CODE_RESPONSE_CODE) {
                         final int requestedOpCode = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, offset);
                         final int responseCode = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, offset + 1);
@@ -363,6 +379,46 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         }
     }
 
+    private long t0() {
+        return new GregorianCalendar(2018, 0, 0).getTime().getTime();
+    }
+    /**
+     * Pass the current time into the sensor. This is in a strange format to keep thinks
+     * in range given the sensor timer running at 8hz. We will use 8hz units since the
+     * beginning of 2018. This is set on the sensor by writing to the logging characteristic.
+     * It will only sync the first time this is written since power up.
+     */
+    private void syncDevice() {
+        final int dt = (int) nowToTimestamp();
+
+        Log.d(TAG, "Sending sync signal with offset " + dt);
+        Logger.a(mLogSession, "Sending sync signal with offset " + dt);
+
+        final BluetoothGattCharacteristic characteristic = mRecordAccessControlPointCharacteristic;
+
+        // Send our custom "sync" RACP message
+        final int size = 6;
+        characteristic.setValue(new byte[size]);
+        characteristic.setValue(OP_CODE_SET_TIMESTAMP, BluetoothGattCharacteristic.FORMAT_UINT8, 0);
+        characteristic.setValue(0, BluetoothGattCharacteristic.FORMAT_UINT8, 1); // operator doesn't matter
+        // sending 4 bytes for timestamp
+        characteristic.setValue(dt, BluetoothGattCharacteristic.FORMAT_UINT32, 2);
+        // write this
+        writeCharacteristic(characteristic);
+    }
+
+    // Convert from the device format (8 Hz units since 2018 beginning) to the
+    // android time format
+    private long timestampToReal(long device_ts) {
+        return t0() + (device_ts * 1000 / 8);
+    }
+
+    // Convert from now to device format (8 Hz units since 2018 beginning)
+    private long nowToTimestamp() {
+        long now = new Date().getTime();
+        return ((now - t0()) * 8 / 1000);
+    }
+
     /**
      * Returns a list of CGM records obtained from this device. The key in the array is the
      */
@@ -433,12 +489,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         if (mRecordAccessControlPointCharacteristic == null)
             return;
 
-        clear();
-        mCallbacks.onOperationStarted(mBluetoothDevice);
-
-        final BluetoothGattCharacteristic characteristic = mRecordAccessControlPointCharacteristic;
-        setOpCode(characteristic, OP_CODE_REPORT_NUMBER_OF_RECORDS, OPERATOR_ALL_RECORDS);
-        writeCharacteristic(characteristic);
+        syncDevice();
     }
 
     /**
@@ -635,31 +686,21 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 
         List<Long> timestamps = new ArrayList<>();
 
-        int numSamples = 0;
-        for (EmgLogRecord r : mRecords) {
-            numSamples += r.emgPwr.size();
-            timestamps.add(new Long(r.timestamp));
+        // TODO: come up with better way of getting the sampling rate that takes into account device
+        // for now this is mathematically accurate.
+        double dt_ms = 5000;
+        if (mRecords.size() > 1) {
+            // If multiple records calculate dt in ms.
+            dt_ms = mRecords.get(1).timestamp - mRecords.get(0).timestamp;
+            Log.d(TAG, "Difference in timestamps " + dt_ms);
+            dt_ms = dt_ms / mRecords.get(0).emgPwr.size();
+            Log.d(TAG, "Calculated sample period as " + dt_ms + " ms");
         }
-
-        if (timestamps.size() > 1) {
-            long dt_l = (timestamps.get(1) - timestamps.get(0));
-            double dt_s = dt_l / 8.0 / mRecords.get(0).emgPwr.size();
-            Log.d(TAG, "timestamp diff: " + dt_s);
-        }
-
-        long now = new Date().getTime();
-        long device_ts_ms = mRecords.get(mRecords.size()-1).timestamp * (1000 / 8);
-        Log.d(TAG, "Delta TS for device " + mBluetoothDevice.getAddress() + " is " + (now - device_ts_ms));
-
-
-        // ms since a fixed date
-        float dt = 5000;
-        long T0 = new Date().getTime() - (long) (dt * numSamples);
-        int i = 0;
-
         for (EmgLogRecord r : mRecords) {
+            int i = 0;
+            long timestamp = r.timestamp;
             for (Integer pwr : r.emgPwr) {
-                fireLogger.addSample(T0 + (long) (i * dt), pwr);
+                fireLogger.addSample(timestamp + (long) (i * dt_ms), pwr);
                 i = i + 1;
             }
         }
@@ -667,6 +708,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         Log.d(TAG, "Entries added.");
 
         fireLogger.updateDb();
+
         // Record analytic data that might be useful
         // Obtain the FirebaseAnalytics instance.
         FirebaseAnalytics mFirebaseAnalytics = FirebaseAnalytics.getInstance(getContext());
@@ -677,6 +719,9 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         bundle.putString("NUM_RECORDS", Integer.toString(mRecords.size()));
         // TODO: store battery value once this is obtained
         mFirebaseAnalytics.logEvent("DOWNLOAD_SENSOR_LOG", bundle);
+
+        // Note: this does not wait for firebase to complete the set event
+        mCallbacks.onOperationCompleted(mBluetoothDevice);
     }
 
     public String getAddress() {
@@ -693,11 +738,5 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         setOpCode(racpCharacteristic, OP_CODE_REPORT_STORED_RECORDS, OPERATOR_ALL_RECORDS);
         writeCharacteristic(racpCharacteristic);
     }
-
-    public void firebaseLogWritten() {
-        Log.d(TAG, getAddress() + " Log written");
-        mCallbacks.onOperationCompleted(mBluetoothDevice);
-    }
-
 
 }

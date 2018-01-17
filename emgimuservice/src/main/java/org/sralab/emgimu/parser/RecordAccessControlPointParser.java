@@ -30,6 +30,8 @@ public class RecordAccessControlPointParser {
 	private final static int OP_CODE_REPORT_NUMBER_OF_RECORDS = 4;
 	private final static int OP_CODE_NUMBER_OF_STORED_RECORDS_RESPONSE = 5;
 	private final static int OP_CODE_RESPONSE_CODE = 6;
+	private final static int OP_CODE_SET_TIMESTAMP = 7;
+	private final static int OP_CODE_SET_TIMESTAMP_COMPLETE = 8;
 
 	private final static int OPERATOR_NULL = 0;
 	private final static int OPERATOR_ALL_RECORDS = 1;
@@ -75,6 +77,9 @@ public class RecordAccessControlPointParser {
 			builder.append(getStatus(status)).append("\n");
 			break;
 		}
+		case OP_CODE_SET_TIMESTAMP:
+		case OP_CODE_SET_TIMESTAMP_COMPLETE:
+			builder.append(getOpCode(opCode));
 		}
 
 		switch (operator) {
@@ -118,6 +123,10 @@ public class RecordAccessControlPointParser {
 			return "Number of stored records response";
 		case OP_CODE_RESPONSE_CODE:
 			return "Response Code";
+		case OP_CODE_SET_TIMESTAMP:
+			return "Set timestamp";
+		case OP_CODE_SET_TIMESTAMP_COMPLETE:
+			return "Set timestamp complete";
 		default:
 			return "Reserved for future use";
 		}

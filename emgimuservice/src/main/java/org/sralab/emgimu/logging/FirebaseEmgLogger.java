@@ -102,7 +102,6 @@ public class FirebaseEmgLogger {
                         @Override
                         public void onSuccess(Void aVoid) {
                             Log.d(TAG, mManager.getAddress() + " Document successfully saved");
-                            mManager.firebaseLogWritten();;
                         }
                     })
                     .addOnFailureListener(new OnFailureListener() {

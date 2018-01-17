@@ -57,7 +57,6 @@ public class FirebaseEmgLogEntry {
      * @param emgPower new sample power
      */
     public void addSample(long timestamp, double emgPower) throws LogFull {
-
         if (timestamps.isEmpty()) {
             T0 = DateFromTimestamp(timestamp).getTime();
         }
