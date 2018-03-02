@@ -269,15 +269,6 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
         Bundle bundle = new Bundle();
         bundle.putString(FirebaseAnalytics.Param.ITEM_ID, "EMG_IMU_SERVICE_CREATED");
         mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.SELECT_CONTENT, bundle);
-
-        // Test write
-        EmgLogManager l = new EmgLogManager();
-        long t0 = new Date().getTime();
-        double Fs = 1000.0 / 1.0; // Sampling rate of sensor (1 Hz logs)
-        for (int i = 0 ; i < (60 * 60 * 3 + 5); i++) {
-            // Simulate three hours of data
-            l.addSample(t0 + (long) Fs * i, (double) i);
-        }
 	}
 
 	@Override
