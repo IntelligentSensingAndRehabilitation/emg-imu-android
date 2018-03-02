@@ -103,6 +103,16 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 	 */
 	public class EmgImuBinder extends LocalBinder {
 
+	    @Override
+        /**
+         * Override the parent method to ensure that the device list is updated, even
+         * if we are not connected to the device. The onDeviceDisconnected callback only
+         * occurs if we are initially connected.
+         */
+        public void disconnect(final BluetoothDevice device) {
+            super.disconnect(device);
+            updateSavedDevices();
+        }
         /**
          * Returns the last received EMG raw value.
          * @param device the device of which battery level should be returned
@@ -384,9 +394,6 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 			cancelNotification(device);
 			createBackgroundNotification();
 		}
-
-		// Save this list of devices for later
-        updateSavedDevices();
 	}
 
 	private void updateSavedDevices() {
