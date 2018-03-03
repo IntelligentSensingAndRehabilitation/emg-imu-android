@@ -64,7 +64,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
     /**
      * Record Access Control Point characteristic UUID
      */
-    private final static UUID EMG_RACP_CHAR_UUID = UUID.fromString("00002a52-1212-EFDE-1523-785FEF13D123");
+    private final static UUID EMG_RACP_CHAR_UUID = UUID.fromString("00002a52-0000-1000-8000-00805f9b34fb");
     private final static UUID EMG_LOG_CHAR_UUID = UUID.fromString("00001240-1212-EFDE-1523-785FEF13D123");
 
     private final static int OP_CODE_REPORT_STORED_RECORDS = 1;
