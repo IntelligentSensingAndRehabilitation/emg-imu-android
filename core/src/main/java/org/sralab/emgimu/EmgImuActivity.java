@@ -28,6 +28,7 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 
 import org.sralab.emgimu.service.EmgImuService;
+import org.sralab.emgimu.service.EmgLogRecord;
 
 import no.nordicsemi.android.nrftoolbox.widget.DividerItemDecoration;
 
@@ -123,4 +124,52 @@ public class EmgImuActivity extends EmgImuBaseActivity {
         if (mAdapter != null)
             mAdapter.onBuffValueReceived(device);
     }
+
+    /**** These callbacks are related to handling the RACP endpoints ****/
+	@Override
+	public void onEmgLogRecordReceived(BluetoothDevice device, EmgLogRecord record) {
+
+	}
+
+	@Override
+	public void onOperationStarted(BluetoothDevice device) {
+
+	}
+
+	@Override
+	public void onOperationCompleted(BluetoothDevice device) {
+
+	}
+
+	@Override
+	public void onOperationFailed(BluetoothDevice device) {
+
+	}
+
+	@Override
+	public void onOperationAborted(BluetoothDevice device) {
+
+	}
+
+	@Override
+	public void onOperationNotSupported(BluetoothDevice device) {
+
+	}
+
+	@Override
+	public void onDatasetClear(BluetoothDevice device) {
+
+	}
+
+	@Override
+	public void onNumberOfRecordsRequested(BluetoothDevice device, int value) {
+
+	}
+
+    @Override
+    public void onDeviceSelected(final BluetoothDevice device, final String name) {
+	    super.onDeviceSelected(device, name);
+	    getService().updateSavedDevices();
+    }
+
 }

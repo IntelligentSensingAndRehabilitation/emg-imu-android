@@ -34,6 +34,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.support.annotation.StringRes;
 import android.support.v4.content.LocalBroadcastManager;
+import android.util.Log;
 import android.widget.Toast;
 
 import java.util.ArrayList;
@@ -41,11 +42,11 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
+import no.nordicsemi.android.ble.BleManager;
+import no.nordicsemi.android.ble.BleManagerCallbacks;
+import no.nordicsemi.android.ble.utils.ILogger;
 import no.nordicsemi.android.log.ILogSession;
 import no.nordicsemi.android.log.LogContract;
-import no.nordicsemi.android.nrftoolbox.profile.BleManager;
-import no.nordicsemi.android.nrftoolbox.profile.BleManagerCallbacks;
-import no.nordicsemi.android.nrftoolbox.profile.ILogger;
 
 public abstract class BleMulticonnectProfileService extends Service implements BleManagerCallbacks {
 	@SuppressWarnings("unused")
@@ -91,12 +92,7 @@ public abstract class BleMulticonnectProfileService extends Service implements B
 					// On older phones (tested on Nexus 4 with Android 5.0.1) the Bluetooth requires some time
 					// after it has been enabled before some operations can start. Starting the GATT server here
 					// without a delay is very likely to cause a DeadObjectException from BluetoothManager#openGattServer(...).
-					mHandler.postDelayed(new Runnable() {
-						@Override
-						public void run() {
-							onBluetoothEnabled();
-						}
-					}, 600);
+					mHandler.postDelayed(() -> onBluetoothEnabled(), 600);
 					break;
 				case BluetoothAdapter.STATE_TURNING_OFF:
 				case BluetoothAdapter.STATE_OFF:
@@ -252,12 +248,13 @@ public abstract class BleMulticonnectProfileService extends Service implements B
 
 	@Override
 	public IBinder onBind(final Intent intent) {
+		Log.d(TAG, "onBind()");
 		mBinded = true;
 		return getBinder();
 	}
 
 	@Override
-	public final void onRebind(final Intent intent) {
+	public void onRebind(final Intent intent) {
 		mBinded = true;
 
 		if (!mActivityIsChangingConfiguration) {
@@ -313,6 +310,7 @@ public abstract class BleMulticonnectProfileService extends Service implements B
 
 	@Override
 	public void onCreate() {
+		Log.d(TAG, "onCreate()");
 		super.onCreate();
 
 		mHandler = new Handler();
@@ -556,12 +554,7 @@ public abstract class BleMulticonnectProfileService extends Service implements B
 	 *            an resource id of the message to be shown
 	 */
 	protected void showToast(final int messageResId) {
-		mHandler.post(new Runnable() {
-			@Override
-			public void run() {
-				Toast.makeText(BleMulticonnectProfileService.this, messageResId, Toast.LENGTH_SHORT).show();
-			}
-		});
+		mHandler.post(() -> Toast.makeText(BleMulticonnectProfileService.this, messageResId, Toast.LENGTH_SHORT).show());
 	}
 
 	/**
@@ -571,12 +564,7 @@ public abstract class BleMulticonnectProfileService extends Service implements B
 	 *            a message to be shown
 	 */
 	protected void showToast(final String message) {
-		mHandler.post(new Runnable() {
-			@Override
-			public void run() {
-				Toast.makeText(BleMulticonnectProfileService.this, message, Toast.LENGTH_SHORT).show();
-			}
-		});
+		mHandler.post(() -> Toast.makeText(BleMulticonnectProfileService.this, message, Toast.LENGTH_SHORT).show());
 	}
 
 	/**

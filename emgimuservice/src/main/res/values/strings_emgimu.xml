@@ -25,6 +25,8 @@
 	<string name="emgimu_feature_title_long">EMG IMU Monitor</string>
 	<string name="emgimu_settings_title">EMG IMU Settings</string>
 
+	<string name="emgimu_log_fetch_name">EMG Log Fetch</string>
+
 	<dimen name="emgimu_feature_title_long_margin">-62dp</dimen>
 
 	<string name="emgimu_devices_title">Sensors</string>

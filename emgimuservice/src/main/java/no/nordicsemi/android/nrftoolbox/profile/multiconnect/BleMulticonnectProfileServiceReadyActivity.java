@@ -48,12 +48,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
+import no.nordicsemi.android.ble.BleManagerCallbacks;
 import no.nordicsemi.android.log.ILogSession;
 import no.nordicsemi.android.log.LocalLogSession;
 import no.nordicsemi.android.log.LogContract;
 import no.nordicsemi.android.log.Logger;
 import no.nordicsemi.android.nrftoolbox.AppHelpFragment;
-import no.nordicsemi.android.nrftoolbox.profile.BleManagerCallbacks;
 import no.nordicsemi.android.nrftoolbox.scanner.ScannerFragment;
 import no.nordicsemi.android.nrftoolbox.utility.DebugLogger;
 
@@ -219,8 +219,7 @@ public abstract class BleMulticonnectProfileServiceReadyActivity<E extends BleMu
 		 * The service will stop itself when all devices it manages were disconnected and unmanaged and the last activity unbinds from it.
 		 */
 		final Intent service = new Intent(this, getServiceClass());
-		startService(service);
-		bindService(service, mServiceConnection, 0);
+		bindService(service, mServiceConnection, Context.BIND_AUTO_CREATE);
 	}
 
 	@Override
@@ -463,12 +462,7 @@ public abstract class BleMulticonnectProfileServiceReadyActivity<E extends BleMu
 	 * @param message a message to be shown
 	 */
 	protected void showToast(final String message) {
-		runOnUiThread(new Runnable() {
-			@Override
-			public void run() {
-				Toast.makeText(BleMulticonnectProfileServiceReadyActivity.this, message, Toast.LENGTH_LONG).show();
-			}
-		});
+		runOnUiThread(() -> Toast.makeText(BleMulticonnectProfileServiceReadyActivity.this, message, Toast.LENGTH_LONG).show());
 	}
 
 	/**
@@ -477,12 +471,7 @@ public abstract class BleMulticonnectProfileServiceReadyActivity<E extends BleMu
 	 * @param messageResId an resource id of the message to be shown
 	 */
 	protected void showToast(final int messageResId) {
-		runOnUiThread(new Runnable() {
-			@Override
-			public void run() {
-				Toast.makeText(BleMulticonnectProfileServiceReadyActivity.this, messageResId, Toast.LENGTH_SHORT).show();
-			}
-		});
+		runOnUiThread(() -> Toast.makeText(BleMulticonnectProfileServiceReadyActivity.this, messageResId, Toast.LENGTH_SHORT).show());
 	}
 
 	/**
