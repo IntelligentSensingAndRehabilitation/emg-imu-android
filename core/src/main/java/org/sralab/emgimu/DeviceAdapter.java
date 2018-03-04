@@ -184,7 +184,6 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
                     final int position = getAdapterPosition();
                     final BluetoothDevice device = mDevices.get(position);
 					mService.disconnect(device);
-					mService.updateSavedDevices();
 					// The device might have not been connected, so there will be no callback
 					onDeviceRemoved(device);
 				}

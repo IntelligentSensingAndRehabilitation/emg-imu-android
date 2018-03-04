@@ -399,9 +399,7 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
                         final EmgImuManager manager = (EmgImuManager) getBleManager(d);
                         manager.getAllRecords();
                     } else {
-                        mBinder.log(d, LogContract.Log.Level.WARNING, "Requesting log from device. It is in managed device list but not connected. This likely means we are trying to reconnect. Forcing connect/disconnect.");
-                        mBinder.disconnect(d);
-                        mBinder.connect(d);
+                        mBinder.log(d, LogContract.Log.Level.WARNING, "It is in managed device list but not connected. Awaiting connection.");
                     }
                     return START_NOT_STICKY;
                 }
@@ -609,7 +607,7 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
         FirebaseJobDispatcher dispatcher = new FirebaseJobDispatcher(new GooglePlayDriver(this));
 
         Log.d(TAG, "Canceling log fetching jobs");
-        dispatcher.cancel(EmgLogFetchJobService.JOB_TAG);
+        dispatcher.cancelAll();
 
         // Need to access context this way so all apps using service (and with the sharedUserId)
         // have the same preferences and connect to the same devices
