@@ -80,7 +80,7 @@ public class EmgImuActivity extends EmgImuBaseActivity {
 	@Override
 	public void onDeviceReady(final BluetoothDevice device) {
 		if (mAdapter != null)
-			mAdapter.onDeviceStateChanged(device);
+			mAdapter.onDeviceReady(device);
 	}
 
 	@Override
