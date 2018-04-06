@@ -1,13 +1,13 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 25
-    buildToolsVersion '26.0.2'
+    compileSdkVersion 27
+    buildToolsVersion '27.0.3'
 
     defaultConfig {
         applicationId "org.sralab.fluttercow"
         minSdkVersion 18
-        targetSdkVersion 25
+        targetSdkVersion 27
         versionCode 1
         versionName "1.0"
     }
@@ -26,14 +26,14 @@ android {
 dependencies {
     implementation 'com.google.firebase:firebase-crash:11.8.0'
     implementation project(':ble')
-    compile fileTree(include: ['*.jar'], dir: 'libs')
-    compile 'com.android.support:appcompat-v7:25.4.0'
-    compile 'com.android.support:design:25.4.0'
-    compile 'no.nordicsemi.android.support.v18:scanner:1.0.0'
-    compile 'no.nordicsemi.android:log:2.1.1'
-    compile project(':common')
-    compile project(':emgimuservice')
-    compile 'com.google.firebase:firebase-core:11.8.0'
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation 'com.android.support:appcompat-v7:27.1.1'
+    implementation 'com.android.support:design:27.1.1'
+    implementation 'no.nordicsemi.android.support.v18:scanner:1.0.0'
+    implementation 'no.nordicsemi.android:log:2.1.1'
+    implementation project(':common')
+    implementation project(':emgimuservice')
+    implementation 'com.google.firebase:firebase-core:11.8.0'
 }
 
 
