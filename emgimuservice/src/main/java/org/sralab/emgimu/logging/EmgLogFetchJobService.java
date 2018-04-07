@@ -5,6 +5,7 @@ package org.sralab.emgimu.logging;
  */
 
 import android.content.Intent;
+import android.os.Build;
 import android.util.Log;
 
 import com.firebase.jobdispatcher.JobParameters;
@@ -28,7 +29,14 @@ public class EmgLogFetchJobService extends JobService
         final Intent service = new Intent(this, EmgImuService.class);
         service.putExtra(EmgImuService.INTENT_FETCH_LOG, true);
         service.putExtra(EmgImuService.INTENT_DEVICE_MAC, job.getExtras().getString("device_mac"));
-        startService(service);
+
+        // As of Oreo, a background service must use this to launch a foreground
+        // service
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(service);
+        } else {
+            startService(service);
+        }
 
         return false;
     }

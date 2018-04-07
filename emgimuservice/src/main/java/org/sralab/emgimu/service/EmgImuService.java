@@ -22,6 +22,7 @@
 package org.sralab.emgimu.service;
 
 import android.app.Notification;
+import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.bluetooth.BluetoothAdapter;
@@ -32,6 +33,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.annotation.NonNull;
@@ -734,6 +736,8 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 		final Notification notification = builder.build();
 		final NotificationManagerCompat nm = NotificationManagerCompat.from(this);
 		nm.notify(NOTIFICATION_ID, notification);
+
+		startForeground(1, notification);
 	}
 
 	/**
@@ -758,15 +762,25 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 		nm.notify(device.getAddress(), NOTIFICATION_ID, notification);
 	}
 
+
 	private NotificationCompat.Builder getNotificationBuilder() {
-		final Intent parentIntent = new Intent(this, EmgImuService.class);
+
+        String channelId = "";
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            channelId = "org.sralab.emgimu.service";
+            NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+            nm.createNotificationChannel(new NotificationChannel(channelId, "EMG IMU Service", NotificationManager.IMPORTANCE_MIN));
+        }
+
+        final Intent parentIntent = new Intent(this, EmgImuService.class);
 		parentIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 		final Intent targetIntent = new Intent(this, EmgImuService.class);
 
 		// Both activities above have launchMode="singleTask" in the AndroidManifest.xml file, so if the task is already running, it will be resumed
 		final PendingIntent pendingIntent = PendingIntent.getActivities(this, OPEN_ACTIVITY_REQ, new Intent[] { parentIntent, targetIntent }, PendingIntent.FLAG_UPDATE_CURRENT);
 
-		final NotificationCompat.Builder builder = new NotificationCompat.Builder(this);
+		final NotificationCompat.Builder builder = new NotificationCompat.Builder(this, channelId);
 		builder.setContentIntent(pendingIntent).setAutoCancel(false);
 		builder.setSmallIcon(R.drawable.ic_stat_notify_proximity);
 		return builder;
