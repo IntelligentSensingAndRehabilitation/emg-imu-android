@@ -1,16 +1,17 @@
-apply plugin: 'com.android.application'
+apply plugin: 'com.android.library'
 
 android {
-    compileSdkVersion 27
-    buildToolsVersion '27.0.3'
+
+    compileSdkVersion rootProject.compileSdk
+    buildToolsVersion rootProject.buildTools
 
     defaultConfig {
-        applicationId "org.sralab.fluttercow"
-        minSdkVersion 18
-        targetSdkVersion 27
-        versionCode 1
-        versionName "1.0"
+        minSdkVersion rootProject.minSdk
+        targetSdkVersion rootProject.compileSdk
+        versionCode rootProject.versionCode
+        versionName rootProject.versionName
     }
+
     buildTypes {
         release {
             minifyEnabled false
@@ -24,16 +25,17 @@ android {
 }
 
 dependencies {
-    implementation 'com.google.firebase:firebase-crash:11.8.0'
     implementation project(':ble')
-    implementation fileTree(include: ['*.jar'], dir: 'libs')
-    implementation 'com.android.support:appcompat-v7:27.1.1'
-    implementation 'com.android.support:design:27.1.1'
-    implementation 'no.nordicsemi.android.support.v18:scanner:1.0.0'
-    implementation 'no.nordicsemi.android:log:2.1.1'
     implementation project(':common')
     implementation project(':emgimuservice')
-    implementation 'com.google.firebase:firebase-core:11.8.0'
+
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation "com.android.support:appcompat-v7:$supportLib"
+    implementation "com.android.support:design:$supportLib"
+    implementation 'no.nordicsemi.android.support.v18:scanner:1.0.0'
+    implementation 'no.nordicsemi.android:log:2.1.1'
+    implementation "com.google.firebase:firebase-firestore:$firebaseVer"
+    implementation "com.google.firebase:firebase-crash:$firebaseVer"
 }
 
 
