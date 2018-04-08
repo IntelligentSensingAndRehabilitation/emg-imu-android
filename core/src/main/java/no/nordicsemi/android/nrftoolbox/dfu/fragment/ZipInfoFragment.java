@@ -29,7 +29,7 @@ import android.support.v7.app.AlertDialog;
 import android.view.LayoutInflater;
 import android.view.View;
 
-import org.sralab.emgimu.R;
+import org.sralab.emgimu.config.R;
 
 public class ZipInfoFragment extends DialogFragment {
 

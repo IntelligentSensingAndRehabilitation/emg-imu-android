@@ -69,7 +69,7 @@ import no.nordicsemi.android.dfu.DfuServiceInitiator;
 import no.nordicsemi.android.dfu.DfuServiceListenerHelper;
 import no.nordicsemi.android.nrftoolbox.AppHelpFragment;
 import no.nordicsemi.android.nrftoolbox.PermissionRationaleFragment;
-import org.sralab.emgimu.R;
+import org.sralab.emgimu.config.R;
 import no.nordicsemi.android.nrftoolbox.dfu.adapter.FileBrowserAppsAdapter;
 import no.nordicsemi.android.nrftoolbox.dfu.fragment.UploadCancelFragment;
 import no.nordicsemi.android.nrftoolbox.dfu.fragment.ZipInfoFragment;
@@ -412,7 +412,8 @@ public class DfuActivity extends AppCompatActivity implements LoaderCallbacks<Cu
 			case android.R.id.home:
 				onBackPressed();
 				break;
-			case R.id.action_about:
+				/*
+			case android.R.id.action_about:
 				final AppHelpFragment fragment = AppHelpFragment.getInstance(R.string.dfu_about_text);
 				fragment.show(getSupportFragmentManager(), "help_fragment");
 				break;
@@ -420,6 +421,7 @@ public class DfuActivity extends AppCompatActivity implements LoaderCallbacks<Cu
 				final Intent intent = new Intent(this, SettingsActivity.class);
 				startActivity(intent);
 				break;
+				*/
 		}
 		return true;
 	}

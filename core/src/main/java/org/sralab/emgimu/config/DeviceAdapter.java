@@ -20,7 +20,7 @@
  * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.sralab.emgimu;
+package org.sralab.emgimu.config;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
@@ -43,6 +43,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import org.sralab.emgimu.service.EmgImuService;
+import org.sralab.emgimu.config.R;
 
 public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder> {
 	private final EmgImuService.EmgImuBinder mService;

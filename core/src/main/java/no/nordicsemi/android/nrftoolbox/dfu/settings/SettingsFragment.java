@@ -30,7 +30,7 @@ import android.support.v7.app.AlertDialog;
 import android.text.TextUtils;
 
 import no.nordicsemi.android.dfu.DfuSettingsConstants;
-import org.sralab.emgimu.R;
+import org.sralab.emgimu.config.R;
 
 public class SettingsFragment extends PreferenceFragment implements DfuSettingsConstants, SharedPreferences.OnSharedPreferenceChangeListener {
 	public static final String SETTINGS_KEEP_BOND = "settings_keep_bond";

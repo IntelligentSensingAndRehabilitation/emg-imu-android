@@ -32,7 +32,7 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AlertDialog;
 import android.util.Log;
 
-import org.sralab.emgimu.R;
+import org.sralab.emgimu.config.R;
 import no.nordicsemi.android.nrftoolbox.dfu.DfuService;
 
 /**

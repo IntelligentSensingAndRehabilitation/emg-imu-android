@@ -27,7 +27,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 
-import org.sralab.emgimu.R;
+import org.sralab.emgimu.config.R;
 import no.nordicsemi.android.nrftoolbox.scanner.ScannerFragment;
 
 /**

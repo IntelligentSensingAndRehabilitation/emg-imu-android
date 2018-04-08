@@ -29,7 +29,7 @@ import android.preference.Preference;
 import android.util.AttributeSet;
 import android.widget.Toast;
 
-import org.sralab.emgimu.R;
+import org.sralab.emgimu.config.R;
 
 public class AboutDfuPreference extends Preference {
 

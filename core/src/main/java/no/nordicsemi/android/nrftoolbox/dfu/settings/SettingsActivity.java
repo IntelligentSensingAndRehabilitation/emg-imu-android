@@ -27,7 +27,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.MenuItem;
 
-import org.sralab.emgimu.R;
+import org.sralab.emgimu.config.R;
 
 public class SettingsActivity extends AppCompatActivity {
 

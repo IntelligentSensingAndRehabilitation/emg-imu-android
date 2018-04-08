@@ -19,7 +19,7 @@
  * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
  * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.sralab.emgimu;
+package org.sralab.emgimu.config;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -27,10 +27,13 @@ import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 
+import org.sralab.emgimu.EmgImuBaseActivity;
 import org.sralab.emgimu.service.EmgImuService;
 import org.sralab.emgimu.service.EmgLogRecord;
 
 import no.nordicsemi.android.nrftoolbox.widget.DividerItemDecoration;
+
+import org.sralab.emgimu.config.R;
 
 public class EmgImuActivity extends EmgImuBaseActivity {
 	private static final String TAG = "EmgImuActivity";

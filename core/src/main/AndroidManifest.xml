@@ -21,7 +21,7 @@
   ~ USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-	package="org.sralab.emgimu"
+	package="org.sralab.emgimu.config"
 	android:sharedUserId="org.sralab.emgimu"
 	android:installLocation="auto">
 
@@ -91,14 +91,8 @@
 			</intent-filter>
 		</activity>
 
-
-
-		<service
-			android:name="org.sralab.emgimu.service.EmgImuService"
-			android:label="@string/emgimu_feature_title" />
-
 		<activity
-			android:name="org.sralab.emgimu.EmgImuActivity"
+			android:name="org.sralab.emgimu.config.EmgImuActivity"
 			android:icon="@drawable/ic_proximity_feature"
 			android:label="@string/emgimu_feature_title"
 			android:launchMode="singleTask" >

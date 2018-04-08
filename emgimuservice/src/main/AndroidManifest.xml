@@ -16,6 +16,10 @@
         android:supportsRtl="true">
 
         <service
+            android:name="org.sralab.emgimu.service.EmgImuService"
+            android:label="@string/emgimu_feature_title" />
+
+        <service
             android:exported="false"
             android:name="org.sralab.emgimu.logging.EmgLogFetchJobService">
             <intent-filter>
