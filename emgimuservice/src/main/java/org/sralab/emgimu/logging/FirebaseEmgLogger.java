@@ -13,7 +13,6 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.crash.FirebaseCrash;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -113,7 +112,6 @@ public class FirebaseEmgLogger {
                         @Override
                         public void onFailure(@NonNull Exception e) {
                             Log.w(TAG, "Error adding document " + DN, e);
-                            FirebaseCrash.report(new Exception("Error adding document " + DN));
                         }
                     });
         });
@@ -183,9 +181,7 @@ public class FirebaseEmgLogger {
             try {
                 addSample(timestamp, emgPower);
             } catch (Exception e) {
-                FirebaseCrash.report(e);
-                // This should never happen
-                e.printStackTrace();
+                Log.e(TAG, "Failed adding sample to log:", e);
             }
         }
     }
