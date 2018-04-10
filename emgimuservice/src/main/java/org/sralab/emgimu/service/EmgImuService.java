@@ -534,7 +534,7 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
         }
     }
 	private void loadAndConnectSavedDevices() {
-        mServiceLogger.e("LoadAndConnectSaveDevices");
+        mServiceLogger.d("LoadAndConnectSaveDevices");
 		// Need to access context this way so all apps using service (and with the sharedUserId)
 		// have the same preferences and connect to the same devices
         Context mContext = null;
