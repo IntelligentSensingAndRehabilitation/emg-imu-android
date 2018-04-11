@@ -4,8 +4,10 @@ package org.sralab.emgimu.logging;
  * Copyright R. James Cotton. 2018
  */
 
+import android.app.ActivityManager;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.content.Context;
 import android.os.Bundle;
 import android.util.Log;
 
@@ -17,6 +19,7 @@ import com.google.firebase.auth.FirebaseUser;
 
 import org.sralab.emgimu.service.EmgImuManager;
 import org.sralab.emgimu.service.EmgImuManagerCallbacks;
+import org.sralab.emgimu.service.EmgImuService;
 import org.sralab.emgimu.service.EmgLogRecord;
 import org.sralab.emgimu.service.ServiceLogger;
 
@@ -42,13 +45,22 @@ public class EmgLogFetchJobService extends JobService implements EmgImuManagerCa
     @Override
     public boolean onStartJob(JobParameters job) {
 
-        String device_mac = job.getExtras().getString("device_mac");
+        /******** Check service isn't running. If it is, then the user may be connected *******/
 
+        ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (EmgImuService.class.getName().equals(service.service.getClassName())) {
+                Log.d(TAG, "Skipping log fetch. Service already bound.");
+                return false; // False to indicate nothing pending
+            }
+        }
+
+        /**** Store information required to get log ****/
+
+        String device_mac = job.getExtras().getString("device_mac");
         mLogSession = Logger.newSession(getApplicationContext(), device_mac, "FetchLog");
         mJob = job;
-
         mServiceLogger.i("onStartJob");
-
 
         /******** Log into Firebase ********/
         mAuth = FirebaseAuth.getInstance();
@@ -62,9 +74,9 @@ public class EmgLogFetchJobService extends JobService implements EmgImuManagerCa
                         if (task.isSuccessful()) {
                             // Sign in success, update UI with the signed-in user's information
                             FirebaseUser user = mAuth.getCurrentUser();
-                            //TODO: mServiceLogger.d("signInAnonymously:success. UID:" + user.getUid());
+                            mServiceLogger.d("signInAnonymously:success. UID:" + user.getUid());
                         } else {
-                            //TODO: mServiceLogger.w("signInAnonymously:failure" + task.getException());
+                            mServiceLogger.w("signInAnonymously:failure" + task.getException());
                         }
                     });
         } else {
