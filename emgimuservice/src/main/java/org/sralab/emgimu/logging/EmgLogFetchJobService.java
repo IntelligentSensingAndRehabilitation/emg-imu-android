@@ -6,33 +6,32 @@ package org.sralab.emgimu.logging;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.os.Build;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
 import android.util.Log;
 
 import com.firebase.jobdispatcher.JobParameters;
 import com.firebase.jobdispatcher.JobService;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
 import com.google.firebase.analytics.FirebaseAnalytics;
-import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
 import org.sralab.emgimu.service.EmgImuManager;
 import org.sralab.emgimu.service.EmgImuManagerCallbacks;
 import org.sralab.emgimu.service.EmgLogRecord;
+import org.sralab.emgimu.service.ServiceLogger;
 
-import static no.nordicsemi.android.nrftoolbox.wearable.common.Constants.ACTION_DISCONNECT;
+import no.nordicsemi.android.ble.error.GattError;
+import no.nordicsemi.android.log.ILogSession;
+import no.nordicsemi.android.log.Logger;
 
 public class EmgLogFetchJobService extends JobService implements EmgImuManagerCallbacks
 {
 
     private static String TAG = EmgLogFetchJobService.class.getSimpleName();
     public static String JOB_TAG = "emg-log-fetch";
+
+    private ILogSession mLogSession;
+    private final ServiceLogger mServiceLogger = new ServiceLogger(TAG, this, mLogSession);
 
     private FirebaseAuth mAuth;
     private FirebaseAnalytics mFirebaseAnalytics;
@@ -43,10 +42,13 @@ public class EmgLogFetchJobService extends JobService implements EmgImuManagerCa
     @Override
     public boolean onStartJob(JobParameters job) {
 
-        Log.i(TAG, "onStartJob: " + job.toString() + " " + job.getExtras().toString());
         String device_mac = job.getExtras().getString("device_mac");
 
+        mLogSession = Logger.newSession(getApplicationContext(), device_mac, "FetchLog");
         mJob = job;
+
+        mServiceLogger.i("onStartJob");
+
 
         /******** Log into Firebase ********/
         mAuth = FirebaseAuth.getInstance();
@@ -84,9 +86,10 @@ public class EmgLogFetchJobService extends JobService implements EmgImuManagerCa
         }
 
         BluetoothDevice device = bluetoothAdapter.getRemoteDevice(device_mac);
+
         mManager = new EmgImuManager(this);
         mManager.setGattCallbacks(this);
-        // TODO: mManager.setLogger(session);
+        mManager.setLogger(mLogSession);
         mManager.connect(device);
 
         return true;
@@ -94,11 +97,13 @@ public class EmgLogFetchJobService extends JobService implements EmgImuManagerCa
 
     private void myJobFinished (JobParameters params, boolean needsReschedule) {
 
-        Log.d(TAG, "myJobFinished:");
+        mServiceLogger.d("myJobFinished");
 
-        if (mManager != null && mManager.isConnected()) {
-            mManager.abort();
-            mManager.disconnect();
+        if (mManager != null) {
+            if (mManager.isConnected()) {
+                mManager.abort();
+                mManager.disconnect();
+            }
             mManager.close();
             mManager = null;
         }
@@ -108,11 +113,13 @@ public class EmgLogFetchJobService extends JobService implements EmgImuManagerCa
 
     @Override
     public boolean onStopJob(JobParameters job) {
-        Log.d(TAG, "onStopJob(): " + job.getExtras().toString());
+        mServiceLogger.d("onStopJob()");
 
         if (mManager != null) {
-            mManager.abort();
-            mManager.disconnect();
+            if (mManager.isConnected()) {
+                mManager.abort();
+                mManager.disconnect();
+            }
             mManager.close();
             mManager = null;
         }
@@ -197,12 +204,14 @@ public class EmgLogFetchJobService extends JobService implements EmgImuManagerCa
 
     @Override
     public void onDeviceDisconnected(BluetoothDevice device) {
-
+        mServiceLogger.e("onDeviceDisconnected");
+        myJobFinished(mJob, true);
     }
 
     @Override
     public void onLinklossOccur(BluetoothDevice device) {
-
+        mServiceLogger.e("onLinklossOccur");
+        myJobFinished(mJob, true);
     }
 
     @Override
@@ -212,7 +221,7 @@ public class EmgLogFetchJobService extends JobService implements EmgImuManagerCa
 
     @Override
     public void onDeviceReady(BluetoothDevice device) {
-        Log.d(TAG, "Device connected and ready. Fetching log.");
+        mServiceLogger.d("Device connected and ready. Fetching log.");
         mManager.getAllRecords();
     }
 
@@ -238,12 +247,14 @@ public class EmgLogFetchJobService extends JobService implements EmgImuManagerCa
 
     @Override
     public void onError(BluetoothDevice device, String message, int errorCode) {
-
+        mServiceLogger.e("Could not connect. " + "Error (0x" + Integer.toHexString(errorCode) + "): " + GattError.parse(errorCode));
+        myJobFinished(mJob, true);
     }
 
     @Override
     public void onDeviceNotSupported(BluetoothDevice device) {
-
+        mServiceLogger.e("onDeviceNotSupported");
+        myJobFinished(mJob, true);
     }
 }
 

@@ -114,71 +114,8 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 	private FirebaseAuth mAuth;
     private FirebaseAnalytics mFirebaseAnalytics;
 
-    // implement both a nRF logging session for the service (not associated with a device)
-    // and allow mirroring this output to logcat. later this may be mirrored or replace
-    // with firebase logging. Individual devices also contain their own nRF logs, but that
-    // calling path should not end up here. Any logging events passed to the service binder
-    // associated with the device will go to the specific device logger and this one.
     private ILogSession mLogSession;
-    private class ServiceLogger implements ILogger, IDeviceLogger {
-
-        // map from nordic log levels to
-        private void logcatLog(int level, String msg) {
-            switch(level) {
-                case LogContract.Log.Level.DEBUG:
-                    Log.d(TAG, msg);
-                    break;
-                case LogContract.Log.Level.WARNING:
-                    Log.w(TAG, msg);
-                    break;
-                case LogContract.Log.Level.INFO:
-                case LogContract.Log.Level.APPLICATION:
-                    Log.i(TAG, msg);
-                    break;
-                case LogContract.Log.Level.VERBOSE:
-                    Log.v(TAG, msg);
-                    break;
-                case LogContract.Log.Level.ERROR:
-                    Log.e(TAG, msg);
-                    break;
-                default:
-                    Log.e(TAG, msg + " reported with unknown logging level: " + level);
-            }
-        }
-
-        @Override
-        public void log(int level, @StringRes final int messageRes, Object... params) {
-            logcatLog(level, getString(messageRes));
-            Logger.log(mLogSession, level, messageRes, params);
-
-        }
-
-        public void log(int level, String message) {
-            logcatLog(level, message);
-            Logger.log(mLogSession, level, message);
-        };
-
-        @Override
-        public void log(BluetoothDevice device,int level, String message) {
-            logcatLog(level, device.getAddress() + " : " + message);
-            Logger.log(mLogSession, level, device.getAddress() + " : " + message);
-        }
-
-        @Override
-        public void log(BluetoothDevice device, int level,  @StringRes final int messageRes, Object... params) {
-            logcatLog(level, device.getAddress() + " : " + getString(messageRes));
-            Logger.log(mLogSession, level, messageRes, params);
-        }
-
-        /***** helper methods to make an android Logger style interface *****/
-        public void d(String message) { log(LogContract.Log.Level.DEBUG, message); }
-        public void i(String message) { log(LogContract.Log.Level.INFO, message); }
-        public void w(String message) { log(LogContract.Log.Level.WARNING, message); }
-        public void e(String message) { log(LogContract.Log.Level.ERROR, message); }
-
-    };
-    private final ServiceLogger mServiceLogger = new ServiceLogger();
-
+    private final ServiceLogger mServiceLogger = new ServiceLogger(TAG, this, mLogSession);
 
 	/**
 	 * This local binder is an interface for the bonded activity to operate with the proximity sensor
