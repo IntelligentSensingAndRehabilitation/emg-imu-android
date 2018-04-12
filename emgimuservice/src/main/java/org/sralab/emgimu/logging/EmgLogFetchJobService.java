@@ -112,10 +112,7 @@ public class EmgLogFetchJobService extends JobService implements EmgImuManagerCa
         mServiceLogger.d("myJobFinished");
 
         if (mManager != null) {
-            if (mManager.isConnected()) {
-                mManager.abort();
-                mManager.disconnect();
-            }
+            mManager.disconnect();
             mManager.close();
             mManager = null;
         }
@@ -128,10 +125,7 @@ public class EmgLogFetchJobService extends JobService implements EmgImuManagerCa
         mServiceLogger.d("onStopJob()");
 
         if (mManager != null) {
-            if (mManager.isConnected()) {
-                mManager.abort();
-                mManager.disconnect();
-            }
+            mManager.disconnect();
             mManager.close();
             mManager = null;
         }
@@ -201,28 +195,30 @@ public class EmgLogFetchJobService extends JobService implements EmgImuManagerCa
 
     @Override
     public void onDeviceConnecting(BluetoothDevice device) {
-
+        mServiceLogger.i("onDeviceConnecting");
     }
 
     @Override
     public void onDeviceConnected(BluetoothDevice device) {
-
+        mServiceLogger.i("onDeviceConnected");
     }
 
     @Override
     public void onDeviceDisconnecting(BluetoothDevice device) {
-
+        mServiceLogger.i("onDeviceDisconnecting");
     }
 
     @Override
     public void onDeviceDisconnected(BluetoothDevice device) {
-        mServiceLogger.e("onDeviceDisconnected");
-        myJobFinished(mJob, true);
+        mServiceLogger.d("onDeviceDisconnected");
     }
 
     @Override
     public void onLinklossOccur(BluetoothDevice device) {
-        mServiceLogger.e("onLinklossOccur");
+        // Note: with shouldAutoConnect true then it will attempt to reconnect
+        // but this typically won't succeed since it is probably out of range
+        // so just try again later.
+        mServiceLogger.e("onLinklossOccurr: Stopping job.");
         myJobFinished(mJob, true);
     }
 
@@ -259,7 +255,15 @@ public class EmgLogFetchJobService extends JobService implements EmgImuManagerCa
 
     @Override
     public void onError(BluetoothDevice device, String message, int errorCode) {
-        mServiceLogger.e("Could not connect. " + "Error (0x" + Integer.toHexString(errorCode) + "): " + GattError.parse(errorCode));
+        // TODO: later it might be necessary to determine what type of error
+        // or what was happening to know the right thing to do. For example,
+        // most of the times I have observed this are during initial connection
+        // and indicates that it will fail to complete the connection. In fact
+        // this seems to be the last event that happens if it doesn't reestablish
+        // so we must use this to kill the job unless there is a timeout that will
+        // handle it instead. onStopJob seems to fire as a timeout but takes a very
+        // long time.
+        mServiceLogger.e("Bluetooth error for device " + device.toString() + ". Error (0x" + Integer.toHexString(errorCode) + "): " + GattError.parse(errorCode));
         myJobFinished(mJob, true);
     }
 
