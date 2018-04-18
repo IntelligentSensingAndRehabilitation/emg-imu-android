@@ -56,7 +56,6 @@ public class EmgLogFetchJobService extends JobService implements EmgImuManagerCa
         }
 
         /**** Store information required to get log ****/
-
         String device_mac = job.getExtras().getString("device_mac");
         mLogSession = Logger.newSession(getApplicationContext(), device_mac, "FetchLog");
         mJob = job;
@@ -76,29 +75,16 @@ public class EmgLogFetchJobService extends JobService implements EmgImuManagerCa
                             FirebaseUser user = mAuth.getCurrentUser();
                             mServiceLogger.d("signInAnonymously:success. UID:" + user.getUid());
 
-
-                            /******* Attempt to open device ******/
-                            final BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-                            if (!bluetoothAdapter.isEnabled()) {
-                                Log.e(TAG, "Unable to fetch logs as adapter is disabled");
-                                jobFinished(job, true);
-                            } else {
-                                BluetoothDevice device = bluetoothAdapter.getRemoteDevice(device_mac);
-
-                                mManager = new EmgImuManager(this);
-                                mManager.setGattCallbacks(this);
-                                mManager.setLogger(mLogSession);
-                                mManager.connect(device);
-                            }
+                            attemptConnection();
                         } else {
                             mServiceLogger.w("signInAnonymously:failure" + task.getException());
 
                             // If user unknown, then no need to collect log
-                            jobFinished(job, true);
+                            jobFinished(mJob, true);
                         }
                     });
         } else {
-            Log.d(TAG, "Prior logged in user: " + currentUser.getUid());
+            attemptConnection();
         }
 
         // Obtain the FirebaseAnalytics instance.
@@ -109,6 +95,25 @@ public class EmgLogFetchJobService extends JobService implements EmgImuManagerCa
         mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.SELECT_CONTENT, bundle);
 
         return true;
+    }
+
+    private void attemptConnection() {
+        String device_mac = mJob.getExtras().getString("device_mac");
+
+        final BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        if (!bluetoothAdapter.isEnabled()) {
+            mServiceLogger.e("Unable to fetch logs as adapter is disabled");
+            jobFinished(mJob, true);
+        } else {
+
+            mServiceLogger.d("Attempting to connect and fetch logs");
+            BluetoothDevice device = bluetoothAdapter.getRemoteDevice(device_mac);
+
+            mManager = new EmgImuManager(this);
+            mManager.setGattCallbacks(this);
+            mManager.setLogger(mLogSession);
+            mManager.connect(device);
+        }
     }
 
     private void myJobFinished (JobParameters params, boolean needsReschedule) {
