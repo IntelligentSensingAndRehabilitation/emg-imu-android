@@ -67,7 +67,7 @@ public class EmgLogFetchJobService extends JobService implements EmgImuManagerCa
 
         // Check if user is signed in (non-null) and update UI accordingly.
         FirebaseUser currentUser = mAuth.getCurrentUser();
-        //TODO: mServiceLogger.d("User ID: " + currentUser);
+        mServiceLogger.d("User ID: " + currentUser);
         if (currentUser == null) {
             mAuth.signInAnonymously()
                     .addOnCompleteListener(task -> {
@@ -75,8 +75,26 @@ public class EmgLogFetchJobService extends JobService implements EmgImuManagerCa
                             // Sign in success, update UI with the signed-in user's information
                             FirebaseUser user = mAuth.getCurrentUser();
                             mServiceLogger.d("signInAnonymously:success. UID:" + user.getUid());
+
+
+                            /******* Attempt to open device ******/
+                            final BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+                            if (!bluetoothAdapter.isEnabled()) {
+                                Log.e(TAG, "Unable to fetch logs as adapter is disabled");
+                                jobFinished(job, true);
+                            } else {
+                                BluetoothDevice device = bluetoothAdapter.getRemoteDevice(device_mac);
+
+                                mManager = new EmgImuManager(this);
+                                mManager.setGattCallbacks(this);
+                                mManager.setLogger(mLogSession);
+                                mManager.connect(device);
+                            }
                         } else {
                             mServiceLogger.w("signInAnonymously:failure" + task.getException());
+
+                            // If user unknown, then no need to collect log
+                            jobFinished(job, true);
                         }
                     });
         } else {
@@ -89,20 +107,6 @@ public class EmgLogFetchJobService extends JobService implements EmgImuManagerCa
         Bundle bundle = new Bundle();
         bundle.putString(FirebaseAnalytics.Param.ITEM_ID, "EMG_IMU_FETCH_STARTED");
         mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.SELECT_CONTENT, bundle);
-
-        /******* Attempt to open device ******/
-        final BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-        if (!bluetoothAdapter.isEnabled()) {
-            Log.e(TAG, "Unable to fetch logs as adapter is disabled");
-            return true;
-        }
-
-        BluetoothDevice device = bluetoothAdapter.getRemoteDevice(device_mac);
-
-        mManager = new EmgImuManager(this);
-        mManager.setGattCallbacks(this);
-        mManager.setLogger(mLogSession);
-        mManager.connect(device);
 
         return true;
     }
