@@ -34,7 +34,10 @@ import com.google.firebase.analytics.FirebaseAnalytics;
 import org.sralab.emgimu.logging.FirebaseEmgLogger;
 import org.sralab.emgimu.parser.RecordAccessControlPointParser;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Deque;
 import java.util.GregorianCalendar;
@@ -217,6 +220,56 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
             mRecordAccessControlPointCharacteristic = null;
 		}
 
+        private int mLastBufferCount;
+
+		private void parseBuff(final BluetoothDevice device, final BluetoothGattCharacteristic characteristic) {
+            final byte [] buffer = characteristic.getValue();
+		    int len = buffer.length;
+		    switch(len) {
+		        // Data from single channel system
+                case 20:
+                    // Have to manually combine to get the endian right
+
+                    int [] parsed = new int[EMG_BUFFER_LEN];
+                    for (int i = 0; i < EMG_BUFFER_LEN; i++)
+                        parsed[i] = buffer[i + 1] * 256 + buffer[i];
+                    mEmgBuff = parsed;
+                    mCallbacks.onEmgBuffReceived(device, mEmgBuff);
+                    break;
+                case 242:
+                    byte [] array = {buffer[0], buffer[1]};
+
+                    // check the sample counter and make sure no data was lost
+                    int count = ByteBuffer.wrap(array).order(ByteOrder.LITTLE_ENDIAN).getShort();
+                    int diff = count - mLastBufferCount;
+                    //Logger.i(mLogSession, "Count: " + count + " prior: " + mLastBufferCount);
+                    if (diff != 10) {
+                        Log.e(TAG, "Buffer drop of " + diff + " samples");
+                        //Logger.e(mLogSession, "Buffer drop of " + diff + " samples");
+                    }
+                    mLastBufferCount = count;
+
+                    // representation of the data is 3 bytes per sample, 8 channels, and then 10 samples
+                    final int CHANNELS = 8;
+                    final int SAMPLES = 10;
+                    int data[][] = new int[CHANNELS][SAMPLES];
+                    for (int ch = 0; ch < 8; ch++) {
+                        for (int sample = 0; sample < SAMPLES; sample++) {
+                            int idx = 2 + 3 * (ch + CHANNELS * sample);
+                            byte sign = ((buffer[idx + 2] & 0x80) == 0x80) ? (byte) 0xff : (byte) 0x00;
+                            byte [] t_array = {buffer[idx], buffer[idx+1], buffer[idx+2], sign};
+                            data[ch][sample] = ByteBuffer.wrap(t_array).order(ByteOrder.BIG_ENDIAN).getInt();
+                        }
+                        Log.d(TAG, "Data[" + ch + "] = " + Arrays.toString(data[ch]));
+
+                    }
+
+                    mCallbacks.onEmgBuffReceived(device, count, data);
+
+                    break;
+            }
+        }
+
 		@Override
 		protected void onCharacteristicWrite(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic) {
             if (characteristic.getUuid().equals(EMG_RACP_CHAR_UUID)) {
@@ -246,13 +299,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                     checkEmgClick(gatt.getDevice(), pwr_val);
                     break;
                 case EMG_BUFF:
-                    // Have to manually combine to get the endian right
-                    byte [] buffer = characteristic.getValue();
-                    int [] parsed = new int[EMG_BUFFER_LEN];
-                    for (int i = 0; i < EMG_BUFFER_LEN; i++)
-                        parsed[i] = buffer[i + 1] * 256 + buffer[i];
-                    mEmgBuff = parsed;
-                    mCallbacks.onEmgBuffReceived(device, mEmgBuff);
+                    parseBuff(device, characteristic);
                     break;
                 case EMG_LOG:
                     int totalSize = characteristic.getValue().length;
