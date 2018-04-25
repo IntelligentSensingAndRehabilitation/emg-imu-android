@@ -155,8 +155,10 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
             // When initially connected default to updates when the PWR is updated
             //requests.add(Request.newEnableNotificationsRequest(mEmgPwrCharacteristic));
 
-            requests.add(Request.newEnableIndicationsRequest(mRecordAccessControlPointCharacteristic));
-            requests.add(Request.newEnableNotificationsRequest(mEmgLogCharacteristic));
+            if (mRecordAccessControlPointCharacteristic != null)
+                requests.add(Request.newEnableIndicationsRequest(mRecordAccessControlPointCharacteristic));
+            if (mEmgLogCharacteristic != null)
+                requests.add(Request.newEnableNotificationsRequest(mEmgLogCharacteristic));
 
             mStreamingMode = STREAMING_MODE.STREAMINNG_POWER;
 			return requests;
@@ -169,28 +171,42 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                 mEmgRawCharacteristic = llService.getCharacteristic(EMG_RAW_CHAR_UUID);
                 mEmgBuffCharacteristic = llService.getCharacteristic(EMG_BUFF_CHAR_UUID);
                 mEmgPwrCharacteristic  = llService.getCharacteristic(EMG_PWR_CHAR_UUID);
-                mRecordAccessControlPointCharacteristic = llService.getCharacteristic(EMG_RACP_CHAR_UUID);
-                mEmgLogCharacteristic = llService.getCharacteristic(EMG_LOG_CHAR_UUID);
 
+                Log.v(TAG, "Characteristics for service " + llService.getUuid());
                 for (BluetoothGattCharacteristic c : llService.getCharacteristics() ) {
                     Log.v(TAG, "Found: " + c.getUuid());
                 }
             }
-			return (mEmgRawCharacteristic != null) && (mEmgPwrCharacteristic != null) && (mEmgBuffCharacteristic != null)
-                    && (mEmgLogCharacteristic != null) && (mRecordAccessControlPointCharacteristic != null);
+			return (mEmgRawCharacteristic != null) && (mEmgPwrCharacteristic != null) && (mEmgBuffCharacteristic != null);
 		}
 
 		@Override
 		protected boolean isOptionalServiceSupported(final BluetoothGatt gatt) {
-			final BluetoothGattService iaService = gatt.getService(IMU_SERVICE_UUID);
-			if (iaService != null) {
+
+		    // Determine if logging is supported
+            final BluetoothGattService llService = gatt.getService(EMG_SERVICE_UUID);
+            if (llService != null) {
+                mRecordAccessControlPointCharacteristic = llService.getCharacteristic(EMG_RACP_CHAR_UUID);
+                mEmgLogCharacteristic = llService.getCharacteristic(EMG_LOG_CHAR_UUID);
+            }
+            return supportsLogging();
+
+            // TODO: better support IMU in the future. for now ignore.
+            /*
+            final BluetoothGattService iaService = gatt.getService(IMU_SERVICE_UUID);
+            if (iaService != null) {
                 mImuAccelCharacteristic = iaService.getCharacteristic(IMU_ACCEL_CHAR_UUID);
-			}
-            for (BluetoothGattCharacteristic c : iaService.getCharacteristics() ) {
+            }
+            for (BluetoothGattCharacteristic c : iaService.getCharacteristics()) {
                 Log.v(TAG, "Optional Char Found: " + c.getUuid());
             }
-			return mImuAccelCharacteristic != null;
+            return mImuAccelCharacteristic != null;
+            */
 		}
+
+		public boolean supportsLogging() {
+		    return (mEmgLogCharacteristic != null) && (mRecordAccessControlPointCharacteristic != null);
+        }
 
 		@Override
 		protected void onDeviceDisconnected() {

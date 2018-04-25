@@ -62,6 +62,7 @@ import com.google.firebase.auth.FirebaseUser;
 
 import java.util.List;
 
+import no.nordicsemi.android.ble.error.GattError;
 import no.nordicsemi.android.ble.utils.ILogger;
 import no.nordicsemi.android.log.ILogSession;
 import no.nordicsemi.android.log.LogContract;
@@ -319,7 +320,8 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
     public void onError(BluetoothDevice device, String message, int errorCode) {
         super.onError(device, message, errorCode);
 
-        mBinder.log(device, LogContract.Log.Level.WARNING, "onError: " + message + " errorCode: " + errorCode);
+        mBinder.log(device, LogContract.Log.Level.WARNING, "onError: " + message +
+                " errorCode: " + errorCode + "(" + GattError.parseConnectionError(errorCode) + ")");
     }
 
 
