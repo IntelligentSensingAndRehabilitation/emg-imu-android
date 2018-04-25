@@ -656,6 +656,12 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
         LocalBroadcastManager.getInstance(this).sendBroadcast(broadcast);
     }
 
+    @Override
+    public void onEmgBuffReceived(BluetoothDevice device, int count, int[][] data) {
+	    // TODO: handle all the channels. for now just keep first.
+        onEmgBuffReceived(device, data[0]);
+    }
+
     public void onEmgClick(final BluetoothDevice device) {
         final Intent broadcast = new Intent(BROADCAST_EMG_CLICK);
         broadcast.putExtra(EXTRA_DEVICE, device);

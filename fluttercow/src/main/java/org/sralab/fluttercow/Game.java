@@ -196,6 +196,11 @@ public class Game extends EmgImuBaseActivity {
     }
 
     @Override
+    public void onEmgBuffReceived(BluetoothDevice device, int count, int[][] data) {
+        onEmgBuffReceived(device, data[0]);
+    }
+
+    @Override
     public void onEmgPwrReceived(final BluetoothDevice device, int value)
     {
         if (mDevices == null || device == null) // should not happen
