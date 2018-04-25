@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    android:sharedUserId="org.sralab.emgimu"
+    android:installLocation="auto"
+    package="org.sralab.emgimu.streaming">
+
+    <application>
+
+
+        <activity
+            android:name="org.sralab.emgimu.streaming.Streaming"
+            android:icon="@drawable/ic_proximity_feature"
+            android:label="@string/streaming_title"
+            android:launchMode="singleTask" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="org.sralab.emgimu.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+    </application>
+
+</manifest>
