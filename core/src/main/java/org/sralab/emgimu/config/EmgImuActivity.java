@@ -128,7 +128,12 @@ public class EmgImuActivity extends EmgImuBaseActivity {
             mAdapter.onBuffValueReceived(device);
     }
 
-    /**** These callbacks are related to handling the RACP endpoints ****/
+	@Override
+	public void onEmgBuffReceived(BluetoothDevice device, int count, int[][] data) {
+		onEmgBuffReceived(device, data[0]);
+	}
+
+	/**** These callbacks are related to handling the RACP endpoints ****/
 	@Override
 	public void onEmgLogRecordReceived(BluetoothDevice device, EmgLogRecord record) {
 
