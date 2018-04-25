@@ -234,6 +234,10 @@ public class EmgLogFetchJobService extends JobService implements EmgImuManagerCa
     @Override
     public void onServicesDiscovered(BluetoothDevice device, boolean optionalServicesFound) {
 
+        if (!optionalServicesFound) {
+            mServiceLogger.w("Device connected but does not support logging. Abort job fetch.");
+            myJobFinished(mJob, false);
+        }
     }
 
     @Override
