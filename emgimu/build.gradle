@@ -31,6 +31,7 @@ dependencies {
     implementation project(':emgimuservice')
     implementation project(':core')
     implementation project(':fluttercow')
+    implementation project(':streaming')
 
     //implementation "com.android.support:appcompat-v7:$supportLib"
 
