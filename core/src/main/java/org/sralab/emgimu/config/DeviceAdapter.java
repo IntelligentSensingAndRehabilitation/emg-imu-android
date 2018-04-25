@@ -195,11 +195,10 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
 				}
 			});
 
-            downloadMode.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(final View v) {
-                    final int position = getAdapterPosition();
-                    final BluetoothDevice device = mDevices.get(position);
+            downloadMode.setOnClickListener(v -> {
+                final int position = getAdapterPosition();
+                final BluetoothDevice device = mDevices.get(position);
+                if (mService != null) { // watch out for race condition where this is clicked before connecting
                     switch(mService.getStreamingMode(device)) {
                         case STREAMING_BUFFERED:
                             mService.streamPwr(device);
