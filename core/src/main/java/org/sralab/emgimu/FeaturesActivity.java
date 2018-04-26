@@ -47,8 +47,11 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.crashlytics.android.Crashlytics;
+
 import java.util.List;
 
+import io.fabric.sdk.android.Fabric;
 import no.nordicsemi.android.nrftoolbox.AppHelpFragment;
 import no.nordicsemi.android.nrftoolbox.adapter.AppAdapter;
 
@@ -66,6 +69,8 @@ public class FeaturesActivity extends AppCompatActivity {
 
 	@Override
 	protected void onCreate(final Bundle savedInstanceState) {
+		Fabric.with(this, new Crashlytics());
+
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_features);
 

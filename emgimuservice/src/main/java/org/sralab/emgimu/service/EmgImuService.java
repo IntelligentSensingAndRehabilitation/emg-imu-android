@@ -41,12 +41,12 @@ import android.support.annotation.StringRes;
 import android.support.v4.app.NotificationManagerCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
-import android.support.v4.util.SimpleArrayMap;
 import android.support.v4.app.NotificationCompat;
 
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.crashlytics.android.Crashlytics;
 import com.firebase.jobdispatcher.FirebaseJobDispatcher;
 import com.firebase.jobdispatcher.GooglePlayDriver;
 import com.firebase.jobdispatcher.Job;
@@ -62,14 +62,13 @@ import com.google.firebase.auth.FirebaseUser;
 
 import java.util.List;
 
+import io.fabric.sdk.android.Fabric;
 import no.nordicsemi.android.ble.error.GattError;
-import no.nordicsemi.android.ble.utils.ILogger;
 import no.nordicsemi.android.log.ILogSession;
 import no.nordicsemi.android.log.LogContract;
 import no.nordicsemi.android.log.Logger;
 import no.nordicsemi.android.ble.BleManager;
 import no.nordicsemi.android.nrftoolbox.profile.multiconnect.BleMulticonnectProfileService;
-import no.nordicsemi.android.nrftoolbox.profile.multiconnect.IDeviceLogger;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -260,6 +259,9 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
      * parent onCreate prior to startign bluetooth
      */
 	protected void onServiceCreated() {
+
+        Fabric.with(this, new Crashlytics());
+
         final int titleId = mBinder.getLoggerProfileTitle();
         if (titleId > 0) {
             mLogSession = Logger.newSession(getApplicationContext(), getString(titleId), "Service");
