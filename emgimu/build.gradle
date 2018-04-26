@@ -33,15 +33,15 @@ dependencies {
     implementation project(':fluttercow')
     implementation project(':streaming')
 
-    //implementation "com.android.support:appcompat-v7:$supportLib"
-
     // Required to prevent google-services pulling in arbitrary versions
-    //api "com.android.support:support-v4:$supportLib"
+    api "com.android.support:appcompat-v7:$supportLib"
+    api "com.android.support:support-v4:$supportLib"
     //api "com.google.firebase:firebase-auth:$firebaseVer"
     //implementation "com.google.firebase:firebase-firestore:$firebaseVer"
     //implementation "com.google.firebase:firebase-crash:$firebaseVer"
+    api "com.google.firebase:firebase-core:$firebaseVer"
 }
 
 // Required here to make this app connect to google services (not the JSON file
 // should also be in the directory of this module)
-//apply plugin: 'com.google.gms.google-services'
+apply plugin: 'com.google.gms.google-services'

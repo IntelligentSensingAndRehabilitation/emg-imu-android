@@ -37,7 +37,7 @@ dependencies {
     implementation 'no.nordicsemi.android:dfu:1.3.0'
     implementation "com.google.firebase:firebase-auth:$firebaseVer"
     implementation "com.google.firebase:firebase-firestore:$firebaseVer"
-    implementation 'com.crashlytics.sdk.android:crashlytics:2.9.1'
+    implementation "com.crashlytics.sdk.android:crashlytics:$crashlyticsVer"
     implementation 'com.firebase:firebase-jobdispatcher:0.8.5'
 }
 
