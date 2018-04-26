@@ -32,7 +32,7 @@
 		<intent
 			android:action="android.intent.action.VIEW"
 			android:targetPackage="no.nordicsemi.android.nrftoolbox"
-			android:targetClass="no.nordicsemi.android.nrftoolbox.FeaturesActivity" />
+			android:targetClass="org.sralab.emgimu.FeaturesActivity" />
 		<intent
 			android:action="android.intent.action.VIEW"
 			android:targetPackage="no.nordicsemi.android.nrftoolbox"

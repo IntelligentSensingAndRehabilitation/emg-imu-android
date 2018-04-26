@@ -19,7 +19,7 @@
  * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
  * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package no.nordicsemi.android.nrftoolbox;
+package org.sralab.emgimu;
 
 import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
@@ -49,6 +49,7 @@ import android.widget.Toast;
 
 import java.util.List;
 
+import no.nordicsemi.android.nrftoolbox.AppHelpFragment;
 import no.nordicsemi.android.nrftoolbox.adapter.AppAdapter;
 
 import org.sralab.emgimu.service.R;
