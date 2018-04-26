@@ -1,14 +1,16 @@
 package org.sralab.emgimu.streaming;
 
 import android.bluetooth.BluetoothDevice;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 
+import com.crashlytics.android.Crashlytics;
+
 import org.sralab.emgimu.EmgImuBaseActivity;
-import org.sralab.emgimu.service.EmgImuManager;
 import org.sralab.emgimu.service.EmgImuService;
 import org.sralab.emgimu.service.EmgLogRecord;
+
+import io.fabric.sdk.android.Fabric;
 
 public class Streaming extends EmgImuBaseActivity {
     private static final String TAG = Streaming.class.getSimpleName();
@@ -17,6 +19,8 @@ public class Streaming extends EmgImuBaseActivity {
 
     @Override
     protected void onCreateView(final Bundle savedInstanceState) {
+        Fabric.with(this, new Crashlytics());
+
         setContentView(R.layout.activity_streaming);
     }
 

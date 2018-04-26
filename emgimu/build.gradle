@@ -1,4 +1,5 @@
 apply plugin: 'com.android.application'
+apply plugin: 'io.fabric'
 
 android {
 
@@ -39,9 +40,10 @@ dependencies {
     //api "com.google.firebase:firebase-auth:$firebaseVer"
     //implementation "com.google.firebase:firebase-firestore:$firebaseVer"
     //implementation "com.google.firebase:firebase-crash:$firebaseVer"
+
     api "com.google.firebase:firebase-core:$firebaseVer"
+    //api "com.google.firebase:firebase-crash:$firebaseVer"
+    implementation "com.crashlytics.sdk.android:crashlytics:$crashlyticsVer"
 }
 
-// Required here to make this app connect to google services (not the JSON file
-// should also be in the directory of this module)
 apply plugin: 'com.google.gms.google-services'

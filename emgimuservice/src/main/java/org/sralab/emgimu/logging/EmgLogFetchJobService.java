@@ -11,6 +11,7 @@ import android.content.Context;
 import android.os.Bundle;
 import android.util.Log;
 
+import com.crashlytics.android.Crashlytics;
 import com.firebase.jobdispatcher.JobParameters;
 import com.firebase.jobdispatcher.JobService;
 import com.google.firebase.analytics.FirebaseAnalytics;
@@ -23,6 +24,7 @@ import org.sralab.emgimu.service.EmgImuService;
 import org.sralab.emgimu.service.EmgLogRecord;
 import org.sralab.emgimu.service.ServiceLogger;
 
+import io.fabric.sdk.android.Fabric;
 import no.nordicsemi.android.ble.error.GattError;
 import no.nordicsemi.android.log.ILogSession;
 import no.nordicsemi.android.log.Logger;
@@ -44,6 +46,8 @@ public class EmgLogFetchJobService extends JobService implements EmgImuManagerCa
     private JobParameters mJob;
     @Override
     public boolean onStartJob(JobParameters job) {
+
+        Fabric.with(this, new Crashlytics());
 
         /******** Check service isn't running. If it is, then the user may be connected *******/
 

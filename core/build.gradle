@@ -41,6 +41,8 @@ dependencies {
     }
     implementation files('libs/achartengine-1.1.0.jar')
 
+    implementation "com.google.firebase:firebase-core:$firebaseVer"
+    //implementation "com.google.firebase:firebase-crash:$firebaseVer"
     implementation "com.crashlytics.sdk.android:crashlytics:$crashlyticsVer"
 }
 
