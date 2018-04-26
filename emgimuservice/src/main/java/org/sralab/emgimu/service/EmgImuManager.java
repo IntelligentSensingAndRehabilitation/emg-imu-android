@@ -260,10 +260,10 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                             byte [] t_array = {buffer[idx], buffer[idx+1], buffer[idx+2], sign};
                             data[ch][sample] = ByteBuffer.wrap(t_array).order(ByteOrder.BIG_ENDIAN).getInt();
                         }
-                        Log.d(TAG, "Data[" + ch + "] = " + Arrays.toString(data[ch]));
-
+                        //Log.d(TAG, "Data[" + ch + "] = " + Arrays.toString(data[ch]));
                     }
 
+                    mEmgBuff = data[0]; // TODO: this is a hack for "backward" compatibility.
                     mCallbacks.onEmgBuffReceived(device, count, data);
 
                     break;
