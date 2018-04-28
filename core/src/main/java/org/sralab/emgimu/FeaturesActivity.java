@@ -55,7 +55,7 @@ import io.fabric.sdk.android.Fabric;
 import no.nordicsemi.android.nrftoolbox.AppHelpFragment;
 import org.sralab.emgimu.adapter.AppAdapter;
 
-import org.sralab.emgimu.service.R;
+import org.sralab.emgimu.config.R;
 
 public class FeaturesActivity extends AppCompatActivity {
 	private static final String NRF_CONNECT_CATEGORY = "no.nordicsemi.android.nrftoolbox.LAUNCHER";
