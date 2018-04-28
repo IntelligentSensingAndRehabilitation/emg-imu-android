@@ -56,9 +56,11 @@ public class FirebaseEmgLogger {
 
     private FirebaseEmgLogEntry log = null;
     private EmgImuManager mManager;
+    private String mDeviceMac;
 
     public FirebaseEmgLogger(EmgImuManager manager) {
         mManager = manager;
+        mDeviceMac = manager.getAddress();
 
         mAuth = FirebaseAuth.getInstance();
         mUser = mAuth.getCurrentUser(); // Log in performed by main service
@@ -76,8 +78,8 @@ public class FirebaseEmgLogger {
     }
 
     private DocumentReference getDocument(String DN) {
-        mManager.log(LogContract.Log.Level.DEBUG, "getDocument(" + DN + ") for address " + mManager.getAddress());
-        return mDb.collection("emgLogs").document(mUser.getUid()).collection(mManager.getAddress()).document(DN);
+        mManager.log(LogContract.Log.Level.DEBUG, "getDocument(" + DN + ") for address " + mDeviceMac);
+        return mDb.collection("emgLogs").document(mUser.getUid()).collection(mDeviceMac).document(DN);
     }
 
     private DocumentReference getDocument() {
@@ -106,7 +108,7 @@ public class FirebaseEmgLogger {
                     .addOnSuccessListener(new OnSuccessListener<Void>() {
                         @Override
                         public void onSuccess(Void aVoid) {
-                            mManager.log(LogContract.Log.Level.DEBUG, mManager.getAddress() + " Document " + DN + " successfully saved");
+                            mManager.log(LogContract.Log.Level.DEBUG, mDeviceMac + " Document " + DN + " successfully saved");
                         }
                     })
                     .addOnFailureListener(new OnFailureListener() {
@@ -129,7 +131,7 @@ public class FirebaseEmgLogger {
         }
 
         String DN = FirebaseEmgLogEntry.FilenameFromTimestamp(timestamp);
-        Log.d(TAG, "Fetching log for " + DN + " Sensor: " + mManager.getAddress() + " PID: " + android.os.Process.myPid() + " TID " + android.os.Process.myTid() + " UID " + android.os.Process.myUid());
+        Log.d(TAG, "Fetching log for " + DN + " Sensor: " + mDeviceMac + " PID: " + android.os.Process.myPid() + " TID " + android.os.Process.myTid() + " UID " + android.os.Process.myUid());
 
         mManager.log(LogContract.Log.Level.INFO, "Preparing Firestore DB: " + getDocument(DN).getPath());
 
