@@ -76,6 +76,7 @@ public class FirebaseEmgLogger {
     }
 
     private DocumentReference getDocument(String DN) {
+        mManager.log(LogContract.Log.Level.DEBUG, "getDocument(" + DN + ") for address " + mManager.getAddress());
         return mDb.collection("emgLogs").document(mUser.getUid()).collection(mManager.getAddress()).document(DN);
     }
 
@@ -105,13 +106,13 @@ public class FirebaseEmgLogger {
                     .addOnSuccessListener(new OnSuccessListener<Void>() {
                         @Override
                         public void onSuccess(Void aVoid) {
-                            Log.d(TAG, mManager.getAddress() + " Document " + DN + " successfully saved");
+                            mManager.log(LogContract.Log.Level.DEBUG, mManager.getAddress() + " Document " + DN + " successfully saved");
                         }
                     })
                     .addOnFailureListener(new OnFailureListener() {
                         @Override
                         public void onFailure(@NonNull Exception e) {
-                            Log.w(TAG, "Error adding document " + DN, e);
+                            mManager.log(LogContract.Log.Level.ERROR, "Error adding document " + DN + " Error: " + e.toString());
                         }
                     });
         });
