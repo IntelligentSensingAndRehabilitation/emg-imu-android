@@ -57,7 +57,7 @@ import no.nordicsemi.android.nrftoolbox.AppHelpFragment;
 import no.nordicsemi.android.nrftoolbox.scanner.ScannerFragment;
 import no.nordicsemi.android.nrftoolbox.utility.DebugLogger;
 
-import org.sralab.emgimu.service.R;
+import org.sralab.emgimu.common.R;
 
 /**
  * <p>
