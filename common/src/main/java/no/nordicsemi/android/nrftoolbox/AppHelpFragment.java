@@ -28,7 +28,7 @@ import android.support.annotation.NonNull;
 import android.support.v4.app.DialogFragment;
 import android.support.v7.app.AlertDialog;
 
-import org.sralab.emgimu.service.R;
+import org.sralab.emgimu.common.R;
 
 public class AppHelpFragment extends DialogFragment {
 	private static final String ARG_TEXT = "ARG_TEXT";

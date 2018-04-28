@@ -514,7 +514,7 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 		builder.setColor(ContextCompat.getColor(this, R.color.actionBarColorDark));
 		builder.setShowWhen(false).setDefaults(0).setOngoing(true); // an ongoing notification will not be shown on Android Wear
 		builder.setGroup(EMGIMU_GROUP_ID).setGroupSummary(true);
-		builder.setContentTitle(getString(R.string.app_name));
+		builder.setContentTitle(getString(R.string.service_name));
 
 		final List<BluetoothDevice> managedDevices = getManagedDevices();
 		final List<BluetoothDevice> connectedDevices = getConnectedDevices();

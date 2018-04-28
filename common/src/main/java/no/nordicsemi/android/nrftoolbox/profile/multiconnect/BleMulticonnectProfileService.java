@@ -37,7 +37,7 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.widget.Toast;
 
-import org.sralab.emgimu.service.R;
+import org.sralab.emgimu.common.R;
 
 import java.util.ArrayList;
 import java.util.Collections;

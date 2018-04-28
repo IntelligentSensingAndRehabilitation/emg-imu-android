@@ -53,43 +53,8 @@
 
 				<category android:name="android.intent.category.LAUNCHER" />
 			</intent-filter>
-
-			<meta-data android:name="android.app.shortcuts"
-				android:resource="@xml/shortcuts" />
-
 		</activity>
 
-		<!-- Template plugin activities -->
-
-		<!-- Plug-in activities -->
-		<activity
-			android:name="no.nordicsemi.android.nrftoolbox.dfu.DfuActivity"
-			android:icon="@drawable/ic_dfu_feature"
-			android:label="@string/dfu_feature_title" >
-			<intent-filter>
-				<action android:name="android.intent.action.MAIN" />
-
-				<category android:name="org.sralab.emgimu.LAUNCHER" />
-			</intent-filter>
-		</activity>
-		<activity
-			android:name="no.nordicsemi.android.nrftoolbox.dfu.settings.SettingsActivity"
-			android:label="@string/dfu_settings_title" />
-		<activity
-			android:name="no.nordicsemi.android.nrftoolbox.dfu.NotificationActivity"
-			android:label="@string/dfu_feature_title" />
-
-		<activity
-			android:name="no.nordicsemi.android.nrftoolbox.dfu.DfuInitiatorActivity"
-			android:label="@string/dfu_service_title"
-			android:noHistory="true"
-			android:theme="@style/AppTheme.Translucent" >
-			<intent-filter>
-				<action android:name="no.nordicsemi.android.action.DFU_UPLOAD" />
-
-				<category android:name="android.intent.category.DEFAULT" />
-			</intent-filter>
-		</activity>
 
 		<activity
 			android:name="org.sralab.emgimu.config.EmgImuActivity"
