@@ -23,8 +23,8 @@
 <resources>
 
 	<string name="app_name">EMG IMU</string>
-	<string name="font_path">fonts/trebucbd.ttf</string>
-	<string name="normal_font_path">fonts/trebuc.ttf</string>
+	<string name="bonding">Bonding with the device&#8230;</string>
+	<string name="bonded">The device is now bonded.</string>
 
 	<string name="shortcut_dfu_short">DFU</string>
 	<string name="shortcut_dfu_long">Device Firmware Update</string>
