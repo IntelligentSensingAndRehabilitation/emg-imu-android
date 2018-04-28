@@ -53,7 +53,7 @@ import java.util.List;
 
 import io.fabric.sdk.android.Fabric;
 import no.nordicsemi.android.nrftoolbox.AppHelpFragment;
-import no.nordicsemi.android.nrftoolbox.adapter.AppAdapter;
+import org.sralab.emgimu.adapter.AppAdapter;
 
 import org.sralab.emgimu.service.R;
 
