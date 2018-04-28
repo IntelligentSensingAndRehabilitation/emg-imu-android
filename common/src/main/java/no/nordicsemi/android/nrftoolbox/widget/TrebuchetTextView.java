@@ -26,23 +26,23 @@ import android.graphics.Typeface;
 import android.util.AttributeSet;
 import android.widget.TextView;
 
-import org.sralab.emgimu.service.R;
+import org.sralab.emgimu.common.R;
 
-public class TrebuchetBoldTextView extends TextView {
+public class TrebuchetTextView extends TextView {
 
-	public TrebuchetBoldTextView(Context context) {
+	public TrebuchetTextView(Context context) {
 		super(context);
 
 		init();
 	}
 
-	public TrebuchetBoldTextView(Context context, AttributeSet attrs) {
+	public TrebuchetTextView(Context context, AttributeSet attrs) {
 		super(context, attrs);
 
 		init();
 	}
 
-	public TrebuchetBoldTextView(Context context, AttributeSet attrs, int defStyle) {
+	public TrebuchetTextView(Context context, AttributeSet attrs, int defStyle) {
 		super(context, attrs, defStyle);
 
 		init();
@@ -50,7 +50,7 @@ public class TrebuchetBoldTextView extends TextView {
 
 	private void init() {
 		if (!isInEditMode()) {
-			final Typeface typeface = Typeface.createFromAsset(getContext().getAssets(), getContext().getString(R.string.font_path));
+			final Typeface typeface = Typeface.createFromAsset(getContext().getAssets(), getContext().getString(R.string.normal_font_path));
 			setTypeface(typeface);
 		}
 	}

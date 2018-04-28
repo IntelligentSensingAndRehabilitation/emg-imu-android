@@ -37,6 +37,8 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.widget.Toast;
 
+import org.sralab.emgimu.service.R;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -520,7 +522,7 @@ public abstract class BleMulticonnectProfileService extends Service implements B
 
 	@Override
 	public void onBondingRequired(final BluetoothDevice device) {
-		showToast(no.nordicsemi.android.nrftoolbox.common.R.string.bonding);
+		showToast(R.string.bonding);
 
 		final Intent broadcast = new Intent(BROADCAST_BOND_STATE);
 		broadcast.putExtra(EXTRA_DEVICE, device);
@@ -530,7 +532,7 @@ public abstract class BleMulticonnectProfileService extends Service implements B
 
 	@Override
 	public void onBonded(final BluetoothDevice device) {
-		showToast(no.nordicsemi.android.nrftoolbox.common.R.string.bonded);
+		showToast(R.string.bonded);
 
 		final Intent broadcast = new Intent(BROADCAST_BOND_STATE);
 		broadcast.putExtra(EXTRA_DEVICE, device);
