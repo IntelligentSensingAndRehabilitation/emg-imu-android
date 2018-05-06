@@ -122,15 +122,10 @@ public class EmgImuActivity extends EmgImuBaseActivity {
             mAdapter.onPwrValueReceived(device); // Adapter will access value directly from service
     }
 
-    @Override
-    public void onEmgBuffReceived(final BluetoothDevice device, int [] value) {
-        if (mAdapter != null)
-            mAdapter.onBuffValueReceived(device);
-    }
-
 	@Override
 	public void onEmgBuffReceived(BluetoothDevice device, int count, int[][] data) {
-		onEmgBuffReceived(device, data[0]);
+		if (mAdapter != null)
+			mAdapter.onBuffValueReceived(device);
 	}
 
 	/**** These callbacks are related to handling the RACP endpoints ****/

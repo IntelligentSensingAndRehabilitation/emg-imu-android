@@ -153,15 +153,10 @@ public class Streaming extends EmgImuBaseActivity {
     }
 
     @Override
-    public void onEmgBuffReceived(final BluetoothDevice device, int [] value) {
+    public void onEmgBuffReceived(BluetoothDevice device, int count, int[][] data) {
         if (mAdapter != null) {
             mAdapter.onBuffValueReceived(device);
         }
-    }
-
-    @Override
-    public void onEmgBuffReceived(BluetoothDevice device, int count, int[][] data) {
-        Log.d(TAG, "onEmgBuffReceived: " + count);
     }
 
 }

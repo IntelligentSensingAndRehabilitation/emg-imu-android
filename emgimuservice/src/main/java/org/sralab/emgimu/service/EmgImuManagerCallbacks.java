@@ -26,7 +26,6 @@ import no.nordicsemi.android.ble.BleManagerCallbacks;
 
 public interface EmgImuManagerCallbacks extends BleManagerCallbacks {
     void onEmgRawReceived(final BluetoothDevice device, int value);
-    void onEmgBuffReceived(final BluetoothDevice device, int [] value);
     void onEmgBuffReceived(BluetoothDevice device, int count, int[][] data);
     void onEmgPwrReceived(final BluetoothDevice device, int value);
     void onEmgClick(final BluetoothDevice device);

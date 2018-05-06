@@ -141,7 +141,7 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
         // If graph exists for this device, update it with new data
         LineGraphView mLineGraph = mDeviceLineGraphMap.get(device);
         if (mLineGraph != null) {
-            final int [] buffValue = mService.getEmgBuffValue(device);
+            final int [] buffValue = mService.getEmgBuffValue(device)[0];
             for (int i = 0; i < buffValue.length; i++)
                 mLineGraph.addValue(buffValue[i]);
         }

@@ -107,11 +107,6 @@ public abstract class EmgImuBaseActivity extends BleMulticonnectProfileServiceRe
         // Do nothing
     }
 
-    @Override
-    public void onEmgBuffReceived(final BluetoothDevice device, int [] value) {
-        // Do nothing
-    }
-
 
     @Override
     public void onEmgClick(final BluetoothDevice device) {
