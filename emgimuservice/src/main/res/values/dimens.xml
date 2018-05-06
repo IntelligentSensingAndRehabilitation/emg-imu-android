@@ -31,8 +31,6 @@
     <dimen name="feature_section_padding">8dp</dimen>
     <dimen name="feature_device_name_margin_top">8dp</dimen>
     <dimen name="feature_grid_margin_top">0dp</dimen>
-    <dimen name="feature_uart_buttons_pane_width">256dp</dimen>
-    <dimen name="feature_uart_buttons_pane_height">256dp</dimen>
 
     <dimen name="navdrawer_width">260dp</dimen>
     <dimen name="navdrawer_padding_top">30dp</dimen>
