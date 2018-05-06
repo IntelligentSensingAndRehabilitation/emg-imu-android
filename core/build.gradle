@@ -40,8 +40,7 @@ dependencies {
         exclude group: 'xpp3', module: 'xpp3'
     }
 
-    implementation "com.google.firebase:firebase-core:$firebaseVer"
-    //implementation "com.google.firebase:firebase-crash:$firebaseVer"
+    implementation "com.google.firebase:firebase-core:$firebaseCoreVer"
     implementation "com.crashlytics.sdk.android:crashlytics:$crashlyticsVer"
 }
 
