@@ -36,7 +36,6 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.support.annotation.NonNull;
 import android.support.annotation.StringRes;
 import android.support.v4.app.NotificationManagerCompat;
 import android.support.v4.content.ContextCompat;
@@ -53,10 +52,7 @@ import com.firebase.jobdispatcher.Job;
 import com.firebase.jobdispatcher.Lifetime;
 import com.firebase.jobdispatcher.RetryStrategy;
 import com.firebase.jobdispatcher.Trigger;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
 import com.google.firebase.analytics.FirebaseAnalytics;
-import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
@@ -92,6 +88,8 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
     public static final String EXTRA_EMG_RAW = "org.sralab.emgimu.EXTRA_EMG_RAW";
     public static final String EXTRA_EMG_PWR = "org.sralab.emgimu.EXTRA_EMG_PWR";
     public static final String EXTRA_EMG_BUFF = "org.sralab.emgimu.EXTRA_EMG_BUFF";
+    public static final String EXTRA_EMG_CHANNELS = "org.sralab.emgimu.EXTRA_EMG_CHANNELS";
+    public static final String EXTRA_EMG_COUNT = "org.sralab.emgimu.EXTRA_EMG_COUNT";
 
     public static final String INTENT_FETCH_LOG = "org.sralab.INTENT_FETCH_LOG";
     public static final String INTENT_DEVICE_MAC = "org.sralab.INTENT_DEVICE_MAC";
@@ -277,23 +275,23 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
         FirebaseUser currentUser = mAuth.getCurrentUser();
         mServiceLogger.d("User ID: " + currentUser);
         if (currentUser == null) {
+            Log.d(TAG, "Attempting to log in to firebase");
             mAuth.signInAnonymously()
-                    .addOnCompleteListener(new OnCompleteListener<AuthResult>() {
-                        @Override
-                        public void onComplete(@NonNull Task<AuthResult> task) {
-                            if (task.isSuccessful()) {
-                                // Sign in success, update UI with the signed-in user's information
-                                FirebaseUser user = mAuth.getCurrentUser();
+                    .addOnCompleteListener(task -> {
+                        if (task.isSuccessful()) {
+                            // Sign in success, update UI with the signed-in user's information
+                            FirebaseUser user = mAuth.getCurrentUser();
 
-                                mServiceLogger.d("signInAnonymously:success. UID:" + user.getUid());
-                                //updateUI(user);
-                            } else {
-                                // If sign in fails, display a message to the user.
-                                mServiceLogger.w("signInAnonymously:failure" + task.getException());
-                                //Toast.makeText(AnonymousAuthActivity.this, "Authentication failed.",
-                                //        Toast.LENGTH_SHORT).show();
-                                //updateUI(null);
-                            }
+                            Log.d(TAG, "signInAnonymously:success. UID:" + user.getUid());
+                            mServiceLogger.d("signInAnonymously:success. UID:" + user.getUid());
+                            //updateUI(user);
+                        } else {
+                            // If sign in fails, display a message to the user.
+                            mServiceLogger.w("signInAnonymously:failure" + task.getException());
+                            Log.d(TAG, "signInAnonymously:failure" + task.getException());
+                            //Toast.makeText(AnonymousAuthActivity.this, "Authentication failed.",
+                            //        Toast.LENGTH_SHORT).show();
+                            //updateUI(null);
                         }
                     });
         } else {
@@ -652,16 +650,30 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 
     public void onEmgBuffReceived(final BluetoothDevice device, int [] value)
     {
+        // TODO: ultimately remove but here for backward compatibility
         final Intent broadcast = new Intent(BROADCAST_EMG_BUFF);
         broadcast.putExtra(EXTRA_DEVICE, device);
+        broadcast.putExtra(EXTRA_EMG_CHANNELS, 1);
         broadcast.putExtra(EXTRA_EMG_BUFF, value);
         LocalBroadcastManager.getInstance(this).sendBroadcast(broadcast);
     }
 
     @Override
     public void onEmgBuffReceived(BluetoothDevice device, int count, int[][] data) {
-	    // TODO: handle all the channels. for now just keep first.
-        onEmgBuffReceived(device, data[0]);
+        final int CHANNELS = data.length;
+        final int SAMPLES = data[0].length;
+	    int [] linearizedData = new int[CHANNELS * SAMPLES];
+
+	    for (int i = 0; i < CHANNELS; i++)
+	        for (int j = 0; j < SAMPLES; j++)
+	            linearizedData[i + j * CHANNELS] = data[i][j];
+
+        final Intent broadcast = new Intent(BROADCAST_EMG_BUFF);
+        broadcast.putExtra(EXTRA_DEVICE, device);
+        broadcast.putExtra(EXTRA_EMG_CHANNELS, CHANNELS);
+        broadcast.putExtra(EXTRA_EMG_COUNT, count);
+        broadcast.putExtra(EXTRA_EMG_BUFF, linearizedData);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(broadcast);
     }
 
     public void onEmgClick(final BluetoothDevice device) {
