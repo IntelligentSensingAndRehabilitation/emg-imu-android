@@ -53,4 +53,5 @@ dependencies {
     implementation "com.android.support:design:$supportLib"
     implementation 'no.nordicsemi.android.support.v18:scanner:1.0.0'
     implementation 'no.nordicsemi.android:log:2.1.1'
+    implementation files('libs/achartengine-1.1.0.jar')
 }

@@ -39,7 +39,6 @@ dependencies {
         exclude group: 'stax', module: 'stax-api'
         exclude group: 'xpp3', module: 'xpp3'
     }
-    implementation files('libs/achartengine-1.1.0.jar')
 
     implementation "com.google.firebase:firebase-core:$firebaseVer"
     //implementation "com.google.firebase:firebase-crash:$firebaseVer"

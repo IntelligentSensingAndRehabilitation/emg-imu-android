@@ -36,14 +36,12 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 import android.widget.ImageButton;
 
-import org.achartengine.GraphicalView;
-
 import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
 
 import org.sralab.emgimu.service.EmgImuService;
-import org.sralab.emgimu.config.R;
+import org.sralab.emgimu.visualization.LineGraphView;
 
 public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder> {
 	private final EmgImuService.EmgImuBinder mService;
@@ -87,7 +85,6 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
         // When a view is recycled, we must dettach the graph from it's
         // view so it can be used again later
         holder.layoutView.removeAllViews();
-        holder.mGraphView = null;
         holder.mLineGraph = null;
     }
 
@@ -161,7 +158,6 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
         private ImageButton downloadMode;
         private ImageButton actionDisconnect;
 
-        private GraphicalView mGraphView;
         private LineGraphView mLineGraph;
 
         ColorStateList connectedColor;
@@ -178,7 +174,6 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
 
             // Graphing elements will be assigned once we have a position
             mLineGraph = null;
-            mGraphView = null;
 
             connectedColor = ContextCompat.getColorStateList(itemView.getContext(), R.color.orange);
             disconnectedColor = ContextCompat.getColorStateList(itemView.getContext(), R.color.darkGray);
@@ -213,7 +208,7 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
             });
         }
 
-        // We want one line graph and graph view per device. The ViewHolder constructo
+        // We want one line graph and graph view per device. The ViewHolder constructor
         // can be created multiple times in the line cycle of the view so cannot create there
         private void createGraphIfMissing(final BluetoothDevice device) {
 
@@ -222,17 +217,12 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
 
                 // See if graph has been cached and if so use this
                 if (mLineGraph == null) {
-                    mLineGraph = new LineGraphView();
+                    mLineGraph = new LineGraphView(itemView.getContext(), layoutView);
                     mDeviceLineGraphMap.put(device, mLineGraph);
                 }
             }
-
-            if (mGraphView == null) {
-                mGraphView = mLineGraph.getView(itemView.getContext());
-                layoutView.addView(mGraphView); // prior graphs removed when view recycled
-            }
-
         }
+
 		private void bind(final BluetoothDevice device) {
 			final int state = mService.getConnectionState(device);
 
@@ -248,7 +238,7 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
 
             // Update the graph
             createGraphIfMissing(device);
-            mGraphView.repaint();
+            mLineGraph.repaint();
 		}
 	}
 }
