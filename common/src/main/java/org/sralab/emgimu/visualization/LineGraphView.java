@@ -19,11 +19,12 @@
  * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
  * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.sralab.emgimu.config;
+package org.sralab.emgimu.visualization;
 
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Paint.Align;
+import android.view.ViewGroup;
 
 import org.achartengine.ChartFactory;
 import org.achartengine.GraphicalView;
@@ -37,28 +38,19 @@ import org.achartengine.renderer.XYSeriesRenderer;
  * This class uses external library AChartEngine to show dynamic real time line graph for HR values
  */
 public class LineGraphView {
+
 	//TimeSeries will hold the data in x,y format for single chart
 	private TimeSeries mSeries = new TimeSeries("EMG Power");
 	//XYMultipleSeriesDataset will contain all the TimeSeries
 	private XYMultipleSeriesDataset mDataset = new XYMultipleSeriesDataset();
 	//XYMultipleSeriesRenderer will contain all XYSeriesRenderer and it can be used to set the properties of whole Graph
 	private XYMultipleSeriesRenderer mMultiRenderer = new XYMultipleSeriesRenderer();
-	private static LineGraphView mInstance = null;
-
-	/**
-	 * singleton implementation of LineGraphView class
-	 */
-	public static synchronized LineGraphView getLineGraphView() {
-		if (mInstance == null) {
-			mInstance = new LineGraphView();
-		}
-		return mInstance;
-	}
+	private GraphicalView mGraphView;
 
 	/**
 	 * This constructor will set some properties of single chart and some properties of whole graph
 	 */
-	public LineGraphView() {
+	public LineGraphView(Context context, ViewGroup layout) {
 		//add single line chart mSeries
 		mDataset.addSeries(mSeries);
 
@@ -96,14 +88,13 @@ public class LineGraphView {
 		renderer.setShowLabels(false);
 		renderer.setShowAxes(false);
 		renderer.addSeriesRenderer(seriesRenderer);
+
+		mGraphView = ChartFactory.getLineChartView(context, mDataset, mMultiRenderer);
+		layout.addView(mGraphView);
 	}
 
-	/**
-	 * return graph view to activity
-	 */
-	public GraphicalView getView(Context context) {
-		final GraphicalView graphView = ChartFactory.getLineChartView(context, mDataset, mMultiRenderer);
-		return graphView;
+	public void repaint() {
+		mGraphView.repaint();
 	}
 
 	/**
