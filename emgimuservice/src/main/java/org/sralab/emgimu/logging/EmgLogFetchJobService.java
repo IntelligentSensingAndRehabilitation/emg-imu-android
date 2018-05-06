@@ -152,13 +152,7 @@ public class EmgLogFetchJobService extends JobService implements EmgImuManagerCa
     }
 
     @Override
-    public void onEmgBuffReceived(BluetoothDevice device, int[] value) {
-
-    }
-
-    @Override
     public void onEmgBuffReceived(BluetoothDevice device, int count, int[][] data) {
-        onEmgBuffReceived(device, data[0]);
     }
 
     @Override

@@ -230,11 +230,12 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                 case 20:
                     // Have to manually combine to get the endian right
 
-                    int [] parsed = new int[EMG_BUFFER_LEN];
+                    int [][] parsed = new int[1][EMG_BUFFER_LEN];
                     for (int i = 0; i < EMG_BUFFER_LEN; i++)
-                        parsed[i] = buffer[i + 1] * 256 + buffer[i];
+                        parsed[0][i] = buffer[i + 1] * 256 + buffer[i];
                     mEmgBuff = parsed;
-                    mCallbacks.onEmgBuffReceived(device, mEmgBuff);
+                    // TODO: add data counter to this format
+                    mCallbacks.onEmgBuffReceived(device, 0, mEmgBuff);
                     break;
                 case 242:
                     byte [] array = {buffer[0], buffer[1]};
@@ -263,7 +264,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                         //Log.d(TAG, "Data[" + ch + "] = " + Arrays.toString(data[ch]));
                     }
 
-                    mEmgBuff = data[0]; // TODO: this is a hack for "backward" compatibility.
+                    mEmgBuff = data;
                     mCallbacks.onEmgBuffReceived(device, count, data);
 
                     break;
@@ -705,8 +706,8 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
     }
 
     // Accessors for the EMG buffer
-    private int [] mEmgBuff;
-    public int[] getEmgBuff() {
+    private int [][] mEmgBuff;
+    public int[][] getEmgBuff() {
         return mEmgBuff;
     }
 
