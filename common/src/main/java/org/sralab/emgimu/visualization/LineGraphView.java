@@ -97,6 +97,10 @@ public class LineGraphView {
 		mGraphView.repaint();
 	}
 
+	private int mWindowSize = 100;
+	public void setWindowSize(int newWindow) {
+		mWindowSize = newWindow;
+	}
 	/**
 	 * add new x,y value to chart
 	 */
@@ -104,7 +108,7 @@ public class LineGraphView {
 	public void addValue(int val) {
         mCounter++;
         mSeries.add(mCounter, val);
-        if (mSeries.getItemCount() > 100)
+        if (mSeries.getItemCount() > mWindowSize)
             mSeries.remove(0);
 	}
 

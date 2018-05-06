@@ -34,8 +34,7 @@ dependencies {
     implementation "com.android.support:appcompat-v7:$supportLib"
     implementation "com.android.support:design:$supportLib"
 
-    implementation "com.google.firebase:firebase-core:$firebaseVer"
-    //implementation "com.google.firebase:firebase-crash:$firebaseVer"
+    implementation "com.google.firebase:firebase-core:$firebaseCoreVer"
     implementation "com.crashlytics.sdk.android:crashlytics:$crashlyticsVer"
 }
 

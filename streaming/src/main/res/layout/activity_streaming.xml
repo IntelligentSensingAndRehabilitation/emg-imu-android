@@ -9,4 +9,43 @@
         android:id="@+id/toolbar_actionbar"
         layout="@layout/toolbar"/>
 
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/emg_list"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+    <!--
+    <FrameLayout
+        android:id="@+id/emg_ch1"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"/>
+    <FrameLayout
+        android:id="@+id/emg_ch2"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"/>
+    <FrameLayout
+        android:id="@+id/emg_ch3"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"/>
+    <FrameLayout
+        android:id="@+id/emg_ch4"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"/>
+    <FrameLayout
+        android:id="@+id/emg_ch5"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"/>
+    <FrameLayout
+        android:id="@+id/emg_ch6"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"/>
+    <FrameLayout
+        android:id="@+id/emg_ch7"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"/>
+    <FrameLayout
+        android:id="@+id/emg_ch8"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"/>
+    -->
+
 </LinearLayout>
