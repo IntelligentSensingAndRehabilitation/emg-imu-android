@@ -103,7 +103,7 @@ public class Game extends EmgImuBaseActivity {
     @Override
     protected void onCreateView(Bundle savedInstanceState) {
         Fabric.with(this, new Crashlytics());
-        
+
         accomplishmentBox = new AccomplishmentBox();
         gameOverDialog = new GameOverDialog(this);
         handler = new MyHandler(this);
@@ -202,7 +202,6 @@ public class Game extends EmgImuBaseActivity {
 
     @Override
     public void onEmgBuffReceived(BluetoothDevice device, int count, int[][] data) {
-        onEmgBuffReceived(device, data[0]);
     }
 
     @Override
