@@ -26,6 +26,7 @@ import android.bluetooth.BluetoothDevice;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -43,7 +44,8 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
 
 	private final EmgImuService.EmgImuBinder mService;
 	private final List<BluetoothDevice> mDevices;
-    private final Map<BluetoothDevice, LineGraphView> mDeviceLineGraphMap = new HashMap<>();
+    private final Map<Pair<BluetoothDevice, Integer>, LineGraphView> mDeviceLineGraphMap = new HashMap<>();
+    private final Integer CHANNELS = 8; // TODO: this should be adjustable
 
 	public DeviceAdapter(final EmgImuService.EmgImuBinder binder) {
 		mService = binder;
@@ -54,7 +56,14 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
 
 	@Override
 	public ViewHolder onCreateViewHolder(final ViewGroup parent, final int viewType) {
-		final View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.emg_activity, parent, false);
+
+        final View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.emg_activity, parent, false);
+        int height = parent.getMeasuredHeight() / CHANNELS;
+
+        ViewGroup.LayoutParams params = view.getLayoutParams();
+        params.height = height;
+        view.setLayoutParams(params);
+
         return new ViewHolder(view);
 	}
 
@@ -74,7 +83,7 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
 
 	@Override
 	public void onBindViewHolder(final ViewHolder holder, final int position) {
-		holder.bind(mDevices.get(position));
+		holder.bind(mDevices.get(position / CHANNELS), position % CHANNELS);
 	}
 
 	@Override
@@ -87,11 +96,11 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
 
     @Override
 	public int getItemCount() {
-	    return mDevices.size();
+	    return mDevices.size() * CHANNELS;
 	}
 
 	public void onDeviceAdded(final BluetoothDevice device) {
-        final int position = mDevices.indexOf(device);
+        final int position = mDevices.indexOf(device) * CHANNELS;
 		if (position == -1) {
 			notifyItemInserted(mDevices.size() - 1);
 		} else {
@@ -109,7 +118,7 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
 	}
 
 	public void onDeviceStateChanged(final BluetoothDevice device) {
-		final int position = mDevices.indexOf(device);
+		final int position = mDevices.indexOf(device) * CHANNELS;
         if (position >= 0)
             notifyItemChanged(position);
 	}
@@ -119,34 +128,56 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
         mService.streamBuffered(device);
     }
 
-	public void onPwrValueReceived(final BluetoothDevice device) {
-
-        // If graph exists for this device, update it with new data
-        LineGraphView mLineGraph = mDeviceLineGraphMap.get(device);
-        if (mLineGraph != null) {
-            final int pwrValue = mService.getEmgPwrValue(device);
-            mLineGraph.addValue(pwrValue);
+    private double mRange = 5e5; // default range in graphs
+    public void setRange(double newRange) {
+        mRange = newRange;
+        for (LineGraphView l : mDeviceLineGraphMap.values()) {
+            l.setRange(mRange);
         }
+    }
 
-        final int position = mDevices.indexOf(device);
-        if (position >= 0)
-            notifyItemChanged(position);
+    public void onPwrValueReceived(final BluetoothDevice device) {
+
+	    for (int channel = 0; channel < CHANNELS; channel++) {
+            // If graph exists for this device, update it with new data
+            LineGraphView mLineGraph = mDeviceLineGraphMap.get(new Pair<>(device, channel));
+            if (mLineGraph != null) {
+                final int pwrValue = mService.getEmgPwrValue(device);
+                mLineGraph.addValue(pwrValue);
+            }
+
+            final int position = mDevices.indexOf(device) * CHANNELS + channel;
+            if (position >= 0)
+                notifyItemChanged(position);
+        }
     }
 
 
+    int updateCounter = 0;
     public void onBuffValueReceived(final BluetoothDevice device) {
 
-        // If graph exists for this device, update it with new data
-        LineGraphView mLineGraph = mDeviceLineGraphMap.get(device);
-        if (mLineGraph != null) {
-            final int [] buffValue = mService.getEmgBuffValue(device);
-            for (int i = 0; i < buffValue.length; i++)
-                mLineGraph.addValue(buffValue[i]);
+        final int[][] bufferedValues = mService.getEmgBuffValue(device);
+        final int MAX_CHANNELS = bufferedValues.length;
+
+        updateCounter ++;
+        for (int channel = 0; channel < CHANNELS & channel < MAX_CHANNELS; channel++) {
+            // If graph exists for this device, update it with new data
+            LineGraphView mLineGraph = mDeviceLineGraphMap.get(new Pair<>(device, channel));
+            if (mLineGraph != null) {
+                final int[] buffValue = mService.getEmgBuffValue(device)[channel];
+                for (int i = 0; i < buffValue.length; i++)
+                    mLineGraph.addValue(buffValue[i]);
+            }
+
         }
 
-        final int position = mDevices.indexOf(device);
-        if (position >= 0)
-            notifyItemChanged(position);
+        if (updateCounter % 5 == 0) {
+            for(int channel = 0; channel < CHANNELS; channel++) {
+                final int position = mDevices.indexOf(device) * CHANNELS + channel;
+                if (position >= 0)
+                    notifyItemChanged(position);
+            }
+        }
     }
 
 	public class ViewHolder extends RecyclerView.ViewHolder {
@@ -170,7 +201,7 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
 
         // We want one line graph and graph view per device. The ViewHolder constructor
         // can be created multiple times in the line cycle of the view so cannot create there
-        private void createGraphIfMissing(final BluetoothDevice device) {
+        private void createGraphIfMissing(final BluetoothDevice device, int channel) {
 
             if (mLineGraph == null) {
                 mLineGraph = mDeviceLineGraphMap.get(device);
@@ -178,15 +209,17 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
                 // See if graph has been cached and if so use this
                 if (mLineGraph == null) {
                     mLineGraph = new LineGraphView(mLayoutView.getContext(), mLayoutView);
-                    mLineGraph.setWindowSize(2000);
-                    mDeviceLineGraphMap.put(device, mLineGraph);
+                    mLineGraph.setWindowSize(250);
+                    mLineGraph.setRange(mRange);
+                    mLineGraph.enableFiltering(true);
+                    mDeviceLineGraphMap.put(new Pair<>(device, channel), mLineGraph);
                 }
             }
         }
 
-		private void bind(final BluetoothDevice device) {
+		private void bind(final BluetoothDevice device, int channel) {
             // Update the graph
-            createGraphIfMissing(device);
+            createGraphIfMissing(device, channel);
             mLineGraph.repaint();
 		}
 	}
