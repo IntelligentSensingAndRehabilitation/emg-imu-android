@@ -24,6 +24,7 @@ package org.sralab.emgimu.visualization;
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Paint.Align;
+import android.util.Log;
 import android.view.ViewGroup;
 
 import org.achartengine.ChartFactory;
@@ -47,6 +48,10 @@ public class LineGraphView {
 	private XYMultipleSeriesRenderer mMultiRenderer = new XYMultipleSeriesRenderer();
 	private GraphicalView mGraphView;
 
+	public void setRange(double range) {
+        mMultiRenderer.setYAxisMax(range);
+        mMultiRenderer.setYAxisMin(-range);
+    }
 	/**
 	 * This constructor will set some properties of single chart and some properties of whole graph
 	 */
@@ -59,7 +64,7 @@ public class LineGraphView {
 		//set line chart color to Black
 		seriesRenderer.setColor(Color.BLACK);
 		//set line chart style to square points
-		seriesRenderer.setPointStyle(PointStyle.SQUARE);
+		seriesRenderer.setPointStyle(PointStyle.CIRCLE);
 		seriesRenderer.setFillPoints(true);
 		seriesRenderer.setShowLegendItem(false);
 
@@ -79,6 +84,7 @@ public class LineGraphView {
 		renderer.setXLabelsColor(Color.DKGRAY);
 		renderer.setLabelsTextSize(20);
 		renderer.setLegendTextSize(20);
+
 		//Disable zoom
 		renderer.setPanEnabled(false, false);
 		renderer.setZoomEnabled(false, false);
@@ -88,6 +94,9 @@ public class LineGraphView {
 		renderer.setShowLabels(false);
 		renderer.setShowAxes(false);
 		renderer.addSeriesRenderer(seriesRenderer);
+
+		// defaults to auto-ranging
+		// setRange(5e6);
 
 		mGraphView = ChartFactory.getLineChartView(context, mDataset, mMultiRenderer);
 		layout.addView(mGraphView);
@@ -101,15 +110,51 @@ public class LineGraphView {
 	public void setWindowSize(int newWindow) {
 		mWindowSize = newWindow;
 	}
+
+	private final int FIR_ORDER = 5;
+	private final double [] A = {1.0, -0.88998924, 0.82014106, -0.52922618, 0.47812984}; //{1.f        , -3.37945934f,  4.37556425f, -2.5836815f ,  0.59017961f};
+	private final double [] B = {0.15986491, 0, -0.31972982, 0, 0.15986491}; //{0.02734515f,  0.f        , -0.0546903f ,  0.f        ,  0.02734515f};
+	private final double [] inputs = new double[FIR_ORDER-1];  // stores history of inputs with most recent at the end
+	private final double [] outputs = new double[FIR_ORDER-1]; // stores history of outputs with most recent at the end
+
+	private boolean mFiltering = false;
+
+	final double filter(double val) {
+		double new_output = val * B[0];
+
+		for (int i = 1; i < FIR_ORDER; i++) {
+			int j = FIR_ORDER - 1 - i;
+			new_output += B[i] * inputs[j] - A[i] * outputs[j];
+		}
+
+		// Shift values in buffer and add new values
+		for (int i = 0; i < FIR_ORDER-1; i++) {
+			inputs[i] = (i == (FIR_ORDER-2)) ? val : inputs[i+1];
+			outputs[i] = (i == (FIR_ORDER-2)) ? new_output : outputs[i+1];
+		}
+
+		return new_output;
+	}
+
+	public void enableFiltering(boolean enable) {
+		mFiltering = enable;
+	}
+
 	/**
 	 * add new x,y value to chart
 	 */
 	private int mCounter;
 	public void addValue(int val) {
         mCounter++;
-        mSeries.add(mCounter, val);
-        if (mSeries.getItemCount() > mWindowSize)
-            mSeries.remove(0);
+
+        if (mFiltering)
+			mSeries.add(mCounter, filter((double) val));
+        else
+			mSeries.add(mCounter, (double) val);
+
+        if (mSeries.getItemCount() > mWindowSize) {
+			mSeries.remove(0);
+		}
 	}
 
 	/**
