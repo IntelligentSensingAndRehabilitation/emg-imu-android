@@ -5,7 +5,10 @@ import android.bluetooth.BluetoothDevice;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
+import android.widget.EditText;
 
 import com.crashlytics.android.Crashlytics;
 
@@ -23,6 +26,7 @@ public class Streaming extends EmgImuBaseActivity {
 
     private RecyclerView mDevicesView;
     private DeviceAdapter mAdapter;
+    private EditText mRangeText;
 
     @Override
     protected void onCreateView(final Bundle savedInstanceState) {
@@ -35,6 +39,27 @@ public class Streaming extends EmgImuBaseActivity {
             throw new RuntimeException("No emg list");
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.addItemDecoration(new DividerItemDecoration(this, DividerItemDecoration.VERTICAL_LIST));
+
+        mRangeText = (EditText) findViewById(R.id.rangeText);
+        mRangeText.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+                double range = Double.parseDouble(charSequence.toString());
+                if (mAdapter != null)
+                    mAdapter.setRange(range);
+                Log.d(TAG, "Range change to: " + range);
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+
+            }
+        });
     }
 
     @Override
@@ -43,6 +68,10 @@ public class Streaming extends EmgImuBaseActivity {
         mDevicesView.setAdapter(mAdapter = new DeviceAdapter(binder));
         Log.d(TAG, "onServiceBinded");
         Log.d(TAG, "Managed devices: " + binder.getManagedDevices());
+
+        double range = Double.parseDouble(mRangeText.getText().toString());
+        mAdapter.setRange(range);
+        Log.d(TAG, "Range set to: " + range);
     }
 
     @Override
