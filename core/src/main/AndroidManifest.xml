@@ -57,7 +57,7 @@
 
 
 		<activity
-			android:name="org.sralab.emgimu.config.EmgImuActivity"
+			android:name="org.sralab.emgimu.config.ConfigActivity"
 			android:icon="@drawable/ic_proximity_feature"
 			android:label="@string/emgimu_feature_title"
 			android:launchMode="singleTask" >

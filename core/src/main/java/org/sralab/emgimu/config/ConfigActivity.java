@@ -35,8 +35,8 @@ import no.nordicsemi.android.nrftoolbox.widget.DividerItemDecoration;
 
 import org.sralab.emgimu.config.R;
 
-public class EmgImuActivity extends EmgImuBaseActivity {
-	private static final String TAG = "EmgImuActivity";
+public class ConfigActivity extends EmgImuBaseActivity {
+	private static final String TAG = "ConfigActivity";
 
 	private RecyclerView mDevicesView;
 	private DeviceAdapter mAdapter;
