@@ -19,7 +19,7 @@
  * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
  * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.sralab.emgimu;
+package org.sralab.emgimu.launcher;
 
 import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
@@ -53,11 +53,10 @@ import java.util.List;
 
 import io.fabric.sdk.android.Fabric;
 import no.nordicsemi.android.nrftoolbox.AppHelpFragment;
-import org.sralab.emgimu.adapter.AppAdapter;
 
 import org.sralab.emgimu.config.R;
 
-public class FeaturesActivity extends AppCompatActivity {
+public class LauncherActivity extends AppCompatActivity {
 	private static final String NRF_CONNECT_CATEGORY = "no.nordicsemi.android.nrftoolbox.LAUNCHER";
 	private static final String UTILS_CATEGORY = "no.nordicsemi.android.nrftoolbox.UTILS";
 	private static final String NRF_CONNECT_PACKAGE = "no.nordicsemi.android.mcp";
@@ -72,7 +71,7 @@ public class FeaturesActivity extends AppCompatActivity {
 		Fabric.with(this, new Crashlytics());
 
 		super.onCreate(savedInstanceState);
-		setContentView(R.layout.activity_features);
+		setContentView(R.layout.activity_launcher);
 
         final Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar_actionbar);
         setSupportActionBar(toolbar);
@@ -168,7 +167,7 @@ public class FeaturesActivity extends AppCompatActivity {
 				try {
 					startActivity(action);
 				} catch (final ActivityNotFoundException e) {
-					Toast.makeText(FeaturesActivity.this, R.string.no_application_play, Toast.LENGTH_SHORT).show();
+					Toast.makeText(LauncherActivity.this, R.string.no_application_play, Toast.LENGTH_SHORT).show();
 				}
 				mDrawerLayout.closeDrawers();
 			}
