@@ -44,7 +44,7 @@
 		android:theme="@style/AppTheme">
 
 		<activity
-			android:name="org.sralab.emgimu.FeaturesActivity"
+			android:name="org.sralab.emgimu.launcher.LauncherActivity"
 			android:label="@string/app_name"
             android:theme="@style/AppTheme.TranslucentStatusBar"
 			android:launchMode="singleTask" >
