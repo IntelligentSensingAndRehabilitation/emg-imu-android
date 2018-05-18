@@ -52,7 +52,7 @@ public class EmgPowerView extends View {
     private double mMin = 100;
     private double mMax = 4900;
     private double mPwr = 2500;
-    private final double mMaxHeightPwr = 5000; // The range of the graph
+    private final double mMaxHeightPwr = Short.MAX_VALUE * 2; // The range of the graph
     public void setMinPower(double p)
     {
         mMin = p;
@@ -64,6 +64,7 @@ public class EmgPowerView extends View {
     public void setCurrentPower(double p)
     {
         mPwr = p;
+        invalidate();
     }
 
     /**
@@ -141,6 +142,11 @@ public class EmgPowerView extends View {
     private String maxDescribeString() {
         return Integer.toString((int) mMax);
     }
+
+    private String minDescribeString() {
+        return Integer.toString((int) mMin);
+    }
+
     private void invalidateTextPaintAndMeasurements() {
         mBarPaint.setColor(mBarColor);
         mLinePaint.setColor(mLineColor);
@@ -189,9 +195,21 @@ public class EmgPowerView extends View {
                 (lineLeft + lineRight) / 2,
                 stringHeight,
                 mTextPaint);
+
+        stringHeight = minHeight + mTextDimension;
+        /*if (maxHeight < mTextDimension * 2) {
+            // if bar close to top of screen, move text below it
+            stringHeight = maxHeight + mTextDimension;
+        };*/
+        canvas.drawText(minDescribeString(),
+                (lineLeft + lineRight) / 2,
+                stringHeight,
+                mTextPaint);
+
+
     }
 
-    private boolean mAllowInput = false;
+    private boolean mAllowInput = true;
     public void enableInput(boolean allow) {
         mAllowInput = allow;
     }
@@ -210,6 +228,7 @@ public class EmgPowerView extends View {
             // Ignore gestures if they do not start near the current bar
             if (Math.abs(e.getY() - pwrToHeight(mMax)) > 100)
                 return false;
+
             return true;
         }
 
@@ -231,11 +250,23 @@ public class EmgPowerView extends View {
         if (!result) {
            if (event.getAction() == MotionEvent.ACTION_UP) {
                Log.d(TAG, "Valid scroll completed.");
-               // TODO: need to have a callback listener that can catch this to notify controller
+               if (mListener != null) {
+                   mListener.onMaxChanged(mMax);
+               }
            } else {
                Log.d(TAG, "onTouchEvent not handled: " + event);
            }
         }
         return result;
+    }
+
+    OnMaxChangedEventListener mListener;
+
+    public interface OnMaxChangedEventListener {
+        void onMaxChanged(double newMax);
+    }
+
+    public void setOnMaxChangedEventListener(OnMaxChangedEventListener maxChangeEventListener) {
+        mListener = maxChangeEventListener;
     }
 }
