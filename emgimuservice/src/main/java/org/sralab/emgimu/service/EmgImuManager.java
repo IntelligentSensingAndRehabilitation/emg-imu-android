@@ -230,9 +230,23 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                 case 20:
                     // Have to manually combine to get the endian right
 
-                    int [][] parsed = new int[1][EMG_BUFFER_LEN];
-                    for (int i = 0; i < EMG_BUFFER_LEN; i++)
-                        parsed[0][i] = buffer[i*2 + 1] * 256 + buffer[i*2];
+                    double ina333_gain = 101;   // for 1k resistor
+                    double bandpass_gain = 10;  //# 1M / 100k
+                    double nrf52383_gain = 1.0; // more easily programmable now differential
+                    double analog_gain = ina333_gain * bandpass_gain;
+
+                    double lsb_per_v = analog_gain * nrf52383_gain / 0.6 * (1<<13);
+                    double microvolts_per_lsb = 1.0e6 / lsb_per_v;
+
+                    double [][] parsed = new double[1][EMG_BUFFER_LEN];
+                    for (int i = 0; i < EMG_BUFFER_LEN; i++) {
+                        byte [] array = {buffer[i*2], buffer[i*2+1]};
+
+                        // check the sample counter and make sure no data was lost
+                        int count = ByteBuffer.wrap(array).order(ByteOrder.LITTLE_ENDIAN).getShort();
+                        parsed[0][i] = count * microvolts_per_lsb;
+                    }
+
                     mEmgBuff = parsed;
                     // TODO: add data counter to this format
                     mCallbacks.onEmgBuffReceived(device, 0, mEmgBuff);
@@ -253,7 +267,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                     // representation of the data is 3 bytes per sample, 8 channels, and then 10 samples
                     final int CHANNELS = 8;
                     final int SAMPLES = 10;
-                    int data[][] = new int[CHANNELS][SAMPLES];
+                    double data[][] = new double[CHANNELS][SAMPLES];
                     for (int ch = 0; ch < 8; ch++) {
                         for (int sample = 0; sample < SAMPLES; sample++) {
                             int idx = 2 + 3 * (ch + CHANNELS * sample);
@@ -706,8 +720,8 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
     }
 
     // Accessors for the EMG buffer
-    private int [][] mEmgBuff;
-    public int[][] getEmgBuff() {
+    private double [][] mEmgBuff;
+    public double[][] getEmgBuff() {
         return mEmgBuff;
     }
 

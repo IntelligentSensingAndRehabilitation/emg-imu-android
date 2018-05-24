@@ -123,7 +123,7 @@ public class ConfigActivity extends EmgImuBaseActivity {
     }
 
 	@Override
-	public void onEmgBuffReceived(BluetoothDevice device, int count, int[][] data) {
+	public void onEmgBuffReceived(BluetoothDevice device, int count, double[][] data) {
 		if (mAdapter != null)
 			mAdapter.onBuffValueReceived(device);
 	}
