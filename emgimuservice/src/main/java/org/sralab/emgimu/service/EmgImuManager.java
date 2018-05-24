@@ -232,7 +232,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 
                     int [][] parsed = new int[1][EMG_BUFFER_LEN];
                     for (int i = 0; i < EMG_BUFFER_LEN; i++)
-                        parsed[0][i] = buffer[i + 1] * 256 + buffer[i];
+                        parsed[0][i] = buffer[i*2 + 1] * 256 + buffer[i*2];
                     mEmgBuff = parsed;
                     // TODO: add data counter to this format
                     mCallbacks.onEmgBuffReceived(device, 0, mEmgBuff);
