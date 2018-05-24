@@ -156,7 +156,7 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
     int updateCounter = 0;
     public void onBuffValueReceived(final BluetoothDevice device) {
 
-        final int[][] bufferedValues = mService.getEmgBuffValue(device);
+        final double[][] bufferedValues = mService.getEmgBuffValue(device);
         final int MAX_CHANNELS = bufferedValues.length;
 
         updateCounter ++;
@@ -164,7 +164,7 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
             // If graph exists for this device, update it with new data
             LineGraphView mLineGraph = mDeviceLineGraphMap.get(new Pair<>(device, channel));
             if (mLineGraph != null) {
-                final int[] buffValue = mService.getEmgBuffValue(device)[channel];
+                final double[] buffValue = mService.getEmgBuffValue(device)[channel];
                 for (int i = 0; i < buffValue.length; i++)
                     mLineGraph.addValue(buffValue[i]);
             }

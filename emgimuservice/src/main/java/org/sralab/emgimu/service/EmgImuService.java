@@ -165,7 +165,7 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
          * @param device the device of which battery level should be returned
          * @return emg value or -1 if no value was received or characteristic was not found
          */
-        public int [][] getEmgBuffValue(final BluetoothDevice device) {
+        public double [][] getEmgBuffValue(final BluetoothDevice device) {
             final EmgImuManager manager = (EmgImuManager) getBleManager(device);
             return manager.getEmgBuff();
         }
@@ -649,10 +649,10 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
     }
 
     @Override
-    public void onEmgBuffReceived(BluetoothDevice device, int count, int[][] data) {
+    public void onEmgBuffReceived(BluetoothDevice device, int count, double[][] data) {
         final int CHANNELS = data.length;
         final int SAMPLES = data[0].length;
-	    int [] linearizedData = new int[CHANNELS * SAMPLES];
+	    double [] linearizedData = new double[CHANNELS * SAMPLES];
 
 	    for (int i = 0; i < CHANNELS; i++)
 	        for (int j = 0; j < SAMPLES; j++)

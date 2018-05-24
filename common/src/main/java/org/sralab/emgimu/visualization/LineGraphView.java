@@ -144,13 +144,13 @@ public class LineGraphView {
 	 * add new x,y value to chart
 	 */
 	private int mCounter;
-	public void addValue(int val) {
+	public void addValue(double val) {
         mCounter++;
 
         if (mFiltering)
-			mSeries.add(mCounter, filter((double) val));
+			mSeries.add(mCounter, filter(val));
         else
-			mSeries.add(mCounter, (double) val);
+			mSeries.add(mCounter, val);
 
         if (mSeries.getItemCount() > mWindowSize) {
 			mSeries.remove(0);

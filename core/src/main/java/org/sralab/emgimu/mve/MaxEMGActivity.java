@@ -80,7 +80,7 @@ public class MaxEMGActivity extends EmgImuBaseActivity implements EmgPowerView.O
     }
 
     @Override
-    public void onEmgBuffReceived(BluetoothDevice device, int count, int[][] data) {
+    public void onEmgBuffReceived(BluetoothDevice device, int count, double[][] data) {
 
     }
 
