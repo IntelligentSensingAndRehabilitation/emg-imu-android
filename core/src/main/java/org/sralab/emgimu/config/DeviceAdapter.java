@@ -193,17 +193,21 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
             downloadMode.setOnClickListener(v -> {
                 final int position = getAdapterPosition();
                 final BluetoothDevice device = mDevices.get(position);
-                if (mService != null) { // watch out for race condition where this is clicked before connecting
-                    switch(mService.getStreamingMode(device)) {
-                        case STREAMING_BUFFERED:
-                            mService.streamPwr(device);
-                            downloadMode.setImageResource(R.drawable.ic_action_download_normal);
-                            break;
-                        case STREAMINNG_POWER:
-                            mService.streamBuffered(device);
-                            downloadMode.setImageResource(R.drawable.ic_action_download_pressed);
-                            break;
-                    }
+
+                // Catch race condition where device is not connected but button is pressed
+                boolean connected = mService.isConnected(device);
+                if (!connected)
+                    return;
+
+                switch(mService.getStreamingMode(device)) {
+                    case STREAMING_BUFFERED:
+                        mService.streamPwr(device);
+                        downloadMode.setImageResource(R.drawable.ic_action_download_normal);
+                        break;
+                    case STREAMINNG_POWER:
+                        mService.streamBuffered(device);
+                        downloadMode.setImageResource(R.drawable.ic_action_download_pressed);
+                        break;
                 }
             });
         }

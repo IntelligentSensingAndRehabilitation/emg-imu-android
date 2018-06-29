@@ -636,12 +636,13 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 
     // Handle the two streaming modes for EMG data (raw buffered data or processed power)
 
-    public enum STREAMING_MODE {
+     public enum STREAMING_MODE {
+        STREAMING_UNKNOWN,
         STREAMINNG_POWER,
         STREAMING_BUFFERED
     };
 
-    private STREAMING_MODE mStreamingMode;
+    private STREAMING_MODE mStreamingMode = STREAMING_MODE.STREAMING_UNKNOWN;
     public final void enableBufferedStreamingMode() {
         enableEmgBuffNotifications();
         disableEmgPwrNotifications();
