@@ -30,7 +30,7 @@
             android:contentDescription="range"
             android:ems="10"
             android:inputType="number"
-            android:text="500000" />
+            android:text="200" />
     </LinearLayout>
 
     <android.support.v7.widget.RecyclerView
