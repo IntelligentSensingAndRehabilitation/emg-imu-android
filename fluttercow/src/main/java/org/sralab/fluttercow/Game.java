@@ -160,6 +160,7 @@ public class Game extends EmgImuBaseActivity {
     public void onDeviceReady(final BluetoothDevice device) {
         mReady = true;
         Log.d(TAG, "onDeviceReady");
+        mService.streamPwr(device);
     }
 
     @Override
