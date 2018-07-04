@@ -26,7 +26,7 @@ import no.nordicsemi.android.ble.BleManagerCallbacks;
 
 public interface EmgImuManagerCallbacks extends BleManagerCallbacks {
     void onEmgRawReceived(final BluetoothDevice device, int value);
-    void onEmgBuffReceived(final BluetoothDevice device, int [] value);
+    void onEmgBuffReceived(BluetoothDevice device, int count, double[][] data);
     void onEmgPwrReceived(final BluetoothDevice device, int value);
     void onEmgClick(final BluetoothDevice device);
 
@@ -43,5 +43,4 @@ public interface EmgImuManagerCallbacks extends BleManagerCallbacks {
     void onOperationNotSupported(final BluetoothDevice device);
     void onDatasetClear(final BluetoothDevice device);
     void onNumberOfRecordsRequested(final BluetoothDevice device, final int value);
-
 }

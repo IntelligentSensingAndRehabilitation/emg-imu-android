@@ -3,26 +3,54 @@
 buildscript {
     repositories {
         jcenter()
+        google()
+        maven {
+            url 'https://maven.fabric.io/public'
+        }
+
+
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.0.1'
+        classpath 'com.android.tools.build:gradle:3.1.3'
+        classpath 'com.google.gms:google-services:3.2.1'
+        classpath 'io.fabric.tools:gradle:1.25.3'
 
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
-        classpath 'com.google.gms:google-services:3.1.2'
     }
 }
 
 allprojects {
     repositories {
-        maven {
-            url "https://maven.google.com"
-        }
-        maven {
-            // nRF Toolbox is using Play Service 7.8.87 in order to make the app working in China:
-            // https://developer.android.com/training/wearables/apps/creating-app-china.html#ChinaSDK
-            url "${rootProject.projectDir}/google-play-services-7-8-87"
-        }
         jcenter()
+        google()
+
+        mavenCentral()
+        maven { url 'https://maven.fabric.io/public' }
     }
+    gradle.projectsEvaluated {
+        tasks.withType(JavaCompile) {
+            options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
+        }
+    }
+}
+
+ext {
+    buildTools = '27.0.3'
+    compileSdk = 27
+    minSdk = 18
+    minSdkInstant = 21
+    versionCode = 1
+    versionName = '1.0'
+
+    supportLib = '27.1.1'
+    firebaseAuthVer = '16.0.2'
+    firebaseCoreVer = '16.0.1'
+    firebaseFirestoreVer = '17.0.2'
+    crashlyticsVer = '2.9.4'
+    instantAppsVer = '1.1.0'
+
+    espressoVersion = "3.0.1"
+    androidTestVersion = "1.0.1"
+    hamcrestVersion = "1.3"
 }

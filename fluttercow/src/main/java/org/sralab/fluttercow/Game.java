@@ -21,12 +21,15 @@ import android.widget.Toast;
 import java.util.List;
 import android.util.Log;
 
+import com.crashlytics.android.Crashlytics;
 import com.google.firebase.analytics.FirebaseAnalytics;
 
 import org.sralab.emgimu.EmgImuBaseActivity;
 import org.sralab.emgimu.service.EmgImuService;
 import org.sralab.emgimu.service.EmgLogRecord;
 import org.sralab.fluttercow.sprites.PlayableCharacter;
+
+import io.fabric.sdk.android.Fabric;
 
 public class Game extends EmgImuBaseActivity {
     private static final String TAG = "Game";
@@ -99,6 +102,8 @@ public class Game extends EmgImuBaseActivity {
 
     @Override
     protected void onCreateView(Bundle savedInstanceState) {
+        Fabric.with(this, new Crashlytics());
+
         accomplishmentBox = new AccomplishmentBox();
         gameOverDialog = new GameOverDialog(this);
         handler = new MyHandler(this);
@@ -155,6 +160,7 @@ public class Game extends EmgImuBaseActivity {
     public void onDeviceReady(final BluetoothDevice device) {
         mReady = true;
         Log.d(TAG, "onDeviceReady");
+        mService.streamPwr(device);
     }
 
     @Override
@@ -193,6 +199,10 @@ public class Game extends EmgImuBaseActivity {
         last_rescaled = rescaled;
 
         return rescaled;
+    }
+
+    @Override
+    public void onEmgBuffReceived(BluetoothDevice device, int count, double[][] data) {
     }
 
     @Override

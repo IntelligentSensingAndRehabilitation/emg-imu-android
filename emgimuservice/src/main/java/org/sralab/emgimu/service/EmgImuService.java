@@ -22,6 +22,7 @@
 package org.sralab.emgimu.service;
 
 import android.app.Notification;
+import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.bluetooth.BluetoothAdapter;
@@ -32,41 +33,38 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.support.annotation.NonNull;
 import android.support.annotation.StringRes;
 import android.support.v4.app.NotificationManagerCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
-import android.support.v4.util.SimpleArrayMap;
-import android.support.v7.app.NotificationCompat;
+import android.support.v4.app.NotificationCompat;
 
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.crashlytics.android.Crashlytics;
 import com.firebase.jobdispatcher.FirebaseJobDispatcher;
 import com.firebase.jobdispatcher.GooglePlayDriver;
 import com.firebase.jobdispatcher.Job;
 import com.firebase.jobdispatcher.Lifetime;
 import com.firebase.jobdispatcher.RetryStrategy;
 import com.firebase.jobdispatcher.Trigger;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
 import com.google.firebase.analytics.FirebaseAnalytics;
-import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
 import java.util.List;
 
-import no.nordicsemi.android.ble.utils.ILogger;
+import io.fabric.sdk.android.Fabric;
+import no.nordicsemi.android.ble.error.GattError;
 import no.nordicsemi.android.log.ILogSession;
 import no.nordicsemi.android.log.LogContract;
 import no.nordicsemi.android.log.Logger;
 import no.nordicsemi.android.ble.BleManager;
 import no.nordicsemi.android.nrftoolbox.profile.multiconnect.BleMulticonnectProfileService;
-import no.nordicsemi.android.nrftoolbox.profile.multiconnect.IDeviceLogger;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -90,6 +88,8 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
     public static final String EXTRA_EMG_RAW = "org.sralab.emgimu.EXTRA_EMG_RAW";
     public static final String EXTRA_EMG_PWR = "org.sralab.emgimu.EXTRA_EMG_PWR";
     public static final String EXTRA_EMG_BUFF = "org.sralab.emgimu.EXTRA_EMG_BUFF";
+    public static final String EXTRA_EMG_CHANNELS = "org.sralab.emgimu.EXTRA_EMG_CHANNELS";
+    public static final String EXTRA_EMG_COUNT = "org.sralab.emgimu.EXTRA_EMG_COUNT";
 
     public static final String INTENT_FETCH_LOG = "org.sralab.INTENT_FETCH_LOG";
     public static final String INTENT_DEVICE_MAC = "org.sralab.INTENT_DEVICE_MAC";
@@ -112,71 +112,8 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 	private FirebaseAuth mAuth;
     private FirebaseAnalytics mFirebaseAnalytics;
 
-    // implement both a nRF logging session for the service (not associated with a device)
-    // and allow mirroring this output to logcat. later this may be mirrored or replace
-    // with firebase logging. Individual devices also contain their own nRF logs, but that
-    // calling path should not end up here. Any logging events passed to the service binder
-    // associated with the device will go to the specific device logger and this one.
     private ILogSession mLogSession;
-    private class ServiceLogger implements ILogger, IDeviceLogger {
-
-        // map from nordic log levels to
-        private void logcatLog(int level, String msg) {
-            switch(level) {
-                case LogContract.Log.Level.DEBUG:
-                    Log.d(TAG, msg);
-                    break;
-                case LogContract.Log.Level.WARNING:
-                    Log.w(TAG, msg);
-                    break;
-                case LogContract.Log.Level.INFO:
-                case LogContract.Log.Level.APPLICATION:
-                    Log.i(TAG, msg);
-                    break;
-                case LogContract.Log.Level.VERBOSE:
-                    Log.v(TAG, msg);
-                    break;
-                case LogContract.Log.Level.ERROR:
-                    Log.e(TAG, msg);
-                    break;
-                default:
-                    Log.e(TAG, msg + " reported with unknown logging level: " + level);
-            }
-        }
-
-        @Override
-        public void log(int level, @StringRes final int messageRes, Object... params) {
-            logcatLog(level, getString(messageRes));
-            Logger.log(mLogSession, level, messageRes, params);
-
-        }
-
-        public void log(int level, String message) {
-            logcatLog(level, message);
-            Logger.log(mLogSession, level, message);
-        };
-
-        @Override
-        public void log(BluetoothDevice device,int level, String message) {
-            logcatLog(level, device.getAddress() + " : " + message);
-            Logger.log(mLogSession, level, device.getAddress() + " : " + message);
-        }
-
-        @Override
-        public void log(BluetoothDevice device, int level,  @StringRes final int messageRes, Object... params) {
-            logcatLog(level, device.getAddress() + " : " + getString(messageRes));
-            Logger.log(mLogSession, level, messageRes, params);
-        }
-
-        /***** helper methods to make an android Logger style interface *****/
-        public void d(String message) { log(LogContract.Log.Level.DEBUG, message); }
-        public void i(String message) { log(LogContract.Log.Level.INFO, message); }
-        public void w(String message) { log(LogContract.Log.Level.WARNING, message); }
-        public void e(String message) { log(LogContract.Log.Level.ERROR, message); }
-
-    };
-    private final ServiceLogger mServiceLogger = new ServiceLogger();
-
+    private final ServiceLogger mServiceLogger = new ServiceLogger(TAG, this, mLogSession);
 
 	/**
 	 * This local binder is an interface for the bonded activity to operate with the proximity sensor
@@ -228,7 +165,7 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
          * @param device the device of which battery level should be returned
          * @return emg value or -1 if no value was received or characteristic was not found
          */
-        public int [] getEmgBuffValue(final BluetoothDevice device) {
+        public double [][] getEmgBuffValue(final BluetoothDevice device) {
             final EmgImuManager manager = (EmgImuManager) getBleManager(device);
             return manager.getEmgBuff();
         }
@@ -320,6 +257,9 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
      * parent onCreate prior to startign bluetooth
      */
 	protected void onServiceCreated() {
+
+        Fabric.with(this, new Crashlytics());
+
         final int titleId = mBinder.getLoggerProfileTitle();
         if (titleId > 0) {
             mLogSession = Logger.newSession(getApplicationContext(), getString(titleId), "Service");
@@ -335,23 +275,23 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
         FirebaseUser currentUser = mAuth.getCurrentUser();
         mServiceLogger.d("User ID: " + currentUser);
         if (currentUser == null) {
+            Log.d(TAG, "Attempting to log in to firebase");
             mAuth.signInAnonymously()
-                    .addOnCompleteListener(new OnCompleteListener<AuthResult>() {
-                        @Override
-                        public void onComplete(@NonNull Task<AuthResult> task) {
-                            if (task.isSuccessful()) {
-                                // Sign in success, update UI with the signed-in user's information
-                                FirebaseUser user = mAuth.getCurrentUser();
+                    .addOnCompleteListener(task -> {
+                        if (task.isSuccessful()) {
+                            // Sign in success, update UI with the signed-in user's information
+                            FirebaseUser user = mAuth.getCurrentUser();
 
-                                mServiceLogger.d("signInAnonymously:success. UID:" + user.getUid());
-                                //updateUI(user);
-                            } else {
-                                // If sign in fails, display a message to the user.
-                                mServiceLogger.w("signInAnonymously:failure" + task.getException());
-                                //Toast.makeText(AnonymousAuthActivity.this, "Authentication failed.",
-                                //        Toast.LENGTH_SHORT).show();
-                                //updateUI(null);
-                            }
+                            Log.d(TAG, "signInAnonymously:success. UID:" + user.getUid());
+                            mServiceLogger.d("signInAnonymously:success. UID:" + user.getUid());
+                            //updateUI(user);
+                        } else {
+                            // If sign in fails, display a message to the user.
+                            mServiceLogger.w("signInAnonymously:failure" + task.getException());
+                            Log.d(TAG, "signInAnonymously:failure" + task.getException());
+                            //Toast.makeText(AnonymousAuthActivity.this, "Authentication failed.",
+                            //        Toast.LENGTH_SHORT).show();
+                            //updateUI(null);
                         }
                     });
         } else {
@@ -366,9 +306,6 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
         mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.SELECT_CONTENT, bundle);
 	}
 
-
-	private final SimpleArrayMap<String, Integer> logFetchStartId = new SimpleArrayMap<>();
-
     @Override
     public int onStartCommand(final Intent intent, final int flags, final int startId) {
         mBinder.log(LogContract.Log.Level.INFO, "onStartCommand");
@@ -376,124 +313,15 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 
         mServiceLogger.d("onStartCommand: " + intent + " " + flags + " " + startId);
 
-        if (intent.getBooleanExtra(EmgImuService.INTENT_FETCH_LOG, false)) {
-            String device_mac = intent.getStringExtra(INTENT_DEVICE_MAC);
-
-            // Detect if bluetooth is enabled and if not don't attempt to get log
-            final BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-            if (!bluetoothAdapter.isEnabled()) {
-                mServiceLogger.e("Unable to download log as bluetooth is disabled");
-                stopSelf(startId);
-                return START_NOT_STICKY;
-            }
-
-            synchronized (logFetchStartId) {
-                logFetchStartId.put(device_mac, startId);
-            }
-
-            List<BluetoothDevice> devices = getManagedDevices();
-            for (BluetoothDevice d : devices) {
-                if (d.getAddress().equals(device_mac)) {
-                    if (!isConnected(d)) {
-                        mBinder.log(d, LogContract.Log.Level.INFO, "Requesting logs from connected device");
-                        final EmgImuManager manager = (EmgImuManager) getBleManager(d);
-                        manager.getAllRecords();
-                    } else {
-                        mBinder.log(d, LogContract.Log.Level.WARNING, "It is in managed device list but not connected. Awaiting connection.");
-                    }
-                    return START_NOT_STICKY;
-                }
-            }
-
-            mServiceLogger.d("Device not in managed devices. Connecting to device.");
-
-            BluetoothDevice device = bluetoothAdapter.getRemoteDevice(device_mac);
-            mBinder.connect(device,  getLogger(device));
-        } else {
-            mServiceLogger.e("Service started without binding or special intent. Not meant to be used this way");
-        }
-
         return START_NOT_STICKY;
     }
-
-    /**
-     * Handles stopping service based on the thread ID. This is a bit complicated because
-     * it will stopSelf(threadId) will stop if it is the most recent (greatest) thread ID
-     * but we want to only stop when it is the last one.
-     */
-    private void smartStop(BluetoothDevice device) {
-        synchronized(logFetchStartId) {
-            Integer startThreadId = logFetchStartId.get(device.getAddress());
-
-            // If there is only one thread remaining, then appropriate to stop it
-            if (logFetchStartId.size() == 1) {
-                mBinder.log(device, LogContract.Log.Level.DEBUG, "One thread found so stopping service: " + logFetchStartId);
-
-                logFetchStartId.remove(device.getAddress());
-                stopSelf(startThreadId);
-                return;
-            }
-
-            // Work out the maximum thread Id
-            Integer maxThreadId = 0;
-            for (int i = 0; i < logFetchStartId.size(); i++) {
-                if (logFetchStartId.valueAt(i) > maxThreadId) {
-                    maxThreadId = logFetchStartId.valueAt(i);
-                }
-            }
-
-            if (startThreadId >= maxThreadId) {
-                mBinder.log(device, LogContract.Log.Level.DEBUG, "Multiple threads and this is the greatest. Just removing element " + startThreadId + " " + logFetchStartId);
-
-                // If there are multiple threads and this one is the highest number we should
-                // only remove its ID
-                logFetchStartId.remove(device.getAddress());
-
-                // However later stop needs to use this maxThreadId which we removed. Arbitrarily
-                // assign to the first device..
-                logFetchStartId.setValueAt(0, maxThreadId);
-            } else {
-                mBinder.log(device, LogContract.Log.Level.DEBUG, "This is not the lowest thread. Service should not stop after " + startThreadId + " " + logFetchStartId);
-
-                // This call to stopSelf should make no functional difference
-                stopSelf(startThreadId);
-                logFetchStartId.remove(device.getAddress());
-            }
-        }
-    }
-    @Override
-    public void onDeviceReady(BluetoothDevice device) {
-        super.onDeviceReady(device);
-
-        // See if a log fetch has been requested
-        Integer startThreadId;
-        synchronized (logFetchStartId) {
-            startThreadId = logFetchStartId.get(device.getAddress());
-        }
-
-
-        if(startThreadId != null) {
-            mBinder.log(device, LogContract.Log.Level.INFO, "onDeviceReady. requesting log download");
-            final EmgImuManager manager = (EmgImuManager) getBleManager(device);
-            manager.getAllRecords();
-        } else {
-            mBinder.log(device, LogContract.Log.Level.WARNING, "onDeviceReady. no log request active.");
-        }
-    }
-
 
     @Override
     public void onError(BluetoothDevice device, String message, int errorCode) {
         super.onError(device, message, errorCode);
 
-        mBinder.log(device, LogContract.Log.Level.WARNING, "onError: " + message + " errorCode: " + errorCode);
-
-        // See if a log fetch has been requested
-        Integer startThreadId = logFetchStartId.get(device.getAddress());
-        if (startThreadId != null) {
-            mServiceLogger.d("Unable to download log from " + device.getAddress() + " list of threads " + logFetchStartId);
-            smartStop(device);
-        }
+        mBinder.log(device, LogContract.Log.Level.WARNING, "onError: " + message +
+                " errorCode: " + errorCode + "(" + GattError.parseConnectionError(errorCode) + ")");
     }
 
 
@@ -645,7 +473,7 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
         }
     }
 	private void loadAndConnectSavedDevices() {
-        mServiceLogger.e("LoadAndConnectSaveDevices");
+        mServiceLogger.d("LoadAndConnectSaveDevices");
 		// Need to access context this way so all apps using service (and with the sharedUserId)
 		// have the same preferences and connect to the same devices
         Context mContext = null;
@@ -684,7 +512,7 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 		builder.setColor(ContextCompat.getColor(this, R.color.actionBarColorDark));
 		builder.setShowWhen(false).setDefaults(0).setOngoing(true); // an ongoing notification will not be shown on Android Wear
 		builder.setGroup(EMGIMU_GROUP_ID).setGroupSummary(true);
-		builder.setContentTitle(getString(R.string.app_name));
+		builder.setContentTitle(getString(R.string.service_name));
 
 		final List<BluetoothDevice> managedDevices = getManagedDevices();
 		final List<BluetoothDevice> connectedDevices = getConnectedDevices();
@@ -758,15 +586,25 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 		nm.notify(device.getAddress(), NOTIFICATION_ID, notification);
 	}
 
+
 	private NotificationCompat.Builder getNotificationBuilder() {
-		final Intent parentIntent = new Intent(this, EmgImuService.class);
+
+        String channelId = "";
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            channelId = "org.sralab.emgimu.service";
+            NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+            nm.createNotificationChannel(new NotificationChannel(channelId, "EMG IMU Service", NotificationManager.IMPORTANCE_MIN));
+        }
+
+        final Intent parentIntent = new Intent(this, EmgImuService.class);
 		parentIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 		final Intent targetIntent = new Intent(this, EmgImuService.class);
 
 		// Both activities above have launchMode="singleTask" in the AndroidManifest.xml file, so if the task is already running, it will be resumed
 		final PendingIntent pendingIntent = PendingIntent.getActivities(this, OPEN_ACTIVITY_REQ, new Intent[] { parentIntent, targetIntent }, PendingIntent.FLAG_UPDATE_CURRENT);
 
-		final NotificationCompat.Builder builder = new NotificationCompat.Builder(this);
+		final NotificationCompat.Builder builder = new NotificationCompat.Builder(this, channelId);
 		builder.setContentIntent(pendingIntent).setAutoCancel(false);
 		builder.setSmallIcon(R.drawable.ic_stat_notify_proximity);
 		return builder;
@@ -810,11 +648,21 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
         LocalBroadcastManager.getInstance(this).sendBroadcast(broadcast);
     }
 
-    public void onEmgBuffReceived(final BluetoothDevice device, int [] value)
-    {
+    @Override
+    public void onEmgBuffReceived(BluetoothDevice device, int count, double[][] data) {
+        final int CHANNELS = data.length;
+        final int SAMPLES = data[0].length;
+	    double [] linearizedData = new double[CHANNELS * SAMPLES];
+
+	    for (int i = 0; i < CHANNELS; i++)
+	        for (int j = 0; j < SAMPLES; j++)
+	            linearizedData[i + j * CHANNELS] = data[i][j];
+
         final Intent broadcast = new Intent(BROADCAST_EMG_BUFF);
         broadcast.putExtra(EXTRA_DEVICE, device);
-        broadcast.putExtra(EXTRA_EMG_BUFF, value);
+        broadcast.putExtra(EXTRA_EMG_CHANNELS, CHANNELS);
+        broadcast.putExtra(EXTRA_EMG_COUNT, count);
+        broadcast.putExtra(EXTRA_EMG_BUFF, linearizedData);
         LocalBroadcastManager.getInstance(this).sendBroadcast(broadcast);
     }
 
@@ -838,15 +686,6 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
     @Override
     public void onOperationCompleted(BluetoothDevice device) {
 
-        mBinder.log(device, LogContract.Log.Level.DEBUG, "onOperationCompleted: " + logFetchStartId);
-
-        Integer startThreadId = logFetchStartId.get(device.getAddress());
-        if (startThreadId != null) {
-            mBinder.log(device, LogContract.Log.Level.INFO, "Log retrieval complete");
-            smartStop(device);
-        } else {
-            mBinder.log(device, LogContract.Log.Level.WARNING, "onOperationCompleted without log fetch intent");
-        }
     }
 
     @Override

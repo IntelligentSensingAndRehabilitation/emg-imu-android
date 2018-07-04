@@ -13,7 +13,6 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.crash.FirebaseCrash;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -57,9 +56,11 @@ public class FirebaseEmgLogger {
 
     private FirebaseEmgLogEntry log = null;
     private EmgImuManager mManager;
+    private String mDeviceMac;
 
     public FirebaseEmgLogger(EmgImuManager manager) {
         mManager = manager;
+        mDeviceMac = manager.getAddress();
 
         mAuth = FirebaseAuth.getInstance();
         mUser = mAuth.getCurrentUser(); // Log in performed by main service
@@ -77,7 +78,8 @@ public class FirebaseEmgLogger {
     }
 
     private DocumentReference getDocument(String DN) {
-        return mDb.collection("emgLogs").document(mUser.getUid()).collection(mManager.getAddress()).document(DN);
+        mManager.log(LogContract.Log.Level.DEBUG, "getDocument(" + DN + ") for address " + mDeviceMac);
+        return mDb.collection("emgLogs").document(mUser.getUid()).collection(mDeviceMac).document(DN);
     }
 
     private DocumentReference getDocument() {
@@ -106,14 +108,13 @@ public class FirebaseEmgLogger {
                     .addOnSuccessListener(new OnSuccessListener<Void>() {
                         @Override
                         public void onSuccess(Void aVoid) {
-                            Log.d(TAG, mManager.getAddress() + " Document " + DN + " successfully saved");
+                            mManager.log(LogContract.Log.Level.DEBUG, mDeviceMac + " Document " + DN + " successfully saved");
                         }
                     })
                     .addOnFailureListener(new OnFailureListener() {
                         @Override
                         public void onFailure(@NonNull Exception e) {
-                            Log.w(TAG, "Error adding document " + DN, e);
-                            FirebaseCrash.report(new Exception("Error adding document " + DN));
+                            mManager.log(LogContract.Log.Level.ERROR, "Error adding document " + DN + " Error: " + e.toString());
                         }
                     });
         });
@@ -130,7 +131,7 @@ public class FirebaseEmgLogger {
         }
 
         String DN = FirebaseEmgLogEntry.FilenameFromTimestamp(timestamp);
-        Log.d(TAG, "Fetching log for " + DN + " Sensor: " + mManager.getAddress() + " PID: " + android.os.Process.myPid() + " TID " + android.os.Process.myTid() + " UID " + android.os.Process.myUid());
+        Log.d(TAG, "Fetching log for " + DN + " Sensor: " + mDeviceMac + " PID: " + android.os.Process.myPid() + " TID " + android.os.Process.myTid() + " UID " + android.os.Process.myUid());
 
         mManager.log(LogContract.Log.Level.INFO, "Preparing Firestore DB: " + getDocument(DN).getPath());
 
@@ -183,9 +184,7 @@ public class FirebaseEmgLogger {
             try {
                 addSample(timestamp, emgPower);
             } catch (Exception e) {
-                FirebaseCrash.report(e);
-                // This should never happen
-                e.printStackTrace();
+                Log.e(TAG, "Failed adding sample to log:", e);
             }
         }
     }

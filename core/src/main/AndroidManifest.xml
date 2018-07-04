@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!--
+<?xml version="1.0" encoding="utf-8"?><!--
   ~ Copyright (c) 2015, Nordic Semiconductor
   ~ All rights reserved.
   ~
@@ -21,94 +20,61 @@
   ~ USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-	package="org.sralab.emgimu"
-	android:sharedUserId="org.sralab.emgimu"
-	android:installLocation="auto">
+    package="org.sralab.emgimu.config"
+    android:installLocation="auto"
+    android:sharedUserId="org.sralab.emgimu">
 
-	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-	<uses-permission android:name="android.permission.BLUETOOTH" />
-	<uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
-	<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-	<uses-permission android:name="no.nordicsemi.android.LOG" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="no.nordicsemi.android.LOG" />
 
-	<uses-feature
-		android:name="android.hardware.bluetooth_le"
-		android:required="true" />
+    <uses-feature
+        android:name="android.hardware.bluetooth_le"
+        android:required="true" />
 
-	<application
-		android:fullBackupContent="true"
-		android:allowBackup="true"
-		android:icon="@mipmap/ic_launcher"
-		android:roundIcon="@mipmap/ic_launcher_round"
-		android:label="@string/app_name"
-		android:theme="@style/AppTheme" >
+    <application
+        android:allowBackup="true"
+        android:fullBackupContent="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:theme="@style/AppTheme">
+        <activity
+            android:name="org.sralab.emgimu.launcher.LauncherActivity"
+            android:label="@string/app_name"
+            android:launchMode="singleTask"
+            android:theme="@style/AppTheme.TranslucentStatusBar">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
 
-		<activity
-			android:name="no.nordicsemi.android.nrftoolbox.FeaturesActivity"
-			android:label="@string/app_name"
-            android:theme="@style/AppTheme.TranslucentStatusBar"
-			android:launchMode="singleTask" >
-			<intent-filter>
-				<action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".ConfigActivity"
+            android:icon="@drawable/ic_proximity_feature"
+            android:label="@string/emgimu_feature_title"
+            android:launchMode="singleTask">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="org.sralab.emgimu.LAUNCHER" />
+            </intent-filter>
+        </activity>
 
-				<category android:name="android.intent.category.LAUNCHER" />
-			</intent-filter>
+        <meta-data
+            android:name="io.fabric.ApiKey"
+            android:value="8751562450c786ca67410fd4e08fbb7c9303dbea" />
 
-			<meta-data android:name="android.app.shortcuts"
-				android:resource="@xml/shortcuts" />
-
-		</activity>
-
-		<!-- Template plugin activities -->
-
-		<!-- Plug-in activities -->
-		<activity
-			android:name="no.nordicsemi.android.nrftoolbox.dfu.DfuActivity"
-			android:icon="@drawable/ic_dfu_feature"
-			android:label="@string/dfu_feature_title" >
-			<intent-filter>
-				<action android:name="android.intent.action.MAIN" />
-
-				<category android:name="org.sralab.emgimu.LAUNCHER" />
-			</intent-filter>
-		</activity>
-		<activity
-			android:name="no.nordicsemi.android.nrftoolbox.dfu.settings.SettingsActivity"
-			android:label="@string/dfu_settings_title" />
-		<activity
-			android:name="no.nordicsemi.android.nrftoolbox.dfu.NotificationActivity"
-			android:label="@string/dfu_feature_title" />
-
-		<activity
-			android:name="no.nordicsemi.android.nrftoolbox.dfu.DfuInitiatorActivity"
-			android:label="@string/dfu_service_title"
-			android:noHistory="true"
-			android:theme="@style/AppTheme.Translucent" >
-			<intent-filter>
-				<action android:name="no.nordicsemi.android.action.DFU_UPLOAD" />
-
-				<category android:name="android.intent.category.DEFAULT" />
-			</intent-filter>
-		</activity>
-
-
-
-		<service
-			android:name="org.sralab.emgimu.service.EmgImuService"
-			android:label="@string/emgimu_feature_title" />
-
-		<activity
-			android:name="org.sralab.emgimu.EmgImuActivity"
-			android:icon="@drawable/ic_proximity_feature"
-			android:label="@string/emgimu_feature_title"
-			android:launchMode="singleTask" >
-			<intent-filter>
-				<action android:name="android.intent.action.MAIN" />
-
-				<category android:name="org.sralab.emgimu.LAUNCHER" />
-			</intent-filter>
-		</activity>
-
-	</application>
+        <activity
+            android:name="org.sralab.emgimu.mve.MaxEMGActivity"
+            android:label="@string/title_activity_max_emg">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="org.sralab.emgimu.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
 
 </manifest>

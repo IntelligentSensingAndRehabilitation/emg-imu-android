@@ -23,7 +23,7 @@ package no.nordicsemi.android.nrftoolbox.utility;
 
 import android.util.Log;
 
-import no.nordicsemi.android.nrftoolbox.common.BuildConfig;
+import org.sralab.emgimu.common.BuildConfig;
 
 public class DebugLogger {
 	public static void v(final String tag, final String text) {

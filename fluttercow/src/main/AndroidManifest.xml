@@ -12,22 +12,20 @@
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
-    <application
+    <!--Cannot use these from both manifests
+        android:label="@string/fluttercow_name"
+        android:supportsRtl="true"
+        android:theme="@style/FlutterCowAppTheme"
         android:allowBackup="true"
         android:icon="@mipmap/ic_fluttercow_launcher"
-        android:label="@string/app_name"
-        android:supportsRtl="true"
-        android:theme="@style/FlutterCowAppTheme">
+        tools:replace="android:icon,android:theme,android:theme"-->
 
+    <application>
         <activity
-            android:name=".Game"
-            android:label="@string/app_name"
+            android:name="org.sralab.fluttercow.Game"
+            android:label="@string/fluttercow_name"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|screenLayout|fontScale|uiMode|orientation|screenSize|smallestScreenSize|layoutDirection"
             android:screenOrientation="portrait" >
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
             <intent-filter>
                 <action android:name="com.quchen.flappycow.Game" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -38,10 +36,8 @@
             </intent-filter>
         </activity>
 
-        <service
-            android:name="org.sralab.emgimu.service.EmgImuService"
-            android:label="@string/emgimu_feature_title" />
-
+        <meta-data
+            android:name="io.fabric.ApiKey"
+            android:value="8751562450c786ca67410fd4e08fbb7c9303dbea" />
     </application>
-
 </manifest>
