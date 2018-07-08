@@ -104,8 +104,8 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 
 	// TODO: optimize for device battery life, handle condition
     // when sensor is not detected (does not influence battery)
-    private final static int LOG_FETCH_PERIOD_MIN_S = 5;//*60;
-    private final static int LOG_FETCH_PERIOD_MAX_S = 15;//*60;
+    private final static int LOG_FETCH_PERIOD_MIN_S = 5*60;
+    private final static int LOG_FETCH_PERIOD_MAX_S = 15*60;
 
 	private final EmgImuBinder mBinder = new EmgImuBinder();
 
