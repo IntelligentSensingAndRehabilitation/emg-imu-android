@@ -134,22 +134,34 @@ public class MaxEMGActivity extends EmgImuBaseActivity implements EmgPowerView.O
 
     }
 
+    int discardCounter;
+
     @Override
     public void onDeviceReady(BluetoothDevice device) {
         // TODO: add dropdown to allow selecting device
         Log.d("DeviceAdapter", "Device added. Requested streaming: " + device);
         mService.streamPwr(device);
+
+        discardCounter = 20;
     }
 
     double mLpfValue = Double.NaN;
-    final double LPF_ALPHA = 0.05;
+    final double LPF_ALPHA = 0.1;
 
     @Override
     public void onEmgPwrReceived(final BluetoothDevice device, int value) {
 
+        // Let ADC warm up on chip
+        if (discardCounter > 0) {
+            discardCounter--;
+            return;
+        }
+
         // Initialize with first sample
-        if (Double.isNaN(mLpfValue))
+        if (Double.isNaN(mLpfValue)) {
             mLpfValue = value;
+            Log.d(TAG, "First value is: " + value);
+        }
 
         mLpfValue = mLpfValue * (1-LPF_ALPHA) + value * LPF_ALPHA;
 
