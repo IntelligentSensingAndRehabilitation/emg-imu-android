@@ -32,6 +32,7 @@ import android.util.Log;
 import com.google.firebase.analytics.FirebaseAnalytics;
 
 import org.sralab.emgimu.logging.FirebaseEmgLogger;
+import org.sralab.emgimu.logging.FirebaseStreamLogger;
 import org.sralab.emgimu.parser.RecordAccessControlPointParser;
 
 import java.nio.ByteBuffer;
@@ -112,6 +113,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
     private final static int RESPONSE_OPERAND_NOT_SUPPORTED = 9;
 
     private FirebaseEmgLogger fireLogger;
+    private FirebaseStreamLogger streamLogger;
     private List<EmgLogRecord> mRecords = new ArrayList<>();
     private boolean mAbort;
 
@@ -125,6 +127,9 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         EMG_LOG,
         UNKNOWN
     };
+
+    //! Data relating to logging to FireBase
+    private boolean mLogging = true;
 
 	public EmgImuManager(final Context context) {
 		super(context);
@@ -145,6 +150,19 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         createBond();
         super.connect(device);
         fireLogger = new FirebaseEmgLogger(this);
+
+        if (mLogging) {
+            Log.d(TAG, "Created stream logger");
+            streamLogger = new FirebaseStreamLogger(this);
+        }
+    }
+
+    public void close() {
+	    super.close();
+
+	    if (mLogging) {
+	        streamLogger.write();
+        }
     }
 
 	/**
@@ -213,11 +231,19 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 
 		@Override
 		protected void onDeviceDisconnected() {
+		    Log.d(TAG, "onDeviceDisconnected");
+
             mImuAccelCharacteristic = null;
             mEmgPwrCharacteristic = null;
             mEmgBuffCharacteristic = null;
             mEmgLogCharacteristic = null;
             mRecordAccessControlPointCharacteristic = null;
+
+            if (mLogging) {
+                Log.d(TAG, "Writing to stream logger");
+                streamLogger.write();
+                streamLogger = null;
+            }
 		}
 
         private int mLastBufferCount;
@@ -245,6 +271,10 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                         // check the sample counter and make sure no data was lost
                         int count = ByteBuffer.wrap(array).order(ByteOrder.LITTLE_ENDIAN).getShort();
                         parsed[0][i] = count * microvolts_per_lsb;
+
+                        if (mLogging) {
+                            streamLogger.addRawSample(new Date().getTime(), parsed[0][i]);
+                        }
                     }
 
                     mEmgBuff = parsed;
@@ -312,6 +342,11 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                     mEmgPwr = pwr_val;
                     mCallbacks.onEmgPwrReceived(device, mEmgPwr);
                     checkEmgClick(gatt.getDevice(), pwr_val);
+
+                    if (mLogging) {
+                        streamLogger.addPwrSample(new Date().getTime(), mEmgPwr);
+                    }
+
                     break;
                 case EMG_BUFF:
                     parseBuff(device, characteristic);
