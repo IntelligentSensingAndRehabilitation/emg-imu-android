@@ -30,7 +30,7 @@ public class GameOverDialog extends Dialog {
     private Game game;
 
     /** Milliseconds for game timer tick */
-    public static final long UPDATE_INTERVAL = 2000;
+    public static final long UPDATE_INTERVAL = 1000;
 
     private TextView tvCurrentScoreVal;
     private TextView tvBestScoreVal;

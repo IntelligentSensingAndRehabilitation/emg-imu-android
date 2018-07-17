@@ -16,6 +16,7 @@ import android.media.SoundPool;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.view.WindowManager;
 import android.widget.Toast;
 
 import java.util.List;
@@ -49,7 +50,7 @@ public class Game extends EmgImuBaseActivity {
 
     // Handle toggling the control mode
     public enum CONTROL_MODE { LINEAR, THRESHOLD };
-    private CONTROL_MODE mMode = CONTROL_MODE.LINEAR;
+    private CONTROL_MODE mMode = CONTROL_MODE.THRESHOLD;
     public void toggleMode() {
         mMode = (mMode == CONTROL_MODE.LINEAR) ? CONTROL_MODE.THRESHOLD : CONTROL_MODE.LINEAR;
     }
@@ -71,13 +72,7 @@ public class Game extends EmgImuBaseActivity {
      * Whether the music should play or not
      */
     public boolean musicShouldPlay = false;
-    
-    /** Time interval (ms) you have to press the backbutton twice in to exit */
-    private static final long DOUBLE_BACK_TIME = 1000;
-    
-    /** Saves the time of the last backbutton press*/
-    private long backPressed;
-    
+
     /** To do UI things from different threads */
     public MyHandler handler;
     
@@ -113,13 +108,14 @@ public class Game extends EmgImuBaseActivity {
         view = new GameView(this);
         setContentView(view);
 
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+
         // Obtain the FirebaseAnalytics instance.
         mFirebaseAnalytics = FirebaseAnalytics.getInstance(this);
 
         Bundle bundle = new Bundle();
         bundle.putString(FirebaseAnalytics.Param.ITEM_ID, "FLUTTERCOW_CREATED");
         mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.SELECT_CONTENT, bundle);
-
     }
 
     @Override
@@ -363,19 +359,6 @@ public class Game extends EmgImuBaseActivity {
             musicPlayer.start();
         }
         super.onResume();
-    }
-    
-    /**
-     * Prevent accidental exits by requiring a double press.
-     */
-    @Override
-    public void onBackPressed() {
-        if(System.currentTimeMillis() - backPressed < DOUBLE_BACK_TIME){
-            super.onBackPressed();
-        }else{
-            backPressed = System.currentTimeMillis();
-            Toast.makeText(this, getResources().getString(R.string.on_back_press), Toast.LENGTH_LONG).show();
-        }
     }
 
     /**
