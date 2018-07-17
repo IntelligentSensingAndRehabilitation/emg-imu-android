@@ -102,9 +102,15 @@ public class FirebaseStreamLogger {
 
 
     public void write() {
+
         if (log == null) {
             Log.e(TAG, "Someone is trying to update a log that isn't valid");
             throw new InvalidParameterException("Trying to update a null log");
+        }
+
+        if (log.getRawSamples().size() == 0 && log.getPwrSamples().size() == 0) {
+            Log.d(TAG, "Not writing log as no samples recorded");
+            return;
         }
 
         // Need to make a copy of this object because it will be replaced immediately after
