@@ -49,9 +49,10 @@ public class EmgPowerView extends View {
         init(attrs, defStyle);
     }
 
-    private double mMin = 100;
-    private double mMax = 4900;
-    private double mPwr = 2500;
+    private double mMin = 0;
+    private double mMax = 0;
+    private double mPwr = 0;
+    private double mThresh = 5000;
     private final double mMaxHeightPwr = Short.MAX_VALUE * 2; // The range of the graph
     public void setMinPower(double p)
     {
@@ -66,6 +67,9 @@ public class EmgPowerView extends View {
         mPwr = p;
         invalidate();
     }
+    public double getMin() { return mMin; }
+    public double getMax() { return mMax; }
+    public double getThreshold() { return mThresh; }
 
     /**
      * Converts an EMG power into a screen height, where the height
@@ -147,6 +151,10 @@ public class EmgPowerView extends View {
         return Integer.toString((int) mMin);
     }
 
+    private String threshDescribeString() {
+        return Integer.toString((int) mThresh);
+    }
+
     private void invalidateTextPaintAndMeasurements() {
         mBarPaint.setColor(mBarColor);
         mLinePaint.setColor(mLineColor);
@@ -171,9 +179,11 @@ public class EmgPowerView extends View {
         int contentWidth = getWidth() - paddingLeft - paddingRight;
 
         int lineLeft = paddingLeft;
-        int lineRight = (int) (paddingLeft + contentWidth * 0.45);
-        int barLeft = (int) (paddingLeft + contentWidth * 0.5);
-        int barRight = paddingLeft + contentWidth;
+        int lineRight = (int) (paddingLeft + contentWidth * 0.3);
+        int barLeft = (int) (paddingLeft + contentWidth * 0.36);
+        int barRight = (int) (paddingLeft + contentWidth * 0.63);
+        int threshLeft = (int) (paddingLeft + contentWidth * 0.69);
+        int threshRight = (int) (paddingLeft + contentWidth * 1.0);
 
         Rect rectangle = new Rect(barLeft, pwrToHeight(0),
                 barRight, pwrToHeight(mPwr));
@@ -184,6 +194,9 @@ public class EmgPowerView extends View {
 
         int maxHeight = pwrToHeight(mMax);
         canvas.drawLine(lineLeft, maxHeight, lineRight, maxHeight, mLinePaint);
+
+        int threshHeight = pwrToHeight(mThresh);
+        canvas.drawLine(threshLeft, threshHeight, threshRight, threshHeight, mLinePaint);
 
         // Draw the text.
         float stringHeight = maxHeight - mTextHeight;
@@ -206,6 +219,11 @@ public class EmgPowerView extends View {
                 stringHeight,
                 mTextPaint);
 
+        stringHeight = threshHeight + mTextDimension;
+        canvas.drawText(threshDescribeString(),
+                (threshLeft + threshRight) / 2,
+                stringHeight,
+                mTextPaint);
 
     }
 
@@ -216,18 +234,39 @@ public class EmgPowerView extends View {
 
     private GestureDetector mDetector;
     class mListener extends GestureDetector.SimpleOnGestureListener {
+
+        // Track which side we are scrolling
+        private int scrolling = 0;
+
         @Override
         public boolean onDown(MotionEvent e) {
+
+            scrolling = 0;
+
             if (mAllowInput == false)
                 return false;
 
-            // Ignore gestures on the bar graph side of screen
-            if (e.getX() > getWidth() / 2)
-                return false;
+            // Left side swipes are for current power
+            if (e.getX() < getWidth() / 3) {
 
-            // Ignore gestures if they do not start near the current bar
-            if (Math.abs(e.getY() - pwrToHeight(mMax)) > 100)
-                return false;
+                // Ignore gestures if they do not start near the current bar
+                if (Math.abs(e.getY() - pwrToHeight(mMax)) > 100)
+                    return false;
+
+                scrolling = 1;
+            }
+
+
+            // Right side swipes are for current power threshold
+            if (e.getX() > getWidth() * 2 / 3) {
+
+                // Ignore gestures if they do not start near the current bar
+                if (Math.abs(e.getY() - pwrToHeight(mThresh)) > 100)
+                    return false;
+
+                scrolling = 2;
+            }
+
 
             return true;
         }
@@ -238,7 +277,13 @@ public class EmgPowerView extends View {
 
             double h = e2.getY();
             double p = heightToPwr(h);
-            mMax = p;
+
+            if (scrolling == 1) {
+                mMax = p;
+            } else if (scrolling == 2) {
+                mThresh = p;
+            }
+
             invalidate();
             return true;
         }

@@ -18,12 +18,10 @@ public class MaxEMGActivity extends EmgImuBaseActivity implements EmgPowerView.O
     private EmgImuService.EmgImuBinder mService;
 
     private EmgPowerView mPwrView;
-    private Button mClearMaxButton;
-    private Button mSaveMaxButton;
 
     private double mMax = Double.NaN;
     private double mMin = Double.NaN;
-
+    
     @Override
     protected void onCreateView(final Bundle savedInstanceState) {
         setContentView(R.layout.activity_max_emg);
@@ -31,17 +29,28 @@ public class MaxEMGActivity extends EmgImuBaseActivity implements EmgPowerView.O
         mPwrView = findViewById(R.id.emg_power_view);
         mPwrView.setOnMaxChangedEventListener(this);
 
-        mClearMaxButton = findViewById(R.id.clear_max_button);
+        Button mClearMaxButton = findViewById(R.id.clear_max_button);
         mClearMaxButton.setOnClickListener(view -> {
             clearMax();
             clearMin();
         });
 
-        mSaveMaxButton = findViewById(R.id.save_max_button);
+        Button mSaveMaxButton = findViewById(R.id.save_max_button);
         mSaveMaxButton.setOnClickListener(view -> {
             // TODO: save this trial to firebase
+            Log.e(TAG, "Saving threshold is not implemented");
             clearMax();
             clearMin();
+        });
+
+        Button mSaveThreshold = findViewById(R.id.save_threshold_button);
+        mSaveThreshold.setOnClickListener(view -> {
+            double thresh = mPwrView.getThreshold();
+            double min = mPwrView.getMin();
+
+            min = min + (thresh - min) * 0.1;
+
+            Log.d(TAG, "Saving threshold " + thresh + " and minimum " + min);
         });
     }
 
