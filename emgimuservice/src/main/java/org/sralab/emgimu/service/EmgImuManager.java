@@ -50,6 +50,7 @@ import java.util.UUID;
 
 import no.nordicsemi.android.log.Logger;
 import no.nordicsemi.android.ble.BleManager;
+import no.nordicsemi.android.ble.Request;
 
 import static java.lang.Math.abs;
 

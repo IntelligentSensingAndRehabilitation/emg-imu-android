@@ -26,14 +26,13 @@ android {
 }
 
 dependencies {
-    implementation project(':ble')
     implementation project(':common')
     implementation project(':emgimuservice')
 
     implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation 'no.nordicsemi.android:ble:1.1.0'
     implementation "com.android.support:appcompat-v7:$supportLib"
     implementation "com.android.support:design:$supportLib"
-
     implementation "com.google.firebase:firebase-core:$firebaseCoreVer"
     implementation "com.crashlytics.sdk.android:crashlytics:$crashlyticsVer"
 }
