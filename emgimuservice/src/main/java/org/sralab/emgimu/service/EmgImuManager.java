@@ -26,6 +26,8 @@ import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
 import android.content.Context;
+import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
 
@@ -155,6 +157,8 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
             Log.d(TAG, "Created stream logger");
             streamLogger = new FirebaseStreamLogger(this);
         }
+
+        loadThreshold();
     }
 
     public void close() {
@@ -708,7 +712,8 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
     private int mEmgPwr = -1;
     public int getEmgPwr() { return mEmgPwr; }
 
-    private double MAX_SCALE = 0x1500; // TODO: this should be user calibrate-able, or automatic
+    // TODO: this should be user calibrate-able, or automatic
+    private double MAX_SCALE = Short.MAX_VALUE * 2;
     private double MIN_SCALE = 0x0000; // TODO: this should be user calibrate-able, or automatic
 
     // Scale EMG from 0 to 1.0 using configurable endpoints
@@ -724,8 +729,8 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
     //! Output true when EMG power goes over threshold
     // TODO: these should be in preferences or automatic
     private long THRESHOLD_TIME_NS = 500 * (int)1e6; // 500 ms
-    private final int HIGH_THRESHOLD = 2000;
-    private final int LOW_THRESHOLD = 1000;
+    private double HIGH_THRESHOLD = 2000;
+    private double LOW_THRESHOLD = 1000;
     private long mThresholdTime = 0;
     private boolean overThreshold;
 
@@ -859,4 +864,21 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         writeCharacteristic(racpCharacteristic);
     }
 
+    public void setThreshold(double min, double max) {
+        Log.d(TAG, "New threshold " + min + " " + max);
+
+        SharedPreferences sharedPref = getContext().getSharedPreferences(EmgImuService.SERVICE_PREFERENCES, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putFloat(EmgImuService.MIN_THRESHOLD_PREFERENCE, (float) min);
+        editor.putFloat(EmgImuService.MAX_THRESHOLD_PREFERENCE, (float) max);
+        editor.commit();
+    }
+
+    public void loadThreshold() {
+        SharedPreferences sharedPref = getContext().getSharedPreferences(EmgImuService.SERVICE_PREFERENCES, Context.MODE_PRIVATE);
+        LOW_THRESHOLD = (double) sharedPref.getFloat(EmgImuService.MIN_THRESHOLD_PREFERENCE, (float) LOW_THRESHOLD);
+        HIGH_THRESHOLD = (double) sharedPref.getFloat(EmgImuService.MAX_THRESHOLD_PREFERENCE, (float) HIGH_THRESHOLD);
+
+        Log.d(TAG, "Loaded threshold " + LOW_THRESHOLD + " " + HIGH_THRESHOLD);
+    }
 }

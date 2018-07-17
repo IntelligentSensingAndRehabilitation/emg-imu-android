@@ -96,6 +96,8 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 
     public static final String SERVICE_PREFERENCES = "org.sralab.emgimu.PREFERENCES";
     public static final String DEVICE_PREFERENCE = "org.sralab.emgimu.DEVICE_LIST";
+    public static final String MIN_THRESHOLD_PREFERENCE = "org.sralab.emgimu.MIN_THRESHOLD_PREFERENCE";
+    public static final String MAX_THRESHOLD_PREFERENCE = "org.sralab.emgimu.MAX_THRESHOLD_PREFERENCE";
 
 	private final static String EMGIMU_GROUP_ID = "emgimu_connected_sensors";
 	private final static int NOTIFICATION_ID = 1000;
@@ -189,6 +191,12 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
         public EmgImuManager.STREAMING_MODE getStreamingMode(final BluetoothDevice device) {
             final EmgImuManager manager = (EmgImuManager) getBleManager(device);
             return manager.getStreamingMode();
+        }
+
+        //! Set threshold
+        public void setThreshold(final BluetoothDevice device, double minThreshold, double maxThreshold) {
+            final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+            manager.setThreshold(minThreshold, maxThreshold);
         }
 
         public int getLoggerProfileTitle() {

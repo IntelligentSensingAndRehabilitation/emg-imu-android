@@ -21,6 +21,8 @@ public class MaxEMGActivity extends EmgImuBaseActivity implements EmgPowerView.O
 
     private double mMax = Double.NaN;
     private double mMin = Double.NaN;
+
+    private BluetoothDevice mDevice;
     
     @Override
     protected void onCreateView(final Bundle savedInstanceState) {
@@ -48,9 +50,11 @@ public class MaxEMGActivity extends EmgImuBaseActivity implements EmgPowerView.O
             double thresh = mPwrView.getThreshold();
             double min = mPwrView.getMin();
 
-            min = min + (thresh - min) * 0.1;
+            min = min + (thresh - min) * 0.5;
 
             Log.d(TAG, "Saving threshold " + thresh + " and minimum " + min);
+
+            mService.setThreshold(mDevice, min, thresh);
         });
     }
 
@@ -152,6 +156,8 @@ public class MaxEMGActivity extends EmgImuBaseActivity implements EmgPowerView.O
         mService.streamPwr(device);
 
         discardCounter = 20;
+
+        mDevice = device;
     }
 
     double mLpfValue = Double.NaN;
