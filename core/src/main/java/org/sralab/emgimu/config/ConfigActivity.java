@@ -69,6 +69,13 @@ public class ConfigActivity extends EmgImuBaseActivity {
 	}
 
 	@Override
+	public void onBatteryValueReceived(final BluetoothDevice device, final int value)
+	{
+		if (mAdapter != null)
+			mAdapter.onBatteryValueReceived(device);
+	}
+
+	@Override
 	public void onDeviceConnecting(final BluetoothDevice device) {
 		if (mAdapter != null)
 			mAdapter.onDeviceAdded(device);

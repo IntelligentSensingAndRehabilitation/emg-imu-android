@@ -209,6 +209,12 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
             return manager.getMaxThreshold();
         }
 
+        //! Get battery
+        public int getBattery(final BluetoothDevice device) {
+            final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+            return manager.getBatteryValue();
+        }
+
         public int getLoggerProfileTitle() {
             return R.string.emgimu_feature_title;
             //return 0; // Use the line above to enable logging, but this slows down application

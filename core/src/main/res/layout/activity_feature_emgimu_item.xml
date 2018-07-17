@@ -35,17 +35,6 @@
 		android:layout_width="fill_parent"
 		android:layout_height="wrap_content">
 
-		<no.nordicsemi.android.nrftoolbox.widget.TrebuchetBoldTextView
-			android:id="@+id/name"
-			android:layout_width="wrap_content"
-			android:layout_height="50dip"
-			android:ellipsize="marquee"
-			android:gravity="center_vertical"
-			android:lines="1"
-            android:layout_centerVertical="true"
-			android:textSize="20sp"
-			android:textColor="@android:color/black"/>
-
 		<TextView
 			android:id="@+id/address"
 			android:layout_width="wrap_content"
@@ -57,11 +46,22 @@
 			android:paddingRight="10dp"
 			android:textSize="12sp" />
 
+		<TextView
+			android:id="@+id/battery"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_centerVertical="true"
+			android:layout_toRightOf="@id/address"
+			android:lines="1"
+			android:paddingLeft="10dp"
+			android:paddingRight="10dp"
+			android:textSize="12sp" />
+
 		<ImageButton
 			android:id="@+id/action_pwr_buffered"
 			android:layout_width="wrap_content"
 			android:layout_height="wrap_content"
-            android:layout_toRightOf="@id/address"
+            android:layout_toLeftOf="@id/action_disconnect"
             android:layout_centerVertical="true"
 			android:src="@drawable/ic_action_download_normal"/>
 

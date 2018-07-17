@@ -93,6 +93,11 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
 		return mDevices.size();
 	}
 
+	public void onBatteryValueReceived(final BluetoothDevice device) {
+        final int position = mDevices.indexOf(device);
+        notifyItemChanged(position);
+    }
+
 	public void onDeviceAdded(final BluetoothDevice device) {
         final int position = mDevices.indexOf(device);
 		if (position == -1) {
@@ -152,8 +157,8 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
     }
 
 	public class ViewHolder extends RecyclerView.ViewHolder {
-		private TextView nameView;
-		private TextView addressView;
+		private TextView batteryView;
+        private TextView addressView;
         private ViewGroup layoutView;
         private ImageButton downloadMode;
         private ImageButton actionDisconnect;
@@ -166,8 +171,8 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
         public ViewHolder(final View itemView) {
 			super(itemView);
 
-			nameView = (TextView) itemView.findViewById(R.id.name);
 			addressView = (TextView) itemView.findViewById(R.id.address);
+            batteryView = (TextView) itemView.findViewById(R.id.battery);
             layoutView =  (ViewGroup) itemView.findViewById(R.id.graph_pwr);
             downloadMode = (ImageButton) itemView.findViewById(R.id.action_pwr_buffered);
             actionDisconnect = (ImageButton) itemView.findViewById(R.id.action_disconnect);
@@ -230,11 +235,14 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
 		private void bind(final BluetoothDevice device) {
 			final int state = mService.getConnectionState(device);
 
-			String name = device.getName();
-			if (TextUtils.isEmpty(name))
-				name = nameView.getResources().getString(R.string.emgimu_default_device_name);
-			nameView.setText(name);
 			addressView.setText(device.getAddress());
+
+			final int battery = mService.getBattery(device);
+			if (battery != -1) {
+                double voltage = 3.0 + 1.2 * (battery / 100.0);
+                Log.d("DeviceAdapter", "(" + battery + ") " + voltage);
+                batteryView.setText(String.format("%02d%% (%.2fV)", battery, voltage));
+            }
 
             // Color of disconnect button should indicate connection status
             final ColorStateList color = state == BluetoothGatt.STATE_CONNECTED ? connectedColor : disconnectedColor;
