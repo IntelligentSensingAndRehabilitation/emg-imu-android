@@ -26,13 +26,13 @@ android {
 }
 
 dependencies {
+    implementation project(":ble")
     implementation project(":common")
 
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation "com.android.support:appcompat-v7:$supportLib"
     implementation "com.android.support:design:$supportLib"
     implementation 'no.nordicsemi.android:log:2.1.1'
-    implementation 'no.nordicsemi.android:ble:1.1.0'
 
     implementation 'com.firebase:firebase-jobdispatcher:0.8.5'
 

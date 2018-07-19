@@ -26,13 +26,13 @@ android {
 }
 
 dependencies {
+    implementation project(':ble')
     implementation project(':common')
     implementation project(':emgimuservice')
 
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation "com.android.support:appcompat-v7:$supportLib"
     implementation "com.android.support:design:$supportLib"
-    implementation 'no.nordicsemi.android:ble:1.1.0'
     implementation 'no.nordicsemi.android.support.v18:scanner:1.0.0'
     implementation 'no.nordicsemi.android:log:2.1.1'
     implementation "com.google.firebase:firebase-auth:$firebaseAuthVer"
