@@ -113,7 +113,7 @@ public class FirebaseStreamLogger {
         String DN = mLog.DocumentName();
 
         Log.d(TAG, "Writing " + DN + " " + log.getRawSamples().size() + " raw samples and " + log.getPwrSamples().size() + " power samples");
-        mManager.log(LogContract.Log.Level.INFO, "Writing stream " + DN + log.getRawSamples().size() + " raw samples and " + log.getPwrSamples() + " power samples");
+        mManager.log(LogContract.Log.Level.INFO, "Writing stream " + DN + log.getRawSamples().size() + " raw samples and " + log.getPwrSamples().size() + " power samples");
 
         Handler mainHandler = new Handler(Looper.getMainLooper());
         mainHandler.post(()-> {
