@@ -56,6 +56,7 @@ public class MaxEMGActivity extends EmgImuBaseActivity implements EmgPowerView.O
 
             mService.setThreshold(mDevice, min, thresh);
         });
+
     }
 
     //! Clear the prior max by setting to zero
@@ -158,6 +159,10 @@ public class MaxEMGActivity extends EmgImuBaseActivity implements EmgPowerView.O
         discardCounter = 20;
 
         mDevice = device;
+
+        double thresh = mService.getMaxThreshold(device);
+        Log.d(TAG, "Threshold loaded: " + thresh);
+        mPwrView.setThreshold(thresh);
     }
 
     double mLpfValue = Double.NaN;

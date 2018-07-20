@@ -881,4 +881,12 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 
         Log.d(TAG, "Loaded threshold " + LOW_THRESHOLD + " " + HIGH_THRESHOLD);
     }
+
+    public double getMinThreshold() {
+        return LOW_THRESHOLD;
+    }
+
+    public double getMaxThreshold() {
+        return HIGH_THRESHOLD;
+    }
 }

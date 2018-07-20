@@ -70,6 +70,7 @@ public class EmgPowerView extends View {
     public double getMin() { return mMin; }
     public double getMax() { return mMax; }
     public double getThreshold() { return mThresh; }
+    public void setThreshold(double thresh) { mThresh = thresh; }
 
     /**
      * Converts an EMG power into a screen height, where the height
