@@ -149,7 +149,6 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 
 	@Override
     public void connect(final BluetoothDevice device) {
-        createBond();
         super.connect(device);
         fireLogger = new FirebaseEmgLogger(this);
 
