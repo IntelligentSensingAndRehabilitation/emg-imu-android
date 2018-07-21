@@ -115,7 +115,7 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
     private FirebaseAnalytics mFirebaseAnalytics;
 
     private ILogSession mLogSession;
-    private final ServiceLogger mServiceLogger = new ServiceLogger(TAG, this, mLogSession);
+    private ServiceLogger mServiceLogger = new ServiceLogger(TAG, this, mLogSession);
 
 	/**
 	 * This local binder is an interface for the bonded activity to operate with the proximity sensor
@@ -286,7 +286,8 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 
         final int titleId = mBinder.getLoggerProfileTitle();
         if (titleId > 0) {
-            mLogSession = Logger.newSession(getApplicationContext(), getString(titleId), "Service");
+            mLogSession = Logger.newSession(getApplicationContext(), "Service", "Service", "Service");
+            mServiceLogger = new ServiceLogger(TAG, this, mLogSession);
         }
 
         mServiceLogger.d("onServiceCreated");
@@ -448,7 +449,7 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
         final int titleId = mBinder.getLoggerProfileTitle();
         ILogSession logSession = null;
         if (titleId > 0) {
-            logSession = Logger.newSession(getApplicationContext(), getString(titleId), device.getAddress(), device.getName());
+            logSession = Logger.newSession(getApplicationContext(), "Device", device.getAddress(), device.getName());
         }
         return logSession;
 	}

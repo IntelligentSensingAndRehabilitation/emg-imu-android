@@ -61,7 +61,7 @@ public class EmgLogFetchJobService extends JobService implements EmgImuManagerCa
 
         /**** Store information required to get log ****/
         String device_mac = job.getExtras().getString("device_mac");
-        mLogSession = Logger.newSession(getApplicationContext(), device_mac, "FetchLog");
+        mLogSession = Logger.newSession(getApplicationContext(), "FetchLog", device_mac, "FetchLog");
         mJob = job;
         mServiceLogger.i("onStartJob");
 
