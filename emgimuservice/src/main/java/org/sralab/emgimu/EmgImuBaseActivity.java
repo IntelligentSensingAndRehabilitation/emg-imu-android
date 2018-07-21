@@ -78,6 +78,18 @@ public abstract class EmgImuBaseActivity extends BleMulticonnectProfileServiceRe
         LocalBroadcastManager.getInstance(this).unregisterReceiver(mCommonBroadcastReceiver);
     }
 
+    @Override
+    protected void onResume() {
+        // Start the service here because we want it to be sticky for at least
+        // a short while when changing between activities to avoid constantly
+        // rebinding the BLE device.
+        final Intent service = new Intent(this, getServiceClass());
+        startService(service);
+
+        // This actually triggers binding to the service
+        super.onResume();
+    }
+
     private static IntentFilter makeIntentFilter() {
         final IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(EmgImuService.BROADCAST_EMG_RAW);

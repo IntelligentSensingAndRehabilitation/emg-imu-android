@@ -338,7 +338,7 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 
         mServiceLogger.d("onStartCommand: " + intent + " " + flags + " " + startId);
 
-        return START_NOT_STICKY;
+        return START_STICKY;
     }
 
     @Override
@@ -350,9 +350,16 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
     }
 
 
+    private boolean mBound = false;
+    private final Object mLock = new Object();
+
     @Override
     public IBinder onBind(final Intent intent) {
         mServiceLogger.d("onBind: " + intent);
+
+        synchronized (mLock) {
+            mBound = true;
+        }
 
         // We have been starting by a service. Attempt to
         loadAndConnectSavedDevices();
@@ -378,12 +385,22 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
     @Override
     public final void onRebind(final Intent intent) {
         mServiceLogger.d("onRebind: " + intent);
+
+        synchronized (mLock) {
+            mBound = true;
+        }
+
         super.onRebind(intent);
 
     }
 
     @Override
 	protected void onRebind() {
+
+        synchronized (mLock) {
+            mBound = true;
+        }
+
 		// When the activity rebinds to the service, remove the notification
 		cancelNotifications();
 	}
@@ -391,6 +408,21 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 	@Override
 	public void onUnbind() {
         mBinder.log(LogContract.Log.Level.INFO, "onUnbind");
+
+        synchronized (mLock) {
+            mBound = false;
+        }
+
+        getHandler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                if (mBound == false) {
+                    mServiceLogger.i("Timeout occurred and service still not bound. Shutting down.");
+                    stopSelf();
+                }
+            }
+        }, 5000);
+
         createBackgroundNotification();
 	}
 
