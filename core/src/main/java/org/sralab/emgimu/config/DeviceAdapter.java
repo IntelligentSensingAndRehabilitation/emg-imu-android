@@ -240,7 +240,6 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
 			final int battery = mService.getBattery(device);
 			if (battery != -1) {
                 double voltage = 3.0 + 1.2 * (battery / 100.0);
-                Log.d("DeviceAdapter", "(" + battery + ") " + voltage);
                 batteryView.setText(String.format("%02d%% (%.2fV)", battery, voltage));
             }
 
