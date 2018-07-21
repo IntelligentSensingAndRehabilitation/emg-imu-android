@@ -155,9 +155,11 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         super.connect(device);
         fireLogger = new FirebaseEmgLogger(this);
 
-        if (mLogging) {
-            Log.d(TAG, "Created stream logger");
-            streamLogger = new FirebaseStreamLogger(this);
+        synchronized (this) {
+            if (mLogging) {
+                Log.d(TAG, "Created stream logger");
+                streamLogger = new FirebaseStreamLogger(this);
+            }
         }
 
         loadThreshold();
@@ -166,8 +168,12 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
     public void close() {
 	    super.close();
 
-	    if (mLogging) {
-	        streamLogger.write();
+        synchronized (this) {
+            if (mLogging && streamLogger != null) {
+                Log.d(TAG, "Writing to stream logger");
+                streamLogger.write();
+                streamLogger = null;
+            }
         }
     }
 
@@ -245,10 +251,12 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
             mEmgLogCharacteristic = null;
             mRecordAccessControlPointCharacteristic = null;
 
-            if (mLogging) {
-                Log.d(TAG, "Writing to stream logger");
-                streamLogger.write();
-                streamLogger = null;
+            synchronized (this) {
+                if (mLogging && streamLogger != null) {
+                    Log.d(TAG, "Writing to stream logger");
+                    streamLogger.write();
+                    streamLogger = null;
+                }
             }
 		}
 
@@ -323,7 +331,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
             mCallbacks.onEmgPwrReceived(device, mEmgPwr);
             checkEmgClick(device, pwr_val);
 
-            if (mLogging) {
+            if (mLogging && streamLogger != null) {
                 streamLogger.addPwrSample(ts_ms, mEmgPwr);
             }
         }
@@ -416,7 +424,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                         int count = ByteBuffer.wrap(array).order(ByteOrder.LITTLE_ENDIAN).getShort();
                         parsed[0][i] = count * microvolts_per_lsb;
 
-                        if (mLogging) {
+                        if (mLogging && streamLogger != null) {
                             long offset_ms = (long) (1000.0 * i / EMG_FS);
                             streamLogger.addRawSample(buf_ts_ms + offset_ms, parsed[0][i]);
                         }
