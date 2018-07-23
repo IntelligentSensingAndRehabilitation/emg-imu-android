@@ -261,7 +261,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 
                     double ina333_gain = 101;   // for 1k resistor
                     double bandpass_gain = 10;  //# 1M / 100k
-                    double nrf52383_gain = 1.0; // more easily programmable now differential
+                    double nrf52383_gain = 1.0 / 6.0; // more easily programmable now differential
                     double analog_gain = ina333_gain * bandpass_gain;
 
                     double lsb_per_v = analog_gain * nrf52383_gain / 0.6 * (1<<13);
