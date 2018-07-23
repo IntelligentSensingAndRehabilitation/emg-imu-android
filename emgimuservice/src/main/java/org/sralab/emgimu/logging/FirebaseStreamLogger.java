@@ -51,7 +51,7 @@ public class FirebaseStreamLogger {
      * subsequently the timestamps will be seconds since T0 as a double precision.
      */
 
-    final private FirebaseStreamEntry log = new FirebaseStreamEntry();
+    private FirebaseStreamEntry log;
     private EmgImuManager mManager;
     private String mDeviceMac;
 
@@ -77,6 +77,8 @@ public class FirebaseStreamLogger {
                 .setTimestampsInSnapshotsEnabled(true)
                 .build();
         mDb.setFirestoreSettings(settings);
+
+        log = new FirebaseStreamEntry();
     }
 
     private DocumentReference getDocument(String DN) {
@@ -89,7 +91,10 @@ public class FirebaseStreamLogger {
             throw new InvalidParameterException("Need to prepare log");
         }
 
-        log.addRawSample(timestamp, sample);
+        boolean full = log.addRawSample(timestamp, sample);
+
+        if (full)
+            flushLog();
     }
 
     public void addPwrSample(long timestamp, double sample) {
@@ -97,9 +102,15 @@ public class FirebaseStreamLogger {
             throw new InvalidParameterException("Need to prepare log");
         }
 
-        log.addPwrSample(timestamp, sample);
+        boolean full = log.addPwrSample(timestamp, sample);
+        if (full)
+            flushLog();
     }
 
+    public void flushLog() {
+        write();
+        log = new FirebaseStreamEntry();
+    }
 
     public void write() {
 

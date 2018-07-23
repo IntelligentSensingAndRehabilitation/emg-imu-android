@@ -62,7 +62,7 @@ public class FirebaseStreamEntry {
      * @param timestamp new sample timestamp
      * @param sample new sample power
      */
-    public void addRawSample(long timestamp, double sample) {
+    public boolean addRawSample(long timestamp, double sample) {
         if (T0 == 0) {
             T0 = DateFromTimestamp(timestamp).getTime();
         }
@@ -71,6 +71,8 @@ public class FirebaseStreamEntry {
 
         this.raw_timestamps.add(delta);
         this.raw_samples.add(sample);
+
+        return logFull();
     }
 
     /**
@@ -78,7 +80,7 @@ public class FirebaseStreamEntry {
      * @param timestamp new sample timestamp
      * @param sample new sample power
      */
-    public void addPwrSample(long timestamp, double sample) {
+    public boolean addPwrSample(long timestamp, double sample) {
         if (T0 == 0) {
             T0 = DateFromTimestamp(timestamp).getTime();
         }
@@ -87,6 +89,12 @@ public class FirebaseStreamEntry {
 
         this.pwr_timestamps.add(delta);
         this.pwr_samples.add(sample);
+
+        return logFull();
+    }
+
+    public boolean logFull() {
+        return (this.pwr_samples.size() + this.raw_samples.size()) > 10000;
     }
 
     /**
