@@ -94,7 +94,7 @@ public class FirebaseStreamEntry {
     }
 
     public boolean logFull() {
-        return (this.pwr_samples.size() + this.raw_samples.size()) > 10000;
+        return (this.pwr_samples.size() + this.raw_samples.size()) > 4000;
     }
 
     /**
