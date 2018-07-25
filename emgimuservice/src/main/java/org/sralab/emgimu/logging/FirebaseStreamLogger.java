@@ -140,12 +140,14 @@ public class FirebaseStreamLogger {
                         @Override
                         public void onSuccess(Void aVoid) {
                             mManager.log(LogContract.Log.Level.DEBUG, mDeviceMac + " Document " + DN + " successfully saved");
+                            Log.d(TAG, "Successfully wrote " + DN);
                         }
                     })
                     .addOnFailureListener(new OnFailureListener() {
                         @Override
                         public void onFailure(@NonNull Exception e) {
                             mManager.log(LogContract.Log.Level.ERROR, "Error adding document " + DN + " Error: " + e.toString());
+                            Log.d(TAG, "Failed writing " + DN, e);
                         }
                     });
         });
