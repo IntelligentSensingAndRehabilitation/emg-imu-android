@@ -2,6 +2,10 @@ package org.sralab.emgimu.logging;
 
 import android.util.Log;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
+import java.lang.reflect.Array;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -15,10 +19,10 @@ public class FirebaseStreamEntry {
     private static String TAG = FirebaseStreamEntry.class.getName();
 
     private long T0 = 0;
-    private ArrayList<Double> raw_timestamps;
-    private ArrayList<Double> raw_samples;
-    private ArrayList<Double> pwr_timestamps;
-    private ArrayList<Double> pwr_samples;
+    protected ArrayList<Double> raw_timestamps;
+    protected ArrayList<Double> raw_samples;
+    protected ArrayList<Double> pwr_timestamps;
+    protected ArrayList<Double> pwr_samples;
 
     public FirebaseStreamEntry() {
         this.raw_timestamps = new ArrayList<Double>();
@@ -30,10 +34,10 @@ public class FirebaseStreamEntry {
     // Copy constructor
     public FirebaseStreamEntry(FirebaseStreamEntry base) {
         this.T0 = base.getT0().getTime();
-        this.raw_timestamps = new ArrayList<>(base.getRawTimestamps());
-        this.raw_samples = new ArrayList<>(base.getRawSamples());
-        this.pwr_timestamps = new ArrayList<>(base.getPwrTimestamps());
-        this.pwr_samples = new ArrayList<>(base.getPwrSamples());
+        this.raw_timestamps = new ArrayList<>(base.raw_timestamps);
+        this.raw_samples = new ArrayList<>(base.raw_samples);
+        this.pwr_timestamps = new ArrayList<>(base.pwr_timestamps);
+        this.pwr_samples = new ArrayList<>(base.pwr_samples);
     }
 
     public static Date DateFromTimestamp(long timestamp) {
@@ -93,8 +97,12 @@ public class FirebaseStreamEntry {
         return logFull();
     }
 
+    public int logSize() {
+        return (this.pwr_samples.size() + this.raw_samples.size());
+    }
+
     public boolean logFull() {
-        return (this.pwr_samples.size() + this.raw_samples.size()) > 10000;
+        return logSize() > 10000;
     }
 
     /**
@@ -125,17 +133,26 @@ public class FirebaseStreamEntry {
         T0 = T0_date.getTime();
     }
 
+    private String exportArray(ArrayList<Double> a) {
+        GsonBuilder gsonBuilder = new GsonBuilder();
+        Gson gson = gsonBuilder.create();
+        String s = gson.toJson(a);
+        return s;
+    }
+
     //! Return the array of timestamps for raw samples
-    public ArrayList<Double> getRawTimestamps() { return raw_timestamps; }
+    public String getRawTimestamps() {
+        return exportArray(raw_timestamps);
+    }
 
     //! Return the array of individual raw samples
-    public ArrayList<Double> getRawSamples() { return raw_samples; }
+    public String getRawSamples() { return exportArray(raw_samples); }
 
     //! Return the array of timestamps for raw samples
-    public ArrayList<Double> getPwrTimestamps() { return pwr_timestamps; }
+    public String getPwrTimestamps() { return exportArray(pwr_timestamps); }
 
     //! Return the array of individual raw samples
-    public ArrayList<Double> getPwrSamples() { return pwr_samples; }
+    public String getPwrSamples() { return exportArray(pwr_samples); }
 
     //! Set the timestamps (used when restoring from DB)
     public void setRawTimestamps(ArrayList<Double> raw_timestamps) { this.raw_timestamps = raw_timestamps; }

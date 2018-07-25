@@ -119,7 +119,7 @@ public class FirebaseStreamLogger {
             throw new InvalidParameterException("Trying to update a null log");
         }
 
-        if (log.getRawSamples().size() == 0 && log.getPwrSamples().size() == 0) {
+        if (log.logSize() == 0) {
             Log.d(TAG, "Not writing log as no samples recorded");
             return;
         }
@@ -127,13 +127,14 @@ public class FirebaseStreamLogger {
         // Need to make a copy of this object because it will be replaced immediately after
         // and this thread may not post for some time
         FirebaseStreamEntry mLog = new FirebaseStreamEntry(log);
-        String DN = mLog.DocumentName();
-
-        Log.d(TAG, "Writing " + DN + " " + log.getRawSamples().size() + " raw samples and " + log.getPwrSamples().size() + " power samples");
-        mManager.log(LogContract.Log.Level.INFO, "Writing stream " + DN + log.getRawSamples().size() + " raw samples and " + log.getPwrSamples().size() + " power samples");
 
         Handler mainHandler = new Handler(Looper.getMainLooper());
         mainHandler.post(()-> {
+
+            String DN = mLog.DocumentName();
+            Log.d(TAG, "Writing " + DN + " " + log.logSize() + " samples");
+            mManager.log(LogContract.Log.Level.INFO, "Writing stream " + DN + + log.logSize() + " samples");
+
             // Add a new document with a generated ID
             getDocument(DN).set(mLog)
                     .addOnSuccessListener(new OnSuccessListener<Void>() {
