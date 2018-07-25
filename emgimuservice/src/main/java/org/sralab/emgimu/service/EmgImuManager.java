@@ -66,7 +66,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
     public final static UUID IMU_ACCEL_CHAR_UUID = UUID.fromString("00002235-1212-EFDE-1523-785FEF13D123");
 
     private final double EMG_FS = 2000.0;
-    private final int EMG_BUFFER_LEN = (16 / 2); // elements in UINT16
+    private final int EMG_BUFFER_LEN = (40 / 2); // elements in UINT16
 
     private BluetoothGattCharacteristic mEmgRawCharacteristic, mEmgBuffCharacteristic, mEmgPwrCharacteristic, mImuAccelCharacteristic;
 
