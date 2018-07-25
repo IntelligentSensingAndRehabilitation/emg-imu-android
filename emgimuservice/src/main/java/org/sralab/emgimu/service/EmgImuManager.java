@@ -816,12 +816,14 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 
     private STREAMING_MODE mStreamingMode = STREAMING_MODE.STREAMING_UNKNOWN;
     public final void enableBufferedStreamingMode() {
+        syncDevice();
         enableEmgBuffNotifications();
         disableEmgPwrNotifications();
         mStreamingMode = STREAMING_MODE.STREAMING_BUFFERED;
     }
 
     public final void enablePowerStreamingMode() {
+        syncDevice();
         enableEmgPwrNotifications();
         disableEmgBuffNotifications();
         mStreamingMode = STREAMING_MODE.STREAMINNG_POWER;
