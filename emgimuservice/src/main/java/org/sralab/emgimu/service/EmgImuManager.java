@@ -254,21 +254,19 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 
 		private long mPwrT0;
 		private long mLastPwrCount;
-		private long resolvePwrCounter(int timestamp, byte counter) {
+		private long resolvePwrCounter(long timestamp, byte counter) {
             /**
              * Tracks if the counter is reliable and if so uses this to work
              * out the timestamp for this sample. If there is a drop resets
              * based on the transmitted timestamp.
              */
 
-            // timestamp is 1/8 seconds since some arbitrary time start
-            final double TIMESTAMP_HZ = 8.0;
 
             // counter is the power sample counter which should be running at a fixed rate
             final double COUNTER_HZ = 100.0;
 
             // convert timestamp into ms since some arbitrary T0
-            long timestamp_ms = (long) (timestamp * 1000 / TIMESTAMP_HZ);
+            long timestamp_real = timestampToReal(timestamp);
 
             // convert counter into ms, although this aliases frequently
             byte counter_aliased = (byte) (mLastPwrCount % 255);
@@ -292,17 +290,17 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                     // TODO: sometime err is 0. Determine if this is duplicate packets.
                     Log.d(TAG, "Too many dropped samples detected: " + err);
                     mLastPwrCount = counter_aliased;
-                    mPwrT0 = timestamp_ms - (long) (mLastPwrCount * 1000 / COUNTER_HZ);
+                    mPwrT0 = timestamp_real - (long) (mLastPwrCount * 1000 / COUNTER_HZ);
                     break;
             }
 
             // nominal combination
             long resolved_ms = mPwrT0 + (long) (mLastPwrCount * 1000 / COUNTER_HZ);
 
-            long diff = resolved_ms - timestamp_ms;
+            long diff = resolved_ms - timestamp_real;
             if (abs(diff) > 200) {
-                Log.e(TAG, "Timebase drift. Diff: " + diff + " Resolved: " + resolved_ms + " transmitted: " + timestamp_ms);
-                mPwrT0 = timestamp_ms - (long) (mLastPwrCount * 1000 / COUNTER_HZ);
+                Log.e(TAG, "Timebase drift. Diff: " + diff + " Resolved: " + resolved_ms + " transmitted: " + timestamp_real);
+                mPwrT0 = timestamp_real - (long) (mLastPwrCount * 1000 / COUNTER_HZ);
                 resolved_ms = mPwrT0 + (long) (mLastPwrCount * 1000 / COUNTER_HZ);
             }
 
@@ -314,10 +312,10 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
             byte format = buffer[0];
             assert(format == 16);
             byte counter = buffer[1];
-            int timestamp = ByteBuffer.wrap(buffer, 2, 2).order(ByteOrder.LITTLE_ENDIAN).getShort();
+            long timestamp = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 2);
 
-            int pwr_val = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 4) +
-                characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 5) * 256;
+            int pwr_val = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 6) +
+                characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 7) * 256;
 
             long ts_ms = resolvePwrCounter(timestamp, counter);
 
@@ -332,21 +330,18 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 
         private long mBufT0;
         private long mLastBufferCount;
-        private long resolveBufCounter(int timestamp, byte counter) {
+        private long resolveBufCounter(long timestamp, byte counter) {
             /**
              * Tracks if the counter is reliable and if so uses this to work
              * out the timestamp for this sample. If there is a drop resets
              * based on the transmitted timestamp.
              */
 
-            // timestamp is 1/8 seconds since some arbitrary time start
-            final double TIMESTAMP_HZ = 8.0;
-
             // counter is the power sample counter which should be running at a fixed rate
             final double COUNTER_HZ = (EMG_FS / EMG_BUFFER_LEN); // 2khz but 8 samples per buffer
 
             // convert timestamp into ms since some arbitrary T0
-            long timestamp_ms = (long) (timestamp * 1000 / TIMESTAMP_HZ);
+            long timestamp_real = timestampToReal(timestamp);
 
             // convert counter into ms, although this aliases frequently
             byte counter_aliased = (byte) (mLastBufferCount % 255);
@@ -370,17 +365,17 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                     // TODO: sometime err is 0. Determine if this is duplicate packets.
                     Log.d(TAG, "Too many dropped samples detected: " + err);
                     mLastBufferCount = counter_aliased;
-                    mBufT0 = timestamp_ms - (long) (mLastBufferCount * 1000 / COUNTER_HZ);
+                    mBufT0 = timestamp_real - (long) (mLastBufferCount * 1000 / COUNTER_HZ);
                     break;
             }
 
             // nominal combination
             long resolved_ms = mBufT0 + (long) (mLastBufferCount * 1000 / COUNTER_HZ);
 
-            long diff = resolved_ms - timestamp_ms;
+            long diff = resolved_ms - timestamp_real;
             if (abs(diff) > 200) {
-                Log.e(TAG, "Timebase drift. Diff: " + diff + " Resolved: " + resolved_ms + " transmitted: " + timestamp_ms);
-                mBufT0 = timestamp_ms - (long) (mLastBufferCount * 1000 / COUNTER_HZ);
+                Log.e(TAG, "Timebase drift. Diff: " + diff + " Resolved: " + resolved_ms + " transmitted: " + timestamp_real);
+                mBufT0 = timestamp_real - (long) (mLastBufferCount * 1000 / COUNTER_HZ);
                 resolved_ms = mBufT0 + (long) (mLastBufferCount * 1000 / COUNTER_HZ);
             }
 
@@ -398,7 +393,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 		        // Data from single channel system
                 case 16: // 1 channel of 16 bit data
                     byte counter = buffer[1];
-                    int timestamp = ByteBuffer.wrap(buffer, 2, 2).order(ByteOrder.LITTLE_ENDIAN).getShort();
+                    long timestamp = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 2);
 
                     long buf_ts_ms = resolveBufCounter(timestamp, counter);
 
@@ -415,7 +410,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                     double [][] parsed = new double[1][EMG_BUFFER_LEN];
 
                     for (int i = 0; i < EMG_BUFFER_LEN; i++) {
-                        byte [] array = {buffer[4+i*2], buffer[4+i*2+1]};
+                        byte [] array = {buffer[6+i*2], buffer[6+i*2+1]};
 
                         // check the sample counter and make sure no data was lost
                         int count = ByteBuffer.wrap(array).order(ByteOrder.LITTLE_ENDIAN).getShort();
