@@ -129,8 +129,8 @@ public class FirebaseStreamLogger {
         FirebaseStreamEntry mLog = new FirebaseStreamEntry(log);
         String DN = mLog.DocumentName();
 
-        Log.d(TAG, "Writing " + DN + " " + log.getRawSamples().size() + " raw samples and " + log.getPwrSamples().size() + " power samples");
-        mManager.log(LogContract.Log.Level.INFO, "Writing stream " + DN + log.getRawSamples().size() + " raw samples and " + log.getPwrSamples().size() + " power samples");
+        Log.d(TAG, "Writing " + getDocument(DN).getPath()  + " " + log.getRawSamples().size() + " raw samples and " + log.getPwrSamples().size() + " power samples");
+        mManager.log(LogContract.Log.Level.INFO, "Writing stream " + getDocument(DN).getPath() + " "  + log.getRawSamples().size() + " raw samples and " + log.getPwrSamples().size() + " power samples");
 
         Handler mainHandler = new Handler(Looper.getMainLooper());
         mainHandler.post(()-> {
@@ -140,7 +140,7 @@ public class FirebaseStreamLogger {
                         @Override
                         public void onSuccess(Void aVoid) {
                             mManager.log(LogContract.Log.Level.DEBUG, mDeviceMac + " Document " + DN + " successfully saved");
-                            Log.d(TAG, "Successfully wrote " + DN);
+                            Log.d(TAG, "Successfully wrote " + getDocument(DN).getPath());
                         }
                     })
                     .addOnFailureListener(new OnFailureListener() {
