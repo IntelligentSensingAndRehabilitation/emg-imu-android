@@ -262,6 +262,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 
 		private long mPwrT0;
 		private long mLastPwrCount;
+
 		private long resolvePwrCounter(long timestamp, byte counter) {
             /**
              * Tracks if the counter is reliable and if so uses this to work
@@ -277,7 +278,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
             long timestamp_real = timestampToReal(timestamp);
 
             // convert counter into ms, although this aliases frequently
-            byte counter_aliased = (byte) (mLastPwrCount % 255);
+            byte counter_aliased = (byte) (mLastPwrCount % 256);
             byte err = (byte) (counter - counter_aliased);
             switch (err) {
                 case 1:
@@ -297,7 +298,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                 default:
                     // TODO: sometime err is 0. Determine if this is duplicate packets.
                     Log.d(TAG, "Too many dropped samples detected: " + err);
-                    mLastPwrCount = counter_aliased;
+                    mLastPwrCount = counter;
                     mPwrT0 = timestamp_real - (long) (mLastPwrCount * 1000 / COUNTER_HZ);
                     break;
             }
@@ -352,7 +353,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
             long timestamp_real = timestampToReal(timestamp);
 
             // convert counter into ms, although this aliases frequently
-            byte counter_aliased = (byte) (mLastBufferCount % 255);
+            byte counter_aliased = (byte) (mLastBufferCount % 256);
             byte err = (byte) (counter - counter_aliased);
             switch (err) {
                 case 1:
@@ -371,8 +372,8 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                     break;
                 default:
                     // TODO: sometime err is 0. Determine if this is duplicate packets.
-                    Log.d(TAG, "Too many dropped samples detected: " + err);
-                    mLastBufferCount = counter_aliased;
+                    Log.d(TAG, "Too many dropped samples detected. Err: " + err + " Counter: " + counter + " Aliased: " + counter_aliased + " Count: " + mLastBufferCount);
+                    mLastBufferCount = counter;
                     mBufT0 = timestamp_real - (long) (mLastBufferCount * 1000 / COUNTER_HZ);
                     break;
             }
@@ -407,9 +408,9 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 
                     // Have to manually combine to get the endian right
 
-                    double ina333_gain = 101;   // for 1k resistor
+                    double ina333_gain = 1+(100.0 / 10.0);   // for 10k resistor
                     double bandpass_gain = 10;  //# 1M / 100k
-                    double nrf52383_gain = 1.0 / 6.0; // more easily programmable now differential
+                    double nrf52383_gain = 1.0 / 1.0; // more easily programmable now differential
                     double analog_gain = ina333_gain * bandpass_gain;
 
                     double lsb_per_v = analog_gain * nrf52383_gain / 0.6 * (1<<13);
