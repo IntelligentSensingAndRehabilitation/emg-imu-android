@@ -433,7 +433,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 
                     mEmgBuff = parsed;
                     // TODO: add data counter to this format
-                    mCallbacks.onEmgBuffReceived(device, 0, mEmgBuff);
+                    mCallbacks.onEmgBuffReceived(device, counter, mEmgBuff);
                     break;
                 default:
                     assert(false);
