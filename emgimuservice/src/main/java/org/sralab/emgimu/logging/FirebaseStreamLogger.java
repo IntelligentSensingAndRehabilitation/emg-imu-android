@@ -5,6 +5,7 @@ import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
@@ -136,19 +137,17 @@ public class FirebaseStreamLogger {
         mainHandler.post(()-> {
             // Add a new document with a generated ID
             getDocument(DN).set(mLog)
-                    .addOnSuccessListener(new OnSuccessListener<Void>() {
-                        @Override
-                        public void onSuccess(Void aVoid) {
-                            mManager.log(LogContract.Log.Level.DEBUG, mDeviceMac + " Document " + DN + " successfully saved");
-                            Log.d(TAG, "Successfully wrote " + getDocument(DN).getPath());
-                        }
+                    .addOnSuccessListener(aVoid -> {
+                        mManager.log(LogContract.Log.Level.DEBUG, mDeviceMac + " Document " + DN + " successfully saved");
+                        Log.d(TAG, "Successfully wrote " + getDocument(DN).getPath());
                     })
-                    .addOnFailureListener(new OnFailureListener() {
-                        @Override
-                        public void onFailure(@NonNull Exception e) {
-                            mManager.log(LogContract.Log.Level.ERROR, "Error adding document " + DN + " Error: " + e.toString());
-                            Log.d(TAG, "Failed writing " + DN, e);
-                        }
+                    .addOnFailureListener(e -> {
+                        mManager.log(LogContract.Log.Level.ERROR, "Error adding document " + DN + " Error: " + e.toString());
+                        Log.d(TAG, "Failed writing " + DN, e);
+                    })
+                    .addOnCompleteListener(task -> {
+                        mManager.log(LogContract.Log.Level.DEBUG, mDeviceMac + " Document " + DN + " write completed");
+                        Log.d(TAG, "Write completed " + getDocument(DN).getPath());
                     });
         });
     }
