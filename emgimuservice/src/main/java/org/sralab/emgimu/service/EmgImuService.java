@@ -71,6 +71,7 @@ import no.nordicsemi.android.nrftoolbox.profile.multiconnect.BleMulticonnectProf
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.sralab.emgimu.logging.EmgLogFetchJobService;
+import org.sralab.emgimu.streaming.NetworkStreaming;
 
 public class EmgImuService extends BleMulticonnectProfileService implements EmgImuManagerCallbacks {
 	@SuppressWarnings("unused")
@@ -118,6 +119,8 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 
     private ILogSession mLogSession;
     private ServiceLogger mServiceLogger = new ServiceLogger(TAG, this, mLogSession);
+
+    private NetworkStreaming networkStreaming;
 
 	/**
 	 * This local binder is an interface for the bonded activity to operate with the proximity sensor
@@ -351,6 +354,9 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
         Bundle bundle = new Bundle();
         bundle.putString(FirebaseAnalytics.Param.ITEM_ID, "EMG_IMU_SERVICE_CREATED");
         mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.SELECT_CONTENT, bundle);
+
+        networkStreaming = new NetworkStreaming();
+        networkStreaming.start();
 	}
 
     @Override
@@ -402,6 +408,9 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
         Bundle bundle = new Bundle();
         bundle.putString(FirebaseAnalytics.Param.ITEM_ID, "EMG_IMU_SERVICE_STOPPED");
         mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.SELECT_CONTENT, bundle);
+
+        if (networkStreaming != null)
+            networkStreaming.stop();
     }
 
     @Override
@@ -754,6 +763,11 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
         broadcast.putExtra(EXTRA_EMG_COUNT, count);
         broadcast.putExtra(EXTRA_EMG_BUFF, linearizedData);
         LocalBroadcastManager.getInstance(this).sendBroadcast(broadcast);
+
+
+        if (networkStreaming != null && networkStreaming.isConnected()) {
+            networkStreaming.streamEmgBuffer(device, 0, SAMPLES, CHANNELS, data);
+        }
     }
 
     public void onEmgClick(final BluetoothDevice device) {
