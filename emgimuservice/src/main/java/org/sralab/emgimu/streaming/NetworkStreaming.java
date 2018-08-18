@@ -3,11 +3,16 @@ package org.sralab.emgimu.streaming;
 import android.bluetooth.BluetoothDevice;
 import android.util.Log;
 
+import com.google.gson.Gson;
+
+import org.sralab.emgimu.streaming.messages.EmgRawMessage;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.nio.ByteBuffer;
 
 public class NetworkStreaming {
 
@@ -66,8 +71,10 @@ public class NetworkStreaming {
                                 int channels,
                                 double[][] data) {
 
-        byte [] packet = data.toString().getBytes();
-        clientThread.write(packet);
+        Gson gson = new Gson();
+        EmgRawMessage msg = new EmgRawMessage(dev.getAddress(), time, channels, samples, data);
+        String json = gson.toJson(msg);
+        clientThread.write(json.getBytes());
     }
 
     private boolean mRun;
@@ -115,8 +122,8 @@ public class NetworkStreaming {
 
         void write(byte[] b) {
             try {
-                Log.d(TAG, "Writing " + b.length + " bytes");
-
+                Log.d(TAG, "Writing " + b.length + " bytes and " + ByteBuffer.allocate(4).putInt(b.length).array().length);
+                outputStream.write(ByteBuffer.allocate(4).putInt(b.length).array());
                 outputStream.write(b);
             } catch (IOException e) {
                 e.printStackTrace();

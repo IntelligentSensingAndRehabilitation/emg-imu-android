@@ -40,6 +40,8 @@ dependencies {
     implementation "com.google.firebase:firebase-auth:$firebaseAuthVer"
     implementation "com.google.firebase:firebase-firestore:$firebaseFirestoreVer"
     implementation "com.crashlytics.sdk.android:crashlytics:$crashlyticsVer"
+
+    implementation 'com.google.code.gson:gson:2.8.2'
 }
 
 apply plugin: 'com.google.gms.google-services'
