@@ -745,6 +745,10 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
         broadcast.putExtra(EXTRA_DEVICE, device);
         broadcast.putExtra(EXTRA_EMG_PWR, value);
         LocalBroadcastManager.getInstance(this).sendBroadcast(broadcast);
+
+        if (networkStreaming != null && networkStreaming.isConnected()) {
+            networkStreaming.streamEmgPwr(device, 0, (double) value);
+        }
     }
 
     @Override
@@ -763,7 +767,6 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
         broadcast.putExtra(EXTRA_EMG_COUNT, count);
         broadcast.putExtra(EXTRA_EMG_BUFF, linearizedData);
         LocalBroadcastManager.getInstance(this).sendBroadcast(broadcast);
-
 
         if (networkStreaming != null && networkStreaming.isConnected()) {
             networkStreaming.streamEmgBuffer(device, 0, SAMPLES, CHANNELS, data);
