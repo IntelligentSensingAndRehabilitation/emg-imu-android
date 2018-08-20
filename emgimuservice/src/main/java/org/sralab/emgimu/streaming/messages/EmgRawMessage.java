@@ -3,6 +3,7 @@ package org.sralab.emgimu.streaming.messages;
 import java.util.Arrays;
 
 public class EmgRawMessage {
+    public final String MSG = "EmgRaw";
     public String bluetoothMac;
     public long timestamp;
     public int channels;

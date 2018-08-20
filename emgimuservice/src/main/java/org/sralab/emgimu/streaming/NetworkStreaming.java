@@ -5,6 +5,7 @@ import android.util.Log;
 
 import com.google.gson.Gson;
 
+import org.sralab.emgimu.streaming.messages.EmgPwrMessage;
 import org.sralab.emgimu.streaming.messages.EmgRawMessage;
 
 import java.io.IOException;
@@ -73,6 +74,16 @@ public class NetworkStreaming {
 
         Gson gson = new Gson();
         EmgRawMessage msg = new EmgRawMessage(dev.getAddress(), time, channels, samples, data);
+        String json = gson.toJson(msg);
+        clientThread.write(json.getBytes());
+    }
+
+    public void streamEmgPwr(BluetoothDevice dev,
+                                long time,
+                                double data) {
+
+        Gson gson = new Gson();
+        EmgPwrMessage msg = new EmgPwrMessage(dev.getAddress(), time, data);
         String json = gson.toJson(msg);
         clientThread.write(json.getBytes());
     }
