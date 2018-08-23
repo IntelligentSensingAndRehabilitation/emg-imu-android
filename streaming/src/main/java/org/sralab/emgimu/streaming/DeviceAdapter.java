@@ -67,6 +67,14 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
         return new ViewHolder(view);
 	}
 
+	private boolean mFiltering = true;
+	public void toggleFiltering(boolean filter) {
+	    mFiltering = filter;
+	    for (LineGraphView l : mDeviceLineGraphMap.values()) {
+            l.enableFiltering(mFiltering);
+        }
+    }
+
     public class DefaultItemAnimatorNoChange extends DefaultItemAnimator {
         public DefaultItemAnimatorNoChange() {
             setSupportsChangeAnimations(false);
@@ -211,7 +219,7 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
                     mLineGraph = new LineGraphView(mLayoutView.getContext(), mLayoutView);
                     mLineGraph.setWindowSize(250);
                     mLineGraph.setRange(mRange);
-                    mLineGraph.enableFiltering(true);
+                    mLineGraph.enableFiltering(mFiltering);
                     mDeviceLineGraphMap.put(new Pair<>(device, channel), mLineGraph);
                 }
             }

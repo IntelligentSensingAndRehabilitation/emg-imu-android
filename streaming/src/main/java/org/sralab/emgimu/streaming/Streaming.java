@@ -8,6 +8,7 @@ import android.support.v7.widget.RecyclerView;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
+import android.widget.CheckBox;
 import android.widget.EditText;
 
 import com.crashlytics.android.Crashlytics;
@@ -27,6 +28,7 @@ public class Streaming extends EmgImuBaseActivity {
     private RecyclerView mDevicesView;
     private DeviceAdapter mAdapter;
     private EditText mRangeText;
+    private CheckBox enableFilter;
 
     @Override
     protected void onCreateView(final Bundle savedInstanceState) {
@@ -34,13 +36,13 @@ public class Streaming extends EmgImuBaseActivity {
 
         setContentView(R.layout.activity_streaming);
 
-        final RecyclerView recyclerView = mDevicesView = (RecyclerView) findViewById(R.id.emg_list);
+        final RecyclerView recyclerView = mDevicesView = findViewById(R.id.emg_list);
         if (recyclerView == null)
             throw new RuntimeException("No emg list");
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.addItemDecoration(new DividerItemDecoration(this, DividerItemDecoration.VERTICAL_LIST));
 
-        mRangeText = (EditText) findViewById(R.id.rangeText);
+        mRangeText = findViewById(R.id.rangeText);
         mRangeText.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
@@ -60,6 +62,13 @@ public class Streaming extends EmgImuBaseActivity {
 
             }
         });
+
+        enableFilter = findViewById(R.id.filteringCb);
+        enableFilter.setOnCheckedChangeListener((compoundButton, b) -> {
+            if (mAdapter != null)
+                mAdapter.toggleFiltering(b);
+        });
+
     }
 
     @Override
@@ -68,6 +77,8 @@ public class Streaming extends EmgImuBaseActivity {
         mDevicesView.setAdapter(mAdapter = new DeviceAdapter(binder));
         Log.d(TAG, "onServiceBinded");
         Log.d(TAG, "Managed devices: " + binder.getManagedDevices());
+
+        mAdapter.toggleFiltering(enableFilter.isChecked());
 
         double range = Double.parseDouble(mRangeText.getText().toString());
         mAdapter.setRange(range);

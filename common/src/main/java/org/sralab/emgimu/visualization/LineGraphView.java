@@ -153,6 +153,7 @@ public class LineGraphView {
 
 	public void enableFiltering(boolean enable) {
 		mFiltering = enable;
+		Log.d("LinegraphView", "Enable filtering: " + enable);
 	}
 
 	/**
