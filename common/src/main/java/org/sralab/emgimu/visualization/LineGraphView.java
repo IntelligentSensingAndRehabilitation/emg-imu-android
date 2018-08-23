@@ -128,7 +128,7 @@ public class LineGraphView {
 
 	private final int FIR_ORDER = 5;
 	private final double [] A = { 1.        , -3.70211638,  5.25666722, -3.39474815,  0.84242058};
-	private final double [] B = { 1.        , -3.70211638,  5.25666722, -3.39474815,  0.84242058};
+	private final double [] B = { 0.00822449,  0.        , -0.01644898,  0.        ,  0.00822449};
 	private final double [] inputs = new double[FIR_ORDER-1];  // stores history of inputs with most recent at the end
 	private final double [] outputs = new double[FIR_ORDER-1]; // stores history of outputs with most recent at the end
 
