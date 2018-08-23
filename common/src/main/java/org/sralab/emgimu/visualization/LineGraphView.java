@@ -111,9 +111,24 @@ public class LineGraphView {
 		mWindowSize = newWindow;
 	}
 
+	/**
+	 * Optimize for 2000 Hz sampling
+	 *
+	 import numpy as np
+	 import scipy.signal as sig
+	 import matplotlib.pyplot as plt
+
+	 FS = 2000
+	 fcl = 40.0
+	 fch = 125.0
+	 w_pb = [fcl/(FS/2), fch/(FS/2)]
+
+	 b,a = sig.cheby1(2, 3, w_pb, btype='bandpass')
+	 */
+
 	private final int FIR_ORDER = 5;
-	private final double [] A = {1.0, -0.88998924, 0.82014106, -0.52922618, 0.47812984}; //{1.f        , -3.37945934f,  4.37556425f, -2.5836815f ,  0.59017961f};
-	private final double [] B = {0.15986491, 0, -0.31972982, 0, 0.15986491}; //{0.02734515f,  0.f        , -0.0546903f ,  0.f        ,  0.02734515f};
+	private final double [] A = { 1.        , -3.70211638,  5.25666722, -3.39474815,  0.84242058};
+	private final double [] B = { 1.        , -3.70211638,  5.25666722, -3.39474815,  0.84242058};
 	private final double [] inputs = new double[FIR_ORDER-1];  // stores history of inputs with most recent at the end
 	private final double [] outputs = new double[FIR_ORDER-1]; // stores history of outputs with most recent at the end
 
