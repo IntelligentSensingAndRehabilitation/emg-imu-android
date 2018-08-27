@@ -34,6 +34,8 @@ public class EmgPowerView extends View {
     private float mLineWidth = 10; // TODO: use a default from R.dimen...
     private Paint mLinePaint;
 
+    private Rect rectangle;
+
     public EmgPowerView(Context context) {
         super(context);
         init(null, 0);
@@ -138,6 +140,16 @@ public class EmgPowerView extends View {
         mTextPaint.setFlags(Paint.ANTI_ALIAS_FLAG);
         mTextPaint.setTextAlign(Paint.Align.CENTER);
 
+        int paddingLeft = getPaddingLeft();
+        int paddingRight = getPaddingRight();
+        int contentWidth = getWidth() - paddingLeft - paddingRight;
+        int barLeft = (int) (paddingLeft + contentWidth * 0.36);
+        int barRight = (int) (paddingLeft + contentWidth * 0.63);
+
+        //rectangle = new Rect(barLeft, pwrToHeight(0),
+        //        barRight, pwrToHeight(0));
+        rectangle = new Rect(barLeft, pwrToHeight(2000), barRight, pwrToHeight(0));
+
         // Update TextPaint and text measurements from attributes
         invalidateTextPaintAndMeasurements();
 
@@ -181,13 +193,12 @@ public class EmgPowerView extends View {
 
         int lineLeft = paddingLeft;
         int lineRight = (int) (paddingLeft + contentWidth * 0.3);
-        int barLeft = (int) (paddingLeft + contentWidth * 0.36);
-        int barRight = (int) (paddingLeft + contentWidth * 0.63);
         int threshLeft = (int) (paddingLeft + contentWidth * 0.69);
         int threshRight = (int) (paddingLeft + contentWidth * 1.0);
+        int barLeft = (int) (paddingLeft + contentWidth * 0.36);
+        int barRight = (int) (paddingLeft + contentWidth * 0.63);
 
-        Rect rectangle = new Rect(barLeft, pwrToHeight(0),
-                barRight, pwrToHeight(mPwr));
+        rectangle.set(barLeft, pwrToHeight(mPwr), barRight, pwrToHeight(0));
         canvas.drawRect(rectangle, mBarPaint);
 
         int minHeight = pwrToHeight(mMin);
