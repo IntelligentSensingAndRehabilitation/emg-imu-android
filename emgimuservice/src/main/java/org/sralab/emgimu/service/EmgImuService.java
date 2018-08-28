@@ -56,6 +56,8 @@ import com.google.firebase.analytics.FirebaseAnalytics;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import io.fabric.sdk.android.Fabric;
@@ -132,6 +134,20 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
             super.disconnect(device);
             updateSavedDevices();
         }
+
+        /***
+         * Check is all devices are connected
+         * @return true if all the devices are saved are connected
+         */
+        public boolean isConnected() {
+            List<BluetoothDevice> devices = getSavedDevices();
+            for (BluetoothDevice device : devices)
+                if (!mBinder.isConnected(device))
+                    return false;
+
+            return true;
+        }
+
         /**
          * Returns the last received EMG raw value.
          * @param device the device of which battery level should be returned
@@ -529,10 +545,10 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
             e.printStackTrace();
         }
     }
-	private void loadAndConnectSavedDevices() {
-        mServiceLogger.d("LoadAndConnectSaveDevices");
-		// Need to access context this way so all apps using service (and with the sharedUserId)
-		// have the same preferences and connect to the same devices
+
+    List<BluetoothDevice> getSavedDevices() {
+        // Need to access context this way so all apps using service (and with the sharedUserId)
+        // have the same preferences and connect to the same devices
         Context mContext = null;
         try {
             mContext = this.createPackageContext("org.sralab.emgimu", Context.CONTEXT_RESTRICTED);
@@ -543,17 +559,28 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
         String deviceList_s = sharedPref.getString(DEVICE_PREFERENCE, "[]");
         final BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
+        ArrayList <BluetoothDevice> devices = new ArrayList<BluetoothDevice>();
         try {
             JSONArray names = new JSONArray(deviceList_s);
             for (int i = 0; i < names.length(); i++) {
                 String device_mac = names.getString(i);
-                BluetoothDevice device = bluetoothAdapter.getRemoteDevice(device_mac);
-                Log.d(TAG, "Connecting to: " + device);
-                mBinder.connect(device,  getLogger(device));
+                devices.add(bluetoothAdapter.getRemoteDevice(device_mac));
             }
         } catch (JSONException e) {
             e.printStackTrace();
         }
+
+        mServiceLogger.d("Saved devices: " + devices);
+        return Collections.unmodifiableList(devices);
+    }
+
+	private void loadAndConnectSavedDevices() {
+        mServiceLogger.d("LoadAndConnectSaveDevices");
+
+        List <BluetoothDevice> devices = getSavedDevices();
+
+        for (final BluetoothDevice device : devices)
+            mBinder.connect(device, getLogger(device));
     }
 
 	private void createBackgroundNotification() {
