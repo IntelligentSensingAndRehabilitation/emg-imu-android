@@ -109,12 +109,14 @@ public class FirebaseEmgLogger {
                         @Override
                         public void onSuccess(Void aVoid) {
                             mManager.log(LogContract.Log.Level.DEBUG, mDeviceMac + " Document " + DN + " successfully saved");
+                            Log.d(TAG, mDeviceMac + " Document " + getDocument(DN).getPath() + " successfully saved");
                         }
                     })
                     .addOnFailureListener(new OnFailureListener() {
                         @Override
                         public void onFailure(@NonNull Exception e) {
-                            mManager.log(LogContract.Log.Level.ERROR, "Error adding document " + DN + " Error: " + e.toString());
+                            mManager.log(LogContract.Log.Level.ERROR, "Error adding document " + getDocument(DN).getPath() + " Error: " + e.toString());
+                            Log.d(TAG, "Unable to save log");
                         }
                     });
         });
@@ -143,7 +145,7 @@ public class FirebaseEmgLogger {
                         @Override
                         public void onSuccess(DocumentSnapshot documentSnapshot) {
                             if (documentSnapshot.exists()) {
-                                Log.d(TAG, "Loaded previous document: " + DN);
+                                Log.d(TAG, "Loaded previous document: " + getDocument(DN).getPath());
                                 log = documentSnapshot.toObject(FirebaseEmgLogEntry.class);
                             } else {
                                 Log.d(TAG, "No document found. Creating new one: " + DN);
