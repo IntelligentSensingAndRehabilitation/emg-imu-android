@@ -237,10 +237,9 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
 
 			addressView.setText(device.getAddress());
 
-			final int battery = mService.getBattery(device);
-			if (battery != -1) {
-                double voltage = 3.0 + 1.2 * (battery / 100.0);
-                batteryView.setText(String.format("%02d%% (%.2fV)", battery, voltage));
+			final double voltage = mService.getBattery(device);
+			if (voltage > 0) {
+                batteryView.setText(String.format("%.2fV", voltage));
             }
 
             // Color of disconnect button should indicate connection status

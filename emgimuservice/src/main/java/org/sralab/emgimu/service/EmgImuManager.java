@@ -1117,7 +1117,17 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         return HIGH_THRESHOLD;
     }
 
-    public String getmManufacturer() {
+    public double getBatteryVoltage() {
+        int battery = getBatteryValue();
+        if (battery == -1)
+            return -1;
+
+        // Hardcoded conversion based on the firmware
+        double voltage = 3.0 + 1.35 * (battery / 100.0);
+        return voltage;
+    }
+
+    public String getManufacturer() {
         return mManufacturer;
     }
 

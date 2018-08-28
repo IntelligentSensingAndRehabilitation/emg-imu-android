@@ -210,9 +210,9 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
         }
 
         //! Get battery
-        public int getBattery(final BluetoothDevice device) {
+        public double getBattery(final BluetoothDevice device) {
             final EmgImuManager manager = (EmgImuManager) getBleManager(device);
-            return manager.getBatteryValue();
+            return manager.getBatteryVoltage();
         }
 
         public int getLoggerProfileTitle() {

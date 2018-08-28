@@ -99,6 +99,7 @@ public class FirebaseEmgLogger {
         FirebaseEmgLogEntry mLog = new FirebaseEmgLogEntry(log);
         mLog.setHardwareRevision(mManager.getHardwareRevision());
         mLog.setFirmwareRevision(mManager.getFirmwareRevision());
+        mLog.setBatteryVoltage(mManager.getBatteryVoltage());
 
         String DN = mLog.DocumentName();
 
