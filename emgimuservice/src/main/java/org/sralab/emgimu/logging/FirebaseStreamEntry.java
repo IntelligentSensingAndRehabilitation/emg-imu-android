@@ -19,6 +19,8 @@ public class FirebaseStreamEntry {
     private ArrayList<Double> raw_samples;
     private ArrayList<Double> pwr_timestamps;
     private ArrayList<Double> pwr_samples;
+    private String firmware_revision;
+    private String hardware_revision;
 
     public FirebaseStreamEntry() {
         this.raw_timestamps = new ArrayList<Double>();
@@ -34,6 +36,8 @@ public class FirebaseStreamEntry {
         this.raw_samples = new ArrayList<>(base.getRawSamples());
         this.pwr_timestamps = new ArrayList<>(base.getPwrTimestamps());
         this.pwr_samples = new ArrayList<>(base.getPwrSamples());
+        this.hardware_revision = base.hardware_revision;
+        this.firmware_revision = base.firmware_revision;
     }
 
     public static Date DateFromTimestamp(long timestamp) {
@@ -137,6 +141,10 @@ public class FirebaseStreamEntry {
     //! Return the array of individual raw samples
     public ArrayList<Double> getPwrSamples() { return pwr_samples; }
 
+    public String getHardwareRevision() { return hardware_revision; }
+
+    public String getFirmwareRevision() { return firmware_revision; }
+
     //! Set the timestamps (used when restoring from DB)
     public void setRawTimestamps(ArrayList<Double> raw_timestamps) { this.raw_timestamps = raw_timestamps; }
 
@@ -153,5 +161,9 @@ public class FirebaseStreamEntry {
         this.pwr_samples = pwr_samples;
     }
 
+    //! Set the hardware revision
+    public void setHardwareRevision(String h) { this.hardware_revision = h; }
 
+    //! Set the firmware revision
+    public void setFirmwareRevision(String f) { this.firmware_revision = f; }
 }

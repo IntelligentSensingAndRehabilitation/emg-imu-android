@@ -56,11 +56,21 @@ import static java.lang.Math.abs;
 public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 	private final String TAG = "EmgImuManager";
 
-	/** EMG Service UUID **/
+	/** Device Information UUID **/
+    private final static UUID DEVICE_INFORMATION_SERVICE = UUID.fromString("0000180A-0000-1000-8000-00805f9b34fb");
+    private final static UUID MANUFACTURER_NAME_CHARACTERISTIC = UUID.fromString("00002A29-0000-1000-8000-00805f9b34fb");
+    private final static UUID SERIAL_NUMBER_CHARACTERISTIC = UUID.fromString("00002A25-0000-1000-8000-00805f9b34fb");
+    private final static UUID HARDWARE_REVISION_CHARACTERISTIC = UUID.fromString("00002A27-0000-1000-8000-00805f9b34fb");
+    private final static UUID FIRMWARE_REVISION_CHARACTERISTIC = UUID.fromString("00002A26-0000-1000-8000-00805f9b34fb");
+
+    private BluetoothGattCharacteristic mManufacturerCharacteristic, mSerialNumberCharacteristic, mHardwareCharacteristic, mFirmwareCharacteristic;
+
+    /** EMG Service UUID **/
 	public final static UUID EMG_SERVICE_UUID = UUID.fromString("00001234-1212-EFDE-1523-785FEF13D123");
     public final static UUID EMG_RAW_CHAR_UUID = UUID.fromString("00001235-1212-EFDE-1523-785FEF13D123");
     public final static UUID EMG_BUFF_CHAR_UUID = UUID.fromString("00001236-1212-EFDE-1523-785FEF13D123");
     public final static UUID EMG_PWR_CHAR_UUID = UUID.fromString("00001237-1212-EFDE-1523-785FEF13D123");
+
     /** IMU Service UUID **/
     public final static UUID IMU_SERVICE_UUID = UUID.fromString("00002234-1212-EFDE-1523-785FEF13D123");
     public final static UUID IMU_ACCEL_CHAR_UUID = UUID.fromString("00002235-1212-EFDE-1523-785FEF13D123");
@@ -136,7 +146,11 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
     //! Data relating to logging to FireBase
     private boolean mLogging = true;
 
-	public EmgImuManager(final Context context) {
+    private String mManufacturer;
+    private String mHardwareRevision;
+    private String mFirmwareRevision;
+
+    public EmgImuManager(final Context context) {
 		super(context);
 	}
 
@@ -188,6 +202,17 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
             // When initially connected default to updates when the PWR is updated
             //requests.add(Request.newEnableNotificationsRequest(mEmgPwrCharacteristic));
 
+            // Fetch the device information for this sensor
+            if (mManufacturerCharacteristic != null)
+                requests.add(Request.newReadRequest(mManufacturerCharacteristic));
+            if (mSerialNumberCharacteristic != null)
+                requests.add(Request.newReadRequest(mSerialNumberCharacteristic));
+            if (mHardwareCharacteristic != null)
+                requests.add(Request.newReadRequest(mHardwareCharacteristic));
+            if (mFirmwareCharacteristic != null)
+                requests.add(Request.newReadRequest(mFirmwareCharacteristic));
+
+            // Make sure we get updates from the RACP characteristic
             if (mRecordAccessControlPointCharacteristic != null)
                 requests.add(Request.newEnableIndicationsRequest(mRecordAccessControlPointCharacteristic));
             if (mEmgLogCharacteristic != null)
@@ -196,6 +221,26 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
             mStreamingMode = STREAMING_MODE.STREAMINNG_POWER;
 			return requests;
 		}
+
+		boolean isDeviceInfoServiceSupported(final BluetoothGatt gatt) {
+            final BluetoothGattService deviceInfoService = gatt.getService(DEVICE_INFORMATION_SERVICE);
+            if (deviceInfoService != null) {
+                mManufacturerCharacteristic = deviceInfoService.getCharacteristic(MANUFACTURER_NAME_CHARACTERISTIC);
+                mSerialNumberCharacteristic = deviceInfoService.getCharacteristic(SERIAL_NUMBER_CHARACTERISTIC);
+                mHardwareCharacteristic = deviceInfoService.getCharacteristic(HARDWARE_REVISION_CHARACTERISTIC);
+                mFirmwareCharacteristic = deviceInfoService.getCharacteristic(FIRMWARE_REVISION_CHARACTERISTIC);
+            }
+
+            Log.v(TAG, "Device information characteristics for service " + deviceInfoService.getUuid());
+            for (BluetoothGattCharacteristic c : deviceInfoService.getCharacteristics() ) {
+                Log.v(TAG, "Device information found: " + c.getUuid());
+            }
+
+            return  (mManufacturerCharacteristic != null) &&
+                    (mSerialNumberCharacteristic != null) &&
+                    (mHardwareCharacteristic != null) &&
+                    (mFirmwareCharacteristic != null);
+        }
 
 		@Override
 		protected boolean isRequiredServiceSupported(final BluetoothGatt gatt) {
@@ -210,7 +255,13 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                     Log.v(TAG, "Found: " + c.getUuid());
                 }
             }
-			return (mEmgRawCharacteristic != null) && (mEmgPwrCharacteristic != null) && (mEmgBuffCharacteristic != null);
+
+            boolean deviceInfoSupported = isDeviceInfoServiceSupported(gatt);
+
+			return  (mEmgRawCharacteristic != null) &&
+                    (mEmgPwrCharacteristic != null) &&
+                    (mEmgBuffCharacteristic != null) &&
+                    deviceInfoSupported;
 		}
 
 		@Override
@@ -245,7 +296,16 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 		protected void onDeviceDisconnected() {
 		    Log.d(TAG, "onDeviceDisconnected");
 
+		    // Clear the Device Information characteristics
+            mManufacturerCharacteristic = null;
+            mSerialNumberCharacteristic = null;
+            mHardwareCharacteristic = null;
+            mFirmwareCharacteristic = null;
+
+            // Clear the IMU characteristics
             mImuAccelCharacteristic = null;
+
+            // Clear the EMG characteristics
             mEmgPwrCharacteristic = null;
             mEmgBuffCharacteristic = null;
             mEmgLogCharacteristic = null;
@@ -471,7 +531,30 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
             }
         }
 
-		@Override
+        @Override
+        protected void onCharacteristicRead(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic) {
+
+            if (MANUFACTURER_NAME_CHARACTERISTIC.equals(characteristic.getUuid())) {
+                mManufacturer = characteristic.getStringValue(0);
+                Log.d(TAG, "Manufacturer: " + mManufacturer);
+            }
+
+            if (HARDWARE_REVISION_CHARACTERISTIC.equals(characteristic.getUuid())) {
+                mHardwareRevision = characteristic.getStringValue(0);
+                Log.d(TAG, "Hardware revision: " + mHardwareRevision);
+            }
+
+            if (FIRMWARE_REVISION_CHARACTERISTIC.equals(characteristic.getUuid())) {
+                mFirmwareRevision = characteristic.getStringValue(0);
+                Log.d(TAG, "Firmware revision: " + mFirmwareRevision);
+            }
+
+            if (SERIAL_NUMBER_CHARACTERISTIC.equals(characteristic.getUuid())) {
+                Log.d(TAG, "Serial number: " + characteristic.getStringValue(0));
+            }
+        }
+
+        @Override
 		protected void onCharacteristicWrite(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic) {
             if (characteristic.getUuid().equals(EMG_RACP_CHAR_UUID)) {
                 Logger.a(mLogSession, "\"" + RecordAccessControlPointParser.parse(characteristic) + "\" sent");
@@ -1032,5 +1115,17 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 
     public double getMaxThreshold() {
         return HIGH_THRESHOLD;
+    }
+
+    public String getmManufacturer() {
+        return mManufacturer;
+    }
+
+    public String getFirmwareRevision() {
+        return mFirmwareRevision;
+    }
+
+    public String getHardwareRevision() {
+        return mHardwareRevision;
     }
 }

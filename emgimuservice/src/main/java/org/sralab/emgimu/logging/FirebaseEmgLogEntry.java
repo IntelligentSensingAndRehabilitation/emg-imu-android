@@ -19,6 +19,8 @@ public class FirebaseEmgLogEntry {
     private long T0;
     private ArrayList<Double> timestamps;
     private ArrayList<Double> emgPower;
+    private String firmware_revision;
+    private String hardware_revision;
 
     public FirebaseEmgLogEntry() {
         this.timestamps = new ArrayList<Double>();
@@ -30,6 +32,8 @@ public class FirebaseEmgLogEntry {
         this.T0 = base.getT0().getTime();
         this.timestamps = new ArrayList<>(base.getTimestamps());
         this.emgPower = new ArrayList<>(base.getEmgPower());
+        this.hardware_revision = base.hardware_revision;
+        this.firmware_revision = base.firmware_revision;
     }
 
     public static Date DateFromTimestamp(long timestamp) {
@@ -156,4 +160,14 @@ public class FirebaseEmgLogEntry {
     }
     public void setSamples(int v) { /* Do nothing */ }
 
+
+    //! Set the hardware revision
+    public void setHardwareRevision(String h) { this.hardware_revision = h; }
+
+    //! Set the firmware revision
+    public void setFirmwareRevision(String f) { this.firmware_revision = f; }
+
+    public String getHardwareRevision() { return hardware_revision; }
+
+    public String getFirmwareRevision() { return firmware_revision; }
 }

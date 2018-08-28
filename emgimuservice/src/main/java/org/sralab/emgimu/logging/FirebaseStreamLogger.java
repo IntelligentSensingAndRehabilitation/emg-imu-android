@@ -128,6 +128,9 @@ public class FirebaseStreamLogger {
         // Need to make a copy of this object because it will be replaced immediately after
         // and this thread may not post for some time
         FirebaseStreamEntry mLog = new FirebaseStreamEntry(log);
+        mLog.setHardwareRevision(mManager.getHardwareRevision());
+        mLog.setFirmwareRevision(mManager.getFirmwareRevision());
+
         String DN = mLog.DocumentName();
 
         Log.d(TAG, "Writing " + getDocument(DN).getPath()  + " " + log.getRawSamples().size() + " raw samples and " + log.getPwrSamples().size() + " power samples");

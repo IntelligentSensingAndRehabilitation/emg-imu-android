@@ -97,6 +97,9 @@ public class FirebaseEmgLogger {
         // Need to make a copy of this object because it will be replaced immediately after
         // and this thread may not post for some time
         FirebaseEmgLogEntry mLog = new FirebaseEmgLogEntry(log);
+        mLog.setHardwareRevision(mManager.getHardwareRevision());
+        mLog.setFirmwareRevision(mManager.getFirmwareRevision());
+
         String DN = mLog.DocumentName();
 
         mManager.log(LogContract.Log.Level.INFO, "Writing to Firestore: " + DN);
