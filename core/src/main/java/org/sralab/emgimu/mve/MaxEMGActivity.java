@@ -143,9 +143,11 @@ public class MaxEMGActivity extends EmgImuBaseActivity implements EmgPowerView.O
         Log.d(TAG, "Device connected: " + device);
 
         // Is previously connected device might be ready and this event won't fire
-        if (mService.isReady(device)) {
+        if (mService != null && mService.isReady(device)) {
             Log.d(TAG, "Device is already ready. Must have previously connected.");
             onDeviceReady(device);
+        } else if (mService == null) {
+            Log.w(TAG, "Probable race condition");
         }
     }
 

@@ -26,6 +26,7 @@ import android.bluetooth.BluetoothDevice;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 
 import org.sralab.emgimu.EmgImuBaseActivity;
 import org.sralab.emgimu.service.EmgImuService;
@@ -89,8 +90,11 @@ public class ConfigActivity extends EmgImuBaseActivity {
 			mAdapter.onDeviceStateChanged(device);
 
 		// Is previously connected device might be ready and this event won't fire
-		if (mService.isReady(device))
-		    onDeviceReady(device);
+		if (mService != null && mService.isReady(device)) {
+			onDeviceReady(device);
+		} else if (mService == null) {
+			Log.w(TAG, "Probable race condition");
+		}
 	}
 
 	@Override

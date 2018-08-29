@@ -151,8 +151,10 @@ public class Game extends EmgImuBaseActivity {
         Log.d(TAG, "onDeviceConnecting");
 
         // Is previously connected device might be ready and this event won't fire
-        if (mService.isReady(device)) {
+        if (mService != null && mService.isReady(device)) {
             onDeviceReady(device);
+        } else if (mService == null) {
+            Log.w(TAG, "Probable race condition");
         }
     }
 
