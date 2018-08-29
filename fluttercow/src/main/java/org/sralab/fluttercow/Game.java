@@ -149,6 +149,11 @@ public class Game extends EmgImuBaseActivity {
     @Override
     public void onDeviceConnected(final BluetoothDevice device) {
         Log.d(TAG, "onDeviceConnecting");
+
+        // Is previously connected device might be ready and this event won't fire
+        if (mService.isReady(device)) {
+            onDeviceReady(device);
+        }
     }
 
     private boolean mReady = false;

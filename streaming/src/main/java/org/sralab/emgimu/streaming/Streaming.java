@@ -23,7 +23,7 @@ import no.nordicsemi.android.nrftoolbox.widget.DividerItemDecoration;
 public class Streaming extends EmgImuBaseActivity {
     private static final String TAG = Streaming.class.getSimpleName();
 
-    private EmgImuService.EmgImuBinder mBinder;
+    private EmgImuService.EmgImuBinder mService;
 
     private RecyclerView mDevicesView;
     private DeviceAdapter mAdapter;
@@ -73,10 +73,10 @@ public class Streaming extends EmgImuBaseActivity {
 
     @Override
     protected void onServiceBinded(EmgImuService.EmgImuBinder binder) {
-        mBinder = binder;
-        mDevicesView.setAdapter(mAdapter = new DeviceAdapter(binder));
+        mService = binder;
+        mDevicesView.setAdapter(mAdapter = new DeviceAdapter(mService));
         Log.d(TAG, "onServiceBinded");
-        Log.d(TAG, "Managed devices: " + binder.getManagedDevices());
+        Log.d(TAG, "Managed devices: " + mService.getManagedDevices());
 
         mAdapter.toggleFiltering(enableFilter.isChecked());
 
@@ -147,6 +147,11 @@ public class Streaming extends EmgImuBaseActivity {
     public void onDeviceConnected(final BluetoothDevice device) {
         if (mAdapter != null)
             mAdapter.onDeviceStateChanged(device);
+
+        // Is previously connected device might be ready and this event won't fire
+        if (mService.isReady(device)) {
+            onDeviceReady(device);
+        }
     }
 
     @Override

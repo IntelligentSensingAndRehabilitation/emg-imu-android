@@ -40,6 +40,7 @@ public class ConfigActivity extends EmgImuBaseActivity {
 
 	private RecyclerView mDevicesView;
 	private DeviceAdapter mAdapter;
+	private EmgImuService.EmgImuBinder mService;
 
 	@Override
 	protected void onCreateView(final Bundle savedInstanceState) {
@@ -56,6 +57,7 @@ public class ConfigActivity extends EmgImuBaseActivity {
 	@Override
 	protected void onServiceBinded(final EmgImuService.EmgImuBinder binder) {
 		mDevicesView.setAdapter(mAdapter = new DeviceAdapter(binder));
+        mService = binder;
 	}
 
 	@Override
@@ -85,6 +87,10 @@ public class ConfigActivity extends EmgImuBaseActivity {
 	public void onDeviceConnected(final BluetoothDevice device) {
 		if (mAdapter != null)
 			mAdapter.onDeviceStateChanged(device);
+
+		// Is previously connected device might be ready and this event won't fire
+		if (mService.isReady(device))
+		    onDeviceReady(device);
 	}
 
 	@Override

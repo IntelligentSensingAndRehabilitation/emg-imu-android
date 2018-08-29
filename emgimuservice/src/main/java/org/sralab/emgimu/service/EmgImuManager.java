@@ -132,6 +132,8 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
     private List<EmgLogRecord> mRecords = new ArrayList<>();
     private boolean mAbort;
 
+    private boolean mReady = false;
+
     private BluetoothGattCharacteristic mRecordAccessControlPointCharacteristic, mEmgLogCharacteristic;
 
     enum CHARACTERISTIC_TYPE {
@@ -292,7 +294,13 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 		    return (mEmgLogCharacteristic != null) && (mRecordAccessControlPointCharacteristic != null);
         }
 
-		@Override
+        @Override
+        public void onDeviceReady() {
+            super.onDeviceReady();
+            mReady = true;
+        }
+
+        @Override
 		protected void onDeviceDisconnected() {
 		    Log.d(TAG, "onDeviceDisconnected");
 
@@ -310,6 +318,8 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
             mEmgBuffCharacteristic = null;
             mEmgLogCharacteristic = null;
             mRecordAccessControlPointCharacteristic = null;
+
+            mReady = false;
 
             synchronized (this) {
                 if (mLogging && streamLogger != null) {
@@ -1138,4 +1148,9 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
     public String getHardwareRevision() {
         return mHardwareRevision;
     }
+
+    public boolean isDeviceReady() {
+        return mReady;
+    }
+
 }

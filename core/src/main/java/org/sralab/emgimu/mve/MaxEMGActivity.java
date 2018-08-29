@@ -141,6 +141,12 @@ public class MaxEMGActivity extends EmgImuBaseActivity implements EmgPowerView.O
     @Override
     public void onDeviceConnected(BluetoothDevice device) {
         Log.d(TAG, "Device connected: " + device);
+
+        // Is previously connected device might be ready and this event won't fire
+        if (mService.isReady(device)) {
+            Log.d(TAG, "Device is already ready. Must have previously connected.");
+            onDeviceReady(device);
+        }
     }
 
     @Override

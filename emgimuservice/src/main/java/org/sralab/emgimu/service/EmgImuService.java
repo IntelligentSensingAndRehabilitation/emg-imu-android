@@ -141,11 +141,17 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
          */
         public boolean isConnected() {
             List<BluetoothDevice> devices = getSavedDevices();
-            for (BluetoothDevice device : devices)
+            for (BluetoothDevice device : devices) {
                 if (!mBinder.isConnected(device))
                     return false;
-
+                //final EmgImuManager manager = getBleManager(device);
+            }
             return true;
+        }
+
+        public boolean isReady(final BluetoothDevice device) {
+            final EmgImuManager mManager = (EmgImuManager) getBleManager(device);
+            return mManager.isDeviceReady();
         }
 
         /**
