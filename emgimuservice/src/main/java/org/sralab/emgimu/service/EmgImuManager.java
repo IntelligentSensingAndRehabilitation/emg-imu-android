@@ -461,7 +461,6 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
             return resolved_ms;
         }
 
-        private int mLastBufferCount2;
 		private void parseBuff(final BluetoothDevice device, final BluetoothGattCharacteristic characteristic) {
             final byte [] buffer = characteristic.getValue();
             int len = buffer.length;
@@ -513,30 +512,16 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                 case 0x81:
 
                     buf_ts_ms = resolveBufCounter(timestamp, counter, 500);
+                    Log.d(TAG, " Counter: " + counter + " timestamp: " + timestamp + " ms: " + buf_ts_ms);
 
                     final int CHANNELS = 8;
                     final int SAMPLES = 9;
 
-                    // TODO: drop redundant buffer counter
-                    byte [] array = {buffer[HDR_LEN], buffer[HDR_LEN + 1]};
-
-                    // check the sample counter and make sure no data was lost
-                    int count = ByteBuffer.wrap(array).order(ByteOrder.LITTLE_ENDIAN).getShort();
-                    int diff = count - mLastBufferCount2;
-                    //Logger.i(mLogSession, "Count: " + count + " prior: " + mLastBufferCount2);
-                    if (diff != SAMPLES) {
-                        Log.e(TAG, "Buffer drop of " + diff + " samples");
-                        //Logger.e(mLogSession, "Buffer drop of " + diff + " samples");
-                    }
-                    mLastBufferCount2 = count;
-
-                    Log.d(TAG, "Counter1: " + count + " Counter2: " + counter + " timestamp: " + timestamp + " ms: " + buf_ts_ms);
-
-                    // representation of the data is 3 bytes per sample, 8 channels, and then 10 samples
+                    // representation of the data is 3 bytes per sample, 8 channels, and then N samples
                     double data[][] = new double[CHANNELS][SAMPLES];
                     for (int ch = 0; ch < 8; ch++) {
                         for (int sample = 0; sample < SAMPLES; sample++) {
-                            int idx = HDR_LEN + 2 + 3 * (ch + CHANNELS * sample);
+                            int idx = HDR_LEN + 3 * (ch + CHANNELS * sample);
                             byte sign = ((buffer[idx + 2] & 0x80) == 0x80) ? (byte) 0xff : (byte) 0x00;
                             byte [] t_array = {buffer[idx], buffer[idx+1], buffer[idx+2], sign};
                             data[ch][sample] = ByteBuffer.wrap(t_array).order(ByteOrder.BIG_ENDIAN).getInt();
@@ -545,7 +530,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                     }
 
                     mEmgBuff = data;
-                    mCallbacks.onEmgBuffReceived(device, count, data);
+                    mCallbacks.onEmgBuffReceived(device, counter, data);
 
                     break;
                 default:
