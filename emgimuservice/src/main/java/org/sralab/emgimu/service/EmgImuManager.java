@@ -417,7 +417,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
              */
 
             // counter is the power sample counter which should be running at a fixed rate
-            final double COUNTER_HZ = (Fs / EMG_BUFFER_LEN); // 2khz but 8 samples per buffer
+            final double COUNTER_HZ = Fs;
 
             // convert timestamp into ms since some arbitrary T0
             long timestamp_real = timestampToReal(timestamp);
@@ -476,7 +476,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 		        // Data from single channel system
                 case 16: // 1 channel of 16 bit data
 
-                    buf_ts_ms = resolveBufCounter(timestamp, counter, EMG_FS);
+                    buf_ts_ms = resolveBufCounter(timestamp, counter, EMG_FS / EMG_BUFFER_LEN); // 2khz but 8 samples per buffer);
 
                     // Have to manually combine to get the endian right
 
@@ -509,11 +509,11 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                     break;
                 case 0x81:
 
-                    buf_ts_ms = resolveBufCounter(timestamp, counter, 500);
-                    Log.d(TAG, " Counter: " + counter + " timestamp: " + timestamp + " ms: " + buf_ts_ms);
-
                     final int CHANNELS = 8;
                     final int SAMPLES = 9;
+
+                    buf_ts_ms = resolveBufCounter(timestamp, counter, 500.0 / SAMPLES);
+                    Log.d(TAG, " Counter: " + counter + " timestamp: " + timestamp + " ms: " + buf_ts_ms + " scale: " + microvolts_per_lsb);
 
                     // representation of the data is 3 bytes per sample, 8 channels, and then N samples
                     double data[][] = new double[CHANNELS][SAMPLES];
