@@ -467,6 +467,8 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 
             int format = buffer[0] & 0xFF;
 
+            double microvolts_per_lsb;
+
             byte counter = buffer[1];
             long timestamp = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 2);
             long buf_ts_ms;
@@ -486,7 +488,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                     double analog_gain = ina333_gain * bandpass_gain;
 
                     double lsb_per_v = analog_gain * nrf52383_gain / 0.6 * (1<<13);
-                    double microvolts_per_lsb = 1.0e6 / lsb_per_v;
+                    microvolts_per_lsb = 1.0e6 / lsb_per_v;
 
                     double [][] parsed = new double[1][EMG_BUFFER_LEN];
 
@@ -512,6 +514,11 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                     final int CHANNELS = 8;
                     final int SAMPLES = 9;
 
+                    final double ads1298_gain = 8;
+                    final double vref = 2.5e6;
+                    double full_scale_range = 2 * vref / ads1298_gain;
+                    microvolts_per_lsb = full_scale_range / (1<<24);
+
                     buf_ts_ms = resolveBufCounter(timestamp, counter, 500.0 / SAMPLES);
                     Log.d(TAG, " Counter: " + counter + " timestamp: " + timestamp + " ms: " + buf_ts_ms + " scale: " + microvolts_per_lsb);
 
@@ -522,7 +529,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                             int idx = HDR_LEN + 3 * (ch + CHANNELS * sample);
                             byte sign = ((buffer[idx + 2] & 0x80) == 0x80) ? (byte) 0xff : (byte) 0x00;
                             byte [] t_array = {buffer[idx], buffer[idx+1], buffer[idx+2], sign};
-                            data[ch][sample] = ByteBuffer.wrap(t_array).order(ByteOrder.BIG_ENDIAN).getInt();
+                            data[ch][sample] = microvolts_per_lsb * ByteBuffer.wrap(t_array).order(ByteOrder.BIG_ENDIAN).getInt();
                         }
                         //Log.d(TAG, "Data[" + ch + "] = " + Arrays.toString(data[ch]));
                     }
