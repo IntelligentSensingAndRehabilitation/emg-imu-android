@@ -409,7 +409,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 
         private long mBufT0;
         private long mLastBufferCount;
-        private long resolveBufCounter(long timestamp, byte counter) {
+        private long resolveBufCounter(long timestamp, byte counter, double Fs) {
             /**
              * Tracks if the counter is reliable and if so uses this to work
              * out the timestamp for this sample. If there is a drop resets
@@ -417,7 +417,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
              */
 
             // counter is the power sample counter which should be running at a fixed rate
-            final double COUNTER_HZ = (EMG_FS / EMG_BUFFER_LEN); // 2khz but 8 samples per buffer
+            final double COUNTER_HZ = (Fs / EMG_BUFFER_LEN); // 2khz but 8 samples per buffer
 
             // convert timestamp into ms since some arbitrary T0
             long timestamp_real = timestampToReal(timestamp);
@@ -461,20 +461,25 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
             return resolved_ms;
         }
 
+        private int mLastBufferCount2;
 		private void parseBuff(final BluetoothDevice device, final BluetoothGattCharacteristic characteristic) {
             final byte [] buffer = characteristic.getValue();
             int len = buffer.length;
 
-            byte format = buffer[0];
-            assert(format == 16);
+            int format = buffer[0] & 0xFF;
 
+            byte counter = buffer[1];
+            long timestamp = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 2);
+            long buf_ts_ms;
+
+            Log.d(TAG, "Counter: " + counter + " " + timestamp);
+
+            int HDR_LEN = 6;
 		    switch(format) {
 		        // Data from single channel system
                 case 16: // 1 channel of 16 bit data
-                    byte counter = buffer[1];
-                    long timestamp = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 2);
 
-                    long buf_ts_ms = resolveBufCounter(timestamp, counter);
+                    buf_ts_ms = resolveBufCounter(timestamp, counter, EMG_FS);
 
                     // Have to manually combine to get the endian right
 
@@ -489,7 +494,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                     double [][] parsed = new double[1][EMG_BUFFER_LEN];
 
                     for (int i = 0; i < EMG_BUFFER_LEN; i++) {
-                        byte [] array = {buffer[6+i*2], buffer[6+i*2+1]};
+                        byte [] array = {buffer[HDR_LEN + i*2], buffer[HDR_LEN + i*2+1]};
 
                         // check the sample counter and make sure no data was lost
                         int count = ByteBuffer.wrap(array).order(ByteOrder.LITTLE_ENDIAN).getShort();
@@ -505,28 +510,33 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                     // TODO: add data counter to this format
                     mCallbacks.onEmgBuffReceived(device, counter, mEmgBuff);
                     break;
-                default:
-                    assert(false);
-                    /*
-                    byte [] array = {buffer[0], buffer[1]};
+                case 0x81:
+
+                    buf_ts_ms = resolveBufCounter(timestamp, counter, 500);
+
+                    final int CHANNELS = 8;
+                    final int SAMPLES = 9;
+
+                    // TODO: drop redundant buffer counter
+                    byte [] array = {buffer[HDR_LEN], buffer[HDR_LEN + 1]};
 
                     // check the sample counter and make sure no data was lost
                     int count = ByteBuffer.wrap(array).order(ByteOrder.LITTLE_ENDIAN).getShort();
-                    int diff = count - mLastBufferCount;
-                    //Logger.i(mLogSession, "Count: " + count + " prior: " + mLastBufferCount);
-                    if (diff != 10) {
+                    int diff = count - mLastBufferCount2;
+                    //Logger.i(mLogSession, "Count: " + count + " prior: " + mLastBufferCount2);
+                    if (diff != SAMPLES) {
                         Log.e(TAG, "Buffer drop of " + diff + " samples");
                         //Logger.e(mLogSession, "Buffer drop of " + diff + " samples");
                     }
-                    mLastBufferCount = count;
+                    mLastBufferCount2 = count;
+
+                    Log.d(TAG, "Counter1: " + count + " Counter2: " + counter + " timestamp: " + timestamp + " ms: " + buf_ts_ms);
 
                     // representation of the data is 3 bytes per sample, 8 channels, and then 10 samples
-                    final int CHANNELS = 8;
-                    final int SAMPLES = 10;
                     double data[][] = new double[CHANNELS][SAMPLES];
                     for (int ch = 0; ch < 8; ch++) {
                         for (int sample = 0; sample < SAMPLES; sample++) {
-                            int idx = 2 + 3 * (ch + CHANNELS * sample);
+                            int idx = HDR_LEN + 2 + 3 * (ch + CHANNELS * sample);
                             byte sign = ((buffer[idx + 2] & 0x80) == 0x80) ? (byte) 0xff : (byte) 0x00;
                             byte [] t_array = {buffer[idx], buffer[idx+1], buffer[idx+2], sign};
                             data[ch][sample] = ByteBuffer.wrap(t_array).order(ByteOrder.BIG_ENDIAN).getInt();
@@ -537,7 +547,9 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                     mEmgBuff = data;
                     mCallbacks.onEmgBuffReceived(device, count, data);
 
-                    break;*/
+                    break;
+                default:
+                    Log.e(TAG, "Unsupported data format");
             }
         }
 
