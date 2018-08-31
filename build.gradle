@@ -45,9 +45,9 @@ ext {
 
     supportLib = '27.1.1'
     firebaseAuthVer = '16.0.3'
-    firebaseCoreVer = '16.0.1'
-    firebaseFirestoreVer = '17.0.3'
-    crashlyticsVer = '2.9.4'
+    firebaseCoreVer = '16.0.3'
+    firebaseFirestoreVer = '17.1.0'
+    crashlyticsVer = '2.9.5'
     instantAppsVer = '1.1.0'
 
     espressoVersion = "3.0.1"
