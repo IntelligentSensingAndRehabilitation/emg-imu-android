@@ -94,7 +94,7 @@ public class NetworkStreaming {
 
         private Socket socket;
         private static final int SERVERPORT = 5000;
-        private static final String SERVER_IP = "192.168.1.93";
+        private static final String SERVER_IP = "192.168.1.83";
 
         private OutputStream outputStream;
 
