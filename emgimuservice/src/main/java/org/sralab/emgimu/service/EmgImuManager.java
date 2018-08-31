@@ -471,8 +471,6 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
             long timestamp = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 2);
             long buf_ts_ms;
 
-            Log.d(TAG, "Counter: " + counter + " " + timestamp);
-
             int HDR_LEN = 6;
 		    switch(format) {
 		        // Data from single channel system
