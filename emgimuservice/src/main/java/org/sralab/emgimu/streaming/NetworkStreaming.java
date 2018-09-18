@@ -63,6 +63,8 @@ public class NetworkStreaming {
     }
 
     public boolean isConnected() {
+        if (clientThread == null)
+            return false;
         return clientThread.isConnected();
     }
 
@@ -142,6 +144,8 @@ public class NetworkStreaming {
         }
 
         protected boolean isConnected() {
+            if (socket == null)
+                return false;
             return socket.isConnected();
         }
 
