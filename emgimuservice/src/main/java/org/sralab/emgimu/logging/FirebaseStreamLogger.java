@@ -15,10 +15,21 @@ import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreSettings;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
 
 import org.sralab.emgimu.service.EmgImuManager;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.security.InvalidParameterException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.TimeZone;
 
 import no.nordicsemi.android.log.LogContract;
 
@@ -27,8 +38,6 @@ public class FirebaseStreamLogger {
     private String TAG = FirebaseStreamLogger.class.getSimpleName();
 
     private FirebaseUser mUser;
-    private FirebaseAuth mAuth;
-    private FirebaseFirestore mDb;
 
     /**
      * Manages the set of EMG Logs that will be synchronized to the database. These are
@@ -52,15 +61,16 @@ public class FirebaseStreamLogger {
      * subsequently the timestamps will be seconds since T0 as a double precision.
      */
 
-    private FirebaseStreamEntry log;
     private EmgImuManager mManager;
     private String mDeviceMac;
+    private String dateName;
+    private StorageReference storageRef;
 
     public FirebaseStreamLogger(EmgImuManager manager) {
         mManager = manager;
         mDeviceMac = manager.getAddress();
 
-        mAuth = FirebaseAuth.getInstance();
+        FirebaseAuth mAuth = FirebaseAuth.getInstance();
         mUser = mAuth.getCurrentUser(); // Log in performed by main service
 
         if (mUser == null) {
@@ -68,90 +78,44 @@ public class FirebaseStreamLogger {
             throw new InvalidParameterException("No FirebaseUser");
         }
 
-        mDb = FirebaseFirestore.getInstance();
-        if (mDb == null) {
-            Log.e(TAG, "Unable to get Firestore DB");
-            throw new InvalidParameterException("No Firestore DB");
-        }
+        // File name is UTC
+        TimeZone tz = TimeZone.getTimeZone("UTC");
+        DateFormat df = new SimpleDateFormat("yyyyMMdd-HHmmss'Z'"); // Quoted "Z" to indicate UTC, no timezone offset
+        df.setTimeZone(tz);
+        dateName = df.format(new Date());
 
-        FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder()
-                .setTimestampsInSnapshotsEnabled(true)
-                .build();
-        mDb.setFirestoreSettings(settings);
+        FirebaseStorage storage = FirebaseStorage.getInstance();
+        storageRef = storage.getReference().child(getFilename());
 
-        log = new FirebaseStreamEntry();
+        UploadTask uploadTask = storageRef.putStream(logStream);
+        uploadTask.addOnFailureListener(exception -> {
+            Log.e(TAG, "Failed to upload", exception);
+            mManager.log(LogContract.Log.Level.ERROR, "Failed to upload: " + exception.getMessage() + "\" + exception.getStackTrace().toString())
+        }).addOnSuccessListener(taskSnapshot -> {
+            Log.d(TAG, "Upload of log succeeded " + taskSnapshot.toString());
+            mManager.log(LogContract.Log.Level.DEBUG, "Upload of log succeeded " + taskSnapshot.toString());
+        });
     }
 
-    private DocumentReference getDocument(String DN) {
-        mManager.log(LogContract.Log.Level.DEBUG, "getDocument(" + DN + ") for address " + mDeviceMac);
-        return mDb.collection("streams").document(mUser.getUid()).collection(mDeviceMac).document(DN);
+    private final InputStream logStream = new InputStream() {
+        @Override
+        public int read() throws IOException {
+            return 0;
+        }
+    }
+
+
+    private String getFilename() {
+        return "streams/" + mUser + "/" + mDeviceMac + "/" + dateName;
     }
 
     public void addRawSample(long timestamp, double sample) {
-        if (log == null) {
-            throw new InvalidParameterException("Need to prepare log");
-        }
-
-        boolean full = log.addRawSample(timestamp, sample);
-
-        if (full)
-            flushLog();
+        // TODO:
     }
+
 
     public void addPwrSample(long timestamp, double sample) {
-        if (log == null) {
-            throw new InvalidParameterException("Need to prepare log");
-        }
-
-        boolean full = log.addPwrSample(timestamp, sample);
-        if (full)
-            flushLog();
+        // TODO:
     }
 
-    public void flushLog() {
-        write();
-        log = new FirebaseStreamEntry();
-    }
-
-    public void write() {
-
-        if (log == null) {
-            Log.e(TAG, "Someone is trying to update a log that isn't valid");
-            throw new InvalidParameterException("Trying to update a null log");
-        }
-
-        if (log.getRawSamples().size() == 0 && log.getPwrSamples().size() == 0) {
-            Log.d(TAG, "Not writing log as no samples recorded");
-            return;
-        }
-
-        // Need to make a copy of this object because it will be replaced immediately after
-        // and this thread may not post for some time
-        FirebaseStreamEntry mLog = new FirebaseStreamEntry(log);
-        mLog.setHardwareRevision(mManager.getHardwareRevision());
-        mLog.setFirmwareRevision(mManager.getFirmwareRevision());
-
-        String DN = mLog.DocumentName();
-
-        Log.d(TAG, "Writing " + getDocument(DN).getPath()  + " " + log.getRawSamples().size() + " raw samples and " + log.getPwrSamples().size() + " power samples");
-        mManager.log(LogContract.Log.Level.INFO, "Writing stream " + getDocument(DN).getPath() + " "  + log.getRawSamples().size() + " raw samples and " + log.getPwrSamples().size() + " power samples");
-
-        Handler mainHandler = new Handler(Looper.getMainLooper());
-        mainHandler.post(()-> {
-            // Add a new document with a generated ID
-            getDocument(DN).set(mLog)
-                    .addOnSuccessListener(aVoid -> {
-                        mManager.log(LogContract.Log.Level.DEBUG, mDeviceMac + " Document " + DN + " successfully saved");
-                        Log.d(TAG, "Successfully wrote " + getDocument(DN).getPath());
-                    })
-                    .addOnFailureListener(e -> {
-                        mManager.log(LogContract.Log.Level.ERROR, "Error adding document " + DN + " Error: " + e.toString());
-                        Log.d(TAG, "Failed writing " + DN, e);
-                    })
-                    .addOnCompleteListener(task -> {
-                        mManager.log(LogContract.Log.Level.DEBUG, mDeviceMac + " Document " + DN + " write completed");
-                        Log.d(TAG, "Write completed " + getDocument(DN).getPath());
-                    });
-        });
-    }
 }
