@@ -747,7 +747,8 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
         LocalBroadcastManager.getInstance(this).sendBroadcast(broadcast);
 
         if (networkStreaming != null && networkStreaming.isConnected()) {
-            networkStreaming.streamEmgPwr(device, 0, (double) value);
+            double [] data = {(double) value};
+            networkStreaming.streamEmgPwr(device, 0, data);
         }
     }
 

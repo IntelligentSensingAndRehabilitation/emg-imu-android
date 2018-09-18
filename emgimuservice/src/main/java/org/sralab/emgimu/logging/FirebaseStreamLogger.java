@@ -18,11 +18,17 @@ import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
+import com.google.gson.Gson;
 
 import org.sralab.emgimu.service.EmgImuManager;
+import org.sralab.emgimu.streaming.messages.EmgPwrMessage;
+import org.sralab.emgimu.streaming.messages.EmgRawMessage;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
 import java.security.InvalidParameterException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -66,6 +72,11 @@ public class FirebaseStreamLogger {
     private String dateName;
     private StorageReference storageRef;
 
+
+    private PipedOutputStream dataStream;
+    private PipedInputStream logStream;
+    private boolean firstEntry;
+
     public FirebaseStreamLogger(EmgImuManager manager) {
         mManager = manager;
         mDeviceMac = manager.getAddress();
@@ -87,35 +98,69 @@ public class FirebaseStreamLogger {
         FirebaseStorage storage = FirebaseStorage.getInstance();
         storageRef = storage.getReference().child(getFilename());
 
+        dataStream = new PipedOutputStream();
+        try {
+            logStream = new PipedInputStream(dataStream);
+            dataStream.write("[".getBytes());
+            firstEntry = true;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return;
+        }
+
+        Log.d(TAG, "Creating upload task for " + getReference());
+
         UploadTask uploadTask = storageRef.putStream(logStream);
         uploadTask.addOnFailureListener(exception -> {
             Log.e(TAG, "Failed to upload", exception);
-            mManager.log(LogContract.Log.Level.ERROR, "Failed to upload: " + exception.getMessage() + "\" + exception.getStackTrace().toString())
+            mManager.log(LogContract.Log.Level.ERROR, "Failed to upload: " + exception.getMessage() + "\\" + exception.getStackTrace().toString());
         }).addOnSuccessListener(taskSnapshot -> {
             Log.d(TAG, "Upload of log succeeded " + taskSnapshot.toString());
             mManager.log(LogContract.Log.Level.DEBUG, "Upload of log succeeded " + taskSnapshot.toString());
         });
     }
 
-    private final InputStream logStream = new InputStream() {
-        @Override
-        public int read() throws IOException {
-            return 0;
+    public String getReference() {
+        return storageRef.getPath();
+    }
+
+    public void close() {
+        try {
+            dataStream.write("]".getBytes());
+            dataStream.close();
+            Log.d(TAG, "Closing PipedOutputStream");
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
-
     private String getFilename() {
-        return "streams/" + mUser + "/" + mDeviceMac + "/" + dateName;
+        return "streams/" + mUser.getUid() + "/" + mDeviceMac + "/" + dateName + ".json";
     }
 
-    public void addRawSample(long timestamp, double sample) {
-        // TODO:
+    synchronized
+    private void addJson(String json) {
+        try {
+            if (firstEntry) {
+                dataStream.write(json.getBytes());
+                firstEntry = false;
+            } else
+                dataStream.write((",\n" + json).getBytes());
+        } catch (IOException e) {
+            Log.e(TAG, "Error writing to stream");
+        }
     }
 
+    public void addRawSample(long time, int channels, int samples, double [][] data) {
+        Gson gson = new Gson();
+        EmgRawMessage msg = new EmgRawMessage(mDeviceMac, time, channels, samples, data);
+        addJson(gson.toJson(msg));
+    }
 
-    public void addPwrSample(long timestamp, double sample) {
-        // TODO:
+    public void addPwrSample(long time, double [] data) {
+        Gson gson = new Gson();
+        EmgPwrMessage msg = new EmgPwrMessage(mDeviceMac, time, data);
+        addJson(gson.toJson(msg));
     }
 
 }

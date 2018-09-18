@@ -82,7 +82,7 @@ public class NetworkStreaming {
 
     public void streamEmgPwr(BluetoothDevice dev,
                                 long time,
-                                double data) {
+                                double [] data) {
 
         Gson gson = new Gson();
         EmgPwrMessage msg = new EmgPwrMessage(dev.getAddress(), time, data);
