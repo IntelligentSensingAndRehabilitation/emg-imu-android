@@ -1158,4 +1158,11 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         return mReady;
     }
 
+    public String getLoggingRef() {
+        if (mLogging == false || streamLogger == null) {
+            return "";
+        }
+
+        return streamLogger.getReference();
+    }
 }

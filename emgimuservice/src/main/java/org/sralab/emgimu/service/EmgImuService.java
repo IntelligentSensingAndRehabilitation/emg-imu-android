@@ -275,6 +275,17 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
             super.log(level, messageRes, params);
             mServiceLogger.log(level, messageRes, params);
         }
+
+        public List<String> getLoggingReferences() {
+            List<String> references = new ArrayList<>();
+            for (final BluetoothDevice device : getManagedDevices()) {
+                final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+                references.add(manager.getLoggingRef());
+            }
+
+            return references;
+        }
+
 	}
 
 	@Override
@@ -829,4 +840,5 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 			name = getString(R.string.emgimu_default_device_name);
 		return name;
 	}
+
 }
