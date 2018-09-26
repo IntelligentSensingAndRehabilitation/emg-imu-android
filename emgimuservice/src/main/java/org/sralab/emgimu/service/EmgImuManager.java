@@ -184,7 +184,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 
         synchronized (this) {
             if (mLogging && streamLogger != null) {
-                Log.d(TAG, "Writing to stream logger");
+                Log.d(TAG, "Closing stream logger");
                 streamLogger.close();
                 streamLogger = null;
             }
@@ -321,7 +321,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 
             synchronized (this) {
                 if (mLogging && streamLogger != null) {
-                    Log.d(TAG, "Writing to stream logger");
+                    Log.d(TAG, "Closing stream logger");
                     streamLogger.close();
                     streamLogger = null;
                 }
