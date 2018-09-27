@@ -180,8 +180,8 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
             // Graphing elements will be assigned once we have a position
             mLineGraph = null;
 
-            connectedColor = ContextCompat.getColorStateList(itemView.getContext(), R.color.orange);
-            disconnectedColor = ContextCompat.getColorStateList(itemView.getContext(), R.color.darkGray);
+            connectedColor = ContextCompat.getColorStateList(itemView.getContext(), R.color.sral_red);
+            disconnectedColor = ContextCompat.getColorStateList(itemView.getContext(), R.color.sral_orange);
 
             // Configure Disconnect button
             actionDisconnect.setOnClickListener(new View.OnClickListener() {

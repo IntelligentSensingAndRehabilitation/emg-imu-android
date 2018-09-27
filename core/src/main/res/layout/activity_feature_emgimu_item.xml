@@ -69,10 +69,10 @@
             android:id="@+id/action_disconnect"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:backgroundTint="@color/orange"
-            app:backgroundTint="@color/orange"
+            android:backgroundTint="@color/sral_orange"
+            app:backgroundTint="@color/sral_orange"
             android:layout_alignParentRight="true"
-            android:src="@drawable/ic_action_disconnect"/>
+            android:src="@drawable/ic_action_clear"/>
 
 	</RelativeLayout>
 
