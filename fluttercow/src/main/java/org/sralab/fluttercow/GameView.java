@@ -32,11 +32,14 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.os.Message;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 public class GameView extends SurfaceView{
+
+    private final static String TAG = GameView.class.getName();
     
     /** Milliseconds for game timer tick */
     public static final long UPDATE_INTERVAL = 50;        // = 20 FPS
@@ -280,6 +283,7 @@ public class GameView extends SurfaceView{
             if(o.isColliding(player)){
                 o.onCollision();
                 gameOver();
+                return;
             }
         }
         for(int i=0; i<powerUps.size(); i++){
@@ -368,7 +372,7 @@ public class GameView extends SurfaceView{
     public void gameOver(){
         pause();
         playerDeadFall();
-        game.gameOver();
+        game.newGame();
     }
     
     public void revive() {
@@ -389,7 +393,6 @@ public class GameView extends SurfaceView{
      * Let's the character blink a few times.
      */
     private void setupRevive(){
-        game.gameOverDialog.hide();
         player.setY(this.getHeight()/2 - player.getWidth()/2);
         player.setX(this.getWidth()/6);
         obstacles.clear();

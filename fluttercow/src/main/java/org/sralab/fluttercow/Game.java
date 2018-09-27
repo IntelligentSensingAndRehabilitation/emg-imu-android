@@ -48,9 +48,6 @@ public class Game extends EmgImuBaseActivity {
     public static final float volume = 0.3f;
     /** Will play things like mooing */
     public static SoundPool soundPool = new SoundPool(5, AudioManager.STREAM_MUSIC, 0);
-    
-    /** Counts number of played games */
-    private static int gameOverCounter = 1;
 
     // Handle toggling the control mode
     public enum CONTROL_MODE { LINEAR, THRESHOLD };
@@ -92,9 +89,6 @@ public class Game extends EmgImuBaseActivity {
     /** This will increase the revive price */
     public int numberOfRevive = 1;
     
-    /** The dialog displayed when the game is over*/
-    GameOverDialog gameOverDialog;
-
     private boolean mFirstStart = false;
 
     private FirebaseAnalytics mFirebaseAnalytics;
@@ -104,7 +98,6 @@ public class Game extends EmgImuBaseActivity {
         Fabric.with(this, new Crashlytics());
 
         accomplishmentBox = new AccomplishmentBox();
-        gameOverDialog = new GameOverDialog(this);
         handler = new MyHandler(this);
         initMusicPlayer();
         loadCoins();
@@ -374,7 +367,7 @@ public class Game extends EmgImuBaseActivity {
         }
         super.onResume();
     }
-
+    
     @Override
     protected void onDestroy() {
         Gson gson = new Gson();
@@ -390,16 +383,6 @@ public class Game extends EmgImuBaseActivity {
         super.onDestroy();
     }
 
-    /**
-     * Sends the handler the command to show the GameOverDialog.
-     * Because it needs an UI thread.
-     */
-    public void gameOver(){
-        roundLen.add(accomplishmentBox.points);
-
-        handler.sendMessage(Message.obtain(handler, MyHandler.GAME_OVER_DIALOG));
-    }
-    
     public void increaseCoin(){
         this.coins++;
         if(coins >= 50 && !accomplishmentBox.achievement_50_coins){
@@ -454,6 +437,7 @@ public class Game extends EmgImuBaseActivity {
             }
         });
 
+        roundLen.add(accomplishmentBox.points);
         accomplishmentBox.points = 0;
         this.view.getPlayer().upgradeBitmap(accomplishmentBox.points);
     }
@@ -462,8 +446,7 @@ public class Game extends EmgImuBaseActivity {
      * Shows the GameOverDialog when a message with code 0 is received.
      */
     static class MyHandler extends Handler{
-        public static final int GAME_OVER_DIALOG = 0;
-        public static final int SHOW_TOAST = 1;
+        public static final int SHOW_TOAST = 0;
 
         private Game game;
         
@@ -474,20 +457,12 @@ public class Game extends EmgImuBaseActivity {
         @Override
         public void handleMessage(Message msg) {
             switch(msg.what){
-                case GAME_OVER_DIALOG:
-                    showGameOverDialog();
-                    break;
                 case SHOW_TOAST:
                     Toast.makeText(game, msg.arg1, Toast.LENGTH_SHORT).show();
                     break;
             }
         }
 
-        private void showGameOverDialog() {
-            ++Game.gameOverCounter;
-            game.gameOverDialog.init();
-            game.gameOverDialog.show();
-        }
     }
     
 
