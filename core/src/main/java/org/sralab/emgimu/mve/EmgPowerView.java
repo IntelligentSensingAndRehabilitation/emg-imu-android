@@ -103,11 +103,11 @@ public class EmgPowerView extends View {
         // TODO: get pulling in SRALab colors working
         mBarColor = a.getColor(
                 R.styleable.EmgPowerView_barColor,
-                ContextCompat.getColor(getContext(), R.color.orange));
+                ContextCompat.getColor(getContext(), R.color.sral_red));
 
         mLineColor = a.getColor(
                 R.styleable.EmgPowerView_lineColor,
-                ContextCompat.getColor(getContext(), R.color.light_orange));
+                ContextCompat.getColor(getContext(), R.color.sral_orange));
 
         mLineWidth = a.getDimension(
                 R.styleable.EmgPowerView_lineWidth,
@@ -119,7 +119,7 @@ public class EmgPowerView extends View {
 
         mTextColor = a.getColor(
                 R.styleable.EmgPowerView_textColor,
-                ContextCompat.getColor(getContext(), R.color.light_orange));
+                ContextCompat.getColor(getContext(), R.color.sral_orange));
 
         /*if (a.hasValue(R.styleable.EmgPowerView_exampleDrawable)) {
             mExampleDrawable = a.getDrawable(

@@ -41,7 +41,6 @@ import org.sralab.emgimu.config.R;
 
 public class AppAdapter extends BaseAdapter {
 	private static final String CATEGORY = "org.sralab.emgimu.LAUNCHER";
-	private static final String NRF_CONNECT_PACKAGE = "no.nordicsemi.android.mcp";
 
 	private final Context mContext;
 	private final PackageManager mPackageManager;
@@ -58,13 +57,6 @@ public class AppAdapter extends BaseAdapter {
 		intent.addCategory(CATEGORY);
 
 		final List<ResolveInfo> appList = mApplications = pm.queryIntentActivities(intent, 0);
-		// TODO remove the following loop after some time, when there will be no more MCP 1.1 at the market.
-		for (final ResolveInfo info : appList) {
-			if (NRF_CONNECT_PACKAGE.equals(info.activityInfo.packageName)) {
-				appList.remove(info);
-				break;
-			}
-		}
 		Collections.sort(appList, new ResolveInfo.DisplayNameComparator(pm));
 	}
 
@@ -91,8 +83,8 @@ public class AppAdapter extends BaseAdapter {
 
 			final ViewHolder holder = new ViewHolder();
 			holder.view = view;
-			holder.icon = (ImageView) view.findViewById(R.id.icon);
-			holder.label = (TextView) view.findViewById(R.id.label);
+			holder.icon = view.findViewById(R.id.icon);
+			holder.label = view.findViewById(R.id.label);
 			view.setTag(holder);
 		}
 
@@ -101,15 +93,14 @@ public class AppAdapter extends BaseAdapter {
 
 		final ViewHolder holder = (ViewHolder) view.getTag();
 		holder.icon.setImageDrawable(info.loadIcon(pm));
-		holder.label.setText(info.loadLabel(pm).toString().toUpperCase(Locale.US));
-		holder.view.setOnClickListener(new View.OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				final Intent intent = new Intent();
-				intent.setComponent(new ComponentName(info.activityInfo.packageName, info.activityInfo.name));
-				intent.setFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
-				mContext.startActivity(intent);
-			}
+		holder.icon.setScaleType(ImageView.ScaleType.CENTER_CROP);
+
+        holder.label.setText(info.loadLabel(pm).toString().toUpperCase(Locale.US));
+		holder.view.setOnClickListener(v -> {
+			final Intent intent = new Intent();
+			intent.setComponent(new ComponentName(info.activityInfo.packageName, info.activityInfo.name));
+			intent.setFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
+			mContext.startActivity(intent);
 		});
 
 		return view;

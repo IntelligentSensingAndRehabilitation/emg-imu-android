@@ -24,6 +24,7 @@
         <activity
             android:name="org.sralab.fluttercow.Game"
             android:label="@string/fluttercow_name"
+            android:icon="@mipmap/ic_fluttercow_launcher"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|screenLayout|fontScale|uiMode|orientation|screenSize|smallestScreenSize|layoutDirection"
             android:screenOrientation="portrait" >
             <intent-filter>
