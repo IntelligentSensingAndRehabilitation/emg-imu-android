@@ -27,6 +27,7 @@ import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.widget.TextView;
 
 import org.sralab.emgimu.EmgImuBaseActivity;
 import org.sralab.emgimu.service.EmgImuService;
@@ -59,6 +60,9 @@ public class ConfigActivity extends EmgImuBaseActivity {
 	protected void onServiceBinded(final EmgImuService.EmgImuBinder binder) {
 		mDevicesView.setAdapter(mAdapter = new DeviceAdapter(binder));
         mService = binder;
+        String user = mService.getUser();
+        TextView userView = findViewById(R.id.user_id);
+        userView.setText("User: " + user);
 	}
 
 	@Override
