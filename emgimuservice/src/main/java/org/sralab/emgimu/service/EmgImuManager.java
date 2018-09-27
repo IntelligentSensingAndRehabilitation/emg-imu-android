@@ -27,7 +27,6 @@ import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
 
@@ -40,7 +39,6 @@ import org.sralab.emgimu.parser.RecordAccessControlPointParser;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.Deque;
 import java.util.GregorianCalendar;
@@ -186,8 +184,8 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 
         synchronized (this) {
             if (mLogging && streamLogger != null) {
-                Log.d(TAG, "Writing to stream logger");
-                streamLogger.write();
+                Log.d(TAG, "Closing stream logger");
+                streamLogger.close();
                 streamLogger = null;
             }
         }
@@ -323,8 +321,8 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 
             synchronized (this) {
                 if (mLogging && streamLogger != null) {
-                    Log.d(TAG, "Writing to stream logger");
-                    streamLogger.write();
+                    Log.d(TAG, "Closing stream logger");
+                    streamLogger.close();
                     streamLogger = null;
                 }
             }
@@ -403,7 +401,8 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
             checkEmgClick(device, pwr_val);
 
             if (mLogging && streamLogger != null) {
-                streamLogger.addPwrSample(ts_ms, mEmgPwr);
+                double [] data = {(double) mEmgPwr};
+                streamLogger.addPwrSample(ts_ms, data);
             }
         }
 
@@ -471,7 +470,11 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 
             byte counter = buffer[1];
             long timestamp = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 2);
-            long buf_ts_ms;
+            long buf_ts_ms = 0;
+
+            double [][] data;
+            int channels;
+            int samples;
 
             int HDR_LEN = 6;
 		    switch(format) {
@@ -490,43 +493,37 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                     double lsb_per_v = analog_gain * nrf52383_gain / 0.6 * (1<<13);
                     microvolts_per_lsb = 1.0e6 / lsb_per_v;
 
-                    double [][] parsed = new double[1][EMG_BUFFER_LEN];
+                    channels = 1;
+                    samples = EMG_BUFFER_LEN;
+                    data = new double[channels][samples];
 
-                    for (int i = 0; i < EMG_BUFFER_LEN; i++) {
+                    for (int i = 0; i < samples; i++) {
                         byte [] array = {buffer[HDR_LEN + i*2], buffer[HDR_LEN + i*2+1]};
 
                         // check the sample counter and make sure no data was lost
                         int count = ByteBuffer.wrap(array).order(ByteOrder.LITTLE_ENDIAN).getShort();
-                        parsed[0][i] = count * microvolts_per_lsb;
-
-                        if (mLogging && streamLogger != null) {
-                            long offset_ms = (long) (1000.0 * i / EMG_FS);
-                            streamLogger.addRawSample(buf_ts_ms + offset_ms, parsed[0][i]);
-                        }
+                        data[0][i] = count * microvolts_per_lsb;
                     }
 
-                    mEmgBuff = parsed;
-                    // TODO: add data counter to this format
-                    mCallbacks.onEmgBuffReceived(device, counter, mEmgBuff);
                     break;
                 case 0x81:
 
-                    final int CHANNELS = 8;
-                    final int SAMPLES = 9;
+                    channels = 8;
+                    samples = 9;
 
                     final double ads1298_gain = 8;
                     final double vref = 2.5e6;
                     double full_scale_range = 2 * vref / ads1298_gain;
                     microvolts_per_lsb = full_scale_range / (1<<24);
 
-                    buf_ts_ms = resolveBufCounter(timestamp, counter, 500.0 / SAMPLES);
+                    buf_ts_ms = resolveBufCounter(timestamp, counter, 500.0 / samples);
                     Log.d(TAG, " Counter: " + counter + " timestamp: " + timestamp + " ms: " + buf_ts_ms + " scale: " + microvolts_per_lsb);
 
                     // representation of the data is 3 bytes per sample, 8 channels, and then N samples
-                    double data[][] = new double[CHANNELS][SAMPLES];
+                    data = new double[channels][samples];
                     for (int ch = 0; ch < 8; ch++) {
-                        for (int sample = 0; sample < SAMPLES; sample++) {
-                            int idx = HDR_LEN + 3 * (ch + CHANNELS * sample);
+                        for (int sample = 0; sample < samples; sample++) {
+                            int idx = HDR_LEN + 3 * (ch + channels * sample);
                             byte sign = ((buffer[idx + 2] & 0x80) == 0x80) ? (byte) 0xff : (byte) 0x00;
                             byte [] t_array = {buffer[idx], buffer[idx+1], buffer[idx+2], sign};
                             data[ch][sample] = microvolts_per_lsb * ByteBuffer.wrap(t_array).order(ByteOrder.BIG_ENDIAN).getInt();
@@ -534,13 +531,19 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                         //Log.d(TAG, "Data[" + ch + "] = " + Arrays.toString(data[ch]));
                     }
 
-                    mEmgBuff = data;
-                    mCallbacks.onEmgBuffReceived(device, counter, data);
-
                     break;
                 default:
                     Log.e(TAG, "Unsupported data format");
+                    return;
             }
+
+            mEmgBuff = data;
+            mCallbacks.onEmgBuffReceived(device, counter, data);
+
+            if (mLogging && streamLogger != null) {
+                streamLogger.addRawSample(buf_ts_ms, channels, samples, data);
+            }
+
         }
 
         @Override
@@ -1155,4 +1158,11 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         return mReady;
     }
 
+    public String getLoggingRef() {
+        if (mLogging == false || streamLogger == null) {
+            return "";
+        }
+
+        return streamLogger.getReference();
+    }
 }

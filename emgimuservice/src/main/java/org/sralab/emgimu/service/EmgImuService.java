@@ -71,6 +71,7 @@ import no.nordicsemi.android.nrftoolbox.profile.multiconnect.BleMulticonnectProf
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.sralab.emgimu.logging.EmgLogFetchJobService;
+import org.sralab.emgimu.streaming.NetworkStreaming;
 
 public class EmgImuService extends BleMulticonnectProfileService implements EmgImuManagerCallbacks {
 	@SuppressWarnings("unused")
@@ -118,6 +119,8 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 
     private ILogSession mLogSession;
     private ServiceLogger mServiceLogger = new ServiceLogger(TAG, this, mLogSession);
+
+    private NetworkStreaming networkStreaming;
 
 	/**
 	 * This local binder is an interface for the bonded activity to operate with the proximity sensor
@@ -272,6 +275,17 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
             super.log(level, messageRes, params);
             mServiceLogger.log(level, messageRes, params);
         }
+
+        public List<String> getLoggingReferences() {
+            List<String> references = new ArrayList<>();
+            for (final BluetoothDevice device : getManagedDevices()) {
+                final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+                references.add(manager.getLoggingRef());
+            }
+
+            return references;
+        }
+
 	}
 
 	@Override
@@ -351,6 +365,9 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
         Bundle bundle = new Bundle();
         bundle.putString(FirebaseAnalytics.Param.ITEM_ID, "EMG_IMU_SERVICE_CREATED");
         mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.SELECT_CONTENT, bundle);
+
+        networkStreaming = new NetworkStreaming();
+        networkStreaming.start();
 	}
 
     @Override
@@ -402,6 +419,9 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
         Bundle bundle = new Bundle();
         bundle.putString(FirebaseAnalytics.Param.ITEM_ID, "EMG_IMU_SERVICE_STOPPED");
         mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.SELECT_CONTENT, bundle);
+
+        if (networkStreaming != null)
+            networkStreaming.stop();
     }
 
     @Override
@@ -736,6 +756,11 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
         broadcast.putExtra(EXTRA_DEVICE, device);
         broadcast.putExtra(EXTRA_EMG_PWR, value);
         LocalBroadcastManager.getInstance(this).sendBroadcast(broadcast);
+
+        if (networkStreaming != null && networkStreaming.isConnected()) {
+            double [] data = {(double) value};
+            networkStreaming.streamEmgPwr(device, 0, data);
+        }
     }
 
     @Override
@@ -754,6 +779,10 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
         broadcast.putExtra(EXTRA_EMG_COUNT, count);
         broadcast.putExtra(EXTRA_EMG_BUFF, linearizedData);
         LocalBroadcastManager.getInstance(this).sendBroadcast(broadcast);
+
+        if (networkStreaming != null && networkStreaming.isConnected()) {
+            networkStreaming.streamEmgBuffer(device, 0, SAMPLES, CHANNELS, data);
+        }
     }
 
     public void onEmgClick(final BluetoothDevice device) {
@@ -811,4 +840,5 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 			name = getString(R.string.emgimu_default_device_name);
 		return name;
 	}
+
 }

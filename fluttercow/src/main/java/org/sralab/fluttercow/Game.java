@@ -19,15 +19,19 @@ import android.os.Message;
 import android.view.WindowManager;
 import android.widget.Toast;
 
+import java.util.ArrayList;
 import java.util.List;
 import android.util.Log;
 
 import com.crashlytics.android.Crashlytics;
 import com.google.firebase.analytics.FirebaseAnalytics;
+import com.google.gson.Gson;
 
 import org.sralab.emgimu.EmgImuBaseActivity;
+import org.sralab.emgimu.logging.FirebaseGameLogger;
 import org.sralab.emgimu.service.EmgImuService;
 import org.sralab.emgimu.service.EmgLogRecord;
+import org.sralab.emgimu.streaming.messages.EmgPwrMessage;
 import org.sralab.fluttercow.sprites.PlayableCharacter;
 
 import io.fabric.sdk.android.Fabric;
@@ -127,6 +131,8 @@ public class Game extends EmgImuBaseActivity {
 
     private List <BluetoothDevice> mDevices;
     private EmgImuService.EmgImuBinder mService;
+    private FirebaseGameLogger mGameLogger;
+    private ArrayList<Integer> roundLen = new ArrayList<>();
 
     @Override
     protected void onServiceBinded(final EmgImuService.EmgImuBinder binder) {
@@ -134,6 +140,7 @@ public class Game extends EmgImuBaseActivity {
         Log.d(TAG, "onServiceBinded");
         mDevices = binder.getManagedDevices();
         mService = binder;
+        mGameLogger = new FirebaseGameLogger(mService, "Flutter Cow");
     }
 
     @Override
@@ -368,11 +375,28 @@ public class Game extends EmgImuBaseActivity {
         super.onResume();
     }
 
+    @Override
+    protected void onDestroy() {
+        Gson gson = new Gson();
+        String json = gson.toJson(roundLen);
+
+        double p = 0;
+        for(Integer len : roundLen)
+            p += len;
+        p /= roundLen.size();
+
+        mGameLogger.finalize(p, json);
+
+        super.onDestroy();
+    }
+
     /**
      * Sends the handler the command to show the GameOverDialog.
      * Because it needs an UI thread.
      */
     public void gameOver(){
+        roundLen.add(accomplishmentBox.points);
+
         handler.sendMessage(Message.obtain(handler, MyHandler.GAME_OVER_DIALOG));
     }
     

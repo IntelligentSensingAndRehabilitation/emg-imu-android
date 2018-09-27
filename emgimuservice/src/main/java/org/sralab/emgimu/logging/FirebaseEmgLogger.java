@@ -16,6 +16,7 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.FirebaseFirestoreSettings;
 
 import org.sralab.emgimu.service.EmgImuManager;
 
@@ -71,6 +72,10 @@ public class FirebaseEmgLogger {
         }
 
         mDb = FirebaseFirestore.getInstance();
+        FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder()
+                .setTimestampsInSnapshotsEnabled(true)
+                .build();
+        mDb.setFirestoreSettings(settings);
         if (mDb == null) {
             Log.e(TAG, "Unable to get Firestore DB");
             throw new InvalidParameterException("No Firestore DB");
