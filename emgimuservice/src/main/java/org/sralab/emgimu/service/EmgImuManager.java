@@ -1102,8 +1102,10 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         Logger.d(mLogSession, "Log ready. Requesting records from device");
 
         final BluetoothGattCharacteristic racpCharacteristic = mRecordAccessControlPointCharacteristic;
-        setOpCode(racpCharacteristic, OP_CODE_REPORT_STORED_RECORDS, OPERATOR_ALL_RECORDS);
-        writeCharacteristic(racpCharacteristic);
+        if (racpCharacteristic != null) {
+            setOpCode(racpCharacteristic, OP_CODE_REPORT_STORED_RECORDS, OPERATOR_ALL_RECORDS);
+            writeCharacteristic(racpCharacteristic);
+        }
     }
 
     public void setThreshold(double min, double max) {
