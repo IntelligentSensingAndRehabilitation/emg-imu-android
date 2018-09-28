@@ -28,7 +28,7 @@ import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Scaling;
 import com.badlogic.gdx.utils.viewport.ScalingViewport;
 
-import org.sralab.emgimu.service.EmgImuServiceHolder;
+import org.sralab.martianrun.EmgImuServiceHolder;
 import org.sralab.martianrun.actors.*;
 import org.sralab.martianrun.actors.menu.*;
 import org.sralab.martianrun.enums.Difficulty;

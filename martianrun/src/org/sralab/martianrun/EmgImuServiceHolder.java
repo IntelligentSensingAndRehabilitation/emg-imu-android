@@ -1,4 +1,4 @@
-package org.sralab.emgimu.service;
+package org.sralab.martianrun;
 
 
 import android.bluetooth.BluetoothAdapter;
@@ -11,28 +11,24 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
-import android.net.Uri;
-import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
-import android.view.View;
-import android.widget.Toast;
+
+import org.sralab.emgimu.service.EmgImuManager;
+import org.sralab.emgimu.service.EmgImuManagerCallbacks;
+import org.sralab.emgimu.service.EmgImuService;
+import org.sralab.emgimu.service.EmgLogRecord;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
-import no.nordicsemi.android.log.ILogSession;
-import no.nordicsemi.android.log.LocalLogSession;
-import no.nordicsemi.android.log.LogContract;
-import no.nordicsemi.android.log.Logger;
 import no.nordicsemi.android.nrftoolbox.profile.multiconnect.BleMulticonnectProfileService;
 import no.nordicsemi.android.nrftoolbox.scanner.ScannerFragment;
 import no.nordicsemi.android.nrftoolbox.utility.DebugLogger;
 
-public class EmgImuServiceHolder<E extends EmgImuService.EmgImuBinder> implements
-        ScannerFragment.OnDeviceSelectedListener, EmgImuManagerCallbacks {
+public class EmgImuServiceHolder<E extends EmgImuService.EmgImuBinder> implements EmgImuManagerCallbacks {
 
     private static final String TAG = "EmgImuServiceHolder";
 
@@ -172,7 +168,7 @@ public class EmgImuServiceHolder<E extends EmgImuService.EmgImuBinder> implement
         @Override
         public void onServiceConnected(final ComponentName name, final IBinder service) {
             final E bleService = mService = (E) service;
-            bleService.log(LogContract.Log.Level.DEBUG, "Activity bound to the service");
+            //bleService.log(LogContract.Log.Level.DEBUG, "Activity bound to the service");
             mManagedDevices.addAll(bleService.getManagedDevices());
             onServiceBinded(bleService);
 
@@ -214,23 +210,6 @@ public class EmgImuServiceHolder<E extends EmgImuService.EmgImuBinder> implement
         mContext.bindService(service, mServiceConnection, 0);
     }
 
-    //! Must be called by users onPause
-    public void onPause() {
-
-        if (mService != null) {
-            // We don't want to perform some operations (e.g. disable Battery Level notifications) in the service if we are just rotating the screen.
-            // However, when the activity will disappear, we may want to disable some device features to reduce the battery consumption.
-            //mService.setActivityIsChangingConfiguration(isChangingConfigurations());
-            // Log it here as there is no callback when the service gets unbound
-            // and the mService will not be available later (the activity doesn't keep log sessions)
-            mService.log(LogContract.Log.Level.DEBUG, "Activity unbound from the service");
-        }
-
-        mContext.unbindService(mServiceConnection);
-        mService = null;
-
-        onServiceUnbinded();
-    }
 
     //! Must be called by users onDestroy
     public void onDestroy() {
@@ -250,66 +229,6 @@ public class EmgImuServiceHolder<E extends EmgImuService.EmgImuBinder> implement
         intentFilter.addAction(EmgImuService.BROADCAST_EMG_BUFF);
         intentFilter.addAction(EmgImuService.BROADCAST_EMG_CLICK);
         return intentFilter;
-    }
-
-    /**
-     * Returns the service interface that may be used to communicate with the sensor. This will return <code>null</code> if the device is disconnected from the
-     * sensor.
-     *
-     * @return the service binder or <code>null</code>
-     */
-    protected E getService() {
-        return mService;
-    }
-
-
-    /**
-     * Called when user press ADD DEVICE button. See layout files -> onClick attribute.
-     */
-    public void onAddDeviceClicked(final View view) {
-        if (isBLEEnabled()) {
-            showDeviceScanningDialog(getFilterUUID());
-        } else {
-            showBLEDialog();
-        }
-    }
-
-    /**
-     * Returns the title resource id that will be used to create logger session. If 0 is returned (default) logger will not be used.
-     *
-     * @return the title resource id
-     */
-    protected int getLoggerProfileTitle() {
-        return 0;
-    }
-
-    /**
-     * This method may return the local log content provider authority if local log sessions are supported.
-     *
-     * @return local log session content provider URI
-     */
-    protected Uri getLocalAuthorityLogger() {
-        return null;
-    }
-
-    @Override
-    public void onDeviceSelected(final BluetoothDevice device, final String name) {
-        final int titleId = getLoggerProfileTitle();
-        ILogSession logSession = null;
-        if (titleId > 0) {
-            logSession = Logger.newSession(mContext.getApplicationContext(), mContext.getString(titleId), device.getAddress(), name);
-            // If nRF Logger is not installed we may want to use local logger
-            if (logSession == null && getLocalAuthorityLogger() != null) {
-                logSession = LocalLogSession.newSession(mContext.getApplicationContext(), getLocalAuthorityLogger(), device.getAddress(), name);
-            }
-        }
-
-        mService.connect(device, logSession);
-    }
-
-    @Override
-    public void onDialogCanceled() {
-
     }
 
     @Override
@@ -359,7 +278,6 @@ public class EmgImuServiceHolder<E extends EmgImuService.EmgImuBinder> implement
 
     @Override
     public void onDeviceNotSupported(final BluetoothDevice device) {
-        showToast(R.string.not_supported);
     }
 
     @Override
@@ -489,6 +407,46 @@ public class EmgImuServiceHolder<E extends EmgImuService.EmgImuBinder> implement
         if  (mCallbacks != null) {
             mCallbacks.onEmgClick(device);
         }
+    }
+
+    @Override
+    public void onEmgLogRecordReceived(BluetoothDevice device, EmgLogRecord record) {
+
+    }
+
+    @Override
+    public void onOperationStarted(BluetoothDevice device) {
+
+    }
+
+    @Override
+    public void onOperationCompleted(BluetoothDevice device) {
+
+    }
+
+    @Override
+    public void onOperationFailed(BluetoothDevice device) {
+
+    }
+
+    @Override
+    public void onOperationAborted(BluetoothDevice device) {
+
+    }
+
+    @Override
+    public void onOperationNotSupported(BluetoothDevice device) {
+
+    }
+
+    @Override
+    public void onDatasetClear(BluetoothDevice device) {
+
+    }
+
+    @Override
+    public void onNumberOfRecordsRequested(BluetoothDevice device, int value) {
+
     }
 
     public interface Callbacks {

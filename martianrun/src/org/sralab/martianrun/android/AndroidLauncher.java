@@ -16,7 +16,6 @@
 
 package org.sralab.martianrun.android;
 
-import android.bluetooth.BluetoothDevice;
 import android.os.Bundle;
 import android.view.View;
 import android.view.Window;
@@ -25,10 +24,11 @@ import android.widget.RelativeLayout;
 
 import com.badlogic.gdx.backends.android.AndroidApplication;
 import com.badlogic.gdx.backends.android.AndroidApplicationConfiguration;
+
+import org.sralab.martianrun.EmgImuServiceHolder;
 import org.sralab.martianrun.MartianRun;
 import org.sralab.martianrun.utils.GameEventListener;
 import org.sralab.martianrun.utils.GameManager;
-import org.sralab.emgimu.service.EmgImuServiceHolder;
 
 public class AndroidLauncher extends AndroidApplication implements
         GameEventListener {
