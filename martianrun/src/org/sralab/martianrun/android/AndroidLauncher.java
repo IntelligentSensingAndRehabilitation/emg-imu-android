@@ -17,6 +17,7 @@
 package org.sralab.martianrun.android;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
@@ -76,14 +77,16 @@ public class AndroidLauncher extends AndroidApplication implements
 
     @Override
     protected void onPause() {
+        Log.d(TAG, "onDestroy()");
+        mServiceHolder.onPause();
         super.onPause();
-        mServiceHolder.onResume();
     }
 
     @Override
     protected void onDestroy() {
-        super.onDestroy();
+        Log.d(TAG, "onDestroy()");
         mServiceHolder.onDestroy();
+        super.onDestroy();
     }
 
     @Override

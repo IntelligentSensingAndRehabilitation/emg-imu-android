@@ -210,6 +210,24 @@ public class EmgImuServiceHolder<E extends EmgImuService.EmgImuBinder> implement
         mContext.bindService(service, mServiceConnection, 0);
     }
 
+    //! Must be called by users onPause
+    public void onPause() {
+
+        if (mService != null) {
+            // We don't want to perform some operations (e.g. disable Battery Level notifications) in the service if we are just rotating the screen.
+            // However, when the activity will disappear, we may want to disable some device features to reduce the battery consumption.
+            //mService.setActivityIsChangingConfiguration(isChangingConfigurations());
+            // Log it here as there is no callback when the service gets unbound
+            // and the mService will not be available later (the activity doesn't keep log sessions)
+            //mService.log(LogContract.Log.Level.DEBUG, "Activity unbound from the service");
+        }
+
+        mContext.unbindService(mServiceConnection);
+        mService = null;
+
+        onServiceUnbinded();
+    }
+
 
     //! Must be called by users onDestroy
     public void onDestroy() {
@@ -263,7 +281,7 @@ public class EmgImuServiceHolder<E extends EmgImuService.EmgImuBinder> implement
 
     @Override
     public void onDeviceReady(final BluetoothDevice device) {
-        // empty default implementation
+        mService.streamPwr(device);
     }
 
     @Override
