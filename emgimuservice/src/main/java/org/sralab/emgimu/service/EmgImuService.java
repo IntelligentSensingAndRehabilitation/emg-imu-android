@@ -367,8 +367,8 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
         bundle.putString(FirebaseAnalytics.Param.ITEM_ID, "EMG_IMU_SERVICE_CREATED");
         mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.SELECT_CONTENT, bundle);
 
-        networkStreaming = new NetworkStreaming();
-        networkStreaming.start();
+        //networkStreaming = new NetworkStreaming();
+        //networkStreaming.start();
 	}
 
     @Override
