@@ -16,6 +16,8 @@
 
 package org.sralab.martianrun;
 
+import android.util.Log;
+
 import com.badlogic.gdx.Game;
 
 import org.sralab.martianrun.screens.GameScreen;
@@ -26,6 +28,8 @@ import org.sralab.martianrun.utils.GameManager;
 
 public class MartianRun extends Game {
 
+    private static final String TAG = MartianRun.class.getSimpleName();
+
     private EmgImuServiceHolder mService;
 
     public MartianRun(GameEventListener listener, final EmgImuServiceHolder serviceHolder) {
@@ -35,13 +39,14 @@ public class MartianRun extends Game {
 
     @Override
     public void create() {
-
+        Log.d(TAG, "create()");
         AssetsManager.loadAssets();
         setScreen(new GameScreen(mService));
     }
 
     @Override
     public void dispose() {
+        Log.d(TAG, "dispose()");
         super.dispose();
         AudioUtils.dispose();
         AssetsManager.dispose();

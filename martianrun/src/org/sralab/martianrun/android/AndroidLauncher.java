@@ -71,6 +71,7 @@ public class AndroidLauncher extends AndroidApplication implements
 
     @Override
     protected void onResume() {
+        Log.d(TAG, "onResume()");
         super.onResume();
         mServiceHolder.onResume();
     }
@@ -78,15 +79,15 @@ public class AndroidLauncher extends AndroidApplication implements
     @Override
     protected void onPause() {
         Log.d(TAG, "onDestroy()");
-        mServiceHolder.onPause();
         super.onPause();
+        mServiceHolder.onPause();
     }
 
     @Override
     protected void onDestroy() {
         Log.d(TAG, "onDestroy()");
-        mServiceHolder.onDestroy();
         super.onDestroy();
+        mServiceHolder.onDestroy();
     }
 
     @Override
@@ -95,7 +96,10 @@ public class AndroidLauncher extends AndroidApplication implements
     }
 
     @Override
-    protected void onStop() { super.onStop(); }
+    protected void onStop() {
+        Log.d(TAG, "onStop()");
+        super.onStop();
+    }
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {

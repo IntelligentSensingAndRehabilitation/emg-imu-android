@@ -17,6 +17,7 @@
 package org.sralab.martianrun.stages;
 
 import android.bluetooth.BluetoothDevice;
+import android.util.Log;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.OrthographicCamera;
@@ -36,6 +37,8 @@ import org.sralab.martianrun.enums.GameState;
 import org.sralab.martianrun.utils.*;
 
 public class GameStage extends Stage implements ContactListener {
+
+    private static final String TAG = ContactListener.class.getSimpleName();
 
     private static final int VIEWPORT_WIDTH = Constants.APP_WIDTH;
     private static final int VIEWPORT_HEIGHT = Constants.APP_HEIGHT;
@@ -555,13 +558,20 @@ public class GameStage extends Stage implements ContactListener {
     }
 
     private void onGameOver() {
+        Log.d(TAG, "onGameOver()");
         GameManager.getInstance().setGameState(GameState.OVER);
         GameManager.getInstance().resetDifficulty();
         totalTimePassed = 0;
-        setUpMainMenu();
+        clear();
+        setUpStageBase();
+        setUpCharacters();
+        setUpPause();
+        setUpTutorial();
+        onGameResumed();
     }
 
     private void onGameAbout() {
+        Log.d(TAG, "onGameAbout()");
         GameManager.getInstance().setGameState(GameState.ABOUT);
         clear();
         setUpStageBase();
