@@ -395,7 +395,6 @@ public class EmgImuServiceHolder<E extends EmgImuService.EmgImuBinder> implement
 
     @Override
     public void onEmgPwrReceived(BluetoothDevice device, int value) {
-        android.util.Log.d(TAG, "Update");
         if  (mCallbacks != null) {
             mCallbacks.onEmgPwrReceived(device, value);
         }

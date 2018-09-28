@@ -18,7 +18,7 @@
 
 <resources>
 
-    <string name="app_name">Martian Run!</string>
+    <string name="martianrun_app_name">Martian Run!</string>
 
     <!-- GameHelper strings -->
     <string name="gamehelper_sign_in_failed">Failed to sign in. Please check your network connection and try again.</string>
