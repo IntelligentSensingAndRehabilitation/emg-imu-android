@@ -54,3 +54,4 @@ ext {
     androidTestVersion = "1.0.1"
     hamcrestVersion = "1.3"
 }
+
