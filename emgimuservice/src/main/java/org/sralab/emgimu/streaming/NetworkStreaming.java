@@ -65,6 +65,8 @@ public class NetworkStreaming {
     }
 
     public boolean isConnected() {
+        if (clientThread == null)
+            return false;
         return clientThread.isConnected();
     }
 
@@ -82,7 +84,7 @@ public class NetworkStreaming {
 
     public void streamEmgPwr(BluetoothDevice dev,
                                 long time,
-                                double data) {
+                                double [] data) {
 
         Gson gson = new Gson();
         EmgPwrMessage msg = new EmgPwrMessage(dev.getAddress(), time, data);
@@ -121,6 +123,7 @@ public class NetworkStreaming {
                             outputStream.wait(10);
                         } catch (InterruptedException e) {
                             Log.d(TAG, "Interruption indicates stopping requested.");
+                            e.printStackTrace();
                         }
                     }
                 }
@@ -147,6 +150,8 @@ public class NetworkStreaming {
         }
 
         protected boolean isConnected() {
+            if (socket == null)
+                return false;
             return socket.isConnected();
         }
 

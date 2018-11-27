@@ -38,15 +38,16 @@
 		<!-- The size of text below must be fixed, therefore dp are used instead of sp -->
 
 		<no.nordicsemi.android.nrftoolbox.widget.TrebuchetBoldTextView
+			android:id="@+id/user_id"
 			android:layout_width="wrap_content"
 			android:layout_height="wrap_content"
-			android:layout_centerVertical="true"
-			android:layout_marginLeft="@dimen/emgimu_feature_title_long_margin"
-			android:rotation="270"
-			android:text="@string/emgimu_feature_title_long"
+			android:layout_alignParentTop="true"
+			android:layout_centerHorizontal="true"
 			android:textColor="@color/darkGray"
-			android:textSize="32dp"
-			android:textStyle="bold"/>
+			android:layout_marginTop="2dp"
+			android:textSize="16dp"
+			android:textStyle="bold"
+			tools:text="User: " />
 
 		<!-- Application section -->
 
@@ -56,8 +57,9 @@
 			android:layout_height="match_parent"
 			android:layout_marginLeft="@dimen/feature_horizontal_margin"
 			android:layout_marginRight="@dimen/feature_horizontal_margin"
-			android:layout_marginTop="@dimen/feature_vertical_margin_top_narrow"
+			android:layout_marginTop="2dp"
 			android:layout_marginBottom="@dimen/activity_vertical_margin_bottom_narrow"
+			android:layout_below="@+id/user_id"
 			android:layout_above="@+id/action_connect"
 			android:layout_weight="1"
 			android:orientation="vertical">
@@ -84,14 +86,6 @@
 			android:layout_marginBottom="@dimen/activity_vertical_margin_bottom"
 			android:onClick="onAddDeviceClicked"
 			android:text="@string/action_add_device"/>
-
-		<ImageView
-			android:layout_width="wrap_content"
-			android:layout_height="wrap_content"
-			android:layout_alignParentBottom="true"
-			android:layout_centerHorizontal="true"
-			android:layout_marginBottom="6dp"
-			android:src="@drawable/background_title"/>
 
 	</no.nordicsemi.android.nrftoolbox.widget.ForegroundRelativeLayout>
 </LinearLayout>

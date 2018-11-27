@@ -19,15 +19,19 @@ import android.os.Message;
 import android.view.WindowManager;
 import android.widget.Toast;
 
+import java.util.ArrayList;
 import java.util.List;
 import android.util.Log;
 
 import com.crashlytics.android.Crashlytics;
 import com.google.firebase.analytics.FirebaseAnalytics;
+import com.google.gson.Gson;
 
 import org.sralab.emgimu.EmgImuBaseActivity;
+import org.sralab.emgimu.logging.FirebaseGameLogger;
 import org.sralab.emgimu.service.EmgImuService;
 import org.sralab.emgimu.service.EmgLogRecord;
+import org.sralab.emgimu.streaming.messages.EmgPwrMessage;
 import org.sralab.fluttercow.sprites.PlayableCharacter;
 
 import io.fabric.sdk.android.Fabric;
@@ -44,9 +48,6 @@ public class Game extends EmgImuBaseActivity {
     public static final float volume = 0.3f;
     /** Will play things like mooing */
     public static SoundPool soundPool = new SoundPool(5, AudioManager.STREAM_MUSIC, 0);
-    
-    /** Counts number of played games */
-    private static int gameOverCounter = 1;
 
     // Handle toggling the control mode
     public enum CONTROL_MODE { LINEAR, THRESHOLD };
@@ -88,9 +89,6 @@ public class Game extends EmgImuBaseActivity {
     /** This will increase the revive price */
     public int numberOfRevive = 1;
     
-    /** The dialog displayed when the game is over*/
-    GameOverDialog gameOverDialog;
-
     private boolean mFirstStart = false;
 
     private FirebaseAnalytics mFirebaseAnalytics;
@@ -100,7 +98,6 @@ public class Game extends EmgImuBaseActivity {
         Fabric.with(this, new Crashlytics());
 
         accomplishmentBox = new AccomplishmentBox();
-        gameOverDialog = new GameOverDialog(this);
         handler = new MyHandler(this);
         initMusicPlayer();
         loadCoins();
@@ -127,6 +124,8 @@ public class Game extends EmgImuBaseActivity {
 
     private List <BluetoothDevice> mDevices;
     private EmgImuService.EmgImuBinder mService;
+    private FirebaseGameLogger mGameLogger;
+    private ArrayList<Integer> roundLen = new ArrayList<>();
 
     @Override
     protected void onServiceBinded(final EmgImuService.EmgImuBinder binder) {
@@ -134,6 +133,7 @@ public class Game extends EmgImuBaseActivity {
         Log.d(TAG, "onServiceBinded");
         mDevices = binder.getManagedDevices();
         mService = binder;
+        mGameLogger = new FirebaseGameLogger(mService, "Flutter Cow");
     }
 
     @Override
@@ -367,15 +367,22 @@ public class Game extends EmgImuBaseActivity {
         }
         super.onResume();
     }
-
-    /**
-     * Sends the handler the command to show the GameOverDialog.
-     * Because it needs an UI thread.
-     */
-    public void gameOver(){
-        handler.sendMessage(Message.obtain(handler, MyHandler.GAME_OVER_DIALOG));
-    }
     
+    @Override
+    protected void onDestroy() {
+        Gson gson = new Gson();
+        String json = gson.toJson(roundLen);
+
+        double p = 0;
+        for(Integer len : roundLen)
+            p += len;
+        p /= roundLen.size();
+
+        mGameLogger.finalize(p, json);
+
+        super.onDestroy();
+    }
+
     public void increaseCoin(){
         this.coins++;
         if(coins >= 50 && !accomplishmentBox.achievement_50_coins){
@@ -430,6 +437,7 @@ public class Game extends EmgImuBaseActivity {
             }
         });
 
+        roundLen.add(accomplishmentBox.points);
         accomplishmentBox.points = 0;
         this.view.getPlayer().upgradeBitmap(accomplishmentBox.points);
     }
@@ -438,8 +446,7 @@ public class Game extends EmgImuBaseActivity {
      * Shows the GameOverDialog when a message with code 0 is received.
      */
     static class MyHandler extends Handler{
-        public static final int GAME_OVER_DIALOG = 0;
-        public static final int SHOW_TOAST = 1;
+        public static final int SHOW_TOAST = 0;
 
         private Game game;
         
@@ -450,20 +457,12 @@ public class Game extends EmgImuBaseActivity {
         @Override
         public void handleMessage(Message msg) {
             switch(msg.what){
-                case GAME_OVER_DIALOG:
-                    showGameOverDialog();
-                    break;
                 case SHOW_TOAST:
                     Toast.makeText(game, msg.arg1, Toast.LENGTH_SHORT).show();
                     break;
             }
         }
 
-        private void showGameOverDialog() {
-            ++Game.gameOverCounter;
-            game.gameOverDialog.init();
-            game.gameOverDialog.show();
-        }
     }
     
 

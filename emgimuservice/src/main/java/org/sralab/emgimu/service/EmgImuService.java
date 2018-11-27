@@ -116,6 +116,7 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 
 	private FirebaseAuth mAuth;
     private FirebaseAnalytics mFirebaseAnalytics;
+    private FirebaseUser mCurrentUser;
 
     private ILogSession mLogSession;
     private ServiceLogger mServiceLogger = new ServiceLogger(TAG, this, mLogSession);
@@ -251,6 +252,10 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
             configureLoggingSavedDevices();
         }
 
+        public String getUser() {
+            return mCurrentUser.getUid();
+        }
+
         /*** hook these methods so we can forward the message to the Service nRF log and logcat ***/
         @Override
         public void log(final BluetoothDevice device, final int level, final String message) {
@@ -275,6 +280,17 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
             super.log(level, messageRes, params);
             mServiceLogger.log(level, messageRes, params);
         }
+
+        public List<String> getLoggingReferences() {
+            List<String> references = new ArrayList<>();
+            for (final BluetoothDevice device : getManagedDevices()) {
+                final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+                references.add(manager.getLoggingRef());
+            }
+
+            return references;
+        }
+
 	}
 
 	@Override
@@ -322,30 +338,26 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
         mAuth = FirebaseAuth.getInstance();
 
         // Check if user is signed in (non-null) and update UI accordingly.
-        FirebaseUser currentUser = mAuth.getCurrentUser();
-        mServiceLogger.d("User ID: " + currentUser);
-        if (currentUser == null) {
+        mCurrentUser = mAuth.getCurrentUser();
+        mServiceLogger.d("User ID: " + mCurrentUser.getUid());
+        if (mCurrentUser == null) {
             Log.d(TAG, "Attempting to log in to firebase");
             mAuth.signInAnonymously()
                     .addOnCompleteListener(task -> {
                         if (task.isSuccessful()) {
                             // Sign in success, update UI with the signed-in user's information
-                            FirebaseUser user = mAuth.getCurrentUser();
+                            mCurrentUser = mAuth.getCurrentUser();
 
-                            Log.d(TAG, "signInAnonymously:success. UID:" + user.getUid());
-                            mServiceLogger.d("signInAnonymously:success. UID:" + user.getUid());
-                            //updateUI(user);
+                            Log.d(TAG, "signInAnonymously:success. UID:" + mCurrentUser.getUid());
+                            mServiceLogger.d("signInAnonymously:success. UID:" + mCurrentUser.getUid());
                         } else {
                             // If sign in fails, display a message to the user.
                             mServiceLogger.w("signInAnonymously:failure" + task.getException());
                             Log.d(TAG, "signInAnonymously:failure" + task.getException());
-                            //Toast.makeText(AnonymousAuthActivity.this, "Authentication failed.",
-                            //        Toast.LENGTH_SHORT).show();
-                            //updateUI(null);
                         }
                     });
         } else {
-            Log.d(TAG, "Prior logged in user: " + currentUser.getUid());
+            Log.d(TAG, "Prior logged in user: " + mCurrentUser.getUid());
         }
 
         // Obtain the FirebaseAnalytics instance.
@@ -747,7 +759,8 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
         LocalBroadcastManager.getInstance(this).sendBroadcast(broadcast);
 
         if (networkStreaming != null && networkStreaming.isConnected()) {
-            networkStreaming.streamEmgPwr(device, 0, (double) value);
+            double [] data = {(double) value};
+            networkStreaming.streamEmgPwr(device, 0, data);
         }
     }
 
@@ -828,4 +841,5 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 			name = getString(R.string.emgimu_default_device_name);
 		return name;
 	}
+
 }
