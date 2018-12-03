@@ -54,8 +54,8 @@ public class EmgPowerView extends View {
     private double mMin = 0;
     private double mMax = 0;
     private double mPwr = 0;
-    private double mThresh = 5000;
-    private final double mMaxHeightPwr = Short.MAX_VALUE * 2; // The range of the graph
+    private double mThresh = 0;
+    private double mMaxHeightPwr = Short.MAX_VALUE * 2; // The range of the graph
     public void setMinPower(double p)
     {
         mMin = p;
@@ -325,5 +325,9 @@ public class EmgPowerView extends View {
 
     public void setOnMaxChangedEventListener(OnMaxChangedEventListener maxChangeEventListener) {
         mListener = maxChangeEventListener;
+    }
+
+    public void setMaxRange(double maxPwr) {
+        mMaxHeightPwr = maxPwr;
     }
 }

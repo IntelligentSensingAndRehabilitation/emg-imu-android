@@ -2,10 +2,11 @@ package org.sralab.emgimu.mve;
 
 import android.bluetooth.BluetoothDevice;
 import android.os.Bundle;
-import android.app.Activity;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
-import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 
 import org.sralab.emgimu.EmgImuBaseActivity;
 import org.sralab.emgimu.config.R;
@@ -57,6 +58,26 @@ public class MaxEMGActivity extends EmgImuBaseActivity implements EmgPowerView.O
             mService.setThreshold(mDevice, min, thresh);
         });
 
+        EditText maxScaleInput = findViewById(R.id.emg_max_scale);
+        maxScaleInput.addTextChangedListener(new TextWatcher() {
+
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {}
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {}
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+                double range = Double.parseDouble(editable.toString());
+                mPwrView.setMaxRange(range);
+                Log.d(TAG, "Range change to: " + range);
+            }
+
+        });
+        double range = Double.parseDouble(maxScaleInput.getText().toString());
+        mPwrView.setMaxRange(range);
+        Log.d(TAG, "Range change to: " + range);
     }
 
     //! Clear the prior max by setting to zero
