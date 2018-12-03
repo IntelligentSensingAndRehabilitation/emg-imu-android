@@ -253,7 +253,9 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
         }
 
         public String getUser() {
-            return mCurrentUser.getUid();
+            if (mCurrentUser != null)
+                return mCurrentUser.getUid();
+            return "";
         }
 
         /*** hook these methods so we can forward the message to the Service nRF log and logcat ***/
@@ -339,7 +341,6 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 
         // Check if user is signed in (non-null) and update UI accordingly.
         mCurrentUser = mAuth.getCurrentUser();
-        mServiceLogger.d("User ID: " + mCurrentUser.getUid());
         if (mCurrentUser == null) {
             Log.d(TAG, "Attempting to log in to firebase");
             mAuth.signInAnonymously()
@@ -357,7 +358,7 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
                         }
                     });
         } else {
-            Log.d(TAG, "Prior logged in user: " + mCurrentUser.getUid());
+            mServiceLogger.d("User ID: " + mCurrentUser.getUid());
         }
 
         // Obtain the FirebaseAnalytics instance.
