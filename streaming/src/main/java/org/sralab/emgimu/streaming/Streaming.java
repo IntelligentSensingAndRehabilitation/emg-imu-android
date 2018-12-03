@@ -8,6 +8,7 @@ import android.support.v7.widget.RecyclerView;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
+import android.view.WindowManager;
 import android.widget.CheckBox;
 import android.widget.EditText;
 
@@ -35,6 +36,7 @@ public class Streaming extends EmgImuBaseActivity {
         Fabric.with(this, new Crashlytics());
 
         setContentView(R.layout.activity_streaming);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         final RecyclerView recyclerView = mDevicesView = findViewById(R.id.emg_list);
         if (recyclerView == null)
