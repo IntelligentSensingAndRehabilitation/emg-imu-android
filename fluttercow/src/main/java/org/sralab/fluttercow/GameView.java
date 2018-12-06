@@ -172,7 +172,12 @@ public class GameView extends SurfaceView{
     private void draw() {
         while(!holder.getSurface().isValid()){
             /*wait*/
-            try { Thread.sleep(10); } catch (InterruptedException e) { e.printStackTrace(); }
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+                return;
+            }
         }
         Canvas canvas = holder.lockCanvas();
         drawCanvas(canvas, true);
