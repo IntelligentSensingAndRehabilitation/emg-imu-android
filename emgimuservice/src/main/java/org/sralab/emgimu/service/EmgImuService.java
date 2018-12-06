@@ -327,7 +327,7 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 	@Override
     /**
      * Always called when service started, either by binding or startService. call from
-     * parent onCreate prior to startign bluetooth
+     * parent onCreate prior to starting bluetooth
      */
 	protected void onServiceCreated() {
 
@@ -382,22 +382,15 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 
     @Override
     public int onStartCommand(final Intent intent, final int flags, final int startId) {
-        mBinder.log(LogContract.Log.Level.INFO, "onStartCommand");
-	    // parent method is stub, so no need to replicate
-
         mServiceLogger.d("onStartCommand: " + intent + " " + flags + " " + startId);
 
         // See if there is an intent indicating the service was started unbound to
         // acquire a log. Only start this when not already connected to the device.
         if (intent.getBooleanExtra(EmgImuService.INTENT_FETCH_LOG, false)) {
-            String device_mac = intent.getStringExtra(INTENT_DEVICE_MAC);
 
-            for (final BluetoothDevice d : getManagedDevices()) {
-                if (d.getAddress().equals(device_mac)) {
-                    mServiceLogger.d("Already managing " + device_mac + " so will skip fetching log");
-                    return START_NOT_STICKY;
-                }
-            }
+            createSummaryNotification();
+
+            String device_mac = intent.getStringExtra(INTENT_DEVICE_MAC);
 
             // Detect if bluetooth is enabled and if not don't attempt to get log
             final BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
@@ -408,6 +401,11 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
             }
 
             synchronized (logFetchStartId) {
+                if (logFetchStartId.containsKey(device_mac)) {
+                    mServiceLogger.e("Log fetching already queued up for " + device_mac);
+                    return START_NOT_STICKY;
+                }
+
                 logFetchStartId.put(device_mac, startId);
             }
 
@@ -776,7 +774,9 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 		final NotificationManagerCompat nm = NotificationManagerCompat.from(this);
 		nm.notify(NOTIFICATION_ID, notification);
 
-		startForeground(NOTIFICATION_ID, notification);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForeground(NOTIFICATION_ID, notification);
+        }
 	}
 
 	/**
