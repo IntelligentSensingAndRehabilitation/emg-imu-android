@@ -42,35 +42,34 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
 
     private final String TAG = DeviceAdapter.class.getSimpleName();
 
-	private final EmgImuService.EmgImuBinder mService;
-	private final List<BluetoothDevice> mDevices;
+    private final EmgImuService.EmgImuBinder mService;
+    private final List<BluetoothDevice> mDevices;
     private final Map<Pair<BluetoothDevice, Integer>, LineGraphView> mDeviceLineGraphMap = new HashMap<>();
-    private final Integer CHANNELS = 8; // TODO: this should be adjustable
+    private final Integer DISPLAY_CHANNELS = 4; // TODO: this should be adjustable
 
-	public DeviceAdapter(final EmgImuService.EmgImuBinder binder) {
-		mService = binder;
-		mDevices = mService.getManagedDevices();
-	}
+    public DeviceAdapter(final EmgImuService.EmgImuBinder binder) {
+        mService = binder;
+        mDevices = mService.getManagedDevices();
+    }
 
-	public int attachedViews = 0;
-
-	@Override
-	public ViewHolder onCreateViewHolder(final ViewGroup parent, final int viewType) {
+    @Override
+    public ViewHolder onCreateViewHolder(final ViewGroup parent, final int viewType) {
 
         final View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.emg_activity, parent, false);
-        int height = parent.getMeasuredHeight() / CHANNELS;
+        int height = parent.getMeasuredHeight() / DISPLAY_CHANNELS;
 
         ViewGroup.LayoutParams params = view.getLayoutParams();
         params.height = height;
         view.setLayoutParams(params);
 
         return new ViewHolder(view);
-	}
+    }
 
-	private boolean mFiltering = true;
-	public void toggleFiltering(boolean filter) {
-	    mFiltering = filter;
-	    for (LineGraphView l : mDeviceLineGraphMap.values()) {
+    private boolean mFiltering = true;
+
+    public void toggleFiltering(boolean filter) {
+        mFiltering = filter;
+        for (LineGraphView l : mDeviceLineGraphMap.values()) {
             l.enableFiltering(mFiltering);
         }
     }
@@ -81,7 +80,7 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
         }
     }
 
-	@Override
+    @Override
     public void onAttachedToRecyclerView(RecyclerView recyclerView) {
         // This is important to make sure there are not two overlapping views for the
         // same element that the RecycleView tries to use for smoother updates. It
@@ -89,9 +88,19 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
         recyclerView.setItemAnimator(new DefaultItemAnimatorNoChange());
     }
 
-	@Override
-	public void onBindViewHolder(final ViewHolder holder, final int position) {
-		holder.bind(mDevices.get(position / CHANNELS), position % CHANNELS);
+    @Override
+    public void onBindViewHolder(final ViewHolder holder, final int position) {
+        // Find the device and channel index that corresponds to a row
+        int deviceIndex = 0;
+        for (deviceIndex = 0; deviceIndex < mDevices.size(); deviceIndex++) {
+            if (getPosition(mDevices.get(deviceIndex)) >= position) {
+                break;
+            }
+        }
+
+        final BluetoothDevice d = mDevices.get(deviceIndex);
+        int channel = position - getPosition(d);
+        holder.bind(d, channel);
 	}
 
 	@Override
@@ -104,12 +113,21 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
 
     @Override
 	public int getItemCount() {
-	    return mDevices.size() * CHANNELS;
+	    int items = 0;
+	    for (final BluetoothDevice device : mDevices)
+	        items += mService.getChannelCount(device);
+	    return items;
 	}
 
 	//! Get the row in the adapters for the first channel of this device
 	private int getPosition(final BluetoothDevice device) {
-        return mDevices.indexOf(device) * CHANNELS;
+        int items = 0;
+        for (final BluetoothDevice d : mDevices) {
+            if (device == d)
+                break;
+            items += mService.getChannelCount(d);
+        }
+        return items;
     }
 
 	void onDeviceAdded(final BluetoothDevice device) {
@@ -151,25 +169,27 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
 
     // Used to only update graphically for a subset of new data
     private int updateCounter = 0;
-    void onBuffValueReceived(final BluetoothDevice device, int count, double[][] data) {
+    void onBuffValueReceived(final BluetoothDevice device, int count, final double[][] data) {
 
-        final double[][] bufferedValues = data;
-        final int MAX_CHANNELS = bufferedValues.length;
+        int channels = mService.getChannelCount(device);
+
+        if (BuildConfig.DEBUG && data.length != channels) {
+            throw new RuntimeException("Channel count does not match expected data size");
+        }
 
         updateCounter ++;
-        for (int channel = 0; channel < CHANNELS & channel < MAX_CHANNELS; channel++) {
+        for (int channel = 0; channel < channels; channel++) {
             // If graph exists for this device, update it with new data
             LineGraphView mLineGraph = mDeviceLineGraphMap.get(new Pair<>(device, channel));
             if (mLineGraph != null) {
-                final double[] buffValue = data[channel];
-                for (int i = 0; i < buffValue.length; i++)
-                    mLineGraph.addValue(buffValue[i]);
+                for (double buffValue : data[channel])
+                    mLineGraph.addValue(buffValue);
             }
 
         }
 
         if (updateCounter % 5 == 0) {
-            for(int channel = 0; channel < CHANNELS; channel++) {
+            for(int channel = 0; channel < channels; channel++) {
                 final int position = getPosition(device) + channel;
                 if (position >= 0)
                     notifyItemChanged(position);
