@@ -149,6 +149,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
     private String mManufacturer;
     private String mHardwareRevision;
     private String mFirmwareRevision;
+    private int mChannels;
 
     public EmgImuManager(final Context context) {
 		super(context);
@@ -166,6 +167,15 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 
 	@Override
     public void connect(final BluetoothDevice device) {
+
+        if (device.getName().startsWith("EMG")) {
+            mChannels = 1;
+        } else if (device.getName().startsWith("8ch")) {
+            mChannels = 8;
+        } else {
+            throw new RuntimeException("Cannot parse device name");
+        }
+
         super.connect(device);
         fireLogger = new FirebaseEmgLogger(this);
 
@@ -229,6 +239,8 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                 mSerialNumberCharacteristic = deviceInfoService.getCharacteristic(SERIAL_NUMBER_CHARACTERISTIC);
                 mHardwareCharacteristic = deviceInfoService.getCharacteristic(HARDWARE_REVISION_CHARACTERISTIC);
                 mFirmwareCharacteristic = deviceInfoService.getCharacteristic(FIRMWARE_REVISION_CHARACTERISTIC);
+            } else {
+                return false;
             }
 
             Log.v(TAG, "Device information characteristics for service " + deviceInfoService.getUuid());
@@ -318,6 +330,8 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
             mRecordAccessControlPointCharacteristic = null;
 
             mReady = false;
+
+            mChannels = 0;
 
             synchronized (this) {
                 if (mLogging && streamLogger != null) {
@@ -535,6 +549,10 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                 default:
                     Log.e(TAG, "Unsupported data format");
                     return;
+            }
+
+            if (mChannels != channels){
+                throw new RuntimeException("Channel count seemed to change between calls");
             }
 
             mEmgBuff = data;
@@ -1166,5 +1184,9 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         }
 
         return streamLogger.getReference();
+    }
+
+    public int getChannelCount() {
+        return mChannels;
     }
 }
