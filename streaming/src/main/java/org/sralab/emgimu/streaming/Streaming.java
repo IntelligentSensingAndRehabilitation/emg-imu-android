@@ -196,9 +196,6 @@ public class Streaming extends EmgImuBaseActivity {
 
     @Override
     public void onEmgPwrReceived(final BluetoothDevice device, int value) {
-        Log.d(TAG, "onEmgPwrReceived.");
-        if (mAdapter != null)
-            mAdapter.onPwrValueReceived(device); // Adapter will access value directly from service
     }
 
     @Override
