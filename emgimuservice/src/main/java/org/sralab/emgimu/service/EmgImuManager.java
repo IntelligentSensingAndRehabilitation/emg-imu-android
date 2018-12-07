@@ -152,9 +152,9 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
     private int mChannels;
 
     public EmgImuManager(final Context context) {
+		super(context);
         mSynced = false;
         mFetchRecords = false;
-		super(context);
 	}
 
 	@Override
