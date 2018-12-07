@@ -778,6 +778,12 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
     private void syncDevice() {
         final int dt = (int) nowToTimestamp();
 
+        if (mRecordAccessControlPointCharacteristic == null) {
+            if (BuildConfig.DEBUG)
+                throw new RuntimeException("mRecordAccessControlPointCharacteristic was null. This shouldn't really happen.");
+            return;
+        }
+
         Log.d(TAG, "Sending sync signal with offset " + dt);
         Logger.a(mLogSession, "Sending sync signal with offset " + dt);
 
