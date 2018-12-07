@@ -155,6 +155,8 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 		super(context);
         mSynced = false;
         mFetchRecords = false;
+
+        Log.d(TAG, "EmgImuManager created");
 	}
 
 	@Override
@@ -169,6 +171,8 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 
 	@Override
     public void connect(final BluetoothDevice device) {
+
+        Log.d(TAG, "EmgImuManager connect called: " + device.getAddress());
 
         if (device.getName().startsWith("EMG")) {
             mChannels = 1;
@@ -966,16 +970,18 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 
     private STREAMING_MODE mStreamingMode = STREAMING_MODE.STREAMING_UNKNOWN;
     public final void enableBufferedStreamingMode() {
-        if (!mSynced)
-            syncDevice();
+
+        Log.d(TAG, "enabledBufferedStreamingMode: " + mSynced);
+
         enableEmgBuffNotifications();
         disableEmgPwrNotifications();
         mStreamingMode = STREAMING_MODE.STREAMING_BUFFERED;
     }
 
     public final void enablePowerStreamingMode() {
-        if (!mSynced)
-            syncDevice();
+
+        Log.d(TAG, "enablePowerStreamingMode: " + mSynced);
+
         enableEmgPwrNotifications();
         disableEmgBuffNotifications();
         mStreamingMode = STREAMING_MODE.STREAMINNG_POWER;
