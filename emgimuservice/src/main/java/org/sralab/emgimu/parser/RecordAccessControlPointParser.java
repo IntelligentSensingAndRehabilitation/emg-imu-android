@@ -103,8 +103,6 @@ public class RecordAccessControlPointParser {
 			break;
 		}
 		}
-		if (builder.length() > 0)
-			builder.setLength(builder.length() - 1);
 
 		return builder.toString();
 	}

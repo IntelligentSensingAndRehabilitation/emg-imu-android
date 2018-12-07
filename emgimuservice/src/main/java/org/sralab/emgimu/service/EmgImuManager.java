@@ -678,14 +678,22 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                     } else if (opCode == OP_CODE_SET_TIMESTAMP_COMPLETE) {
                         // Now the timestamp has been acknowledged, we can fetch the records
 
-                        Log.d(TAG, "Timestamp set");
-                        Logger.d(mLogSession, "Timestamp set. Requesting all records.");
+                        if(mFetchRecords) {
+                            mFetchRecords = false;
 
-                        clear();
-                        mCallbacks.onOperationStarted(mBluetoothDevice);
+                            Log.d(TAG, "Timestamp set");
+                            Logger.d(mLogSession, "Timestamp set. Requesting all records.");
 
-                        setOpCode(mRecordAccessControlPointCharacteristic, OP_CODE_REPORT_NUMBER_OF_RECORDS, OPERATOR_ALL_RECORDS);
-                        writeCharacteristic(mRecordAccessControlPointCharacteristic);
+                            clear();
+                            mCallbacks.onOperationStarted(mBluetoothDevice);
+
+                            setOpCode(mRecordAccessControlPointCharacteristic, OP_CODE_REPORT_NUMBER_OF_RECORDS, OPERATOR_ALL_RECORDS);
+                            writeCharacteristic(mRecordAccessControlPointCharacteristic);
+                        } else {
+                            Log.d(TAG, "Device synced, but no record request made.");
+                            Logger.d(mLogSession, "Device synced, but no record request made.");
+                        }
+
                     } else if (opCode == OP_CODE_RESPONSE_CODE) {
                         final int requestedOpCode = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, offset);
                         final int responseCode = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, offset + 1);
@@ -863,12 +871,17 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
      * data will be returned to Glucose Measurement characteristic as a notification followed by Record Access Control Point indication with status code ({@link #RESPONSE_SUCCESS} or other in case of
      * error.
      */
+    private boolean mFetchRecords = false;
     public void getAllRecords() {
 
         if (mRecordAccessControlPointCharacteristic == null)
             return;
 
         Log.d(TAG, "getAllRecords()");
+
+        // Indicate when the synchronization of the device has completed that we should
+        // then start downloading records
+        mFetchRecords = true;
         syncDevice();
     }
 
