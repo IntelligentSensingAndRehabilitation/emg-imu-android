@@ -47,6 +47,7 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import com.crashlytics.android.Crashlytics;
+import com.crashlytics.android.core.CrashlyticsCore;
 import com.firebase.jobdispatcher.FirebaseJobDispatcher;
 import com.firebase.jobdispatcher.GooglePlayDriver;
 import com.firebase.jobdispatcher.Job;
@@ -330,8 +331,13 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
      * parent onCreate prior to starting bluetooth
      */
 	protected void onServiceCreated() {
+        // Set up Crashlytics, disabled for debug builds
+        Crashlytics crashlyticsKit = new Crashlytics.Builder()
+                .core(new CrashlyticsCore.Builder().disabled(BuildConfig.DEBUG).build())
+                .build();
 
-        Fabric.with(this, new Crashlytics());
+        // Initialize Fabric with the debug-disabled crashlytics.
+        Fabric.with(this, crashlyticsKit);
 
         final int titleId = mBinder.getLoggerProfileTitle();
         if (titleId > 0) {

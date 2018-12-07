@@ -24,6 +24,7 @@ import java.util.List;
 import android.util.Log;
 
 import com.crashlytics.android.Crashlytics;
+import com.crashlytics.android.core.CrashlyticsCore;
 import com.google.firebase.analytics.FirebaseAnalytics;
 import com.google.gson.Gson;
 
@@ -95,7 +96,13 @@ public class Game extends EmgImuBaseActivity {
 
     @Override
     protected void onCreateView(Bundle savedInstanceState) {
-        Fabric.with(this, new Crashlytics());
+        // Set up Crashlytics, disabled for debug builds
+        Crashlytics crashlyticsKit = new Crashlytics.Builder()
+                .core(new CrashlyticsCore.Builder().disabled(BuildConfig.DEBUG).build())
+                .build();
+
+        // Initialize Fabric with the debug-disabled crashlytics.
+        Fabric.with(this, crashlyticsKit);
 
         accomplishmentBox = new AccomplishmentBox();
         handler = new MyHandler(this);
