@@ -152,6 +152,8 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
     private int mChannels;
 
     public EmgImuManager(final Context context) {
+        mSynced = false;
+        mFetchRecords = false;
 		super(context);
 	}
 
@@ -766,6 +768,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         }
     }
 
+    private boolean mSynced;
     private long t0() {
         return new GregorianCalendar(2018, 0, 0).getTime().getTime();
     }
@@ -775,7 +778,10 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
      * beginning of 2018. This is set on the sensor by writing to the logging characteristic.
      * It will only sync the first time this is written since power up.
      */
+    synchronized
     private void syncDevice() {
+        mSynced = true;
+
         final int dt = (int) nowToTimestamp();
 
         if (mRecordAccessControlPointCharacteristic == null) {
@@ -960,14 +966,16 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 
     private STREAMING_MODE mStreamingMode = STREAMING_MODE.STREAMING_UNKNOWN;
     public final void enableBufferedStreamingMode() {
-        syncDevice();
+        if (!mSynced)
+            syncDevice();
         enableEmgBuffNotifications();
         disableEmgPwrNotifications();
         mStreamingMode = STREAMING_MODE.STREAMING_BUFFERED;
     }
 
     public final void enablePowerStreamingMode() {
-        syncDevice();
+        if (!mSynced)
+            syncDevice();
         enableEmgPwrNotifications();
         disableEmgBuffNotifications();
         mStreamingMode = STREAMING_MODE.STREAMINNG_POWER;

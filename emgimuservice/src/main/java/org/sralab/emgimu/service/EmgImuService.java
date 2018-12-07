@@ -382,7 +382,7 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 
     @Override
     public int onStartCommand(final Intent intent, final int flags, final int startId) {
-        mServiceLogger.d("onStartCommand: " + intent + " " + flags + " " + startId);
+        mServiceLogger.d("onStartCommand: " + intent + " extras: " + intent.getExtras().toString() + " flags: " + flags + " startId" + startId);
 
         // See if there is an intent indicating the service was started unbound to
         // acquire a log. Only start this when not already connected to the device.
@@ -391,6 +391,9 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
             createSummaryNotification();
 
             String device_mac = intent.getStringExtra(INTENT_DEVICE_MAC);
+
+            mServiceLogger.d("onStartCommand due to requesting logs from " + device_mac);
+
 
             // Detect if bluetooth is enabled and if not don't attempt to get log
             final BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
@@ -435,10 +438,15 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 
             // If there is only one thread remaining, then appropriate to stop it
             if (logFetchStartId.size() == 1) {
-                mBinder.log(device, LogContract.Log.Level.DEBUG, "One thread found so stopping service: " + logFetchStartId);
 
                 logFetchStartId.remove(device.getAddress());
-                stopSelf(startThreadId);
+
+                if (mBinded) {
+                    mBinder.log(device, LogContract.Log.Level.DEBUG, "Last log retrieval thread completed. Not stopped service as service also bound");
+                } else {
+                    mBinder.log(device, LogContract.Log.Level.DEBUG, "One thread found so stopping service: " + logFetchStartId);
+                    stopSelf(startThreadId);
+                }
                 return;
             }
 
@@ -478,6 +486,7 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 
         mBinder.log(device, LogContract.Log.Level.WARNING, "onError: " + message +
                 " errorCode: " + errorCode + "(" + GattError.parseConnectionError(errorCode) + ")");
+        Log.e(TAG, "onError", new Exception("backtrack"));
 
         // See if a log fetch has been requested
         Integer startThreadId = logFetchStartId.get(device.getAddress());
@@ -490,7 +499,7 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 
     @Override
     public IBinder onBind(final Intent intent) {
-        mServiceLogger.d("onBind: " + intent);
+        mServiceLogger.d("onBind: " + intent + " extras: " + intent.getExtras().toString() );
 
         // We have been starting by a service. Attempt to
         loadAndConnectSavedDevices();

@@ -6,6 +6,7 @@ package org.sralab.emgimu.logging;
 
 import android.content.Intent;
 import android.os.Build;
+import android.util.Log;
 
 import com.firebase.jobdispatcher.JobParameters;
 import com.firebase.jobdispatcher.JobService;
@@ -21,10 +22,10 @@ public class EmgLogFetchJobService extends JobService
     @Override
     public boolean onStartJob(JobParameters job) {
 
-
         /**** Store information required to get log ****/
         String device_mac = job.getExtras().getString("device_mac");
 
+        Log.d(TAG, "onStartJob: " + device_mac);
 
         // Sent intent to service indicating to download the logs. Could do this as
         // a bound service if we want to wait for the results and reschedule this

@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
+import android.util.Log;
 
 import org.sralab.emgimu.service.EmgImuManager;
 import org.sralab.emgimu.service.EmgImuManagerCallbacks;
@@ -80,6 +81,7 @@ public abstract class EmgImuBaseActivity extends BleMulticonnectProfileServiceRe
 
     @Override
     protected void onResume() {
+        Log.d("EmgImuBaseActivity", "Starting service");
         // Start the service here because we want it to be sticky for at least
         // a short while when changing between activities to avoid constantly
         // rebinding the BLE device.
