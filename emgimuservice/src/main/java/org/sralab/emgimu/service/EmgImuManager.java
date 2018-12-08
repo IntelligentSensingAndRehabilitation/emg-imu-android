@@ -174,7 +174,12 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 
         Log.d(TAG, "EmgImuManager connect called: " + device.getAddress());
 
-        if (device.getName().startsWith("EMG")) {
+        if (device.getName() == null) {
+            Log.e(TAG, "Attempting to connect to device but name is unknown");
+            // Assume that channels are 1 in this case
+            // TODO: probably should make this a proper characteristic or fall back better.
+            mChannels = 1;
+        } else if (device.getName().startsWith("EMG")) {
             mChannels = 1;
         } else if (device.getName().startsWith("8ch")) {
             mChannels = 8;
