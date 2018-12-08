@@ -29,12 +29,18 @@ import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Scaling;
 import com.badlogic.gdx.utils.viewport.ScalingViewport;
 
+import com.google.gson.Gson;
+
+import org.sralab.emgimu.logging.FirebaseGameLogger;
+import org.sralab.emgimu.service.EmgImuService;
 import org.sralab.martianrun.EmgImuServiceHolder;
 import org.sralab.martianrun.actors.*;
 import org.sralab.martianrun.actors.menu.*;
 import org.sralab.martianrun.enums.Difficulty;
 import org.sralab.martianrun.enums.GameState;
 import org.sralab.martianrun.utils.*;
+
+import java.util.ArrayList;
 
 public class GameStage extends Stage implements ContactListener {
 
@@ -72,6 +78,9 @@ public class GameStage extends Stage implements ContactListener {
 
     private EmgImuServiceHolder mServiceHolder;
 
+    private FirebaseGameLogger mGameLogger;
+    private ArrayList<Integer> roundLen = new ArrayList<>();
+
     public GameStage(final EmgImuServiceHolder serviceHolder) {
         super(new ScalingViewport(Scaling.stretch, VIEWPORT_WIDTH, VIEWPORT_HEIGHT,
                 new OrthographicCamera(VIEWPORT_WIDTH, VIEWPORT_HEIGHT)));
@@ -98,7 +107,23 @@ public class GameStage extends Stage implements ContactListener {
                 if (runner != null)
                     runner.jump();
             }
+
+            @Override
+            public void onServiceBinded(final EmgImuService.EmgImuBinder binder)
+            {
+                Log.d(TAG, "Creating game logger now service is bound");
+                mGameLogger = new FirebaseGameLogger(binder, "Martian Run");
+            }
+
+            @Override
+            public void onServiceUnbinded()
+            {
+
+            }
+
         });
+
+
     }
 
     private void setUpStageBase() {
@@ -559,6 +584,9 @@ public class GameStage extends Stage implements ContactListener {
 
     private void onGameOver() {
         Log.d(TAG, "onGameOver()");
+
+        roundLen.add( (int) totalTimePassed);
+
         GameManager.getInstance().setGameState(GameState.OVER);
         GameManager.getInstance().resetDifficulty();
         totalTimePassed = 0;
@@ -578,6 +606,22 @@ public class GameStage extends Stage implements ContactListener {
         setUpGameLabel();
         setUpAboutText();
         setUpAbout();
+    }
+
+    @Override
+    public void dispose() {
+        Log.d(TAG, "GameStage dispose. Writing to log");
+        super.dispose();
+        Gson gson = new Gson();
+        String json = gson.toJson(roundLen);
+
+        double p = 0;
+        for(Integer len : roundLen)
+            p += len;
+        p /= roundLen.size();
+
+        mGameLogger.finalize(p, json);
+
     }
 
 }

@@ -46,9 +46,9 @@ public class MartianRun extends Game {
 
     @Override
     public void dispose() {
-        Log.d(TAG, "dispose()");
         super.dispose();
         AudioUtils.dispose();
         AssetsManager.dispose();
+        getScreen().dispose();
     }
 }

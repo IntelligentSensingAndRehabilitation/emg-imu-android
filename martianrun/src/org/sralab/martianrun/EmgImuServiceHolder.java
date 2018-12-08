@@ -40,8 +40,19 @@ public class EmgImuServiceHolder<E extends EmgImuService.EmgImuBinder> implement
         mContext = context;
     }
 
-    protected void onServiceBinded(final E binder) { mService = binder; }
-    protected void onServiceUnbinded() { mService = null; }
+    protected void onServiceBinded(final E binder) {
+
+        mService = binder;
+        if (mCallbacks != null)
+            mCallbacks.onServiceBinded(binder);
+    }
+
+    protected void onServiceUnbinded() {
+        mService = null;
+        if (mCallbacks != null)
+            mCallbacks.onServiceUnbinded();
+    }
+
     protected Class<? extends BleMulticonnectProfileService> getServiceClass() {
         return EmgImuService.class;
     }
@@ -469,7 +480,16 @@ public class EmgImuServiceHolder<E extends EmgImuService.EmgImuBinder> implement
     public interface Callbacks {
         public void onEmgPwrReceived(final BluetoothDevice device, int value);
         public void onEmgClick(final BluetoothDevice device);
+        public void onServiceBinded(final EmgImuService.EmgImuBinder binder);
+        public void onServiceUnbinded();
     }
     private Callbacks mCallbacks;
-    public void setCallbacks(Callbacks c) { mCallbacks = c; }
+    public void setCallbacks(Callbacks c) {
+        mCallbacks = c;
+
+        // If we are already bound, pass that information on to the callbacks.
+        if (mService != null) {
+            c.onServiceBinded(mService);
+        }
+    }
 }
