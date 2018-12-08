@@ -384,15 +384,17 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
     @Override
     public int onStartCommand(final Intent intent, final int flags, final int startId) {
 
-        if (intent.getExtras() != null)
+        if (intent == null) {
+            mServiceLogger.d("onStartCommand called without intent. flags: " + flags + " startId " + startId);
+        } else if (intent.getExtras() != null) {
             mServiceLogger.d("onStartCommand: " + intent.toString() + " extras: " + intent.getExtras().toString() + " flags: " + flags + " startId" + startId);
-        else {
+        } else {
             mServiceLogger.d("onStartCommand: "  + intent.toString() + " flags: " + flags + " startId" + startId);
         }
 
         // See if there is an intent indicating the service was started unbound to
         // acquire a log. Only start this when not already connected to the device.
-        if (intent.getBooleanExtra(EmgImuService.INTENT_FETCH_LOG, false)) {
+        if (intent != null && intent.getBooleanExtra(EmgImuService.INTENT_FETCH_LOG, false)) {
 
             createSummaryNotification();
 
