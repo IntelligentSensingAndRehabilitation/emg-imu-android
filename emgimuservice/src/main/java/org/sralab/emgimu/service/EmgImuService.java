@@ -433,7 +433,11 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
                     mServiceLogger.i("Unable to connect to " + device_mac + " in one second");
                     smartStop(device);
                 };
-                getHandler().postDelayed(connectionTimeout, 1000);
+                // Note if we were showing the notification based on connecting, then
+                // this would need to be shorter. However, we show the notification
+                // regardless so can keep this longer to make sure we don't fail on
+                // slower devices.
+                getHandler().postDelayed(connectionTimeout, 5000);
 
                 logFetchStartId.put(device_mac, new Pair<>(connectionTimeout, startId));
             }
