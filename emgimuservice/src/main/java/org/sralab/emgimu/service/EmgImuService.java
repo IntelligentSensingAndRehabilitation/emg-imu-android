@@ -691,14 +691,22 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
                 Job myJob = dispatcher.newJobBuilder()
                         .setService(EmgLogFetchJobService.class)             // the JobService that will be called
                         .setTag(EmgLogFetchJobService.JOB_TAG + "_" + names.getString(i))               // uniquely identifies the job
-                        .setTrigger(Trigger.executionWindow(LOG_FETCH_PERIOD_MIN_S,LOG_FETCH_PERIOD_MAX_S))
+                        .setTrigger(Trigger.executionWindow(LOG_FETCH_PERIOD_MIN_S, LOG_FETCH_PERIOD_MAX_S))
                         .setLifetime(Lifetime.FOREVER)                       // run after boot
                         .setRecurring(true)                                  // tasks reoccurs
                         .setRetryStrategy(RetryStrategy.DEFAULT_LINEAR) // default strategy
                         .setExtras(jobInfo)                                  // store the mac address
                         .setReplaceCurrent(true)
                         .build();
-                dispatcher.mustSchedule(myJob);
+                int result = dispatcher.schedule(myJob);
+                if (result != FirebaseJobDispatcher.SCHEDULE_RESULT_SUCCESS) {
+                    mServiceLogger.e("Scheduling log fetch failed");
+                    showToast("Unable to schedule log fetching.");
+                    if (BuildConfig.DEBUG)
+                        throw new RuntimeException("Unable to schedule job fetching");
+                } else {
+                    mServiceLogger.d("Job scheduled successfully");
+                }
             }
         } catch (JSONException e) {
             e.printStackTrace();
