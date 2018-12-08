@@ -515,7 +515,11 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 
     @Override
     public IBinder onBind(final Intent intent) {
-        mServiceLogger.d("onBind: " + intent.toString());
+
+        if (intent != null)
+            mServiceLogger.d("onBind: " + intent.toString());
+        else
+            mServiceLogger.d("onBind with no intent");
 
         // We have been starting by a service. Attempt to
         loadAndConnectSavedDevices();
