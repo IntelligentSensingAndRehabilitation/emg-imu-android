@@ -86,6 +86,8 @@ public class Game extends EmgImuBaseActivity {
     
     /** The amount of collected coins */
     int coins;
+
+    double difficulty = 2.0;
     
     /** This will increase the revive price */
     public int numberOfRevive = 1;
@@ -106,6 +108,7 @@ public class Game extends EmgImuBaseActivity {
         loadCoins();
 
         view = new GameView(this);
+        view.setDifficulty(difficulty);
         setContentView(view);
 
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -375,7 +378,12 @@ public class Game extends EmgImuBaseActivity {
         }
         super.onResume();
     }
-    
+
+    private class Details {
+        ArrayList<Integer> roundLength;
+        double difficulty;
+    };
+
     @Override
     protected void onDestroy() {
         updateLog();
@@ -384,7 +392,11 @@ public class Game extends EmgImuBaseActivity {
 
     private void updateLog() {
         Gson gson = new Gson();
-        String json = gson.toJson(roundLen);
+
+        Details d = new Details();
+        d.roundLength = roundLen;
+        d.difficulty = difficulty;
+        String json = gson.toJson(d);
 
         double p = 0;
         for(Integer len : roundLen)
@@ -436,6 +448,7 @@ public class Game extends EmgImuBaseActivity {
 
     private void resetView() {
         view = new GameView(this);
+        view.setDifficulty(difficulty);
         setContentView(view);
         view.resume();
     }
