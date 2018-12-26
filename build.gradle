@@ -60,6 +60,7 @@ ext {
     firebaseAuthVer = '16.1.0'
     firebaseStorageVer = '16.0.5'
     firebaseFirestoreVer = '17.1.5'
+    firebaseMessagingVer = '17.3.4'
     crashlyticsVer = '2.9.8'
     instantAppsVer = '1.1.0'
 
