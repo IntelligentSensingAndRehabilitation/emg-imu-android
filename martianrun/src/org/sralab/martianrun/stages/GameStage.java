@@ -41,6 +41,7 @@ import org.sralab.martianrun.enums.GameState;
 import org.sralab.martianrun.utils.*;
 
 import java.util.ArrayList;
+import java.util.Date;
 
 public class GameStage extends Stage implements ContactListener {
 
@@ -77,6 +78,7 @@ public class GameStage extends Stage implements ContactListener {
     private Vector3 touchPoint;
 
     private EmgImuServiceHolder mServiceHolder;
+    private long startTime = new Date().getTime();
 
     private FirebaseGameLogger mGameLogger;
     private ArrayList<Integer> roundLen = new ArrayList<>();
@@ -112,7 +114,7 @@ public class GameStage extends Stage implements ContactListener {
             public void onServiceBinded(final EmgImuService.EmgImuBinder binder)
             {
                 Log.d(TAG, "Creating game logger now service is bound");
-                mGameLogger = new FirebaseGameLogger(binder, "Martian Run");
+                mGameLogger = new FirebaseGameLogger(binder, "Martian Run", startTime);
             }
 
             @Override
@@ -610,8 +612,18 @@ public class GameStage extends Stage implements ContactListener {
 
     @Override
     public void dispose() {
-        Log.d(TAG, "GameStage dispose. Writing to log");
+        Log.d(TAG, "Dispose. Writing to log");
         super.dispose();
+        saveLog();
+    }
+
+    public void pause() {
+        Log.d(TAG, "Pausing");
+        saveLog();
+    }
+
+    private void saveLog() {
+        Log.d(TAG, "Writing log");
         Gson gson = new Gson();
         String json = gson.toJson(roundLen);
 
@@ -621,7 +633,6 @@ public class GameStage extends Stage implements ContactListener {
         p /= roundLen.size();
 
         mGameLogger.finalize(p, json);
-
     }
 
 }

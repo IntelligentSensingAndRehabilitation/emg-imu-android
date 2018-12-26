@@ -57,9 +57,7 @@ public class GameScreen implements Screen {
     }
 
     @Override
-    public void pause() {
-
-    }
+    public void pause() { stage.pause(); }
 
     @Override
     public void resume() {

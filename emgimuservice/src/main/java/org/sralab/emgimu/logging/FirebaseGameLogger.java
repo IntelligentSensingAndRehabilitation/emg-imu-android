@@ -92,7 +92,7 @@ public class FirebaseGameLogger {
 
     private GamePlayRecord record;
 
-    public FirebaseGameLogger(EmgImuService.EmgImuBinder service, String game) {
+    public FirebaseGameLogger(EmgImuService.EmgImuBinder service, String game, long startTime) {
 
         FirebaseAuth mAuth = FirebaseAuth.getInstance();
         mUser = mAuth.getCurrentUser(); // Log in performed by main service
@@ -113,13 +113,25 @@ public class FirebaseGameLogger {
         }
 
         record = new GamePlayRecord();
-        record.startTime = new Date().getTime();
+        record.startTime = startTime;
         record.stopTime = 0;
         record.name = game;
         record.performance = 0;
         record.logReference = service.getLoggingReferences();
 
-        save();
+        Handler mainHandler = new Handler(Looper.getMainLooper());
+        mainHandler.post(()-> {
+            DocumentReference doc = getDocument();
+            doc.get().addOnSuccessListener(documentSnapshot -> {
+                if (documentSnapshot.exists()) {
+                    Log.d(TAG, "Loaded previous document: " + getDocument().getPath());
+                    record = documentSnapshot.toObject(GamePlayRecord.class);
+                } else {
+                    Log.d(TAG, "Game record did not exist. Creating new one.");
+                    save();
+                }
+            });
+        });
     }
 
     public void finalize(double performance, String details) {

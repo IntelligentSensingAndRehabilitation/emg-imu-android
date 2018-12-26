@@ -20,6 +20,7 @@ import android.view.WindowManager;
 import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import android.util.Log;
 
@@ -93,6 +94,8 @@ public class Game extends EmgImuBaseActivity {
 
     private FirebaseAnalytics mFirebaseAnalytics;
 
+    private long startTime = new Date().getTime();
+
     @Override
     protected void onCreateView(Bundle savedInstanceState) {
         Fabric.with(this, new Crashlytics());
@@ -133,7 +136,7 @@ public class Game extends EmgImuBaseActivity {
         Log.d(TAG, "onServiceBinded");
         mDevices = binder.getManagedDevices();
         mService = binder;
-        mGameLogger = new FirebaseGameLogger(mService, "Flutter Cow");
+        mGameLogger = new FirebaseGameLogger(mService, "Flutter Cow", startTime);
     }
 
     @Override
@@ -347,10 +350,14 @@ public class Game extends EmgImuBaseActivity {
      */
     @Override
     protected void onPause() {
+        Log.d(TAG, "onPause");
         view.pause();
         if(musicPlayer.isPlaying()){
             musicPlayer.pause();
         }
+
+        updateLog();
+
         super.onPause();
     }
 
@@ -361,6 +368,7 @@ public class Game extends EmgImuBaseActivity {
      */
     @Override
     protected void onResume() {
+        Log.d(TAG, "onResume");
         view.drawOnce();
         if(musicShouldPlay){
             musicPlayer.start();
@@ -370,6 +378,11 @@ public class Game extends EmgImuBaseActivity {
     
     @Override
     protected void onDestroy() {
+        updateLog();
+        super.onDestroy();
+    }
+
+    private void updateLog() {
         Gson gson = new Gson();
         String json = gson.toJson(roundLen);
 
@@ -378,9 +391,8 @@ public class Game extends EmgImuBaseActivity {
             p += len;
         p /= roundLen.size();
 
+        Log.d(TAG, "Updating with: " + json);
         mGameLogger.finalize(p, json);
-
-        super.onDestroy();
     }
 
     public void increaseCoin(){
