@@ -54,13 +54,24 @@ import com.firebase.jobdispatcher.Job;
 import com.firebase.jobdispatcher.Lifetime;
 import com.firebase.jobdispatcher.RetryStrategy;
 import com.firebase.jobdispatcher.Trigger;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.Timestamp;
 import com.google.firebase.analytics.FirebaseAnalytics;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.FirebaseFirestoreSettings;
+import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.firebase.iid.InstanceIdResult;
 
+import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import io.fabric.sdk.android.Fabric;
 import no.nordicsemi.android.ble.error.GattError;
@@ -119,6 +130,7 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 	private FirebaseAuth mAuth;
     private FirebaseAnalytics mFirebaseAnalytics;
     private FirebaseUser mCurrentUser;
+    private String mToken;
 
     private ILogSession mLogSession;
     private ServiceLogger mServiceLogger = new ServiceLogger(TAG, this, mLogSession);
@@ -345,6 +357,7 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 	    registerReceiver(mDisconnectActionBroadcastReceiver, new IntentFilter(ACTION_DISCONNECT));
 
         mAuth = FirebaseAuth.getInstance();
+        mToken = null;
 
         // Check if user is signed in (non-null) and update UI accordingly.
         mCurrentUser = mAuth.getCurrentUser();
@@ -358,6 +371,10 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 
                             Log.d(TAG, "signInAnonymously:success. UID:" + mCurrentUser.getUid());
                             mServiceLogger.d("signInAnonymously:success. UID:" + mCurrentUser.getUid());
+
+                            // It can happen that either one is set first
+                            if (mToken != null && mCurrentUser != null)
+                                storeToken();
                         } else {
                             // If sign in fails, display a message to the user.
                             mServiceLogger.w("signInAnonymously:failure" + task.getException());
@@ -367,6 +384,17 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
         } else {
             mServiceLogger.d("User ID: " + mCurrentUser.getUid());
         }
+
+
+        FirebaseInstanceId.getInstance().getInstanceId().addOnSuccessListener(instanceIdResult -> {
+            mToken = instanceIdResult.getToken();
+            Log.d(TAG, "Received token: " + mToken);
+
+            // It can happen that either one is set first
+            if (mToken != null && mCurrentUser != null)
+                storeToken();
+
+        });
 
         // Obtain the FirebaseAnalytics instance.
         mFirebaseAnalytics = FirebaseAnalytics.getInstance(this);
@@ -378,6 +406,22 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
         //networkStreaming = new NetworkStreaming();
         //networkStreaming.start();
 	}
+
+    private void storeToken()
+    {
+        Log.d(TAG, "Updating token for user in firestore");
+        FirebaseFirestore mDb = FirebaseFirestore.getInstance();
+        FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder()
+                .setTimestampsInSnapshotsEnabled(true)
+                .build();
+        mDb.setFirestoreSettings(settings);
+        DocumentReference doc = mDb.collection("fcmTokens").document(mCurrentUser.getUid());
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("token", mToken);
+        data.put("updated", Timestamp.now());
+        doc.set(data);
+    }
 
     private final SimpleArrayMap<String, Pair<Runnable, Integer>> logFetchStartId = new SimpleArrayMap<>();
 
@@ -850,7 +894,7 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
         String channelId = "";
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            channelId = "org.sralab.emgimu.service";
+            channelId = getString(R.string.default_notification_channel_id);
             NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
             nm.createNotificationChannel(new NotificationChannel(channelId, "EMG IMU Service", NotificationManager.IMPORTANCE_MIN));
         }
