@@ -18,6 +18,8 @@ import org.sralab.emgimu.EmgImuBaseActivity;
 import org.sralab.emgimu.service.EmgImuService;
 import org.sralab.emgimu.service.EmgLogRecord;
 
+import java.text.NumberFormat;
+
 import io.fabric.sdk.android.Fabric;
 import no.nordicsemi.android.nrftoolbox.widget.DividerItemDecoration;
 
@@ -53,10 +55,17 @@ public class Streaming extends EmgImuBaseActivity {
 
             @Override
             public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-                double range = Double.parseDouble(charSequence.toString());
-                if (mAdapter != null)
+                if (mAdapter == null)
+                    return;
+
+                try {
+                    double range = Double.parseDouble(charSequence.toString());
                     mAdapter.setRange(range);
-                Log.d(TAG, "Range change to: " + range);
+                    Log.d(TAG, "Range change to: " + range);
+                } catch (NumberFormatException e) {
+                    // Do nothing until valid number entered
+                }
+
             }
 
             @Override
@@ -82,9 +91,13 @@ public class Streaming extends EmgImuBaseActivity {
 
         mAdapter.toggleFiltering(enableFilter.isChecked());
 
-        double range = Double.parseDouble(mRangeText.getText().toString());
-        mAdapter.setRange(range);
-        Log.d(TAG, "Range set to: " + range);
+        try {
+            double range = Double.parseDouble(mRangeText.getText().toString());
+            mAdapter.setRange(range);
+            Log.d(TAG, "Range set to: " + range);
+        } catch (NumberFormatException e) {
+            // Do nothing if not valid
+        }
     }
 
     @Override

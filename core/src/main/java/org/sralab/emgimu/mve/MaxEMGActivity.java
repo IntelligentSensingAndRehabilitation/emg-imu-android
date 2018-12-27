@@ -13,6 +13,8 @@ import org.sralab.emgimu.config.R;
 import org.sralab.emgimu.service.EmgImuService;
 import org.sralab.emgimu.service.EmgLogRecord;
 
+import java.text.NumberFormat;
+
 public class MaxEMGActivity extends EmgImuBaseActivity implements EmgPowerView.OnMaxChangedEventListener {
 
     private final static String TAG = MaxEMGActivity.class.getSimpleName();
@@ -69,15 +71,24 @@ public class MaxEMGActivity extends EmgImuBaseActivity implements EmgPowerView.O
 
             @Override
             public void afterTextChanged(Editable editable) {
-                double range = Double.parseDouble(editable.toString());
-                mPwrView.setMaxRange(range);
-                Log.d(TAG, "Range change to: " + range);
+                double range;
+                try {
+                    range = Double.parseDouble(editable.toString());
+                    mPwrView.setMaxRange(range);
+                    Log.d(TAG, "Range change to: " + range);
+                } catch (NumberFormatException e) {
+                    // Do nothing until valid number entered
+                }
             }
 
         });
-        double range = Double.parseDouble(maxScaleInput.getText().toString());
-        mPwrView.setMaxRange(range);
-        Log.d(TAG, "Range change to: " + range);
+        try {
+            double range = Double.parseDouble(maxScaleInput.getText().toString());
+            mPwrView.setMaxRange(range);
+            Log.d(TAG, "Range change to: " + range);
+        } catch (NumberFormatException e) {
+
+        }
     }
 
     //! Clear the prior max by setting to zero
