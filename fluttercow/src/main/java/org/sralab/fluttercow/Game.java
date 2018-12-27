@@ -391,6 +391,12 @@ public class Game extends EmgImuBaseActivity {
     }
 
     private void updateLog() {
+
+        // If exiting before service is bound then do not try
+        // and save
+        if (mGameLogger == null)
+            return;
+
         Gson gson = new Gson();
 
         Details d = new Details();
