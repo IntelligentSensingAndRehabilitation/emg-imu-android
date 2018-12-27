@@ -48,12 +48,14 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.crashlytics.android.Crashlytics;
+import com.crashlytics.android.core.CrashlyticsCore;
 
 import java.util.List;
 
 import io.fabric.sdk.android.Fabric;
 import no.nordicsemi.android.nrftoolbox.AppHelpFragment;
 
+import org.sralab.emgimu.config.BuildConfig;
 import org.sralab.emgimu.config.R;
 
 public class LauncherActivity extends AppCompatActivity {
@@ -68,7 +70,11 @@ public class LauncherActivity extends AppCompatActivity {
 
 	@Override
 	protected void onCreate(final Bundle savedInstanceState) {
-		Fabric.with(this, new Crashlytics());
+
+		CrashlyticsCore crashlyticsCore = new CrashlyticsCore.Builder()
+				.disabled(BuildConfig.DEBUG)
+				.build();
+		Fabric.with(this, new Crashlytics.Builder().core(crashlyticsCore).build());
 
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_launcher);

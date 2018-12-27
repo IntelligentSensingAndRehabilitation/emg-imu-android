@@ -13,6 +13,7 @@ import android.widget.CheckBox;
 import android.widget.EditText;
 
 import com.crashlytics.android.Crashlytics;
+import com.crashlytics.android.core.CrashlyticsCore;
 
 import org.sralab.emgimu.EmgImuBaseActivity;
 import org.sralab.emgimu.service.EmgImuService;
@@ -35,7 +36,11 @@ public class Streaming extends EmgImuBaseActivity {
 
     @Override
     protected void onCreateView(final Bundle savedInstanceState) {
-        Fabric.with(this, new Crashlytics());
+
+        CrashlyticsCore crashlyticsCore = new CrashlyticsCore.Builder()
+                .disabled(BuildConfig.DEBUG)
+                .build();
+        Fabric.with(this, new Crashlytics.Builder().core(crashlyticsCore).build());
 
         setContentView(R.layout.activity_streaming);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
