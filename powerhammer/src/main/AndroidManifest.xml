@@ -16,7 +16,7 @@
         android:launchMode="singleTask"
         android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale|layoutDirection|density"
         android:hardwareAccelerated="false"
-        android:name="org.sralab.emgimu.powerhammer.UnityPlayerActivity">
+        android:name="org.sralab.emgimu.powerhammer.PowerHammerActivity">
 
       <!-- For launching outside the core app, directly -->
       <intent-filter>
