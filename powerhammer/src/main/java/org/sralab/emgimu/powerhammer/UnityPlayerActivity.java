@@ -4,20 +4,28 @@ import com.crashlytics.android.Crashlytics;
 import com.crashlytics.android.core.CrashlyticsCore;
 import com.unity3d.player.*;
 import android.app.Activity;
+import android.bluetooth.BluetoothDevice;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Bundle;
+import android.os.SystemClock;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.Window;
 
-import org.sralab.emgimu.powerhammer.BuildConfig;
+import org.sralab.emgimu.service.EmgImuService;
+import org.sralab.emgimu.service.EmgImuServiceHolder;
 
 import io.fabric.sdk.android.Fabric;
 
 public class UnityPlayerActivity extends Activity
 {
+    private static final String TAG = UnityPlayerActivity.class.getSimpleName();
+
     protected UnityPlayer mUnityPlayer; // don't change the name of this variable; referenced from native code
+
+    private EmgImuServiceHolder mServiceHolder;
 
     // Setup activity layout
     @Override protected void onCreate(Bundle savedInstanceState)
@@ -33,6 +41,12 @@ public class UnityPlayerActivity extends Activity
         mUnityPlayer = new UnityPlayer(this);
         setContentView(mUnityPlayer);
         mUnityPlayer.requestFocus();
+
+        // Create the service holder
+        Log.d(TAG, "Creating service holder");
+        mServiceHolder = new EmgImuServiceHolder(this);
+        mServiceHolder.onCreate();
+        mServiceHolder.setCallbacks(mEmgImuCallbacks);
     }
 
     @Override protected void onNewIntent(Intent intent)
@@ -56,6 +70,7 @@ public class UnityPlayerActivity extends Activity
     {
         super.onPause();
         mUnityPlayer.pause();
+        mServiceHolder.onPause();
     }
 
     // Resume Unity
@@ -63,6 +78,7 @@ public class UnityPlayerActivity extends Activity
     {
         super.onResume();
         mUnityPlayer.resume();
+        mServiceHolder.onResume();
     }
 
     @Override protected void onStart()
@@ -118,8 +134,45 @@ public class UnityPlayerActivity extends Activity
     }
 
     // Pass any events not handled by (unfocused) views straight to UnityPlayer
-    @Override public boolean onKeyUp(int keyCode, KeyEvent event)     { return mUnityPlayer.injectEvent(event); }
+    @Override public boolean onKeyUp(int keyCode, KeyEvent event)     {
+        if(keyCode == KeyEvent.KEYCODE_BACK) {
+            // TODO: figure out how to properly exit this
+            //finish();
+            //onDestroy();
+            //mUnityPlayer.quit();
+            //onBackPressed();
+            return true;
+        }
+        return mUnityPlayer.injectEvent(event);
+    }
     @Override public boolean onKeyDown(int keyCode, KeyEvent event)   { return mUnityPlayer.injectEvent(event); }
     @Override public boolean onTouchEvent(MotionEvent event)          { return mUnityPlayer.injectEvent(event); }
     /*API12*/ public boolean onGenericMotionEvent(MotionEvent event)  { return mUnityPlayer.injectEvent(event); }
+
+    private final EmgImuServiceHolder.Callbacks mEmgImuCallbacks = new EmgImuServiceHolder.Callbacks() {
+
+        @Override
+        public void onEmgPwrReceived(BluetoothDevice device, int value) {
+
+        }
+
+        @Override
+        public void onEmgClick(BluetoothDevice device) {
+            MotionEvent event = MotionEvent.obtain(SystemClock.uptimeMillis(),
+                    SystemClock.uptimeMillis(), MotionEvent.ACTION_BUTTON_PRESS,
+                    0, 0, 0);
+            Log.d(TAG, "Received click, injecting an event: " + event);
+            mUnityPlayer.injectEvent(event);
+        }
+
+        @Override
+        public void onServiceBinded(EmgImuService.EmgImuBinder binder) {
+            Log.d(TAG, "Service bound");
+        }
+
+        @Override
+        public void onServiceUnbinded() {
+            Log.d(TAG, "Service unbound");
+        }
+    };
 }
