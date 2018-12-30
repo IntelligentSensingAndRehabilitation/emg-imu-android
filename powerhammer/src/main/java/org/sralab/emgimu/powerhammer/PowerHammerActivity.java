@@ -59,17 +59,17 @@ public class PowerHammerActivity extends UnityPlayerActivity
 
         @Override
         public void onEmgPwrReceived(BluetoothDevice device, int value) {
+            // The standard mUnityPlayer.injectEvent(event) does not provide
+            // flexibility to create custom events such as the EMG power
+            // but we can call custom methods in Unity that do expose this
 
+            // takes in Object, Function Mame, Parameters
+            mUnityPlayer.UnitySendMessage("Player", "OnJavaEmgPowerReceived", Integer.toString(value));
         }
 
         @Override
         public void onEmgClick(BluetoothDevice device) {
-            MotionEvent event = MotionEvent.obtain(SystemClock.uptimeMillis(),
-                    SystemClock.uptimeMillis(), MotionEvent.ACTION_BUTTON_PRESS,
-                    0, 0, 0);
-            //mUnityPlayer.
-                Log.d(TAG, "Received click, injecting an event: " + event);
-            mUnityPlayer.injectEvent(event);
+            mUnityPlayer.UnitySendMessage("Player", "OnJavaClickReceived", "");
         }
 
         @Override
