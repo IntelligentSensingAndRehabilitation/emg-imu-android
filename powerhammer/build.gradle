@@ -1,14 +1,6 @@
 apply plugin: 'com.android.library'
 apply plugin: 'io.fabric'
 
-buildscript {
-    repositories {
-        flatDir {
-            dirs 'Power Hammer/libs'
-        }
-    }
-}
-
 android {
 
     compileSdkVersion rootProject.compileSdk
@@ -77,9 +69,6 @@ dependencies {
     implementation project(':ble')
     implementation project(':common')
     implementation project(':emgimuservice')
-
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
-    //implementation(name: 'UnityAds', ext:'aar')
 
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation "com.android.support:appcompat-v7:$supportLib"

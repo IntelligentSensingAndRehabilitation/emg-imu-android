@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     android:sharedUserId="org.sralab.emgimu"
-    package="org.sralab.emgimu">
+    package="org.sralab.emgimu.powerhammer">
 
   <supports-screens android:smallScreens="true" android:normalScreens="true" android:largeScreens="true" android:xlargeScreens="true" android:anyDensity="true" />
 
@@ -16,7 +16,7 @@
         android:launchMode="singleTask"
         android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale|layoutDirection|density"
         android:hardwareAccelerated="false"
-        android:name="org.sralab.emgimu.PowerHammer.UnityPlayerActivity">
+        android:name="org.sralab.emgimu.powerhammer.UnityPlayerActivity">
 
       <!-- For launching outside the core app, directly -->
       <intent-filter>
