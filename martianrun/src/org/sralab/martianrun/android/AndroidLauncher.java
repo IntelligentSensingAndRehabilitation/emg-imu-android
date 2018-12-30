@@ -25,11 +25,16 @@ import android.widget.RelativeLayout;
 
 import com.badlogic.gdx.backends.android.AndroidApplication;
 import com.badlogic.gdx.backends.android.AndroidApplicationConfiguration;
+import com.crashlytics.android.Crashlytics;
+import com.crashlytics.android.core.CrashlyticsCore;
 
+import org.sralab.emgimu.martianrun.BuildConfig;
 import org.sralab.martianrun.EmgImuServiceHolder;
 import org.sralab.martianrun.MartianRun;
 import org.sralab.martianrun.utils.GameEventListener;
 import org.sralab.martianrun.utils.GameManager;
+
+import io.fabric.sdk.android.Fabric;
 
 public class AndroidLauncher extends AndroidApplication implements
         GameEventListener {
@@ -46,6 +51,11 @@ public class AndroidLauncher extends AndroidApplication implements
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        CrashlyticsCore crashlyticsCore = new CrashlyticsCore.Builder()
+                .disabled(BuildConfig.DEBUG)
+                .build();
+        Fabric.with(this, new Crashlytics.Builder().core(crashlyticsCore).build());
 
         // Create the layout
         RelativeLayout layout = new RelativeLayout(this);
