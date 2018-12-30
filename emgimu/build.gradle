@@ -35,6 +35,7 @@ dependencies {
     implementation project(':fluttercow')
     implementation project(':streaming')
     implementation project(':martianrun')
+    implementation project(':Power Hammer')
 
     // Because too many methods
     implementation 'com.android.support:multidex:1.0.3'
