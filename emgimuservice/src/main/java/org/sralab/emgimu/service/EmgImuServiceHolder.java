@@ -1,4 +1,4 @@
-package org.sralab.martianrun;
+package org.sralab.emgimu.service;
 
 
 import android.bluetooth.BluetoothAdapter;

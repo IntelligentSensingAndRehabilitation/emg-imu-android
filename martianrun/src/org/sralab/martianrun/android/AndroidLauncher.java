@@ -29,7 +29,7 @@ import com.crashlytics.android.Crashlytics;
 import com.crashlytics.android.core.CrashlyticsCore;
 
 import org.sralab.emgimu.martianrun.BuildConfig;
-import org.sralab.martianrun.EmgImuServiceHolder;
+import org.sralab.emgimu.service.EmgImuServiceHolder;
 import org.sralab.martianrun.MartianRun;
 import org.sralab.martianrun.utils.GameEventListener;
 import org.sralab.martianrun.utils.GameManager;

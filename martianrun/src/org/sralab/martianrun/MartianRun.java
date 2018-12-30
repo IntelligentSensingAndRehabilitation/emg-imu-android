@@ -20,6 +20,7 @@ import android.util.Log;
 
 import com.badlogic.gdx.Game;
 
+import org.sralab.emgimu.service.EmgImuServiceHolder;
 import org.sralab.martianrun.screens.GameScreen;
 import org.sralab.martianrun.utils.AssetsManager;
 import org.sralab.martianrun.utils.AudioUtils;

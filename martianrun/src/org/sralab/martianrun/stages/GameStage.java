@@ -33,7 +33,7 @@ import com.google.gson.Gson;
 
 import org.sralab.emgimu.logging.FirebaseGameLogger;
 import org.sralab.emgimu.service.EmgImuService;
-import org.sralab.martianrun.EmgImuServiceHolder;
+import org.sralab.emgimu.service.EmgImuServiceHolder;
 import org.sralab.martianrun.actors.*;
 import org.sralab.martianrun.actors.menu.*;
 import org.sralab.martianrun.enums.Difficulty;
