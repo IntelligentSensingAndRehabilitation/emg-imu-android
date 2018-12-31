@@ -55,9 +55,10 @@ public class PowerHammerActivity extends UnityPlayerActivity
             // flexibility to create custom events such as the EMG power
             // but we can call custom methods in Unity that do expose this
 
-            //Log.d(TAG, "Sending: " + Float.toString(value / 1.0f));
+            String val = Float.toString(value / 10000.0f);
+            Log.d(TAG, "Sending: " + val);
             // takes in Object, Function Mame, Parameters
-            mUnityPlayer.UnitySendMessage("Player", "OnJavaEmgPowerReceived", Float.toString(value / 10000.0f));
+            mUnityPlayer.UnitySendMessage("Player", "OnJavaEmgPowerReceived", val);
         }
 
         @Override
