@@ -1,4 +1,5 @@
 <resources>
+    <string name="app_name">Wearable Biofeedback</string>
     <string name="title_activity_config">Config</string>
     <string name="title_activity_max_emg">Max Activity</string>
     <string name="reset_btn">Reset</string>
