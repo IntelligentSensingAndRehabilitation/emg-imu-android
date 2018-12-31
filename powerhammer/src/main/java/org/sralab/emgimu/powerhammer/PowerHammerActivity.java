@@ -2,17 +2,9 @@ package org.sralab.emgimu.powerhammer;
 
 import com.crashlytics.android.Crashlytics;
 import com.crashlytics.android.core.CrashlyticsCore;
-import com.unity3d.player.*;
-import android.app.Activity;
 import android.bluetooth.BluetoothDevice;
-import android.content.Intent;
-import android.content.res.Configuration;
 import android.os.Bundle;
-import android.os.SystemClock;
 import android.util.Log;
-import android.view.KeyEvent;
-import android.view.MotionEvent;
-import android.view.Window;
 
 import org.sralab.emgimu.service.EmgImuService;
 import org.sralab.emgimu.service.EmgImuServiceHolder;
@@ -63,13 +55,14 @@ public class PowerHammerActivity extends UnityPlayerActivity
             // flexibility to create custom events such as the EMG power
             // but we can call custom methods in Unity that do expose this
 
+            //Log.d(TAG, "Sending: " + Float.toString(value / 1.0f));
             // takes in Object, Function Mame, Parameters
-            mUnityPlayer.UnitySendMessage("Player", "OnJavaEmgPowerReceived", Integer.toString(value));
+            mUnityPlayer.UnitySendMessage("Player", "OnJavaEmgPowerReceived", Float.toString(value / 10000.0f));
         }
 
         @Override
         public void onEmgClick(BluetoothDevice device) {
-            mUnityPlayer.UnitySendMessage("Player", "OnJavaClickReceived", "");
+            //mUnityPlayer.UnitySendMessage("Player", "OnJavaClickReceived", "");
         }
 
         @Override
