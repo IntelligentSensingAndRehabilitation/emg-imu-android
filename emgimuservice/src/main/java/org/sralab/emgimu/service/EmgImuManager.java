@@ -39,6 +39,7 @@ import org.sralab.emgimu.parser.RecordAccessControlPointParser;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Deque;
 import java.util.GregorianCalendar;
@@ -653,6 +654,34 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                     mRecords.add(emgRecord);
                     mCallbacks.onEmgLogRecordReceived(device, emgRecord);
                     break;
+                case IMU_ACCEL:
+                    final float ACCEL_SCALE = 9.8f / 2048.0f; // for 16G to m/s
+                    float accel[][] = new float[3][3];
+                    for (int idx = 0; idx < 3; idx++) // 3 comes from "BUNDLE" param in firmware
+                        for (int chan = 0; chan < 3; chan++)
+                            accel[idx][chan] = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT16, (chan + idx * 3) * 2) * ACCEL_SCALE;
+
+                    mCallbacks.onImuAccelReceived(device, accel);
+
+                    if (mLogging && streamLogger != null) {
+                        streamLogger.addAccelSample(new Date().getTime(), accel);
+                    }
+
+                    break;
+                case IMU_GYRO:
+                    final float GYRO_SCALE = 1.0f / 65.5f; // at 500 deg/s to deg/s
+                    float gyro[][] = new float[3][3];
+                    for (int idx = 0; idx < 3; idx++) // 3 comes from "BUNDLE" param in firmware
+                        for (int chan = 0; chan < 3; chan++)
+                            gyro[idx][chan] = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT16, (chan + idx * 3) * 2) * GYRO_SCALE;
+
+                    mCallbacks.onImuGyroReceived(device, gyro);
+
+                    if (mLogging && streamLogger != null) {
+                        streamLogger.addGyroSample(new Date().getTime(), gyro);
+                    }
+
+                    break;
                 case IMU_ATTITUDE:
                     final float scale = 1.0f / 32767f;
                     float quat[] = new float[4];
@@ -660,6 +689,11 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                         quat[i] = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT16, i * 2) * scale;
                     Log.d(TAG, "Received quaternion: " + quat[0] + " " + quat[1] + " " + quat[2] + " " + quat[3]);
                     mCallbacks.onImuAttitudeReceived(device, quat);
+
+                    if (mLogging && streamLogger != null) {
+                        streamLogger.addAttitudeSample(new Date().getTime(), quat);
+                    }
+
                     break;
                 default:
                     Log.e(TAG, "Received unknown or unexpected notification of characteristic: \"" + characteristic.getUuid().toString() + "\"");

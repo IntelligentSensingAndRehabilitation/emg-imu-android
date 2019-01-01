@@ -235,6 +235,16 @@ public class MaxEMGActivity extends EmgImuBaseActivity implements EmgPowerView.O
     }
 
     @Override
+    public void onImuAccelReceived(BluetoothDevice device, float[][] accel) {
+
+    }
+
+    @Override
+    public void onImuGyroReceived(BluetoothDevice device, float[][] gyro) {
+
+    }
+
+    @Override
     public void onImuAttitudeReceived(BluetoothDevice device, float[] quaternion) {
 
     }

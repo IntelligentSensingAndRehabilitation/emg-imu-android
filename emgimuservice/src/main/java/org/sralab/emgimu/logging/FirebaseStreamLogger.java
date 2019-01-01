@@ -12,6 +12,9 @@ import com.google.gson.Gson;
 import org.sralab.emgimu.service.EmgImuManager;
 import org.sralab.emgimu.streaming.messages.EmgPwrMessage;
 import org.sralab.emgimu.streaming.messages.EmgRawMessage;
+import org.sralab.emgimu.streaming.messages.ImuAccelMessage;
+import org.sralab.emgimu.streaming.messages.ImuGyroMessage;
+import org.sralab.emgimu.streaming.messages.ImuAttitudeMessage;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;
@@ -168,4 +171,21 @@ public class FirebaseStreamLogger {
         addJson(gson.toJson(msg));
     }
 
+    public void addAttitudeSample(long time, float [] data) {
+        Gson gson = new Gson();
+        ImuAttitudeMessage msg = new ImuAttitudeMessage(mDeviceMac, time, data);
+        addJson(gson.toJson(msg));
+    }
+
+    public void addAccelSample(long time, float [][] data) {
+        Gson gson = new Gson();
+        ImuAccelMessage msg = new ImuAccelMessage(mDeviceMac, time, data);
+        addJson(gson.toJson(msg));
+    }
+
+    public void addGyroSample(long time, float [][] data) {
+        Gson gson = new Gson();
+        ImuGyroMessage msg = new ImuGyroMessage(mDeviceMac, time, data);
+        addJson(gson.toJson(msg));
+    }
 }

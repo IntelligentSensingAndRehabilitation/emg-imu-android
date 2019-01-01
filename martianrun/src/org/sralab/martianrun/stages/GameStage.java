@@ -113,6 +113,11 @@ public class GameStage extends Stage implements ContactListener {
             }
 
             @Override
+            public void onImuAccelReceived(BluetoothDevice device, float[][] accel) {
+
+            }
+
+            @Override
             public void onImuAttitudeReceived(BluetoothDevice device, float[] quaternion) {
 
             }

@@ -34,8 +34,8 @@ public interface EmgImuManagerCallbacks extends BleManagerCallbacks {
 
     // Callbacks for IMU updates
     // TODO: parse this and set up callbacks
-    //void onImuAccelReceived(final BluetoothDevice device, double[][] accel);
-    //void onImuGyroReceived(final BluetoothDevice device, double[][] gyro);
+    void onImuAccelReceived(final BluetoothDevice device, float[][] accel);
+    void onImuGyroReceived(final BluetoothDevice device, float[][] gyro);
     //void onImuMagReceived(final BluetoothDevice device, double[][] mag);
     void onImuAttitudeReceived(final BluetoothDevice device, float[] quaternion);
 

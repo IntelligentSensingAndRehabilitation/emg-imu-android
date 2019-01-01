@@ -36,8 +36,6 @@ public class PowerHammerActivity extends UnityPlayerActivity
     // Setup activity layout
     @Override protected void onCreate(Bundle savedInstanceState)
     {
-        super.onCreate(savedInstanceState);
-
         CrashlyticsCore crashlyticsCore = new CrashlyticsCore.Builder()
                 .disabled(BuildConfig.DEBUG)
                 .build();
@@ -48,6 +46,9 @@ public class PowerHammerActivity extends UnityPlayerActivity
         mServiceHolder = new EmgImuServiceHolder(this);
         mServiceHolder.onCreate();
         mServiceHolder.setCallbacks(mEmgImuCallbacks);
+
+        super.onCreate(savedInstanceState);
+        mUnityPlayer.UnitySendMessage("SceneLoader", "loadScene", "1");
     }
 
     @Override
@@ -113,6 +114,8 @@ public class PowerHammerActivity extends UnityPlayerActivity
 
     private final EmgImuServiceHolder.Callbacks mEmgImuCallbacks = new EmgImuServiceHolder.Callbacks() {
 
+        private EmgImuService.EmgImuBinder mService = null;
+
         @Override
         public void onEmgPwrReceived(BluetoothDevice device, int value) {
             // The standard mUnityPlayer.injectEvent(event) does not provide
@@ -130,16 +133,34 @@ public class PowerHammerActivity extends UnityPlayerActivity
         }
 
         @Override
+        public void onImuAccelReceived(BluetoothDevice device, float[][] accel) {
+
+        }
+
+        @Override
+        public void onImuAttitudeReceived(BluetoothDevice device, float[] quaternion) {
+
+        }
+
+        @Override
         public void onServiceBinded(EmgImuService.EmgImuBinder binder) {
             Log.d(TAG, "Service bound");
             long startTime = new Date().getTime();
             mGameLogger = new FirebaseGameLogger(binder, getString(R.string.powerhammer_name), startTime);
+            mService = binder;
         }
 
         @Override
         public void onServiceUnbinded() {
             mGameLogger = null;
+            mService = null;
             Log.d(TAG, "Service unbound");
+        }
+
+        @Override
+        public void onDeviceReady(BluetoothDevice device) {
+            if (mService != null)
+                mService.streamPwr(device);
         }
     };
 

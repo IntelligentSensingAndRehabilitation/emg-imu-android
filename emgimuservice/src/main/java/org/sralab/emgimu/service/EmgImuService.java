@@ -1039,6 +1039,48 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
     }
 
     @Override
+    public void onImuAccelReceived(BluetoothDevice device, float[][] accel) {
+        float [] linearizedData = new float[3 * 3];
+
+        for (int i = 0; i < 3; i++)
+            for (int j = 0; j < 3; j++)
+                linearizedData[i + j * 3] = accel[i][j];
+
+        final Intent broadcast = new Intent(BROADCAST_IMU_ACCEL);
+        broadcast.putExtra(EXTRA_DEVICE, device);
+        broadcast.putExtra(EXTRA_IMU_ACCEL, linearizedData);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(broadcast);
+
+        /*
+        if (networkStreaming != null && networkStreaming.isConnected()) {
+            double [] data = {(double) value};
+            networkStreaming.streamImuAttitude(device, 0, data);
+        }
+        */
+    }
+
+    @Override
+    public void onImuGyroReceived(BluetoothDevice device, float[][] gyro) {
+        float [] linearizedData = new float[3 * 3];
+
+        for (int i = 0; i < 3; i++)
+            for (int j = 0; j < 3; j++)
+                linearizedData[i + j * 3] = gyro[i][j];
+
+        final Intent broadcast = new Intent(BROADCAST_IMU_GYRO);
+        broadcast.putExtra(EXTRA_DEVICE, device);
+        broadcast.putExtra(EXTRA_IMU_GYRO, linearizedData);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(broadcast);
+
+        /*
+        if (networkStreaming != null && networkStreaming.isConnected()) {
+            double [] data = {(double) value};
+            networkStreaming.streamImuAttitude(device, 0, data);
+        }
+        */
+    }
+
+    @Override
     public void onImuAttitudeReceived(BluetoothDevice device, float[] quaternion) {
         final Intent broadcast = new Intent(BROADCAST_IMU_ATTITUDE);
         broadcast.putExtra(EXTRA_DEVICE, device);

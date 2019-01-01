@@ -161,6 +161,16 @@ public class ConfigActivity extends EmgImuBaseActivity {
     }
 
 	@Override
+	public void onImuAccelReceived(BluetoothDevice device, float[][] accel) {
+
+	}
+
+	@Override
+	public void onImuGyroReceived(BluetoothDevice device, float[][] gyro) {
+
+	}
+
+	@Override
 	public void onImuAttitudeReceived(BluetoothDevice device, float[] quaternion) {
 
 	}

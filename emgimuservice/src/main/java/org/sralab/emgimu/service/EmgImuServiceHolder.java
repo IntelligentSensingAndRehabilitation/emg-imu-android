@@ -162,6 +162,39 @@ public class EmgImuServiceHolder<E extends EmgImuService.EmgImuBinder> implement
                     onEmgClick(bluetoothDevice);
                     break;
                 }
+
+                case EmgImuService.BROADCAST_IMU_ACCEL: {
+                    final float [] value = intent.getFloatArrayExtra(EmgImuService.EXTRA_IMU_ACCEL);
+                    final int CHANNELS = 3;
+                    final int SAMPLES = 3;
+                    if (value != null) {
+                        float [][] data = new float[CHANNELS][SAMPLES];
+                        for (int idx = 0; idx < value.length; idx++) {
+                            int i = idx % CHANNELS;
+                            int j = idx / CHANNELS;
+                            data[i][j] = value[idx];
+                        }
+                        onImuAccelReceived(bluetoothDevice, data);
+                    }
+
+                    break;
+                }
+                case EmgImuService.BROADCAST_IMU_GYRO: {
+                    final float [] value = intent.getFloatArrayExtra(EmgImuService.EXTRA_IMU_GYRO);
+                    final int CHANNELS = 3;
+                    final int SAMPLES = 3;
+                    if (value != null) {
+                        float [][] data = new float[CHANNELS][SAMPLES];
+                        for (int idx = 0; idx < value.length; idx++) {
+                            int i = idx % CHANNELS;
+                            int j = idx / CHANNELS;
+                            data[i][j] = value[idx];
+                        }
+                        onImuGyroReceived(bluetoothDevice, data);
+                    }
+
+                    break;
+                }
                 case EmgImuService.BROADCAST_IMU_ATTITUDE: {
                     final float [] quat = intent.getFloatArrayExtra(EmgImuService.EXTRA_IMU_ATTITUDE);
                     onImuAttitudeReceived(bluetoothDevice, quat);
@@ -255,6 +288,8 @@ public class EmgImuServiceHolder<E extends EmgImuService.EmgImuBinder> implement
         intentFilter.addAction(EmgImuService.BROADCAST_EMG_PWR);
         intentFilter.addAction(EmgImuService.BROADCAST_EMG_BUFF);
         intentFilter.addAction(EmgImuService.BROADCAST_EMG_CLICK);
+        intentFilter.addAction(EmgImuService.BROADCAST_IMU_ACCEL);
+        intentFilter.addAction(EmgImuService.BROADCAST_IMU_GYRO);
         intentFilter.addAction(EmgImuService.BROADCAST_IMU_ATTITUDE);
         return intentFilter;
     }
@@ -438,6 +473,18 @@ public class EmgImuServiceHolder<E extends EmgImuService.EmgImuBinder> implement
     }
 
     @Override
+    public void onImuAccelReceived(BluetoothDevice device, float[][] accel) {
+        if (mCallbacks != null) {
+            mCallbacks.onImuAccelReceived(device, accel);
+        }
+    }
+
+    @Override
+    public void onImuGyroReceived(BluetoothDevice device, float[][] gyro) {
+        // TODO
+    }
+
+    @Override
     public void onImuAttitudeReceived(BluetoothDevice device, float[] quaternion) {
         if (mCallbacks != null) {
             mCallbacks.onImuAttitudeReceived(device, quaternion);
@@ -488,6 +535,7 @@ public class EmgImuServiceHolder<E extends EmgImuService.EmgImuBinder> implement
         // Data callbacks
         void onEmgPwrReceived(final BluetoothDevice device, int value);
         void onEmgClick(final BluetoothDevice device);
+        void onImuAccelReceived(BluetoothDevice device, float[][] accel);
         void onImuAttitudeReceived(BluetoothDevice device, float[] quaternion);
 
         // Service connection events
