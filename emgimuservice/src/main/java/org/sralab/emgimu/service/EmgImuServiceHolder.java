@@ -14,11 +14,6 @@ import android.content.pm.PackageManager;
 import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
 
-import org.sralab.emgimu.service.EmgImuManager;
-import org.sralab.emgimu.service.EmgImuManagerCallbacks;
-import org.sralab.emgimu.service.EmgImuService;
-import org.sralab.emgimu.service.EmgLogRecord;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -40,24 +35,22 @@ public class EmgImuServiceHolder<E extends EmgImuService.EmgImuBinder> implement
         mContext = context;
     }
 
-    protected void onServiceBinded(final E binder) {
+    private void onServiceBinded(final E binder) {
 
         mService = binder;
         if (mCallbacks != null)
             mCallbacks.onServiceBinded(binder);
     }
 
-    protected void onServiceUnbinded() {
+    private void onServiceUnbinded() {
         mService = null;
         if (mCallbacks != null)
             mCallbacks.onServiceUnbinded();
     }
 
-    protected Class<? extends BleMulticonnectProfileService> getServiceClass() {
+    private Class<? extends BleMulticonnectProfileService> getServiceClass() {
         return EmgImuService.class;
     }
-
-    protected static final int REQUEST_ENABLE_BT = 2;
 
     private final BroadcastReceiver mCommonBroadcastReceiver = new BroadcastReceiver() {
         @Override
@@ -431,7 +424,6 @@ public class EmgImuServiceHolder<E extends EmgImuService.EmgImuBinder> implement
 
     @Override
     public void onEmgClick(BluetoothDevice device) {
-        android.util.Log.d(TAG, "Click");
         if  (mCallbacks != null) {
             mCallbacks.onEmgClick(device);
         }
@@ -478,10 +470,10 @@ public class EmgImuServiceHolder<E extends EmgImuService.EmgImuBinder> implement
     }
 
     public interface Callbacks {
-        public void onEmgPwrReceived(final BluetoothDevice device, int value);
-        public void onEmgClick(final BluetoothDevice device);
-        public void onServiceBinded(final EmgImuService.EmgImuBinder binder);
-        public void onServiceUnbinded();
+        void onEmgPwrReceived(final BluetoothDevice device, int value);
+        void onEmgClick(final BluetoothDevice device);
+        void onServiceBinded(final EmgImuService.EmgImuBinder binder);
+        void onServiceUnbinded();
     }
     private Callbacks mCallbacks;
     public void setCallbacks(Callbacks c) {
