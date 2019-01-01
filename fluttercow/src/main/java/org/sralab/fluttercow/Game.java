@@ -284,6 +284,11 @@ public class Game extends EmgImuBaseActivity {
         }
     }
 
+    @Override
+    public void onImuAttitudeReceived(BluetoothDevice device, float[] quaternion) {
+
+    }
+
     /**** Methods required to use the EMG logging via RACP ****/
     @Override
     public void onEmgLogRecordReceived(BluetoothDevice device, EmgLogRecord record) {

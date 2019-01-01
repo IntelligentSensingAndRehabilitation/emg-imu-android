@@ -98,6 +98,8 @@ public class GameStage extends Stage implements ContactListener {
         mServiceHolder = serviceHolder;
         mServiceHolder.setCallbacks(new EmgImuServiceHolder.Callbacks() {
 
+            private EmgImuService.EmgImuBinder mService;
+
             @Override
             public void onEmgPwrReceived(BluetoothDevice device, int value) {
                 android.util.Log.d("GameStage", "Update received");
@@ -111,16 +113,28 @@ public class GameStage extends Stage implements ContactListener {
             }
 
             @Override
+            public void onImuAttitudeReceived(BluetoothDevice device, float[] quaternion) {
+
+            }
+
+            @Override
             public void onServiceBinded(final EmgImuService.EmgImuBinder binder)
             {
                 Log.d(TAG, "Creating game logger now service is bound");
                 mGameLogger = new FirebaseGameLogger(binder, "Martian Run", startTime);
+                mService = binder;
             }
 
             @Override
             public void onServiceUnbinded()
             {
+                mService = null;
+            }
 
+            @Override
+            public void onDeviceReady(BluetoothDevice device) {
+                if (mService != null)
+                    mService.streamPwr(device);
             }
 
         });

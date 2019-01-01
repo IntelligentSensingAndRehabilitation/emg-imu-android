@@ -97,6 +97,7 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 
     public final static String EXTRA_DEVICE = "org.sralab.emgimu.EXTRA_DEVICE";
 
+    // Broadcast messages for EMG activity
     public static final String BROADCAST_EMG_RAW = "org.sralab.emgimu.BROADCAST_EMG_RAW";
     public static final String BROADCAST_EMG_PWR = "org.sralab.emgimu.BROADCAST_EMG_PWR";
     public static final String BROADCAST_EMG_BUFF = "org.sralab.emgimu.BROADCAST_EMG_BUFF";
@@ -110,6 +111,17 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 
     public static final String INTENT_FETCH_LOG = "org.sralab.INTENT_FETCH_LOG";
     public static final String INTENT_DEVICE_MAC = "org.sralab.INTENT_DEVICE_MAC";
+
+    // Broadcast messages for IMU activity
+    public static final String BROADCAST_IMU_ACCEL = "org.sralab.emgimu.BROADCAST_IMU_ACCEL";
+    public static final String BROADCAST_IMU_GYRO = "org.sralab.emgimu.BROADCAST_IMU_GYRO";
+    public static final String BROADCAST_IMU_MAG = "org.sralab.emgimu.BROADCAST_IMU_MAG";
+    public static final String BROADCAST_IMU_ATTITUDE = "org.sralab.emgimu.BROADCAST_IMU_ATTITUDE";
+
+    public static final String EXTRA_IMU_ACCEL = "org.sralab.emgimu.EXTRA_IMU_ACCEL";
+    public static final String EXTRA_IMU_GYRO = "org.sralab.emgimu.EXTRA_IMU_GYRO";
+    public static final String EXTRA_IMU_MAG = "org.sralab.emgimu.EXTRA_IMU_MAG";
+    public static final String EXTRA_IMU_ATTITUDE = "org.sralab.emgimu.EXTRA_IMU_ATTITUDE";
 
     public static final String SERVICE_PREFERENCES = "org.sralab.emgimu.PREFERENCES";
     public static final String DEVICE_PREFERENCE = "org.sralab.emgimu.DEVICE_LIST";
@@ -236,6 +248,25 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
             return manager.getStreamingMode();
         }
 
+       public void enableAttitude(final BluetoothDevice device) {
+            final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+            manager.enableAttitude();
+        }
+
+        public void disableAttitude(final BluetoothDevice device) {
+            final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+            manager.disableAttitude();
+        }
+
+        public void enableImu(final BluetoothDevice device) {
+            final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+            manager.enableImu();
+        }
+
+        public void disableImu(final BluetoothDevice device) {
+            final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+            manager.disableImu();
+        }
         //! Set threshold
         public void setClickThreshold(final BluetoothDevice device, float min, float max) {
             final EmgImuManager manager = (EmgImuManager) getBleManager(device);
@@ -1005,6 +1036,21 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
         final Intent broadcast = new Intent(BROADCAST_EMG_CLICK);
         broadcast.putExtra(EXTRA_DEVICE, device);
         LocalBroadcastManager.getInstance(this).sendBroadcast(broadcast);
+    }
+
+    @Override
+    public void onImuAttitudeReceived(BluetoothDevice device, float[] quaternion) {
+        final Intent broadcast = new Intent(BROADCAST_IMU_ATTITUDE);
+        broadcast.putExtra(EXTRA_DEVICE, device);
+        broadcast.putExtra(EXTRA_IMU_ATTITUDE, quaternion);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(broadcast);
+
+        /*
+        if (networkStreaming != null && networkStreaming.isConnected()) {
+            double [] data = {(double) value};
+            networkStreaming.streamImuAttitude(device, 0, data);
+        }
+        */
     }
 
     /******** These callbacks are for managing the EMG logging via RACP ********/

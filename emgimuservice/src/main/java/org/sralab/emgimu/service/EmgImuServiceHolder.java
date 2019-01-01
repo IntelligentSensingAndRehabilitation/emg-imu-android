@@ -162,6 +162,11 @@ public class EmgImuServiceHolder<E extends EmgImuService.EmgImuBinder> implement
                     onEmgClick(bluetoothDevice);
                     break;
                 }
+                case EmgImuService.BROADCAST_IMU_ATTITUDE: {
+                    final float [] quat = intent.getFloatArrayExtra(EmgImuService.EXTRA_IMU_ATTITUDE);
+                    onImuAttitudeReceived(bluetoothDevice, quat);
+                    break;
+                }
 
             }
         }
@@ -250,6 +255,7 @@ public class EmgImuServiceHolder<E extends EmgImuService.EmgImuBinder> implement
         intentFilter.addAction(EmgImuService.BROADCAST_EMG_PWR);
         intentFilter.addAction(EmgImuService.BROADCAST_EMG_BUFF);
         intentFilter.addAction(EmgImuService.BROADCAST_EMG_CLICK);
+        intentFilter.addAction(EmgImuService.BROADCAST_IMU_ATTITUDE);
         return intentFilter;
     }
 
@@ -285,7 +291,9 @@ public class EmgImuServiceHolder<E extends EmgImuService.EmgImuBinder> implement
 
     @Override
     public void onDeviceReady(final BluetoothDevice device) {
-        mService.streamPwr(device);
+        if (mCallbacks != null) {
+            mCallbacks.onDeviceReady(device);
+        }
     }
 
     @Override
@@ -430,6 +438,13 @@ public class EmgImuServiceHolder<E extends EmgImuService.EmgImuBinder> implement
     }
 
     @Override
+    public void onImuAttitudeReceived(BluetoothDevice device, float[] quaternion) {
+        if (mCallbacks != null) {
+            mCallbacks.onImuAttitudeReceived(device, quaternion);
+        }
+    }
+
+    @Override
     public void onEmgLogRecordReceived(BluetoothDevice device, EmgLogRecord record) {
 
     }
@@ -470,11 +485,17 @@ public class EmgImuServiceHolder<E extends EmgImuService.EmgImuBinder> implement
     }
 
     public interface Callbacks {
+        // Data callbacks
         void onEmgPwrReceived(final BluetoothDevice device, int value);
         void onEmgClick(final BluetoothDevice device);
+        void onImuAttitudeReceived(BluetoothDevice device, float[] quaternion);
+
+        // Service connection events
         void onServiceBinded(final EmgImuService.EmgImuBinder binder);
         void onServiceUnbinded();
+        void onDeviceReady(final BluetoothDevice device);
     }
+
     private Callbacks mCallbacks;
     public void setCallbacks(Callbacks c) {
         mCallbacks = c;

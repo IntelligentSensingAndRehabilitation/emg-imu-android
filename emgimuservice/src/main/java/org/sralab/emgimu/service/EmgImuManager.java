@@ -72,11 +72,15 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
     /** IMU Service UUID **/
     public final static UUID IMU_SERVICE_UUID = UUID.fromString("00002234-1212-EFDE-1523-785FEF13D123");
     public final static UUID IMU_ACCEL_CHAR_UUID = UUID.fromString("00002235-1212-EFDE-1523-785FEF13D123");
+    public final static UUID IMU_GYRO_CHAR_UUID = UUID.fromString("00002236-1212-EFDE-1523-785FEF13D123");
+    public final static UUID IMU_MAG_CHAR_UUID = UUID.fromString("00002237-1212-EFDE-1523-785FEF13D123");
+    public final static UUID IMU_ATTITUDE_CHAR_UUID = UUID.fromString("00002238-1212-EFDE-1523-785FEF13D123");
 
     private final double EMG_FS = 2000.0;
     private final int EMG_BUFFER_LEN = (40 / 2); // elements in UINT16
 
-    private BluetoothGattCharacteristic mEmgRawCharacteristic, mEmgBuffCharacteristic, mEmgPwrCharacteristic, mImuAccelCharacteristic;
+    private BluetoothGattCharacteristic mEmgRawCharacteristic, mEmgBuffCharacteristic, mEmgPwrCharacteristic;
+    private BluetoothGattCharacteristic mImuAccelCharacteristic, mImuGyroCharacteristic, mImuMagCharacteristic, mImuAttitudeCharacteristic;
 
     /**
      * Record Access Control Point characteristic UUID
@@ -140,6 +144,10 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         EMG_PWR,
         EMG_RACP,
         EMG_LOG,
+        IMU_ACCEL,
+        IMU_GYRO,
+        IMU_MAG,
+        IMU_ATTITUDE,
         UNKNOWN
     };
 
@@ -297,24 +305,24 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                 mRecordAccessControlPointCharacteristic = llService.getCharacteristic(EMG_RACP_CHAR_UUID);
                 mEmgLogCharacteristic = llService.getCharacteristic(EMG_LOG_CHAR_UUID);
             }
-            return supportsLogging();
+            boolean supportsLogging = (mEmgLogCharacteristic != null) && (mRecordAccessControlPointCharacteristic != null);
 
-            // TODO: better support IMU in the future. for now ignore.
-            /*
             final BluetoothGattService iaService = gatt.getService(IMU_SERVICE_UUID);
             if (iaService != null) {
                 mImuAccelCharacteristic = iaService.getCharacteristic(IMU_ACCEL_CHAR_UUID);
+                mImuGyroCharacteristic = iaService.getCharacteristic(IMU_GYRO_CHAR_UUID);
+                mImuMagCharacteristic = iaService.getCharacteristic(IMU_MAG_CHAR_UUID);
+                mImuAttitudeCharacteristic = iaService.getCharacteristic(IMU_ATTITUDE_CHAR_UUID);
             }
-            for (BluetoothGattCharacteristic c : iaService.getCharacteristics()) {
-                Log.v(TAG, "Optional Char Found: " + c.getUuid());
-            }
-            return mImuAccelCharacteristic != null;
-            */
-		}
+            boolean supportsImu = mImuAccelCharacteristic != null &&
+                    mImuGyroCharacteristic != null &&
+                    //mImuMagCharacteristic != null && // TODO: mag not supported in firmware yet
+                    mImuAttitudeCharacteristic != null;
 
-		public boolean supportsLogging() {
-		    return (mEmgLogCharacteristic != null) && (mRecordAccessControlPointCharacteristic != null);
-        }
+            Log.d(TAG, "Optional services found. Logging: " + supportsLogging + " IMU: " + supportsImu);
+
+            return supportsLogging && supportsImu;
+		}
 
         @Override
         public void onDeviceReady() {
@@ -645,6 +653,14 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                     mRecords.add(emgRecord);
                     mCallbacks.onEmgLogRecordReceived(device, emgRecord);
                     break;
+                case IMU_ATTITUDE:
+                    final float scale = 1.0f / 32767f;
+                    float quat[] = new float[4];
+                    for (int i = 0; i < 4; i++)
+                        quat[i] = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT16, i * 2) * scale;
+                    Log.d(TAG, "Received quaternion: " + quat[0] + " " + quat[1] + " " + quat[2] + " " + quat[3]);
+                    mCallbacks.onImuAttitudeReceived(device, quat);
+                    break;
                 default:
                     Log.e(TAG, "Received unknown or unexpected notification of characteristic: \"" + characteristic.getUuid().toString() + "\"");
                     Logger.e(mLogSession, "Received unknown or unexpected notification of characteristic: \"" + characteristic.getUuid().toString() + "\"");
@@ -966,6 +982,25 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         return enqueue(Request.newDisableNotificationsRequest(mEmgBuffCharacteristic));
     }
 
+    private final boolean enableAttitudeNotifications() {
+        return enqueue(Request.newEnableNotificationsRequest(mImuAttitudeCharacteristic));
+    }
+
+    private final boolean disableAttitudeNotifications() {
+        return enqueue(Request.newDisableNotificationsRequest(mImuAttitudeCharacteristic));
+    }
+
+    private final boolean enableImuNotifications() {
+        // TODO: add mag when firmware supports
+        return enqueue(Request.newEnableNotificationsRequest(mImuAccelCharacteristic)) &&
+                enqueue(Request.newEnableNotificationsRequest(mImuGyroCharacteristic));
+    }
+
+    private final boolean disableImuNotifications() {
+        return enqueue(Request.newDisableNotificationsRequest(mImuAccelCharacteristic)) &&
+                enqueue(Request.newDisableNotificationsRequest(mImuGyroCharacteristic));
+    }
+
     // Handle the two streaming modes for EMG data (raw buffered data or processed power)
 
      public enum STREAMING_MODE {
@@ -994,6 +1029,23 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
     }
 
     public STREAMING_MODE getStreamingMode() { return mStreamingMode; }
+
+    public final void enableAttitude() {
+        enableAttitudeNotifications();
+    }
+
+    public final void disableAttitude() {
+        disableAttitudeNotifications();
+    }
+
+    public final void enableImu() {
+        enableImuNotifications();
+    }
+
+    public final void disableImu() {
+        disableImuNotifications();
+    }
+
 
     // Accessors for the raw EMG
 	private int mEmgRaw = -1;
@@ -1052,18 +1104,18 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         }
     }
 
+    // Accessors for the EMG buffer
+    private double [][] mEmgBuff;
+    public double[][] getEmgBuff() {
+        return mEmgBuff;
+    }
+
     //! Return if this is the EMG PWR characteristic
     private boolean isEmgPwrCharacteristic(final BluetoothGattCharacteristic characteristic) {
         if (characteristic == null)
             return false;
 
         return EMG_PWR_CHAR_UUID.equals(characteristic.getUuid());
-    }
-
-    // Accessors for the EMG buffer
-    private double [][] mEmgBuff;
-    public double[][] getEmgBuff() {
-        return mEmgBuff;
     }
 
     //! Return if this is the EMG PWR characteristic
@@ -1080,6 +1132,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 
         return EMG_LOG_CHAR_UUID.equals(characteristic.getUuid());
     }
+
     private boolean isRACPCharacteristic(final BluetoothGattCharacteristic characteristic) {
         if (characteristic == null)
             return false;
@@ -1087,7 +1140,37 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         return EMG_RACP_CHAR_UUID.equals(characteristic.getUuid());
     }
 
+
+    private boolean isImuAccelCharacteristic(final BluetoothGattCharacteristic characteristic) {
+        if (characteristic == null)
+            return false;
+
+        return IMU_ACCEL_CHAR_UUID.equals(characteristic.getUuid());
+    }
+
+    private boolean isImuGyroCharacteristic(final BluetoothGattCharacteristic characteristic) {
+        if (characteristic == null)
+            return false;
+
+        return IMU_GYRO_CHAR_UUID.equals(characteristic.getUuid());
+    }
+
+    private boolean isImuMagCharacteristic(final BluetoothGattCharacteristic characteristic) {
+        if (characteristic == null)
+            return false;
+
+        return IMU_MAG_CHAR_UUID.equals(characteristic.getUuid());
+    }
+
+    private boolean isImuAttitudeCharacteristic(final BluetoothGattCharacteristic characteristic) {
+        if (characteristic == null)
+            return false;
+
+        return IMU_ATTITUDE_CHAR_UUID.equals(characteristic.getUuid());
+    }
+
     private CHARACTERISTIC_TYPE getCharacteristicType(final BluetoothGattCharacteristic characteristic) {
+
         if (isEmgRawCharacteristic(characteristic))
             return CHARACTERISTIC_TYPE.EMG_RAW;
         if (isEmgPwrCharacteristic(characteristic))
@@ -1098,6 +1181,14 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
             return CHARACTERISTIC_TYPE.EMG_RACP;
         if (isEmgLogCharacteristic(characteristic))
             return CHARACTERISTIC_TYPE.EMG_LOG;
+        if (isImuAccelCharacteristic(characteristic))
+            return CHARACTERISTIC_TYPE.IMU_ACCEL;
+        if (isImuGyroCharacteristic(characteristic))
+            return CHARACTERISTIC_TYPE.IMU_GYRO;
+        if (isImuMagCharacteristic(characteristic))
+            return CHARACTERISTIC_TYPE.IMU_MAG;
+        if (isImuAttitudeCharacteristic(characteristic))
+            return CHARACTERISTIC_TYPE.IMU_ATTITUDE;
 
         return CHARACTERISTIC_TYPE.UNKNOWN;
     }
