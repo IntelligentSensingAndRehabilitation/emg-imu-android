@@ -3,17 +3,13 @@ package org.sralab.emgimu.powerhammer;
 import com.crashlytics.android.Crashlytics;
 import com.crashlytics.android.core.CrashlyticsCore;
 import com.google.gson.Gson;
-import com.unity3d.player.UnityPlayer;
 
-import android.app.Activity;
 import android.bluetooth.BluetoothDevice;
+import android.content.Intent;
+import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.KeyEvent;
-import android.view.View;
-import android.view.Window;
-import android.view.WindowManager;
-import android.widget.LinearLayout;
 
 import org.sralab.emgimu.logging.FirebaseGameLogger;
 import org.sralab.emgimu.service.EmgImuService;
@@ -37,8 +33,6 @@ public class PowerHammerActivity extends UnityPlayerActivity
     private FirebaseGameLogger mGameLogger;
     private ArrayList<Float> roundPwr = new ArrayList<>();
 
-    private LinearLayout layout;
-
     // Setup activity layout
     @Override protected void onCreate(Bundle savedInstanceState)
     {
@@ -54,6 +48,24 @@ public class PowerHammerActivity extends UnityPlayerActivity
         mServiceHolder = new EmgImuServiceHolder(this);
         mServiceHolder.onCreate();
         mServiceHolder.setCallbacks(mEmgImuCallbacks);
+    }
+
+    @Override
+    public boolean bindService(Intent service, ServiceConnection conn, int flags) {
+        if (service.getAction() != null &&
+                service.getAction().equals("com.google.android.gms.ads.identifier.service.START")) {
+            Log.d(TAG, "Dropping intent to google as unbind is not happening");
+            return false;
+        }
+        boolean retval = super.bindService(service, conn, flags);
+        Log.d(TAG, "bindService: " + service + " " + conn + " = " + retval, new RuntimeException(""));
+        return retval;
+    }
+
+    @Override
+    public void unbindService(ServiceConnection conn) {
+        Log.d(TAG, "unbindService: " + conn, new RuntimeException(""));
+        super.unbindService(conn);
     }
 
     boolean exiting = false;
@@ -77,8 +89,8 @@ public class PowerHammerActivity extends UnityPlayerActivity
 
     @Override protected void onDestroy()
     {
-        super.onDestroy();;
         Log.d(TAG, "Destroy service holder");
+        super.onDestroy();;
         mServiceHolder.onDestroy();
     }
 
@@ -126,6 +138,7 @@ public class PowerHammerActivity extends UnityPlayerActivity
 
         @Override
         public void onServiceUnbinded() {
+            mGameLogger = null;
             Log.d(TAG, "Service unbound");
         }
     };
