@@ -687,13 +687,11 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                     float quat[] = new float[4];
                     for (int i = 0; i < 4; i++)
                         quat[i] = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT16, i * 2) * scale;
-                    Log.d(TAG, "Received quaternion: " + quat[0] + " " + quat[1] + " " + quat[2] + " " + quat[3]);
                     mCallbacks.onImuAttitudeReceived(device, quat);
 
                     if (mLogging && streamLogger != null) {
                         streamLogger.addAttitudeSample(new Date().getTime(), quat);
                     }
-
                     break;
                 default:
                     Log.e(TAG, "Received unknown or unexpected notification of characteristic: \"" + characteristic.getUuid().toString() + "\"");

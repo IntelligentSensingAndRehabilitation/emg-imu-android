@@ -200,7 +200,6 @@ public class EmgImuServiceHolder<E extends EmgImuService.EmgImuBinder> implement
                     onImuAttitudeReceived(bluetoothDevice, quat);
                     break;
                 }
-
             }
         }
     };

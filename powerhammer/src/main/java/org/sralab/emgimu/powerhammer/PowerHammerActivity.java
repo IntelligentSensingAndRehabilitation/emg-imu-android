@@ -163,7 +163,7 @@ public class PowerHammerActivity extends UnityPlayerActivity
                 mService.streamPwr(device);
                 difficulty = mService.getMaxPwr(device);
             }
-        }
+       }
     };
 
     //! Data format logged to Firebase
