@@ -11,6 +11,12 @@
 
   <application>
 
+    <!--Based on discussion here https://stackoverflow.com/questions/23467994/errors-managing-the-unityplayer-lifecycle-in-a-native-android-application
+        it would be good to include the flag
+        android:process=":UnityKillsMe"
+        to possibly help with the troubles with the back button. But right now
+        to grab the shared service that won't work. -->
+
     <activity android:label="@string/powerhammer_name"
         android:theme="@style/UnityThemeSelector"
         android:icon="@mipmap/ic_powerhammer_launcher"

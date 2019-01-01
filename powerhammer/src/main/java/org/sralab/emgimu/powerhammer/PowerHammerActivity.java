@@ -3,10 +3,17 @@ package org.sralab.emgimu.powerhammer;
 import com.crashlytics.android.Crashlytics;
 import com.crashlytics.android.core.CrashlyticsCore;
 import com.google.gson.Gson;
+import com.unity3d.player.UnityPlayer;
 
+import android.app.Activity;
 import android.bluetooth.BluetoothDevice;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.KeyEvent;
+import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
+import android.widget.LinearLayout;
 
 import org.sralab.emgimu.logging.FirebaseGameLogger;
 import org.sralab.emgimu.service.EmgImuService;
@@ -30,6 +37,8 @@ public class PowerHammerActivity extends UnityPlayerActivity
     private FirebaseGameLogger mGameLogger;
     private ArrayList<Float> roundPwr = new ArrayList<>();
 
+    private LinearLayout layout;
+
     // Setup activity layout
     @Override protected void onCreate(Bundle savedInstanceState)
     {
@@ -47,10 +56,15 @@ public class PowerHammerActivity extends UnityPlayerActivity
         mServiceHolder.setCallbacks(mEmgImuCallbacks);
     }
 
+    boolean exiting = false;
+
     // Pause Unity
     @Override protected void onPause()
     {
-        super.onPause();
+        if (exiting)
+            safePause();
+        else
+            super.onPause();
         mServiceHolder.onPause();
     }
 
@@ -61,6 +75,29 @@ public class PowerHammerActivity extends UnityPlayerActivity
         mServiceHolder.onResume();
     }
 
+    @Override protected void onDestroy()
+    {
+        super.onDestroy();;
+        Log.d(TAG, "Destroy service holder");
+        mServiceHolder.onDestroy();
+    }
+
+    @Override
+    public void onBackPressed() {
+        Log.d(TAG, "onBackPressed");
+        exiting = true;
+        super.onBackPressed();
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if ((keyCode == KeyEvent.KEYCODE_BACK)) {
+            Log.d(TAG, "onKeyDown KEYCODE_BACK");
+            onBackPressed();
+            return true;
+        }
+        return super.onKeyDown(keyCode, event);
+    }
 
     private final EmgImuServiceHolder.Callbacks mEmgImuCallbacks = new EmgImuServiceHolder.Callbacks() {
 
