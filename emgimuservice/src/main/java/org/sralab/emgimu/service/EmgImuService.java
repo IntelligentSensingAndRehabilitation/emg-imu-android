@@ -113,8 +113,10 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 
     public static final String SERVICE_PREFERENCES = "org.sralab.emgimu.PREFERENCES";
     public static final String DEVICE_PREFERENCE = "org.sralab.emgimu.DEVICE_LIST";
-    public static final String MIN_THRESHOLD_PREFERENCE = "org.sralab.emgimu.MIN_THRESHOLD_PREFERENCE";
-    public static final String MAX_THRESHOLD_PREFERENCE = "org.sralab.emgimu.MAX_THRESHOLD_PREFERENCE";
+    public static final String MIN_PWR_PREFERENCE = "org.sralab.emgimu.MIN_PWR_PREFERENCE";
+    public static final String MAX_PWR_PREFERENCE = "org.sralab.emgimu.MAX_PWR_PREFERENCE";
+    public static final String THRESHOLD_LOW_PREFERENCE = "org.sralab.emgimu.THRESHOLD_LOW_PREFERENCE";
+    public static final String THRESHOLD_HIGH_PREFERENCE = "org.sralab.emgimu.THRESHOLD_HIGH_PREFERENCE";
 
 	private final static String EMGIMU_GROUP_ID = "emgimu_connected_sensors";
 	private final static int NOTIFICATION_ID = 1000;
@@ -235,19 +237,33 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
         }
 
         //! Set threshold
-        public void setThreshold(final BluetoothDevice device, double minThreshold, double maxThreshold) {
+        public void setClickThreshold(final BluetoothDevice device, float min, float max) {
             final EmgImuManager manager = (EmgImuManager) getBleManager(device);
-            manager.setThreshold(minThreshold, maxThreshold);
+            manager.setClickThreshold(min, max);
         }
 
-        public double getMinThreshold(final BluetoothDevice device) {
+        //! Set threshold
+        public void setPwrRange(final BluetoothDevice device, float min, float max) {
             final EmgImuManager manager = (EmgImuManager) getBleManager(device);
-            return manager.getMinThreshold();
+            manager.setPwrRange(min, max);
         }
 
-        public double getMaxThreshold(final BluetoothDevice device) {
+        //! Get threshold
+        public float getClickThreshold(final BluetoothDevice device) {
             final EmgImuManager manager = (EmgImuManager) getBleManager(device);
-            return manager.getMaxThreshold();
+            return manager.getHighThreshold();
+        }
+
+        //! Get threshold
+        public float getMinPwr(final BluetoothDevice device) {
+            final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+            return manager.getMinPwr();
+        }
+
+        //! Get threshold
+        public float getMaxPwr(final BluetoothDevice device) {
+            final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+            return manager.getMaxPwr();
         }
 
         //! Get battery

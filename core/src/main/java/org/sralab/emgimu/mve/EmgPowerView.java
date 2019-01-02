@@ -3,10 +3,8 @@ package org.sralab.emgimu.mve;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
-import android.graphics.drawable.Drawable;
 import android.support.v4.content.ContextCompat;
 import android.text.TextPaint;
 import android.util.AttributeSet;
@@ -25,7 +23,7 @@ public class EmgPowerView extends View {
 
     private TextPaint mTextPaint;
     private int mTextColor;
-    private float mTextHeight, mTextWidth;
+    private float mTextHeight;
     private float mTextDimension = 50; // TODO: use a default from R.dimen...
 
     private int mBarColor; // defaults to R.color.orange below but can be stylelized
@@ -51,48 +49,52 @@ public class EmgPowerView extends View {
         init(attrs, defStyle);
     }
 
-    private double mMin = 0;
-    private double mMax = 0;
-    private double mPwr = 0;
-    private double mThresh = 0;
-    private double mMaxHeightPwr = Short.MAX_VALUE * 2; // The range of the graph
-    public void setMinPower(double p)
+    private float mMin = 0;
+    private float mMax = 0;
+    private float mPwr = 0;
+    private float mThresh = 0;
+    private float mMaxHeightPwr = Short.MAX_VALUE * 2; // The range of the graph
+    public void setMinPower(float p)
     {
         mMin = p;
     }
-    public void setMaxPower(double p)
+    public void setMaxPower(float p)
     {
         mMax = p;
     }
-    public void setCurrentPower(double p)
+    public void setCurrentPower(float p)
     {
         mPwr = p;
         invalidate();
     }
-    public double getMin() { return mMin; }
-    public double getMax() { return mMax; }
-    public double getThreshold() { return mThresh; }
-    public void setThreshold(double thresh) { mThresh = thresh; }
+    public float getMin() { return mMin; }
+    public float getMax() { return mMax; }
+    public float getThreshold() { return mThresh; }
+    public void setThreshold(float thresh) { mThresh = thresh; }
+
+    public void setMaxRange(float maxPwr) {
+        mMaxHeightPwr = maxPwr;
+    }
 
     /**
      * Converts an EMG power into a screen height, where the height
      * coordinates increase down.
      */
-    private int pwrToHeight(double p) {
+    private int pwrToHeight(float p) {
         int paddingTop = getPaddingTop();
         int paddingBottom = getPaddingBottom();
         int contentHeight = getHeight() - paddingTop - paddingBottom;
 
-        double pwrFrac = Math.max(Math.min(p / mMaxHeightPwr, 1), 0);
+        float pwrFrac = Math.max(Math.min(p / mMaxHeightPwr, 1f), 0f);
         return (int) (contentHeight * (1-pwrFrac) + paddingTop);
     }
 
-    private double heightToPwr(double h) {
+    private float heightToPwr(float h) {
         int paddingTop = getPaddingTop();
         int paddingBottom = getPaddingBottom();
         int contentHeight = getHeight() - paddingTop - paddingBottom;
 
-        return mMaxHeightPwr * (1 - (h - paddingTop) / contentHeight);
+        return mMaxHeightPwr * (1f - (h - paddingTop) / contentHeight);
     }
 
     private void init(AttributeSet attrs, int defStyle) {
@@ -174,7 +176,7 @@ public class EmgPowerView extends View {
 
         mTextPaint.setTextSize(mTextDimension);
         mTextPaint.setColor(mTextColor);
-        mTextWidth = mTextPaint.measureText(maxDescribeString());
+        float mTextWidth = mTextPaint.measureText(maxDescribeString());
 
         Paint.FontMetrics fontMetrics = mTextPaint.getFontMetrics();
         mTextHeight = fontMetrics.bottom;
@@ -287,8 +289,8 @@ public class EmgPowerView extends View {
         public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
             //Log.d(TAG, "onScroll: " + e1 + " " + e2 + " " + distanceX + " " + distanceY);
 
-            double h = e2.getY();
-            double p = heightToPwr(h);
+            float h = e2.getY();
+            float p = heightToPwr(h);
 
             if (scrolling == 1) {
                 mMax = p;
@@ -320,14 +322,11 @@ public class EmgPowerView extends View {
     OnMaxChangedEventListener mListener;
 
     public interface OnMaxChangedEventListener {
-        void onMaxChanged(double newMax);
+        void onMaxChanged(float newMax);
     }
 
     public void setOnMaxChangedEventListener(OnMaxChangedEventListener maxChangeEventListener) {
         mListener = maxChangeEventListener;
     }
 
-    public void setMaxRange(double maxPwr) {
-        mMaxHeightPwr = maxPwr;
-    }
 }

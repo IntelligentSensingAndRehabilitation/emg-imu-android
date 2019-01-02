@@ -198,6 +198,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         }
 
         loadThreshold();
+        loadPwrRange();
     }
 
     public void close() {
@@ -1025,10 +1026,11 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
     }
 
     //! Output true when EMG power goes over threshold
-    // TODO: these should be in preferences or automatic
     private long THRESHOLD_TIME_NS = 500 * (int)1e6; // 500 ms
-    private double HIGH_THRESHOLD = 2000;
-    private double LOW_THRESHOLD = 1000;
+    private float max_pwr = 2000;
+    private float min_pwr = 100;
+    private float threshold_low = 200;
+    private float threshold_high = 500;
     private long mThresholdTime = 0;
     private boolean overThreshold;
 
@@ -1041,11 +1043,11 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         long eventTime = System.nanoTime();
         boolean refractory = (eventTime - mThresholdTime) > THRESHOLD_TIME_NS;
 
-        if (value > HIGH_THRESHOLD && overThreshold == false && refractory) {
+        if (value > threshold_high && overThreshold == false && refractory) {
             mThresholdTime = eventTime; // Store this time
             overThreshold = true;
             mCallbacks.onEmgClick(device);
-        } else if (value < LOW_THRESHOLD && overThreshold == true) {
+        } else if (value < threshold_low && overThreshold == true) {
             overThreshold = false;
         }
     }
@@ -1164,30 +1166,62 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         }
     }
 
-    public void setThreshold(double min, double max) {
+    private String devicePrefName(String pref) {
+        return pref + "_" + mBluetoothDevice;
+    }
+
+    void setClickThreshold(float min, float max) {
         Log.d(TAG, "New threshold " + min + " " + max);
+
+        threshold_low = min;
+        threshold_high = max;
 
         SharedPreferences sharedPref = getContext().getSharedPreferences(EmgImuService.SERVICE_PREFERENCES, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPref.edit();
-        editor.putFloat(EmgImuService.MIN_THRESHOLD_PREFERENCE, (float) min);
-        editor.putFloat(EmgImuService.MAX_THRESHOLD_PREFERENCE, (float) max);
-        editor.commit();
+        editor.putFloat(devicePrefName(EmgImuService.THRESHOLD_LOW_PREFERENCE), threshold_low);
+        editor.putFloat(devicePrefName(EmgImuService.THRESHOLD_HIGH_PREFERENCE), threshold_high);
+        editor.apply();
     }
 
-    public void loadThreshold() {
+    private void loadThreshold() {
         SharedPreferences sharedPref = getContext().getSharedPreferences(EmgImuService.SERVICE_PREFERENCES, Context.MODE_PRIVATE);
-        LOW_THRESHOLD = (double) sharedPref.getFloat(EmgImuService.MIN_THRESHOLD_PREFERENCE, (float) LOW_THRESHOLD);
-        HIGH_THRESHOLD = (double) sharedPref.getFloat(EmgImuService.MAX_THRESHOLD_PREFERENCE, (float) HIGH_THRESHOLD);
+        threshold_low = sharedPref.getFloat(devicePrefName(EmgImuService.THRESHOLD_LOW_PREFERENCE), threshold_low);
+        threshold_high = sharedPref.getFloat(devicePrefName(EmgImuService.THRESHOLD_HIGH_PREFERENCE), threshold_high);
 
-        Log.d(TAG, "Loaded threshold " + LOW_THRESHOLD + " " + HIGH_THRESHOLD);
+        Log.d(TAG, "Loaded threshold " + threshold_low + " " + threshold_high);
     }
 
-    public double getMinThreshold() {
-        return LOW_THRESHOLD;
+    void setPwrRange(float min, float max) {
+        Log.d(TAG, "New range " + min + " " + max);
+
+        min_pwr = min;
+        max_pwr = max;
+
+        SharedPreferences sharedPref = getContext().getSharedPreferences(EmgImuService.SERVICE_PREFERENCES, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putFloat(devicePrefName(EmgImuService.MIN_PWR_PREFERENCE), min_pwr);
+        editor.putFloat(devicePrefName(EmgImuService.MAX_PWR_PREFERENCE), max_pwr);
+        editor.apply();
     }
 
-    public double getMaxThreshold() {
-        return HIGH_THRESHOLD;
+    private void loadPwrRange() {
+        SharedPreferences sharedPref = getContext().getSharedPreferences(EmgImuService.SERVICE_PREFERENCES, Context.MODE_PRIVATE);
+        min_pwr = sharedPref.getFloat(devicePrefName(EmgImuService.MIN_PWR_PREFERENCE), min_pwr);
+        max_pwr = sharedPref.getFloat(devicePrefName(EmgImuService.MAX_PWR_PREFERENCE), max_pwr);
+
+        Log.d(TAG, "Loaded range " + min_pwr + " " + max_pwr + " From preference: " + devicePrefName(EmgImuService.MIN_PWR_PREFERENCE));
+    }
+
+    float getHighThreshold() {
+        return threshold_high;
+    }
+
+    float getMinPwr() {
+        return min_pwr;
+    }
+
+    float getMaxPwr() {
+        return max_pwr;
     }
 
     public double getBatteryVoltage() {
