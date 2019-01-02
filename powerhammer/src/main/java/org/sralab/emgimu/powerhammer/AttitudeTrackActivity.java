@@ -135,7 +135,23 @@ public class AttitudeTrackActivity extends UnityPlayerActivity
 
         @Override
         public void onImuAccelReceived(BluetoothDevice device, float[][] accel) {
-            Log.d(TAG, "Received accel:" + Arrays.deepToString(accel));
+
+            float a[] = new float[3];
+            final int CHANNELS = 3;
+            final int SAMPLES = 3;
+            for (int i = 0; i < CHANNELS; i++) {
+                a[i] = 0;
+                for (int j = 0; j < SAMPLES; j++)
+                    a[i] += accel[j][i];
+                a[i] /= SAMPLES;
+            }
+
+            String accel_s = String.join(",",
+                    Float.toString(a[0]),
+                    Float.toString(a[1]),
+                    Float.toString(a[2]));
+
+            mUnityPlayer.UnitySendMessage("Player", "OnJavaAccelReceived", accel_s);
         }
 
         @Override
