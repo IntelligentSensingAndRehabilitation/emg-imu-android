@@ -159,8 +159,10 @@ public class PowerHammerActivity extends UnityPlayerActivity
 
         @Override
         public void onDeviceReady(BluetoothDevice device) {
-            if (mService != null)
+            if (mService != null) {
                 mService.streamPwr(device);
+                difficulty = mService.getMaxPwr(device);
+            }
         }
     };
 
