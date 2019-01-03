@@ -32,6 +32,7 @@ import android.content.IntentFilter;
 import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
+import android.support.annotation.NonNull;
 import android.support.annotation.StringRes;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
@@ -46,6 +47,7 @@ import java.util.List;
 
 import no.nordicsemi.android.ble.BleManager;
 import no.nordicsemi.android.ble.BleManagerCallbacks;
+import no.nordicsemi.android.ble.callback.FailCallback;
 import no.nordicsemi.android.ble.utils.ILogger;
 import no.nordicsemi.android.log.ILogSession;
 import no.nordicsemi.android.log.LogContract;
@@ -136,13 +138,20 @@ public abstract class BleMulticonnectProfileService extends Service implements B
 				return;
 			mManagedDevices.add(device);
 
+			Log.d(TAG, "Service connect called");
 			BleManager<BleManagerCallbacks> manager = mBleManagers.get(device);
 			if (manager != null) {
-				manager.connect(device);
+				manager.connect(device).enqueue();
 			} else {
 				mBleManagers.put(device, manager = initializeManager());
 				manager.setGattCallbacks(BleMulticonnectProfileService.this);
-				manager.connect(device);
+				manager.connect(device)
+						.fail((device1, status) ->
+							{
+								mManagedDevices.remove(device1);
+								mBleManagers.remove(device1);
+							})
+						.enqueue();
 			}
 		}
 
@@ -155,7 +164,7 @@ public abstract class BleMulticonnectProfileService extends Service implements B
 		public void disconnect(final BluetoothDevice device) {
 			final BleManager<BleManagerCallbacks> manager = mBleManagers.get(device);
 			if (manager != null && manager.isConnected()) {
-				manager.disconnect();
+				manager.disconnect().enqueue();
 			}
 			mManagedDevices.remove(device);
 		}
@@ -168,6 +177,17 @@ public abstract class BleMulticonnectProfileService extends Service implements B
 		public final boolean isConnected(final BluetoothDevice device) {
 			final BleManager<BleManagerCallbacks> manager = mBleManagers.get(device);
 			return manager != null && manager.isConnected();
+		}
+
+		/**
+		 * Returns <code>true</code> if the device has finished initializing.
+		 * @param device the target device
+		 * @return <code>true</code> if device is connected to the sensor and has finished
+		 * initializing. False otherwise.
+		 */
+		public final boolean isReady(final BluetoothDevice device) {
+			final BleManager<BleManagerCallbacks> manager = mBleManagers.get(device);
+			return manager != null && manager.isReady();
 		}
 
 		/**
@@ -390,7 +410,7 @@ public abstract class BleMulticonnectProfileService extends Service implements B
 		for (final BluetoothDevice device : mManagedDevices) {
 			final BleManager<BleManagerCallbacks> manager = mBleManagers.get(device);
 			if (!manager.isConnected())
-				manager.connect(device);
+				manager.connect(device).enqueue();
 		}
 	}
 
