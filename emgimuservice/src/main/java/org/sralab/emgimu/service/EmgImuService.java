@@ -36,6 +36,7 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.support.annotation.NonNull;
 import android.support.annotation.StringRes;
 import android.support.v4.app.NotificationManagerCompat;
 import android.support.v4.content.ContextCompat;
@@ -709,6 +710,11 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 	}
 
     @Override
+    public void onLinkLossOccurred(@NonNull BluetoothDevice device) {
+
+    }
+
+    @Override
     public void onDeviceReady(BluetoothDevice device) {
         super.onDeviceReady(device);
 
@@ -720,6 +726,11 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
         } else {
             mBinder.log(device, LogContract.Log.Level.WARNING, "onDeviceReady. no log request active.");
         }
+    }
+
+    @Override
+    public void onBondingFailed(@NonNull BluetoothDevice device) {
+
     }
 
     private void serviceUpdateSavedDevices

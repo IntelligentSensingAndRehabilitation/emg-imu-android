@@ -26,7 +26,6 @@ android {
 }
 
 dependencies {
-    implementation project(':ble')
     implementation project(':common')
     implementation project(':emgimuservice')
 

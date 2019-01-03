@@ -99,10 +99,6 @@ public abstract class BleMulticonnectProfileServiceReadyActivity<E extends BleMu
 							onDeviceDisconnected(bluetoothDevice);
 							break;
 						}
-						case BleMulticonnectProfileService.STATE_LINK_LOSS: {
-							onLinklossOccur(bluetoothDevice);
-							break;
-						}
 						case BleMulticonnectProfileService.STATE_CONNECTING: {
 							onDeviceConnecting(bluetoothDevice);
 							break;
@@ -142,12 +138,6 @@ public abstract class BleMulticonnectProfileServiceReadyActivity<E extends BleMu
 							onBonded(bluetoothDevice);
 							break;
 					}
-					break;
-				}
-				case BleMulticonnectProfileService.BROADCAST_BATTERY_LEVEL: {
-					final int value = intent.getIntExtra(BleMulticonnectProfileService.EXTRA_BATTERY_LEVEL, -1);
-					if (value > 0)
-						onBatteryValueReceived(bluetoothDevice, value);
 					break;
 				}
 				case BleMulticonnectProfileService.BROADCAST_ERROR: {
@@ -254,7 +244,6 @@ public abstract class BleMulticonnectProfileServiceReadyActivity<E extends BleMu
 		intentFilter.addAction(BleMulticonnectProfileService.BROADCAST_SERVICES_DISCOVERED);
 		intentFilter.addAction(BleMulticonnectProfileService.BROADCAST_DEVICE_READY);
 		intentFilter.addAction(BleMulticonnectProfileService.BROADCAST_BOND_STATE);
-		intentFilter.addAction(BleMulticonnectProfileService.BROADCAST_BATTERY_LEVEL);
 		intentFilter.addAction(BleMulticonnectProfileService.BROADCAST_ERROR);
 		return intentFilter;
 	}
@@ -409,11 +398,6 @@ public abstract class BleMulticonnectProfileServiceReadyActivity<E extends BleMu
 	}
 
 	@Override
-	public void onLinklossOccur(final BluetoothDevice device) {
-		// empty default implementation
-	}
-
-	@Override
 	public void onServicesDiscovered(final BluetoothDevice device, final boolean optionalServicesFound) {
 		// empty default implementation
 	}
@@ -436,18 +420,6 @@ public abstract class BleMulticonnectProfileServiceReadyActivity<E extends BleMu
 	@Override
 	public void onDeviceNotSupported(final BluetoothDevice device) {
 		showToast(R.string.not_supported);
-	}
-
-	@Override
-	public final boolean shouldEnableBatteryLevelNotifications(final BluetoothDevice device) {
-		// This method will never be called.
-		// Please see BleMulticonnectProfileService#shouldEnableBatteryLevelNotifications(BluetoothDevice) instead.
-		throw new UnsupportedOperationException("This method should not be called");
-	}
-
-	@Override
-	public void onBatteryValueReceived(final BluetoothDevice device, final int value) {
-		// empty default implementation
 	}
 
 	@Override

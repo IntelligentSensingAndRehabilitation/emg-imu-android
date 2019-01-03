@@ -12,6 +12,7 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.os.IBinder;
+import android.support.annotation.NonNull;
 import android.support.v4.content.LocalBroadcastManager;
 
 import java.util.ArrayList;
@@ -315,6 +316,11 @@ public class EmgImuServiceHolder<E extends EmgImuService.EmgImuBinder> implement
     }
 
     @Override
+    public void onLinkLossOccurred(@NonNull BluetoothDevice device) {
+
+    }
+
+    @Override
     public void onLinklossOccur(final BluetoothDevice device) {
         // empty default implementation
     }
@@ -342,19 +348,12 @@ public class EmgImuServiceHolder<E extends EmgImuService.EmgImuBinder> implement
     }
 
     @Override
+    public void onBondingFailed(@NonNull BluetoothDevice device) {
+
+    }
+
+    @Override
     public void onDeviceNotSupported(final BluetoothDevice device) {
-    }
-
-    @Override
-    public final boolean shouldEnableBatteryLevelNotifications(final BluetoothDevice device) {
-        // This method will never be called.
-        // Please see BleMulticonnectProfileService#shouldEnableBatteryLevelNotifications(BluetoothDevice) instead.
-        throw new UnsupportedOperationException("This method should not be called");
-    }
-
-    @Override
-    public void onBatteryValueReceived(final BluetoothDevice device, final int value) {
-        // empty default implementation
     }
 
     @Override

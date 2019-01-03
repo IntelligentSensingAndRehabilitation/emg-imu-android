@@ -169,11 +169,6 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 	}
 
 	@Override
-	protected boolean shouldAutoConnect() {
-		return true;
-	}
-
-	@Override
 	protected BleManagerGattCallback getGattCallback() {
 		return mGattCallback;
 	}

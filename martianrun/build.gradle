@@ -83,7 +83,7 @@ dependencies {
     implementation "com.badlogicgames.gdx:gdx-backend-android:$gdxVersion"
     implementation "com.badlogicgames.gdx:gdx-box2d:$gdxVersion"
     implementation "com.badlogicgames.gdx:gdx-freetype:$gdxVersion"
-    implementation project(":ble")
+
     implementation project(':common')
     implementation project(':emgimuservice')
     implementation fileTree(dir: 'libs', include: '*.jar')

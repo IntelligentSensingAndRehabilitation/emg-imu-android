@@ -139,13 +139,10 @@ public abstract class BleMulticonnectProfileService extends Service implements B
 
 			BleManager<BleManagerCallbacks> manager = mBleManagers.get(device);
 			if (manager != null) {
-				if (session != null)
-					manager.setLogger(session);
 				manager.connect(device);
 			} else {
 				mBleManagers.put(device, manager = initializeManager());
 				manager.setGattCallbacks(BleMulticonnectProfileService.this);
-				manager.setLogger(session);
 				manager.connect(device);
 			}
 		}
@@ -261,12 +258,6 @@ public abstract class BleMulticonnectProfileService extends Service implements B
 
 		if (!mActivityIsChangingConfiguration) {
 			onRebind();
-			// This method will read the Battery Level value from each connected device, if possible and then try to enable battery notifications (if it has NOTIFY property).
-			// If the Battery Level characteristic has only the NOTIFY property, it will only try to enable notifications.
-			for (final BleManager<BleManagerCallbacks> manager : mBleManagers.values()) {
-				if (manager.isConnected())
-					manager.readBatteryLevel();
-			}
 		}
 	}
 
@@ -286,12 +277,6 @@ public abstract class BleMulticonnectProfileService extends Service implements B
 		if (!mActivityIsChangingConfiguration) {
 			if (!mManagedDevices.isEmpty()) {
 				onUnbind();
-				// When we are connected, but the application is not open, we are not really interested in battery level notifications.
-				// But we will still be receiving other values, if enabled.
-				for (final BleManager<BleManagerCallbacks> manager : mBleManagers.values()) {
-					if (manager.isConnected())
-						manager.setBatteryNotifications(false);
-				}
 			} else {
 				// The last activity has disconnected from the service and there are no devices to manage. The service may be stopped.
 				stopSelf();
@@ -474,14 +459,6 @@ public abstract class BleMulticonnectProfileService extends Service implements B
 	}
 
 	@Override
-	public void onLinklossOccur(final BluetoothDevice device) {
-		final Intent broadcast = new Intent(BROADCAST_CONNECTION_STATE);
-		broadcast.putExtra(EXTRA_DEVICE, device);
-		broadcast.putExtra(EXTRA_CONNECTION_STATE, STATE_LINK_LOSS);
-		LocalBroadcastManager.getInstance(this).sendBroadcast(broadcast);
-	}
-
-	@Override
 	public void onServicesDiscovered(final BluetoothDevice device, final boolean optionalServicesFound) {
 		final Intent broadcast = new Intent(BROADCAST_SERVICES_DISCOVERED);
 		broadcast.putExtra(EXTRA_DEVICE, device);
@@ -510,14 +487,6 @@ public abstract class BleMulticonnectProfileService extends Service implements B
 		LocalBroadcastManager.getInstance(this).sendBroadcast(broadcast);
 
 		// no need for disconnecting, it will be disconnected by the manager automatically
-	}
-
-	@Override
-	public void onBatteryValueReceived(final BluetoothDevice device, final int value) {
-		final Intent broadcast = new Intent(BROADCAST_BATTERY_LEVEL);
-		broadcast.putExtra(EXTRA_DEVICE, device);
-		broadcast.putExtra(EXTRA_BATTERY_LEVEL, value);
-		LocalBroadcastManager.getInstance(this).sendBroadcast(broadcast);
 	}
 
 	@Override
