@@ -23,6 +23,8 @@ package org.sralab.emgimu.parser;
 
 import android.bluetooth.BluetoothGattCharacteristic;
 
+import no.nordicsemi.android.ble.data.Data;
+
 public class RecordAccessControlPointParser {
 	private final static int OP_CODE_REPORT_STORED_RECORDS = 1;
 	private final static int OP_CODE_DELETE_STORED_RECORDS = 2;
@@ -51,7 +53,7 @@ public class RecordAccessControlPointParser {
 	private final static int RESPONSE_PROCEDURE_NOT_COMPLETED = 8;
 	private final static int RESPONSE_OPERAND_NOT_SUPPORTED = 9;
 
-	public static String parse(final BluetoothGattCharacteristic characteristic) {
+	public static String parse(final Data characteristic) {
 		final StringBuilder builder = new StringBuilder();
 		final int opCode = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0);
 		final int operator = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1);

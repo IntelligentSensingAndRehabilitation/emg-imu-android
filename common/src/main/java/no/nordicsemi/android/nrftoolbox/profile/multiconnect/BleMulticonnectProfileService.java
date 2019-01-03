@@ -70,7 +70,6 @@ public abstract class BleMulticonnectProfileService extends Service implements B
 	public static final String EXTRA_ERROR_MESSAGE = "no.nordicsemi.android.nrftoolbox.EXTRA_ERROR_MESSAGE";
 	public static final String EXTRA_ERROR_CODE = "no.nordicsemi.android.nrftoolbox.EXTRA_ERROR_CODE";
 
-	public static final int STATE_LINK_LOSS = -1;
 	public static final int STATE_DISCONNECTED = 0;
 	public static final int STATE_CONNECTED = 1;
 	public static final int STATE_CONNECTING = 2;

@@ -71,10 +71,6 @@ public class EmgImuServiceHolder<E extends EmgImuService.EmgImuBinder> implement
                             onDeviceDisconnected(bluetoothDevice);
                             break;
                         }
-                        case BleMulticonnectProfileService.STATE_LINK_LOSS: {
-                            onLinklossOccur(bluetoothDevice);
-                            break;
-                        }
                         case BleMulticonnectProfileService.STATE_CONNECTING: {
                             onDeviceConnecting(bluetoothDevice);
                             break;
@@ -318,11 +314,6 @@ public class EmgImuServiceHolder<E extends EmgImuService.EmgImuBinder> implement
     @Override
     public void onLinkLossOccurred(@NonNull BluetoothDevice device) {
 
-    }
-
-    @Override
-    public void onLinklossOccur(final BluetoothDevice device) {
-        // empty default implementation
     }
 
     @Override

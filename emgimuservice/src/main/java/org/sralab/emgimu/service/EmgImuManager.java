@@ -28,6 +28,7 @@ import android.bluetooth.BluetoothGattService;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.util.Log;
 
 import com.google.firebase.analytics.FirebaseAnalytics;
@@ -47,6 +48,12 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 
+import no.nordicsemi.android.ble.Request;
+import no.nordicsemi.android.ble.callback.DataReceivedCallback;
+import no.nordicsemi.android.ble.callback.FailCallback;
+import no.nordicsemi.android.ble.callback.MtuCallback;
+import no.nordicsemi.android.ble.callback.SuccessCallback;
+import no.nordicsemi.android.ble.data.Data;
 import no.nordicsemi.android.log.Logger;
 import no.nordicsemi.android.ble.BleManager;
 
@@ -173,6 +180,8 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 		return mGattCallback;
 	}
 
+	// TODO: check this when we get a device name?
+    /*
 	@Override
     public void connect(final BluetoothDevice device) {
 
@@ -192,18 +201,9 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         }
 
         super.connect(device);
-        fireLogger = new FirebaseEmgLogger(this);
 
-        synchronized (this) {
-            if (mLogging) {
-                Log.d(TAG, "Created stream logger");
-                streamLogger = new FirebaseStreamLogger(this);
-            }
-        }
-
-        loadThreshold();
-        loadPwrRange();
     }
+    */
 
     public void close() {
 	    super.close();
@@ -222,31 +222,54 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 	 */
 	private final BleManagerGattCallback mGattCallback = new BleManagerGattCallback() {
 
-		@Override
-		protected Deque<Request> initGatt(final BluetoothGatt gatt) {
-			final LinkedList<Request> requests = new LinkedList<>();
-            // When initially connected default to updates when the PWR is updated
-            //requests.add(Request.newEnableNotificationsRequest(mEmgPwrCharacteristic));
+        @Override
+        protected void initialize() {
+            Log.d(TAG, "Initializing connection");
+            requestMtu(517).with((device, mtu) -> Log.d(TAG, "MTU CHanged")).enqueue();
 
-            // Fetch the device information for this sensor
-            if (mManufacturerCharacteristic != null)
-                requests.add(Request.newReadRequest(mManufacturerCharacteristic));
-            if (mSerialNumberCharacteristic != null)
-                requests.add(Request.newReadRequest(mSerialNumberCharacteristic));
-            if (mHardwareCharacteristic != null)
-                requests.add(Request.newReadRequest(mHardwareCharacteristic));
-            if (mFirmwareCharacteristic != null)
-                requests.add(Request.newReadRequest(mFirmwareCharacteristic));
+            /**** Get information about device *****/
+            // TODO: if we aren't really doing anything with this data do not fetch on connection
+            // Especially if we can use a bonded device and have this cached?
+            readCharacteristic(mManufacturerCharacteristic)
+                    .with((device, data) -> mManufacturer = data.getStringValue(0))
+                    .fail((device, status) -> Log.d(TAG, "Could not read manufacturer"))
+                    .enqueue();
 
-            // Make sure we get updates from the RACP characteristic
-            if (mRecordAccessControlPointCharacteristic != null)
-                requests.add(Request.newEnableIndicationsRequest(mRecordAccessControlPointCharacteristic));
-            if (mEmgLogCharacteristic != null)
-                requests.add(Request.newEnableNotificationsRequest(mEmgLogCharacteristic));
+            readCharacteristic(mHardwareCharacteristic)
+                    .with((device, data) -> {
+                        mHardwareRevision = data.getStringValue(0);
+                        Log.d(TAG, "Hardware revision: " + mHardwareRevision);
+                    })
+                    .enqueue();
 
-            mStreamingMode = STREAMING_MODE.STREAMINNG_POWER;
-			return requests;
-		}
+            readCharacteristic(mFirmwareCharacteristic)
+                    .with((device, data) -> {
+                        mFirmwareRevision = data.getStringValue(0);
+                        Log.d(TAG, "Firmware revision: " + mFirmwareRevision);
+                    })
+                    .enqueue();
+
+            readCharacteristic(mSerialNumberCharacteristic)
+                    .with((device, data) -> Log.d(TAG, "Serial number; " + data.getStringValue(0)))
+                    .enqueue();
+
+            // Set callbacks regarding log fetching
+            // TODO: this should be only enabled when we intend to fetch logs
+            setIndicationCallback(mRecordAccessControlPointCharacteristic)
+                    .with((device, data) -> parseRACPIndication(device, data));
+            enableIndications(mRecordAccessControlPointCharacteristic)
+                    .done(device -> Log.d(TAG, "RACP indication enabled"))
+                    .fail((device, status) -> Log.e(TAG, "RACP indication not enabled"))
+                    .enqueue();
+
+            setNotificationCallback(mEmgLogCharacteristic)
+                    .with((device, data) -> parseLog(device, data));
+            enableIndications(mEmgLogCharacteristic)
+                    .done(device -> Log.d(TAG, "Log characteristic indication enabled"))
+                    .fail((device, status) -> Log.e(TAG, "Log characteristic indication not enabled"))
+                    .enqueue();
+
+        }
 
 		boolean isDeviceInfoServiceSupported(final BluetoothGatt gatt) {
             final BluetoothGattService deviceInfoService = gatt.getService(DEVICE_INFORMATION_SERVICE);
@@ -322,6 +345,19 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 
         @Override
         public void onDeviceReady() {
+		    // Complete some of our initialization once we have a device connected
+            fireLogger = new FirebaseEmgLogger(EmgImuManager.this);
+
+            synchronized (this) {
+                if (mLogging) {
+                    Log.d(TAG, "Created stream logger");
+                    streamLogger = new FirebaseStreamLogger(EmgImuManager.this);
+                }
+            }
+
+            loadThreshold();
+            loadPwrRange();
+
             super.onDeviceReady();
             mReady = true;
         }
@@ -357,437 +393,374 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                 }
             }
 		}
+    };
 
-		private long mPwrT0;
-		private long mLastPwrCount;
+    private long mPwrT0;
+    private long mLastPwrCount;
 
-		private long resolvePwrCounter(long timestamp, byte counter) {
-            /**
-             * Tracks if the counter is reliable and if so uses this to work
-             * out the timestamp for this sample. If there is a drop resets
-             * based on the transmitted timestamp.
-             */
+    private long resolvePwrCounter(long timestamp, byte counter) {
+        /**
+         * Tracks if the counter is reliable and if so uses this to work
+         * out the timestamp for this sample. If there is a drop resets
+         * based on the transmitted timestamp.
+         */
 
 
-            // counter is the power sample counter which should be running at a fixed rate
-            final double COUNTER_HZ = 100.0;
+        // counter is the power sample counter which should be running at a fixed rate
+        final double COUNTER_HZ = 100.0;
 
-            // convert timestamp into ms since some arbitrary T0
-            long timestamp_real = timestampToReal(timestamp);
+        // convert timestamp into ms since some arbitrary T0
+        long timestamp_real = timestampToReal(timestamp);
 
-            // convert counter into ms, although this aliases frequently
-            byte counter_aliased = (byte) (mLastPwrCount % 256);
-            byte err = (byte) (counter - counter_aliased);
-            switch (err) {
-                case 1:
-                //case -255:
-                    // ideal, no apparent dropped samples
-                    mLastPwrCount++;
-                    break;
-                case 2:
-                case 3:
-                case 4:
-                case 5:
-                case 6:
-                case 7:
-                    Log.d(TAG, "Dropped PWR samples detected but tolerable. " + err);
-                    mLastPwrCount += err;
-                    break;
-                default:
-                    // TODO: sometime err is 0. Determine if this is duplicate packets.
-                    Log.d(TAG, "Too many dropped samples detected: " + err);
-                    mLastPwrCount = counter;
-                    mPwrT0 = timestamp_real - (long) (mLastPwrCount * 1000 / COUNTER_HZ);
-                    break;
-            }
-
-            // nominal combination
-            long resolved_ms = mPwrT0 + (long) (mLastPwrCount * 1000 / COUNTER_HZ);
-
-            long diff = resolved_ms - timestamp_real;
-            if (abs(diff) > 200) {
-                Log.e(TAG, "Timebase drift. Diff: " + diff + " Resolved: " + resolved_ms + " transmitted: " + timestamp_real);
+        // convert counter into ms, although this aliases frequently
+        byte counter_aliased = (byte) (mLastPwrCount % 256);
+        byte err = (byte) (counter - counter_aliased);
+        switch (err) {
+            case 1:
+            //case -255:
+                // ideal, no apparent dropped samples
+                mLastPwrCount++;
+                break;
+            case 2:
+            case 3:
+            case 4:
+            case 5:
+            case 6:
+            case 7:
+                Log.d(TAG, "Dropped PWR samples detected but tolerable. " + err);
+                mLastPwrCount += err;
+                break;
+            default:
+                // TODO: sometime err is 0. Determine if this is duplicate packets.
+                Log.d(TAG, "Too many dropped samples detected: " + err);
+                mLastPwrCount = counter;
                 mPwrT0 = timestamp_real - (long) (mLastPwrCount * 1000 / COUNTER_HZ);
-                resolved_ms = mPwrT0 + (long) (mLastPwrCount * 1000 / COUNTER_HZ);
-            }
-
-            return resolved_ms;
+                break;
         }
 
-		private void parsePwr(final BluetoothDevice device, final BluetoothGattCharacteristic characteristic) {
-            final byte [] buffer = characteristic.getValue();
-            byte format = buffer[0];
-            assert(format == 16);
-            byte counter = buffer[1];
-            long timestamp = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 2);
+        // nominal combination
+        long resolved_ms = mPwrT0 + (long) (mLastPwrCount * 1000 / COUNTER_HZ);
 
-            int pwr_val = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 6) +
-                characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 7) * 256;
-
-            long ts_ms = resolvePwrCounter(timestamp, counter);
-
-            mEmgPwr = pwr_val;
-            mCallbacks.onEmgPwrReceived(device, mEmgPwr);
-            checkEmgClick(device, pwr_val);
-
-            if (mLogging && streamLogger != null) {
-                double [] data = {(double) mEmgPwr};
-                streamLogger.addPwrSample(ts_ms, data);
-            }
+        long diff = resolved_ms - timestamp_real;
+        if (abs(diff) > 200) {
+            Log.e(TAG, "Timebase drift. Diff: " + diff + " Resolved: " + resolved_ms + " transmitted: " + timestamp_real);
+            mPwrT0 = timestamp_real - (long) (mLastPwrCount * 1000 / COUNTER_HZ);
+            resolved_ms = mPwrT0 + (long) (mLastPwrCount * 1000 / COUNTER_HZ);
         }
 
-        private long mBufT0;
-        private long mLastBufferCount;
-        private long resolveBufCounter(long timestamp, byte counter, double Fs) {
-            /**
-             * Tracks if the counter is reliable and if so uses this to work
-             * out the timestamp for this sample. If there is a drop resets
-             * based on the transmitted timestamp.
-             */
+        return resolved_ms;
+    }
 
-            // counter is the power sample counter which should be running at a fixed rate
-            final double COUNTER_HZ = Fs;
+    private void parseEmgPwr(BluetoothDevice device,  Data characteristic) {
+        final byte [] buffer = characteristic.getValue();
+        byte format = buffer[0];
+        assert(format == 16);
+        byte counter = buffer[1];
+        long timestamp = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 2);
 
-            // convert timestamp into ms since some arbitrary T0
-            long timestamp_real = timestampToReal(timestamp);
+        int pwr_val = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 6) +
+            characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 7) * 256;
 
-            // convert counter into ms, although this aliases frequently
-            byte counter_aliased = (byte) (mLastBufferCount % 256);
-            byte err = (byte) (counter - counter_aliased);
-            switch (err) {
-                case 1:
-                    //case -255:
-                    // ideal, no apparent dropped samples
-                    mLastBufferCount++;
-                    break;
-                case 2:
-                case 3:
-                case 4:
-                case 5:
-                case 6:
-                case 7:
-                    Log.d(TAG, "Dropped PWR samples detected but tolerable. " + err);
-                    mLastBufferCount += err;
-                    break;
-                default:
-                    // TODO: sometime err is 0. Determine if this is duplicate packets.
-                    Log.d(TAG, "Too many dropped samples detected. Err: " + err + " Counter: " + counter + " Aliased: " + counter_aliased + " Count: " + mLastBufferCount);
-                    mLastBufferCount = counter;
-                    mBufT0 = timestamp_real - (long) (mLastBufferCount * 1000 / COUNTER_HZ);
-                    break;
-            }
+        long ts_ms = resolvePwrCounter(timestamp, counter);
 
-            // nominal combination
-            long resolved_ms = mBufT0 + (long) (mLastBufferCount * 1000 / COUNTER_HZ);
+        mEmgPwr = pwr_val;
+        mCallbacks.onEmgPwrReceived(device, mEmgPwr);
+        checkEmgClick(device, pwr_val);
 
-            long diff = resolved_ms - timestamp_real;
-            if (abs(diff) > 200) {
-                Log.e(TAG, "Timebase drift. Diff: " + diff + " Resolved: " + resolved_ms + " transmitted: " + timestamp_real);
+        if (mLogging && streamLogger != null) {
+            double [] data = {(double) mEmgPwr};
+            streamLogger.addPwrSample(ts_ms, data);
+        }
+    }
+
+    private long mBufT0;
+    private long mLastBufferCount;
+    private long resolveBufCounter(long timestamp, byte counter, double Fs) {
+        /**
+         * Tracks if the counter is reliable and if so uses this to work
+         * out the timestamp for this sample. If there is a drop resets
+         * based on the transmitted timestamp.
+         */
+
+        // counter is the power sample counter which should be running at a fixed rate
+        final double COUNTER_HZ = Fs;
+
+        // convert timestamp into ms since some arbitrary T0
+        long timestamp_real = timestampToReal(timestamp);
+
+        // convert counter into ms, although this aliases frequently
+        byte counter_aliased = (byte) (mLastBufferCount % 256);
+        byte err = (byte) (counter - counter_aliased);
+        switch (err) {
+            case 1:
+                //case -255:
+                // ideal, no apparent dropped samples
+                mLastBufferCount++;
+                break;
+            case 2:
+            case 3:
+            case 4:
+            case 5:
+            case 6:
+            case 7:
+                Log.d(TAG, "Dropped PWR samples detected but tolerable. " + err);
+                mLastBufferCount += err;
+                break;
+            default:
+                // TODO: sometime err is 0. Determine if this is duplicate packets.
+                Log.d(TAG, "Too many dropped samples detected. Err: " + err + " Counter: " + counter + " Aliased: " + counter_aliased + " Count: " + mLastBufferCount);
+                mLastBufferCount = counter;
                 mBufT0 = timestamp_real - (long) (mLastBufferCount * 1000 / COUNTER_HZ);
-                resolved_ms = mBufT0 + (long) (mLastBufferCount * 1000 / COUNTER_HZ);
-            }
-
-            return resolved_ms;
+                break;
         }
 
-		private void parseBuff(final BluetoothDevice device, final BluetoothGattCharacteristic characteristic) {
-            final byte [] buffer = characteristic.getValue();
-            int len = buffer.length;
+        // nominal combination
+        long resolved_ms = mBufT0 + (long) (mLastBufferCount * 1000 / COUNTER_HZ);
 
-            int format = buffer[0] & 0xFF;
+        long diff = resolved_ms - timestamp_real;
+        if (abs(diff) > 200) {
+            Log.e(TAG, "Timebase drift. Diff: " + diff + " Resolved: " + resolved_ms + " transmitted: " + timestamp_real);
+            mBufT0 = timestamp_real - (long) (mLastBufferCount * 1000 / COUNTER_HZ);
+            resolved_ms = mBufT0 + (long) (mLastBufferCount * 1000 / COUNTER_HZ);
+        }
 
-            double microvolts_per_lsb;
+        return resolved_ms;
+    }
 
-            byte counter = buffer[1];
-            long timestamp = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 2);
-            long buf_ts_ms = 0;
+    private void parseEmgBuff(final BluetoothDevice device, final Data characteristic) {
+        final byte [] buffer = characteristic.getValue();
+        int len = buffer.length;
 
-            double [][] data;
-            int channels;
-            int samples;
+        int format = buffer[0] & 0xFF;
 
-            int HDR_LEN = 6;
-		    switch(format) {
-		        // Data from single channel system
-                case 16: // 1 channel of 16 bit data
+        double microvolts_per_lsb;
 
-                    buf_ts_ms = resolveBufCounter(timestamp, counter, EMG_FS / EMG_BUFFER_LEN); // 2khz but 8 samples per buffer);
+        byte counter = buffer[1];
+        long timestamp = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 2);
+        long buf_ts_ms = 0;
 
-                    // Have to manually combine to get the endian right
+        double [][] data;
+        int channels;
+        int samples;
 
-                    double ina333_gain = 1+(100.0 / 10.0);   // for 10k resistor
-                    double bandpass_gain = 10;  //# 1M / 100k
-                    double nrf52383_gain = 1.0 / 1.0; // more easily programmable now differential
-                    double analog_gain = ina333_gain * bandpass_gain;
+        int HDR_LEN = 6;
+        switch(format) {
+            // Data from single channel system
+            case 16: // 1 channel of 16 bit data
 
-                    double lsb_per_v = analog_gain * nrf52383_gain / 0.6 * (1<<13);
-                    microvolts_per_lsb = 1.0e6 / lsb_per_v;
+                buf_ts_ms = resolveBufCounter(timestamp, counter, EMG_FS / EMG_BUFFER_LEN); // 2khz but 8 samples per buffer);
 
-                    channels = 1;
-                    samples = EMG_BUFFER_LEN;
-                    data = new double[channels][samples];
+                // Have to manually combine to get the endian right
 
-                    for (int i = 0; i < samples; i++) {
-                        byte [] array = {buffer[HDR_LEN + i*2], buffer[HDR_LEN + i*2+1]};
+                double ina333_gain = 1+(100.0 / 10.0);   // for 10k resistor
+                double bandpass_gain = 10;  //# 1M / 100k
+                double nrf52383_gain = 1.0 / 1.0; // more easily programmable now differential
+                double analog_gain = ina333_gain * bandpass_gain;
 
-                        // check the sample counter and make sure no data was lost
-                        int count = ByteBuffer.wrap(array).order(ByteOrder.LITTLE_ENDIAN).getShort();
-                        data[0][i] = count * microvolts_per_lsb;
+                double lsb_per_v = analog_gain * nrf52383_gain / 0.6 * (1<<13);
+                microvolts_per_lsb = 1.0e6 / lsb_per_v;
+
+                channels = 1;
+                samples = EMG_BUFFER_LEN;
+                data = new double[channels][samples];
+
+                for (int i = 0; i < samples; i++) {
+                    byte [] array = {buffer[HDR_LEN + i*2], buffer[HDR_LEN + i*2+1]};
+
+                    // check the sample counter and make sure no data was lost
+                    int count = ByteBuffer.wrap(array).order(ByteOrder.LITTLE_ENDIAN).getShort();
+                    data[0][i] = count * microvolts_per_lsb;
+                }
+
+                break;
+            case 0x81:
+
+                channels = 8;
+                samples = 9;
+
+                final double ads1298_gain = 8;
+                final double vref = 2.5e6;
+                double full_scale_range = 2 * vref / ads1298_gain;
+                microvolts_per_lsb = full_scale_range / (1<<24);
+
+                buf_ts_ms = resolveBufCounter(timestamp, counter, 500.0 / samples);
+                Log.d(TAG, " Counter: " + counter + " timestamp: " + timestamp + " ms: " + buf_ts_ms + " scale: " + microvolts_per_lsb);
+
+                // representation of the data is 3 bytes per sample, 8 channels, and then N samples
+                data = new double[channels][samples];
+                for (int ch = 0; ch < 8; ch++) {
+                    for (int sample = 0; sample < samples; sample++) {
+                        int idx = HDR_LEN + 3 * (ch + channels * sample);
+                        byte sign = ((buffer[idx + 2] & 0x80) == 0x80) ? (byte) 0xff : (byte) 0x00;
+                        byte [] t_array = {buffer[idx], buffer[idx+1], buffer[idx+2], sign};
+                        data[ch][sample] = microvolts_per_lsb * ByteBuffer.wrap(t_array).order(ByteOrder.BIG_ENDIAN).getInt();
                     }
+                    //Log.d(TAG, "Data[" + ch + "] = " + Arrays.toString(data[ch]));
+                }
 
+                break;
+            default:
+                Log.e(TAG, "Unsupported data format");
+                return;
+        }
+
+        if (mChannels != channels){
+            throw new RuntimeException("Channel count seemed to change between calls");
+        }
+
+        mEmgBuff = data;
+        mCallbacks.onEmgBuffReceived(device, counter, data);
+
+        if (mLogging && streamLogger != null) {
+            streamLogger.addRawSample(buf_ts_ms, channels, samples, data);
+        }
+    }
+
+    private void parseLog(final BluetoothDevice device, final Data characteristic) {
+        int totalSize = characteristic.getValue().length;
+        long timestamp = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 0);
+        timestamp = timestampToReal(timestamp);
+        if (totalSize < 6) {
+            throw new NegativeArraySizeException("Log characteristic too short to contain any values");
+        }
+        int offset = 4;
+        List<Integer> emgPwr = new ArrayList<Integer>();
+        while (offset < totalSize) {
+            int val = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, offset);
+            emgPwr.add(val);
+            offset += 2;
+        }
+        log(Log.VERBOSE, "Log record received with " + emgPwr.size() + " samples and timestamp " + new Date(timestamp));
+        final EmgLogRecord emgRecord = new EmgLogRecord(timestamp, emgPwr);
+        mRecords.add(emgRecord);
+        mCallbacks.onEmgLogRecordReceived(device, emgRecord);
+    }
+
+    private void parseEmgRaw(final BluetoothDevice device, final Data characteristic) {
+        // Have to manually combine to get the endian right
+        int raw_val = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0) +
+                characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1) * 256;
+        mEmgRaw = raw_val;
+        mCallbacks.onEmgRawReceived(device, mEmgRaw);
+    }
+
+    private void parseImuAccel(final BluetoothDevice device, final Data characteristic) {
+        final float ACCEL_SCALE = 9.8f / 2048.0f; // for 16G to m/s
+        float accel[][] = new float[3][3];
+        for (int idx = 0; idx < 3; idx++) // 3 comes from "BUNDLE" param in firmware
+            for (int chan = 0; chan < 3; chan++)
+                accel[idx][chan] = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT16, (chan + idx * 3) * 2) * ACCEL_SCALE;
+
+        mCallbacks.onImuAccelReceived(device, accel);
+
+        if (mLogging && streamLogger != null) {
+            streamLogger.addAccelSample(new Date().getTime(), accel);
+        }
+    }
+
+    private void parseImuGyro(final BluetoothDevice device, final Data characteristic) {
+        final float GYRO_SCALE = 1.0f / 65.5f; // at 500 deg/s to deg/s
+        float gyro[][] = new float[3][3];
+        for (int idx = 0; idx < 3; idx++) // 3 comes from "BUNDLE" param in firmware
+            for (int chan = 0; chan < 3; chan++)
+                gyro[idx][chan] = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT16, (chan + idx * 3) * 2) * GYRO_SCALE;
+
+        mCallbacks.onImuGyroReceived(device, gyro);
+
+        if (mLogging && streamLogger != null) {
+            streamLogger.addGyroSample(new Date().getTime(), gyro);
+        }
+    }
+
+    private void parseImuAttitude(final BluetoothDevice device, final Data characteristic) {
+        final float scale = 1.0f / 32767f;
+        float quat[] = new float[4];
+        for (int i = 0; i < 4; i++)
+            quat[i] = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT16, i * 2) * scale;
+        Log.d(TAG, "Received quaternion: " + quat[0] + " " + quat[1] + " " + quat[2] + " " + quat[3]);
+        mCallbacks.onImuAttitudeReceived(device, quat);
+
+        if (mLogging && streamLogger != null) {
+            streamLogger.addAttitudeSample(new Date().getTime(), quat);
+        }
+    }
+
+    private void parseRACPIndication(final BluetoothDevice device, final Data characteristic) {
+        log(Log.VERBOSE, "RACP Indication: \"" + RecordAccessControlPointParser.parse(characteristic) + "\" received");
+
+        // Record Access Control Point characteristic
+        int offset = 0;
+        final int opCode = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, offset);
+        offset += 2; // skip the operator
+
+        if (opCode == OP_CODE_NUMBER_OF_STORED_RECORDS_RESPONSE) {
+            // We've obtained the number of all records
+            final int number = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, offset);
+
+            mCallbacks.onNumberOfRecordsRequested(device, number);
+
+            // Request the records
+            if (number > 0) {
+                // TODO: this could be made more precise. It ignores the timestamp on device
+
+                // ms since a fixed date
+                float dt = 5000;
+                long now = new Date().getTime();
+                long T0 = now - (long) (dt * number);
+
+                log(Log.VERBOSE, "There are " + number + " records. Preparing firebase log for T0: " + T0);
+
+                fireLogger.prepareLog(T0);
+            } else {
+                log(Log.VERBOSE, "No records found");
+                mCallbacks.onOperationCompleted(device);
+            }
+        } else if (opCode == OP_CODE_SET_TIMESTAMP_COMPLETE) {
+            // Now the timestamp has been acknowledged, we can fetch the records
+
+            if(mFetchRecords) {
+                mFetchRecords = false;
+
+                log(Log.VERBOSE, "Timestamp set. Requesting all records.");
+
+                clear();
+                mCallbacks.onOperationStarted(getBluetoothDevice());
+
+                // TODO
+                //setOpCode(mRecordAccessControlPointCharacteristic, OP_CODE_REPORT_NUMBER_OF_RECORDS, OPERATOR_ALL_RECORDS);
+                //writeCharacteristic(mRecordAccessControlPointCharacteristic);
+            } else {
+                log(Log.VERBOSE, "Device synced, but no record request made.");
+            }
+
+        } else if (opCode == OP_CODE_RESPONSE_CODE) {
+            final int requestedOpCode = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, offset);
+            final int responseCode = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, offset + 1);
+            log(Log.VERBOSE, "Response result for: " + requestedOpCode + " is: " + responseCode);
+
+            switch (responseCode) {
+                case RESPONSE_SUCCESS:
+                    if (!mAbort) {
+                        // Defer operation complete operator until log is saved
+                        storeRecordsToDb();
+                    } else
+                        mCallbacks.onOperationAborted(device);
                     break;
-                case 0x81:
-
-                    channels = 8;
-                    samples = 9;
-
-                    final double ads1298_gain = 8;
-                    final double vref = 2.5e6;
-                    double full_scale_range = 2 * vref / ads1298_gain;
-                    microvolts_per_lsb = full_scale_range / (1<<24);
-
-                    buf_ts_ms = resolveBufCounter(timestamp, counter, 500.0 / samples);
-                    Log.d(TAG, " Counter: " + counter + " timestamp: " + timestamp + " ms: " + buf_ts_ms + " scale: " + microvolts_per_lsb);
-
-                    // representation of the data is 3 bytes per sample, 8 channels, and then N samples
-                    data = new double[channels][samples];
-                    for (int ch = 0; ch < 8; ch++) {
-                        for (int sample = 0; sample < samples; sample++) {
-                            int idx = HDR_LEN + 3 * (ch + channels * sample);
-                            byte sign = ((buffer[idx + 2] & 0x80) == 0x80) ? (byte) 0xff : (byte) 0x00;
-                            byte [] t_array = {buffer[idx], buffer[idx+1], buffer[idx+2], sign};
-                            data[ch][sample] = microvolts_per_lsb * ByteBuffer.wrap(t_array).order(ByteOrder.BIG_ENDIAN).getInt();
-                        }
-                        //Log.d(TAG, "Data[" + ch + "] = " + Arrays.toString(data[ch]));
-                    }
-
+                case RESPONSE_NO_RECORDS_FOUND:
+                    mCallbacks.onOperationCompleted(device);
                     break;
+                case RESPONSE_OP_CODE_NOT_SUPPORTED:
+                    mCallbacks.onOperationNotSupported(device);
+                    break;
+                case RESPONSE_PROCEDURE_NOT_COMPLETED:
+                case RESPONSE_ABORT_UNSUCCESSFUL:
                 default:
-                    Log.e(TAG, "Unsupported data format");
-                    return;
+                    mCallbacks.onOperationFailed(device);
+                    break;
             }
-
-            if (mChannels != channels){
-                throw new RuntimeException("Channel count seemed to change between calls");
-            }
-
-            mEmgBuff = data;
-            mCallbacks.onEmgBuffReceived(device, counter, data);
-
-            if (mLogging && streamLogger != null) {
-                streamLogger.addRawSample(buf_ts_ms, channels, samples, data);
-            }
-
+            mAbort = false;
         }
-
-        @Override
-        protected void onCharacteristicRead(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic) {
-
-            if (MANUFACTURER_NAME_CHARACTERISTIC.equals(characteristic.getUuid())) {
-                mManufacturer = characteristic.getStringValue(0);
-                Log.d(TAG, "Manufacturer: " + mManufacturer);
-            }
-
-            if (HARDWARE_REVISION_CHARACTERISTIC.equals(characteristic.getUuid())) {
-                mHardwareRevision = characteristic.getStringValue(0);
-                Log.d(TAG, "Hardware revision: " + mHardwareRevision);
-            }
-
-            if (FIRMWARE_REVISION_CHARACTERISTIC.equals(characteristic.getUuid())) {
-                mFirmwareRevision = characteristic.getStringValue(0);
-                Log.d(TAG, "Firmware revision: " + mFirmwareRevision);
-            }
-
-            if (SERIAL_NUMBER_CHARACTERISTIC.equals(characteristic.getUuid())) {
-                Log.d(TAG, "Serial number: " + characteristic.getStringValue(0));
-            }
-        }
-
-        @Override
-		protected void onCharacteristicWrite(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic) {
-            if (characteristic.getUuid().equals(EMG_RACP_CHAR_UUID)) {
-                Logger.a(mLogSession, "\"" + RecordAccessControlPointParser.parse(characteristic) + "\" sent");
-            } else
-			    Logger.a(mLogSession, "\"" + characteristic + "\" sent");
-		}
-
-		@Override
-        public void onCharacteristicNotified(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic) {
-
-            final BluetoothDevice device = gatt.getDevice();
-            switch(getCharacteristicType(characteristic)) {
-                case EMG_RAW:
-                    // Have to manually combine to get the endian right
-                    int raw_val = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0) +
-                            characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1) * 256;
-                    mEmgRaw = raw_val;
-                    mCallbacks.onEmgRawReceived(device, mEmgRaw);
-                    break;
-                case EMG_PWR:
-                    parsePwr(device, characteristic);
-                    break;
-                case EMG_BUFF:
-                    parseBuff(device, characteristic);
-                    break;
-                case EMG_LOG:
-                    int totalSize = characteristic.getValue().length;
-                    long timestamp = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 0);
-                    timestamp = timestampToReal(timestamp);
-                    if (totalSize < 6) {
-                        throw new NegativeArraySizeException("Log characteristic too short to contain any values");
-                    }
-                    int offset = 4;
-                    List<Integer> emgPwr = new ArrayList<Integer>();
-                    while (offset < totalSize) {
-                        int val = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, offset);
-                        emgPwr.add(val);
-                        offset += 2;
-                    }
-                    Log.d(TAG, getAddress() + " Log record received with " + emgPwr.size() + " samples and timestamp " + new Date(timestamp));
-                    Logger.d(mLogSession, "Log record received with " + emgPwr.size() + " samples and timestamp " + new Date(timestamp));
-                    final EmgLogRecord emgRecord = new EmgLogRecord(timestamp, emgPwr);
-                    mRecords.add(emgRecord);
-                    mCallbacks.onEmgLogRecordReceived(device, emgRecord);
-                    break;
-                case IMU_ACCEL:
-                    final float ACCEL_SCALE = 9.8f / 2048.0f; // for 16G to m/s
-                    float accel[][] = new float[3][3];
-                    for (int idx = 0; idx < 3; idx++) // 3 comes from "BUNDLE" param in firmware
-                        for (int chan = 0; chan < 3; chan++)
-                            accel[idx][chan] = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT16, (chan + idx * 3) * 2) * ACCEL_SCALE;
-
-                    mCallbacks.onImuAccelReceived(device, accel);
-
-                    if (mLogging && streamLogger != null) {
-                        streamLogger.addAccelSample(new Date().getTime(), accel);
-                    }
-
-                    break;
-                case IMU_GYRO:
-                    final float GYRO_SCALE = 1.0f / 65.5f; // at 500 deg/s to deg/s
-                    float gyro[][] = new float[3][3];
-                    for (int idx = 0; idx < 3; idx++) // 3 comes from "BUNDLE" param in firmware
-                        for (int chan = 0; chan < 3; chan++)
-                            gyro[idx][chan] = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT16, (chan + idx * 3) * 2) * GYRO_SCALE;
-
-                    mCallbacks.onImuGyroReceived(device, gyro);
-
-                    if (mLogging && streamLogger != null) {
-                        streamLogger.addGyroSample(new Date().getTime(), gyro);
-                    }
-
-                    break;
-                case IMU_ATTITUDE:
-                    final float scale = 1.0f / 32767f;
-                    float quat[] = new float[4];
-                    for (int i = 0; i < 4; i++)
-                        quat[i] = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT16, i * 2) * scale;
-                    Log.d(TAG, "Received quaternion: " + quat[0] + " " + quat[1] + " " + quat[2] + " " + quat[3]);
-                    mCallbacks.onImuAttitudeReceived(device, quat);
-
-                    if (mLogging && streamLogger != null) {
-                        streamLogger.addAttitudeSample(new Date().getTime(), quat);
-                    }
-
-                    break;
-                default:
-                    Log.e(TAG, "Received unknown or unexpected notification of characteristic: \"" + characteristic.getUuid().toString() + "\"");
-                    Logger.e(mLogSession, "Received unknown or unexpected notification of characteristic: \"" + characteristic.getUuid().toString() + "\"");
-                    break;
-            }
-        }
-
-        @Override
-        protected void onCharacteristicIndicated(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic) {
-            switch(getCharacteristicType(characteristic)) {
-                case EMG_RACP:
-                    Logger.a(mLogSession, "RACP Indication: \"" + RecordAccessControlPointParser.parse(characteristic) + "\" received");
-
-                    // Record Access Control Point characteristic
-                    int offset = 0;
-                    final int opCode = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, offset);
-                    offset += 2; // skip the operator
-
-                    if (opCode == OP_CODE_NUMBER_OF_STORED_RECORDS_RESPONSE) {
-                        // We've obtained the number of all records
-                        final int number = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, offset);
-
-                        mCallbacks.onNumberOfRecordsRequested(gatt.getDevice(), number);
-
-                        // Request the records
-                        if (number > 0) {
-                            // TODO: this could be made more precise. It ignores the timestamp on device
-
-                            // ms since a fixed date
-                            float dt = 5000;
-                            long now = new Date().getTime();
-                            long T0 = now - (long) (dt * number);
-
-                            Log.d(TAG, getAddress() + " There are " + number + " records. Preparing firebase log for T0: " + T0);
-                            Logger.d(mLogSession, "There are " + number + " records. Preparing firebase log for T0: " + T0);
-
-                            fireLogger.prepareLog(T0);
-                        } else {
-                            Log.d(TAG, "No records found");
-                            Logger.d(mLogSession, "No records found");
-                            mCallbacks.onOperationCompleted(gatt.getDevice());
-                        }
-                    } else if (opCode == OP_CODE_SET_TIMESTAMP_COMPLETE) {
-                        // Now the timestamp has been acknowledged, we can fetch the records
-
-                        if(mFetchRecords) {
-                            mFetchRecords = false;
-
-                            Log.d(TAG, "Timestamp set");
-                            Logger.d(mLogSession, "Timestamp set. Requesting all records.");
-
-                            clear();
-                            mCallbacks.onOperationStarted(mBluetoothDevice);
-
-                            setOpCode(mRecordAccessControlPointCharacteristic, OP_CODE_REPORT_NUMBER_OF_RECORDS, OPERATOR_ALL_RECORDS);
-                            writeCharacteristic(mRecordAccessControlPointCharacteristic);
-                        } else {
-                            Log.d(TAG, "Device synced, but no record request made.");
-                            Logger.d(mLogSession, "Device synced, but no record request made.");
-                        }
-
-                    } else if (opCode == OP_CODE_RESPONSE_CODE) {
-                        final int requestedOpCode = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, offset);
-                        final int responseCode = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, offset + 1);
-                        Logger.d(mLogSession, "Response result for: " + requestedOpCode + " is: " + responseCode);
-
-                        switch (responseCode) {
-                            case RESPONSE_SUCCESS:
-                                if (!mAbort) {
-                                    // Defer operation complete operator until log is saved
-                                    storeRecordsToDb();
-                                } else
-                                    mCallbacks.onOperationAborted(gatt.getDevice());
-                                break;
-                            case RESPONSE_NO_RECORDS_FOUND:
-                                mCallbacks.onOperationCompleted(gatt.getDevice());
-                                break;
-                            case RESPONSE_OP_CODE_NOT_SUPPORTED:
-                                mCallbacks.onOperationNotSupported(gatt.getDevice());
-                                break;
-                            case RESPONSE_PROCEDURE_NOT_COMPLETED:
-                            case RESPONSE_ABORT_UNSUCCESSFUL:
-                            default:
-                                mCallbacks.onOperationFailed(gatt.getDevice());
-                                break;
-                        }
-                        mAbort = false;
-                    }
-                    break;
-                case EMG_LOG:
-                    Logger.a(mLogSession, "Received LOG_CHAR indication"); //"\"" + CGMSpecificOpsControlPointParser.parse(characteristic) + "\" received");
-                    break;
-                default:
-                    Logger.e(mLogSession, "Received unexpected indication update: " + characteristic.getUuid().toString());
-                    break;
-            }
-        }
-	};
+    }
 
     /**
      * Writes given operation parameters to the characteristic
@@ -845,11 +818,12 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
             return;
         }
 
-        Log.d(TAG, "Sending sync signal with offset " + dt);
-        Logger.a(mLogSession, "Sending sync signal with offset " + dt);
+        log(Log.VERBOSE, "Sending sync signal with offset " + dt);
 
         final BluetoothGattCharacteristic characteristic = mRecordAccessControlPointCharacteristic;
 
+        // TODO:
+        /*
         // Send our custom "sync" RACP message
         final int size = 6;
         characteristic.setValue(new byte[size]);
@@ -859,6 +833,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         characteristic.setValue(dt, BluetoothGattCharacteristic.FORMAT_UINT32, 2);
         // write this
         writeCharacteristic(characteristic);
+        */
     }
 
     // Convert from the device format (8 Hz units since 2018 beginning) to the
@@ -885,7 +860,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
      */
     public void clear() {
         mRecords.clear();
-        mCallbacks.onDatasetClear(mBluetoothDevice);
+        mCallbacks.onDatasetClear(getBluetoothDevice());
     }
 
     /**
@@ -897,11 +872,12 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
             return;
 
         clear();
-        mCallbacks.onOperationStarted(mBluetoothDevice);
+        mCallbacks.onOperationStarted(getBluetoothDevice());
 
-        final BluetoothGattCharacteristic characteristic = mRecordAccessControlPointCharacteristic;
-        setOpCode(characteristic, OP_CODE_REPORT_STORED_RECORDS, OPERATOR_LAST_RECORD);
-        writeCharacteristic(characteristic);
+        // TODO
+        //final BluetoothGattCharacteristic characteristic = mRecordAccessControlPointCharacteristic;
+        //setOpCode(characteristic, OP_CODE_REPORT_STORED_RECORDS, OPERATOR_LAST_RECORD);
+        //writeCharacteristic(characteristic);
     }
 
     /**
@@ -913,11 +889,14 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
             return;
 
         clear();
-        mCallbacks.onOperationStarted(mBluetoothDevice);
+        mCallbacks.onOperationStarted(getBluetoothDevice());
 
+        // TODO:
+        /*
         final BluetoothGattCharacteristic characteristic = mRecordAccessControlPointCharacteristic;
         setOpCode(characteristic, OP_CODE_REPORT_STORED_RECORDS, OPERATOR_FIRST_RECORD);
         writeCharacteristic(characteristic);
+        */
     }
 
     /**
@@ -928,9 +907,10 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
             return;
 
         mAbort = true;
-        final BluetoothGattCharacteristic characteristic = mRecordAccessControlPointCharacteristic;
-        setOpCode(characteristic, OP_CODE_ABORT_OPERATION, OPERATOR_NULL);
-        writeCharacteristic(characteristic);
+        // TODO
+        //final BluetoothGattCharacteristic characteristic = mRecordAccessControlPointCharacteristic;
+        //setOpCode(characteristic, OP_CODE_ABORT_OPERATION, OPERATOR_NULL);
+        //writeCharacteristic(characteristic);
     }
 
     /**
@@ -986,49 +966,78 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
             return;
 
         clear();
-        mCallbacks.onOperationStarted(mBluetoothDevice);
+        mCallbacks.onOperationStarted(getBluetoothDevice());
 
+        // TODO:
+        /*
         final BluetoothGattCharacteristic characteristic = mRecordAccessControlPointCharacteristic;
         setOpCode(characteristic, OP_CODE_DELETE_STORED_RECORDS, OPERATOR_ALL_RECORDS);
         writeCharacteristic(characteristic);
+        */
     }
 
+    /****** helper methods to enable and disable notifications *******/
 
     // Controls to enable what data we are receiving from the sensor
-    private final boolean enableEmgPwrNotifications() {
-        return enqueue(Request.newEnableNotificationsRequest(mEmgPwrCharacteristic));
+    private void enableEmgPwrNotifications() {
+        setNotificationCallback(mEmgPwrCharacteristic)
+                .with((device, data) -> parseEmgPwr(device ,data));
+        enableNotifications(mEmgPwrCharacteristic)
+                .fail((device, status) -> log(Log.ERROR, "Unable to enable EMG power notification"))
+                .enqueue();
     }
 
-    private final boolean disableEmgPwrNotifications() {
-        return enqueue(Request.newDisableNotificationsRequest(mEmgPwrCharacteristic));
+    private void disableEmgPwrNotifications() {
+        disableNotifications(mEmgPwrCharacteristic).enqueue();
     }
 
-    private final boolean enableEmgBuffNotifications() {
-        return enqueue(Request.newEnableNotificationsRequest(mEmgBuffCharacteristic));
+    private void enableEmgBuffNotifications() {
+        setNotificationCallback(mEmgBuffCharacteristic)
+                .with((device, data) -> parseEmgBuff(device ,data));
+        enableNotifications(mEmgBuffCharacteristic)
+                .fail((device, status) -> log(Log.ERROR, "Unable to enable EMG buffer notification"))
+                .enqueue();
     }
 
-    private final boolean disableEmgBuffNotifications() {
-        return enqueue(Request.newDisableNotificationsRequest(mEmgBuffCharacteristic));
+    private void disableEmgBuffNotifications() {
+        disableNotifications(mEmgBuffCharacteristic).enqueue();
     }
 
-    private final boolean enableAttitudeNotifications() {
-        return enqueue(Request.newEnableNotificationsRequest(mImuAttitudeCharacteristic));
+    private void enableAttitudeNotifications() {
+        setNotificationCallback(mImuAttitudeCharacteristic)
+                .with((device, data) -> parseImuAttitude(device ,data));
+        enableNotifications(mImuAttitudeCharacteristic)
+                .fail((device, status) -> log(Log.ERROR, "Unable to enable Attitude notification"))
+                .enqueue();
     }
 
-    private final boolean disableAttitudeNotifications() {
-        return enqueue(Request.newDisableNotificationsRequest(mImuAttitudeCharacteristic));
+    private void disableAttitudeNotifications() {
+        disableNotifications(mImuAttitudeCharacteristic).enqueue();
     }
 
-    private final boolean enableImuNotifications() {
+    private void enableImuNotifications() {
         // TODO: add mag when firmware supports
-        return enqueue(Request.newEnableNotificationsRequest(mImuAccelCharacteristic)) &&
-                enqueue(Request.newEnableNotificationsRequest(mImuGyroCharacteristic));
+
+        setNotificationCallback(mImuAccelCharacteristic)
+                .with((device, data) -> parseImuAccel(device ,data));
+        enableNotifications(mImuAccelCharacteristic)
+                .fail((device, status) -> log(Log.ERROR, "Unable to enable Accel notification"))
+                .enqueue();
+
+        setNotificationCallback(mImuGyroCharacteristic)
+                .with((device, data) -> parseImuGyro(device ,data));
+        enableNotifications(mImuGyroCharacteristic)
+                .fail((device, status) -> log(Log.ERROR, "Unable to enable Gyro notification"))
+                .enqueue();
     }
 
-    private final boolean disableImuNotifications() {
-        return enqueue(Request.newDisableNotificationsRequest(mImuAccelCharacteristic)) &&
-                enqueue(Request.newDisableNotificationsRequest(mImuGyroCharacteristic));
+    private void disableImuNotifications() {
+        disableNotifications(mImuGyroCharacteristic).enqueue();
+        disableNotifications(mImuGyroCharacteristic).enqueue();
     }
+
+    /**** Public API for controlling what we are listening to ****/
+    // This is mostly a very thin shim to the above methods
 
     // Handle the two streaming modes for EMG data (raw buffered data or processed power)
 
@@ -1039,7 +1048,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
     };
 
     private STREAMING_MODE mStreamingMode = STREAMING_MODE.STREAMING_UNKNOWN;
-    public final void enableBufferedStreamingMode() {
+    final void enableBufferedStreamingMode() {
 
         Log.d(TAG, "enabledBufferedStreamingMode: " + mSynced);
 
@@ -1048,7 +1057,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         mStreamingMode = STREAMING_MODE.STREAMING_BUFFERED;
     }
 
-    public final void enablePowerStreamingMode() {
+    final void enablePowerStreamingMode() {
 
         Log.d(TAG, "enablePowerStreamingMode: " + mSynced);
 
@@ -1057,28 +1066,28 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         mStreamingMode = STREAMING_MODE.STREAMINNG_POWER;
     }
 
-    public STREAMING_MODE getStreamingMode() { return mStreamingMode; }
+    STREAMING_MODE getStreamingMode() { return mStreamingMode; }
 
-    public final void enableAttitude() {
+    final void enableAttitude() {
         enableAttitudeNotifications();
     }
 
-    public final void disableAttitude() {
+    final void disableAttitude() {
         disableAttitudeNotifications();
     }
 
-    public final void enableImu() {
+    final void enableImu() {
         enableImuNotifications();
     }
 
-    public final void disableImu() {
+    final void disableImu() {
         disableImuNotifications();
     }
 
 
     // Accessors for the raw EMG
 	private int mEmgRaw = -1;
-    public int getEmgRaw() { return mEmgRaw; }
+    int getEmgRaw() { return mEmgRaw; }
 
     //! Return if this is the raw EMG characteristic
     private boolean isEmgRawCharacteristic(final BluetoothGattCharacteristic characteristic) {
@@ -1090,14 +1099,14 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 
     // Accessors for the EMG power
     private int mEmgPwr = -1;
-    public int getEmgPwr() { return mEmgPwr; }
+    int getEmgPwr() { return mEmgPwr; }
 
     // TODO: this should be user calibrate-able, or automatic
     private double MAX_SCALE = Short.MAX_VALUE * 2;
     private double MIN_SCALE = 0x0000; // TODO: this should be user calibrate-able, or automatic
 
     // Scale EMG from 0 to 1.0 using configurable endpoints
-    public double getEmgPwrScaled() {
+    double getEmgPwrScaled() {
         double val = (mEmgPwr - MIN_SCALE) / (MAX_SCALE - MIN_SCALE);
         if (val > 1.0)
             val = 1.0;
@@ -1119,7 +1128,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
      * Check if a click event happened when EMG goes ovre threshold with hysteresis and
      * refractory period.
      */
-    public void checkEmgClick(final BluetoothDevice device, int value) {
+    private void checkEmgClick(final BluetoothDevice device, int value) {
         // Have a refractory time to prevent noise making multiple events
         long eventTime = System.nanoTime();
         boolean refractory = (eventTime - mThresholdTime) > THRESHOLD_TIME_NS;
@@ -1135,98 +1144,14 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 
     // Accessors for the EMG buffer
     private double [][] mEmgBuff;
-    public double[][] getEmgBuff() {
+    double[][] getEmgBuff() {
         return mEmgBuff;
-    }
-
-    //! Return if this is the EMG PWR characteristic
-    private boolean isEmgPwrCharacteristic(final BluetoothGattCharacteristic characteristic) {
-        if (characteristic == null)
-            return false;
-
-        return EMG_PWR_CHAR_UUID.equals(characteristic.getUuid());
-    }
-
-    //! Return if this is the EMG PWR characteristic
-    private boolean isEmgBuffCharacteristic(final BluetoothGattCharacteristic characteristic) {
-        if (characteristic == null)
-            return false;
-
-        return EMG_BUFF_CHAR_UUID.equals(characteristic.getUuid());
-    }
-
-    private boolean isEmgLogCharacteristic(final BluetoothGattCharacteristic characteristic) {
-        if (characteristic == null)
-            return false;
-
-        return EMG_LOG_CHAR_UUID.equals(characteristic.getUuid());
-    }
-
-    private boolean isRACPCharacteristic(final BluetoothGattCharacteristic characteristic) {
-        if (characteristic == null)
-            return false;
-
-        return EMG_RACP_CHAR_UUID.equals(characteristic.getUuid());
-    }
-
-
-    private boolean isImuAccelCharacteristic(final BluetoothGattCharacteristic characteristic) {
-        if (characteristic == null)
-            return false;
-
-        return IMU_ACCEL_CHAR_UUID.equals(characteristic.getUuid());
-    }
-
-    private boolean isImuGyroCharacteristic(final BluetoothGattCharacteristic characteristic) {
-        if (characteristic == null)
-            return false;
-
-        return IMU_GYRO_CHAR_UUID.equals(characteristic.getUuid());
-    }
-
-    private boolean isImuMagCharacteristic(final BluetoothGattCharacteristic characteristic) {
-        if (characteristic == null)
-            return false;
-
-        return IMU_MAG_CHAR_UUID.equals(characteristic.getUuid());
-    }
-
-    private boolean isImuAttitudeCharacteristic(final BluetoothGattCharacteristic characteristic) {
-        if (characteristic == null)
-            return false;
-
-        return IMU_ATTITUDE_CHAR_UUID.equals(characteristic.getUuid());
-    }
-
-    private CHARACTERISTIC_TYPE getCharacteristicType(final BluetoothGattCharacteristic characteristic) {
-
-        if (isEmgRawCharacteristic(characteristic))
-            return CHARACTERISTIC_TYPE.EMG_RAW;
-        if (isEmgPwrCharacteristic(characteristic))
-            return CHARACTERISTIC_TYPE.EMG_PWR;
-        if (isEmgBuffCharacteristic(characteristic))
-            return CHARACTERISTIC_TYPE.EMG_BUFF;
-        if (isRACPCharacteristic(characteristic))
-            return CHARACTERISTIC_TYPE.EMG_RACP;
-        if (isEmgLogCharacteristic(characteristic))
-            return CHARACTERISTIC_TYPE.EMG_LOG;
-        if (isImuAccelCharacteristic(characteristic))
-            return CHARACTERISTIC_TYPE.IMU_ACCEL;
-        if (isImuGyroCharacteristic(characteristic))
-            return CHARACTERISTIC_TYPE.IMU_GYRO;
-        if (isImuMagCharacteristic(characteristic))
-            return CHARACTERISTIC_TYPE.IMU_MAG;
-        if (isImuAttitudeCharacteristic(characteristic))
-            return CHARACTERISTIC_TYPE.IMU_ATTITUDE;
-
-        return CHARACTERISTIC_TYPE.UNKNOWN;
     }
 
     /**** code for downloading logs and uploading to firestore ****/
 
     private void storeRecordsToDb() {
-        Log.d(TAG, getAddress() + " storeRecordsToDb");
-        Logger.d(mLogSession, "storeRecordsToDb");
+        log(Log.VERBOSE, "storeRecordsToDb");
 
         List<Long> timestamps = new ArrayList<>();
 
@@ -1249,8 +1174,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
             }
         }
 
-        Log.d(TAG, "Entries added.");
-        Logger.d(mLogSession,"Entries added.");
+        log(Log.VERBOSE,"Entries added.");
 
         fireLogger.updateDb();
 
@@ -1259,35 +1183,35 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         FirebaseAnalytics mFirebaseAnalytics = FirebaseAnalytics.getInstance(getContext());
 
         Bundle bundle = new Bundle();
-        bundle.putString("DEVICE_NAME", mBluetoothDevice.getName());
-        bundle.putString("DEVICE_MAC", mBluetoothDevice.getAddress());
+        bundle.putString("DEVICE_NAME", getBluetoothDevice().getName());
+        bundle.putString("DEVICE_MAC", getBluetoothDevice().getAddress());
         bundle.putString("NUM_RECORDS", Integer.toString(mRecords.size()));
         // TODO: store battery value once this is obtained
         mFirebaseAnalytics.logEvent("DOWNLOAD_SENSOR_LOG", bundle);
 
         // Note: this does not wait for firebase to complete the set event
-        mCallbacks.onOperationCompleted(mBluetoothDevice);
+        mCallbacks.onOperationCompleted(getBluetoothDevice());
     }
 
     public String getAddress() {
-        if (mBluetoothDevice == null)
+        if (getBluetoothDevice() == null)
             return "";
-        return mBluetoothDevice.getAddress();
+        return getBluetoothDevice().getAddress();
     }
 
     public void firebaseLogReady(FirebaseEmgLogger logger) {
-        Log.d(TAG, getAddress() + " Log ready. Requesting records from device");
-        Logger.d(mLogSession, "Log ready. Requesting records from device");
+        log(Log.VERBOSE, "Log ready. Requesting records from device");
 
-        final BluetoothGattCharacteristic racpCharacteristic = mRecordAccessControlPointCharacteristic;
-        if (racpCharacteristic != null) {
-            setOpCode(racpCharacteristic, OP_CODE_REPORT_STORED_RECORDS, OPERATOR_ALL_RECORDS);
-            writeCharacteristic(racpCharacteristic);
-        }
+        // TODO
+        //final BluetoothGattCharacteristic racpCharacteristic = mRecordAccessControlPointCharacteristic;
+        //if (racpCharacteristic != null) {
+        //    setOpCode(racpCharacteristic, OP_CODE_REPORT_STORED_RECORDS, OPERATOR_ALL_RECORDS);
+        //    writeCharacteristic(racpCharacteristic);
+        //}
     }
 
     private String devicePrefName(String pref) {
-        return pref + "_" + mBluetoothDevice;
+        return pref + "_" + getBluetoothDevice();
     }
 
     void setClickThreshold(float min, float max) {
@@ -1380,5 +1304,16 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 
     public int getChannelCount() {
         return mChannels;
+    }
+
+    public void log(final int priority, @NonNull final String message)
+    {
+        switch(priority) {
+            case Log.INFO: Log.i(TAG, getBluetoothDevice() + " " + message); break;
+            case Log.VERBOSE: Log.v(TAG, getBluetoothDevice() + " " + message); break;
+            case Log.DEBUG: Log.d(TAG, getBluetoothDevice() + " " + message); break;
+            case Log.ERROR: Log.e(TAG, getBluetoothDevice() + " " + message); break;
+            default: Log.d(TAG, getBluetoothDevice() + " " + message); break;
+        }
     }
 }
