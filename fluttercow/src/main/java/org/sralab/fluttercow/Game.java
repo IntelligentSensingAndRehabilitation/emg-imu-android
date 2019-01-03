@@ -205,16 +205,6 @@ public class Game extends EmgImuBaseActivity {
         super.onDeviceNotSupported(device);
     }
 
-    @Override
-    public void onLinklossOccur(final BluetoothDevice device) {
-
-        // The link loss may also be called when Bluetooth adapter was disabled
-        if (BluetoothAdapter.getDefaultAdapter().isEnabled()) {
-            // Do nothing. We could notify the user here.
-            Log.d(TAG, "onLinklossOccur");
-        }
-    }
-
     private double last_rescaled = 0.5;
     //! Rescale the EMG power into a usable range
     private double smoothEmgPwr(final BluetoothDevice device) {

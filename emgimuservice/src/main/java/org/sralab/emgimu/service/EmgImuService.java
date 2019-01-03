@@ -183,11 +183,6 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
             return true;
         }
 
-        public boolean isReady(final BluetoothDevice device) {
-            final EmgImuManager mManager = (EmgImuManager) getBleManager(device);
-            return mManager.isDeviceReady();
-        }
-
         /**
          * Returns the last received EMG raw value.
          * @param device the device of which battery level should be returned

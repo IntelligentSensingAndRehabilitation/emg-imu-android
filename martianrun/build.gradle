@@ -88,6 +88,8 @@ dependencies {
     implementation project(':emgimuservice')
     implementation fileTree(dir: 'libs', include: '*.jar')
 
+    implementation "no.nordicsemi.android:ble:$nordicBleLVer"
+
     implementation "com.google.firebase:firebase-auth:$firebaseAuthVer"
     implementation "com.google.firebase:firebase-core:$firebaseCoreVer"
     implementation "com.google.firebase:firebase-firestore:$firebaseFirestoreVer"

@@ -1309,7 +1309,10 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
     public void log(final int priority, @NonNull final String message)
     {
         switch(priority) {
-            case Log.INFO: Log.i(TAG, getBluetoothDevice() + " " + message); break;
+            case Log.INFO:
+                // Suppress excessive info
+                // Log.i(TAG, getBluetoothDevice() + " " + message);
+                break;
             case Log.VERBOSE: Log.v(TAG, getBluetoothDevice() + " " + message); break;
             case Log.DEBUG: Log.d(TAG, getBluetoothDevice() + " " + message); break;
             case Log.ERROR: Log.e(TAG, getBluetoothDevice() + " " + message); break;
