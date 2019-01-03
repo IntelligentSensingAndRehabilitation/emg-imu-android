@@ -69,7 +69,7 @@ public class ConfigActivity extends EmgImuBaseActivity {
 	}
 
 	private void setGUI() {
-		final RecyclerView recyclerView = mDevicesView = (RecyclerView) findViewById(android.R.id.list);
+		final RecyclerView recyclerView = mDevicesView = findViewById(android.R.id.list);
 		recyclerView.setLayoutManager(new LinearLayoutManager(this));
 		recyclerView.addItemDecoration(new DividerItemDecoration(this, DividerItemDecoration.VERTICAL_LIST));
 	}
@@ -91,13 +91,6 @@ public class ConfigActivity extends EmgImuBaseActivity {
 	@Override
 	protected int getAboutTextId() {
 		return R.string.emgimu_about_text;
-	}
-
-	@Override
-	public void onBatteryValueReceived(final BluetoothDevice device, final int value)
-	{
-		if (mAdapter != null)
-			mAdapter.onBatteryValueReceived(device);
 	}
 
 	@Override
@@ -144,7 +137,8 @@ public class ConfigActivity extends EmgImuBaseActivity {
 
 	@Override
 	public void onLinkLossOccurred(@NonNull BluetoothDevice device) {
-
+		if (mAdapter != null)
+			mAdapter.onDeviceStateChanged(device);
 	}
 
 	@Override
@@ -152,17 +146,6 @@ public class ConfigActivity extends EmgImuBaseActivity {
 		super.onDeviceNotSupported(device);
 		if (mAdapter != null)
 			mAdapter.onDeviceRemoved(device);
-	}
-
-	@Override
-	public void onLinklossOccur(final BluetoothDevice device) {
-		if (mAdapter != null)
-			mAdapter.onDeviceStateChanged(device);
-
-		// The link loss may also be called when Bluetooth adapter was disabled
-		if (BluetoothAdapter.getDefaultAdapter().isEnabled()) {
-			// Do nothing. We could notify the user here.
-		}
 	}
 
     @Override
