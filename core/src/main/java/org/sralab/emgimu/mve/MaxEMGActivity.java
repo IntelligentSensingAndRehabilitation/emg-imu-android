@@ -2,6 +2,7 @@ package org.sralab.emgimu.mve;
 
 import android.bluetooth.BluetoothDevice;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
@@ -193,6 +194,11 @@ public class MaxEMGActivity extends EmgImuBaseActivity implements EmgPowerView.O
     }
 
     @Override
+    public void onLinkLossOccurred(@NonNull BluetoothDevice device) {
+
+    }
+
+    @Override
     public void onDeviceReady(BluetoothDevice device) {
         // TODO: add dropdown to allow selecting device
         Log.d("DeviceAdapter", "Device added. Requested streaming: " + device);
@@ -203,6 +209,11 @@ public class MaxEMGActivity extends EmgImuBaseActivity implements EmgPowerView.O
         mPwrView.setThreshold(mService.getClickThreshold(device));
         mPwrView.setMinPower(mService.getMinPwr(device));
         mPwrView.setMaxPower(mService.getMaxPwr(device));
+    }
+
+    @Override
+    public void onBondingFailed(@NonNull BluetoothDevice device) {
+
     }
 
     float mLpfValue = Float.NaN;

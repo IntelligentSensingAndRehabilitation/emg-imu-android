@@ -3,6 +3,7 @@ package org.sralab.emgimu.streaming;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.Editable;
@@ -183,6 +184,11 @@ public class Streaming extends EmgImuBaseActivity {
     }
 
     @Override
+    public void onBondingFailed(@NonNull BluetoothDevice device) {
+
+    }
+
+    @Override
     public void onDeviceDisconnecting(final BluetoothDevice device) {
         if (mAdapter != null)
             mAdapter.onDeviceStateChanged(device);
@@ -195,21 +201,15 @@ public class Streaming extends EmgImuBaseActivity {
     }
 
     @Override
+    public void onLinkLossOccurred(@NonNull BluetoothDevice device) {
+
+    }
+
+    @Override
     public void onDeviceNotSupported(final BluetoothDevice device) {
         super.onDeviceNotSupported(device);
         if (mAdapter != null)
             mAdapter.onDeviceRemoved(device);
-    }
-
-    @Override
-    public void onLinklossOccur(final BluetoothDevice device) {
-        if (mAdapter != null)
-            mAdapter.onDeviceStateChanged(device);
-
-        // The link loss may also be called when Bluetooth adapter was disabled
-        if (BluetoothAdapter.getDefaultAdapter().isEnabled()) {
-            // Do nothing. We could notify the user here.
-        }
     }
 
     @Override

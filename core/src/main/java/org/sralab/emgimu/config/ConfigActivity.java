@@ -29,6 +29,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.PowerManager;
 import android.provider.Settings;
+import android.support.annotation.NonNull;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -100,6 +101,11 @@ public class ConfigActivity extends EmgImuBaseActivity {
 	}
 
 	@Override
+	public void onBondingFailed(@NonNull BluetoothDevice device) {
+
+	}
+
+	@Override
 	public void onDeviceConnecting(final BluetoothDevice device) {
 		if (mAdapter != null)
 			mAdapter.onDeviceAdded(device);
@@ -134,6 +140,11 @@ public class ConfigActivity extends EmgImuBaseActivity {
 	public void onDeviceDisconnected(final BluetoothDevice device) {
 		if (mAdapter != null)
 			mAdapter.onDeviceRemoved(device);
+	}
+
+	@Override
+	public void onLinkLossOccurred(@NonNull BluetoothDevice device) {
+
 	}
 
 	@Override

@@ -16,6 +16,7 @@ import android.media.SoundPool;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.support.annotation.NonNull;
 import android.view.WindowManager;
 import android.widget.Toast;
 
@@ -178,6 +179,11 @@ public class Game extends EmgImuBaseActivity {
     }
 
     @Override
+    public void onBondingFailed(@NonNull BluetoothDevice device) {
+
+    }
+
+    @Override
     public void onDeviceDisconnecting(final BluetoothDevice device) {
         Log.d(TAG, "onDeviceDisconnecting");
         view.pause();
@@ -186,6 +192,11 @@ public class Game extends EmgImuBaseActivity {
     @Override
     public void onDeviceDisconnected(final BluetoothDevice device) {
         Log.d(TAG, "onDeviceDisconnected");
+    }
+
+    @Override
+    public void onLinkLossOccurred(@NonNull BluetoothDevice device) {
+
     }
 
     @Override
