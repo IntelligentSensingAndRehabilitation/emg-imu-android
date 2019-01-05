@@ -54,6 +54,7 @@ import no.nordicsemi.android.ble.callback.FailCallback;
 import no.nordicsemi.android.ble.callback.MtuCallback;
 import no.nordicsemi.android.ble.callback.SuccessCallback;
 import no.nordicsemi.android.ble.data.Data;
+import no.nordicsemi.android.ble.data.MutableData;
 import no.nordicsemi.android.log.Logger;
 import no.nordicsemi.android.ble.BleManager;
 
@@ -96,22 +97,22 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
     private final static UUID EMG_RACP_CHAR_UUID = UUID.fromString("00002a52-1212-EFDE-1523-785FEF13D123");
     private final static UUID EMG_LOG_CHAR_UUID = UUID.fromString("00001240-1212-EFDE-1523-785FEF13D123");
 
-    private final static int OP_CODE_REPORT_STORED_RECORDS = 1;
-    private final static int OP_CODE_DELETE_STORED_RECORDS = 2;
-    private final static int OP_CODE_ABORT_OPERATION = 3;
-    private final static int OP_CODE_REPORT_NUMBER_OF_RECORDS = 4;
-    private final static int OP_CODE_NUMBER_OF_STORED_RECORDS_RESPONSE = 5;
-    private final static int OP_CODE_RESPONSE_CODE = 6;
-    private final static int OP_CODE_SET_TIMESTAMP = 7;
-    private final static int OP_CODE_SET_TIMESTAMP_COMPLETE = 8;
+    private final static byte OP_CODE_REPORT_STORED_RECORDS = 1;
+    private final static byte OP_CODE_DELETE_STORED_RECORDS = 2;
+    private final static byte OP_CODE_ABORT_OPERATION = 3;
+    private final static byte OP_CODE_REPORT_NUMBER_OF_RECORDS = 4;
+    private final static byte OP_CODE_NUMBER_OF_STORED_RECORDS_RESPONSE = 5;
+    private final static byte OP_CODE_RESPONSE_CODE = 6;
+    private final static byte OP_CODE_SET_TIMESTAMP = 7;
+    private final static byte OP_CODE_SET_TIMESTAMP_COMPLETE = 8;
 
-    private final static int OPERATOR_NULL = 0;
-    private final static int OPERATOR_ALL_RECORDS = 1;
-    private final static int OPERATOR_LESS_THEN_OR_EQUAL = 2;
-    private final static int OPERATOR_GREATER_THEN_OR_EQUAL = 3;
-    private final static int OPERATOR_WITHING_RANGE = 4;
-    private final static int OPERATOR_FIRST_RECORD = 5;
-    private final static int OPERATOR_LAST_RECORD = 6;
+    private final static byte OPERATOR_NULL = 0;
+    private final static byte OPERATOR_ALL_RECORDS = 1;
+    //private final static byte OPERATOR_LESS_THEN_OR_EQUAL = 2;
+    //private final static byte OPERATOR_GREATER_THEN_OR_EQUAL = 3;
+    //private final static byte OPERATOR_WITHING_RANGE = 4;
+    private final static byte OPERATOR_FIRST_RECORD = 5;
+    private final static byte OPERATOR_LAST_RECORD = 6;
 
 
 
@@ -265,7 +266,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 
             setNotificationCallback(mEmgLogCharacteristic)
                     .with((device, data) -> parseLog(device, data));
-            enableIndications(mEmgLogCharacteristic)
+            enableNotifications(mEmgLogCharacteristic)
                     .done(device -> Log.d(TAG, "Log characteristic indication enabled"))
                     .fail((device, status) -> Log.e(TAG, "Log characteristic indication not enabled"))
                     .enqueue();
@@ -727,9 +728,14 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                 clear();
                 mCallbacks.onOperationStarted(getBluetoothDevice());
 
-                // TODO
-                //setOpCode(mRecordAccessControlPointCharacteristic, OP_CODE_REPORT_NUMBER_OF_RECORDS, OPERATOR_ALL_RECORDS);
-                //writeCharacteristic(mRecordAccessControlPointCharacteristic);
+                writeCharacteristic(mRecordAccessControlPointCharacteristic,
+                        Data.opCode(OP_CODE_REPORT_NUMBER_OF_RECORDS, OPERATOR_ALL_RECORDS))
+                        .done(dev -> Log.d(TAG, "Send request number of records to RACP"))
+                        .fail((dev, status) -> {
+                            Log.d(TAG, "Failed to send request number of records to RACP: " + status);
+                        })
+                        .enqueue();
+
             } else {
                 log(Log.VERBOSE, "Device synced, but no record request made.");
             }
@@ -763,40 +769,6 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         }
     }
 
-    /**
-     * Writes given operation parameters to the characteristic
-     *
-     * @param characteristic the characteristic to write. This must be the Record Access Control Point characteristic
-     * @param opCode         the operation code
-     * @param operator       the operator (see {@link #OPERATOR_NULL} and others
-     * @param params         optional parameters (one for >=, <=, two for the range, none for other operators)
-     */
-    private void setOpCode(final BluetoothGattCharacteristic characteristic, final int opCode, final int operator, final Integer... params) {
-        final int size = 2 + ((params.length > 0) ? 1 : 0) + params.length * 2; // 1 byte for opCode, 1 for operator, 1 for filter type (if parameters exists) and 2 for each parameter
-        characteristic.setValue(new byte[size]);
-
-        // write the operation code
-        int offset = 0;
-        characteristic.setValue(opCode, BluetoothGattCharacteristic.FORMAT_UINT8, offset);
-        offset += 1;
-
-        // write the operator. This is always present but may be equal to OPERATOR_NULL
-        characteristic.setValue(operator, BluetoothGattCharacteristic.FORMAT_UINT8, offset);
-        offset += 1;
-
-        // if parameters exists, append them. Parameters should be sorted from minimum to maximum. Currently only one or two params are allowed
-        if (params.length > 0) {
-            // our implementation use only sequence number as a filer type
-            characteristic.setValue(FILTER_TYPE_SEQUENCE_NUMBER, BluetoothGattCharacteristic.FORMAT_UINT8, offset);
-            offset += 1;
-
-            for (final Integer i : params) {
-                characteristic.setValue(i, BluetoothGattCharacteristic.FORMAT_UINT16, offset);
-                offset += 2;
-            }
-        }
-    }
-
     private boolean mSynced;
     private long t0() {
         return new GregorianCalendar(2018, 0, 0).getTime().getTime();
@@ -826,7 +798,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         // TODO:
         /*
         // Send our custom "sync" RACP message
-        final int size = 6;
+
         characteristic.setValue(new byte[size]);
         characteristic.setValue(OP_CODE_SET_TIMESTAMP, BluetoothGattCharacteristic.FORMAT_UINT8, 0);
         characteristic.setValue(0, BluetoothGattCharacteristic.FORMAT_UINT8, 1); // operator doesn't matter
@@ -835,6 +807,20 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         // write this
         writeCharacteristic(characteristic);
         */
+
+        final int size = 6;
+        MutableData data = new MutableData(new byte[size]);
+        data.setByte(OP_CODE_SET_TIMESTAMP, 0);
+        data.setByte(0, 1);
+        data.setValue(dt, BluetoothGattCharacteristic.FORMAT_UINT32, 2);
+
+        writeCharacteristic(mRecordAccessControlPointCharacteristic, data)
+                .done(device -> Log.d(TAG, "Send timestamp to RACP"))
+                .fail((device, status) -> {
+                    Log.d(TAG, "Failed to send timestamp to RACP: " + status);
+                })
+                .enqueue();
+
     }
 
     // Convert from the device format (8 Hz units since 2018 beginning) to the
@@ -875,10 +861,13 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         clear();
         mCallbacks.onOperationStarted(getBluetoothDevice());
 
-        // TODO
-        //final BluetoothGattCharacteristic characteristic = mRecordAccessControlPointCharacteristic;
-        //setOpCode(characteristic, OP_CODE_REPORT_STORED_RECORDS, OPERATOR_LAST_RECORD);
-        //writeCharacteristic(characteristic);
+        writeCharacteristic(mRecordAccessControlPointCharacteristic,
+                Data.opCode(OP_CODE_REPORT_STORED_RECORDS, OPERATOR_LAST_RECORD))
+                .done(device -> Log.d(TAG, "Sent report stored record to RACP"))
+                .fail((device, status) -> {
+                    Log.d(TAG, "Failed to send report stored record to RACP: " + status);
+                })
+                .enqueue();
     }
 
     /**
@@ -892,12 +881,13 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         clear();
         mCallbacks.onOperationStarted(getBluetoothDevice());
 
-        // TODO:
-        /*
-        final BluetoothGattCharacteristic characteristic = mRecordAccessControlPointCharacteristic;
-        setOpCode(characteristic, OP_CODE_REPORT_STORED_RECORDS, OPERATOR_FIRST_RECORD);
-        writeCharacteristic(characteristic);
-        */
+        writeCharacteristic(mRecordAccessControlPointCharacteristic,
+                Data.opCode(OP_CODE_REPORT_STORED_RECORDS, OPERATOR_FIRST_RECORD))
+                .done(device -> Log.d(TAG, "Sent request first stored to RACP"))
+                .fail((device, status) -> {
+                    Log.d(TAG, "Failed to request first stored to RACP: " + status);
+                })
+                .enqueue();
     }
 
     /**
@@ -908,10 +898,14 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
             return;
 
         mAbort = true;
-        // TODO
-        //final BluetoothGattCharacteristic characteristic = mRecordAccessControlPointCharacteristic;
-        //setOpCode(characteristic, OP_CODE_ABORT_OPERATION, OPERATOR_NULL);
-        //writeCharacteristic(characteristic);
+
+        writeCharacteristic(mRecordAccessControlPointCharacteristic,
+                Data.opCode(OP_CODE_ABORT_OPERATION, OPERATOR_NULL))
+                .done(device -> Log.d(TAG, "Sent abort operation to RACP"))
+                .fail((device, status) -> {
+                    Log.d(TAG, "Failed to send abort operation to RACP: " + status);
+                })
+                .enqueue();
     }
 
     /**
@@ -969,12 +963,15 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         clear();
         mCallbacks.onOperationStarted(getBluetoothDevice());
 
-        // TODO:
-        /*
-        final BluetoothGattCharacteristic characteristic = mRecordAccessControlPointCharacteristic;
-        setOpCode(characteristic, OP_CODE_DELETE_STORED_RECORDS, OPERATOR_ALL_RECORDS);
-        writeCharacteristic(characteristic);
-        */
+        writeCharacteristic(mRecordAccessControlPointCharacteristic,
+                Data.opCode(OP_CODE_DELETE_STORED_RECORDS, OPERATOR_ALL_RECORDS))
+                .done(device -> {
+                    Log.d(TAG, "Send delete all records to RACP");
+                })
+                .fail((device, status) -> {
+                    Log.d(TAG, "Failed to send delete all records to RACP: " + status);
+                })
+                .enqueue();
     }
 
     /****** helper methods to enable and disable notifications *******/
@@ -1203,12 +1200,16 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
     public void firebaseLogReady(FirebaseEmgLogger logger) {
         log(Log.VERBOSE, "Log ready. Requesting records from device");
 
-        // TODO
-        //final BluetoothGattCharacteristic racpCharacteristic = mRecordAccessControlPointCharacteristic;
-        //if (racpCharacteristic != null) {
-        //    setOpCode(racpCharacteristic, OP_CODE_REPORT_STORED_RECORDS, OPERATOR_ALL_RECORDS);
-        //    writeCharacteristic(racpCharacteristic);
-        //}
+
+        writeCharacteristic(mRecordAccessControlPointCharacteristic,
+                Data.opCode(OP_CODE_REPORT_STORED_RECORDS, OPERATOR_ALL_RECORDS))
+                .done(device -> {
+                    Log.d(TAG, "Send report all records to RACP");
+                })
+                .fail((device, status) -> {
+                    Log.d(TAG, "Failed to send report all records to RACP: " + status);
+                })
+                .enqueue();
     }
 
     private String devicePrefName(String pref) {

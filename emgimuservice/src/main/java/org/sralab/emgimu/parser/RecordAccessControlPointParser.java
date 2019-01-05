@@ -26,32 +26,32 @@ import android.bluetooth.BluetoothGattCharacteristic;
 import no.nordicsemi.android.ble.data.Data;
 
 public class RecordAccessControlPointParser {
-	private final static int OP_CODE_REPORT_STORED_RECORDS = 1;
-	private final static int OP_CODE_DELETE_STORED_RECORDS = 2;
-	private final static int OP_CODE_ABORT_OPERATION = 3;
-	private final static int OP_CODE_REPORT_NUMBER_OF_RECORDS = 4;
-	private final static int OP_CODE_NUMBER_OF_STORED_RECORDS_RESPONSE = 5;
-	private final static int OP_CODE_RESPONSE_CODE = 6;
-	private final static int OP_CODE_SET_TIMESTAMP = 7;
-	private final static int OP_CODE_SET_TIMESTAMP_COMPLETE = 8;
+	private final static byte OP_CODE_REPORT_STORED_RECORDS = 1;
+	private final static byte OP_CODE_DELETE_STORED_RECORDS = 2;
+	private final static byte OP_CODE_ABORT_OPERATION = 3;
+	private final static byte OP_CODE_REPORT_NUMBER_OF_RECORDS = 4;
+	private final static byte OP_CODE_NUMBER_OF_STORED_RECORDS_RESPONSE = 5;
+	private final static byte OP_CODE_RESPONSE_CODE = 6;
+	private final static byte OP_CODE_SET_TIMESTAMP = 7;
+	private final static byte OP_CODE_SET_TIMESTAMP_COMPLETE = 8;
 
-	private final static int OPERATOR_NULL = 0;
-	private final static int OPERATOR_ALL_RECORDS = 1;
-	private final static int OPERATOR_LESS_THEN_OR_EQUAL = 2;
-	private final static int OPERATOR_GREATER_THEN_OR_EQUAL = 3;
-	private final static int OPERATOR_WITHING_RANGE = 4;
-	private final static int OPERATOR_FIRST_RECORD = 5;
-	private final static int OPERATOR_LAST_RECORD = 6;
+	private final static byte OPERATOR_NULL = 0;
+	private final static byte OPERATOR_ALL_RECORDS = 1;
+	private final static byte OPERATOR_LESS_THEN_OR_EQUAL = 2;
+	private final static byte OPERATOR_GREATER_THEN_OR_EQUAL = 3;
+	private final static byte OPERATOR_WITHING_RANGE = 4;
+	private final static byte OPERATOR_FIRST_RECORD = 5;
+	private final static byte OPERATOR_LAST_RECORD = 6;
 
-	private final static int RESPONSE_SUCCESS = 1;
-	private final static int RESPONSE_OP_CODE_NOT_SUPPORTED = 2;
-	private final static int RESPONSE_INVALID_OPERATOR = 3;
-	private final static int RESPONSE_OPERATOR_NOT_SUPPORTED = 4;
-	private final static int RESPONSE_INVALID_OPERAND = 5;
-	private final static int RESPONSE_NO_RECORDS_FOUND = 6;
-	private final static int RESPONSE_ABORT_UNSUCCESSFUL = 7;
-	private final static int RESPONSE_PROCEDURE_NOT_COMPLETED = 8;
-	private final static int RESPONSE_OPERAND_NOT_SUPPORTED = 9;
+	private final static byte RESPONSE_SUCCESS = 1;
+	private final static byte RESPONSE_OP_CODE_NOT_SUPPORTED = 2;
+	private final static byte RESPONSE_INVALID_OPERATOR = 3;
+	private final static byte RESPONSE_OPERATOR_NOT_SUPPORTED = 4;
+	private final static byte RESPONSE_INVALID_OPERAND = 5;
+	private final static byte RESPONSE_NO_RECORDS_FOUND = 6;
+	private final static byte RESPONSE_ABORT_UNSUCCESSFUL = 7;
+	private final static byte RESPONSE_PROCEDURE_NOT_COMPLETED = 8;
+	private final static byte RESPONSE_OPERAND_NOT_SUPPORTED = 9;
 
 	public static String parse(final Data characteristic) {
 		final StringBuilder builder = new StringBuilder();
