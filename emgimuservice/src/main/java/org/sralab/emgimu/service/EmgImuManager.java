@@ -165,7 +165,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         mSynced = false;
         mFetchRecords = false;
 
-        Log.d(TAG, "EmgImuManager created");
+        log(Log.INFO, "EmgImuManager created");
 	}
 
 	@Override
@@ -217,7 +217,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 
         @Override
         protected void initialize() {
-            Log.d(TAG, "Initializing connection");
+            log(Log.INFO, "Initializing connection");
             requestMtu(517).with((device, mtu) -> Log.d(TAG, "MTU CHanged")).enqueue();
 
             /**** Get information about device *****/
@@ -266,10 +266,10 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
             } else {
                 return false;
             }
+            log(Log.INFO, "Device information characteristics for service " + deviceInfoService.getUuid());
 
-            Log.v(TAG, "Device information characteristics for service " + deviceInfoService.getUuid());
             for (BluetoothGattCharacteristic c : deviceInfoService.getCharacteristics() ) {
-                Log.v(TAG, "Device information found: " + c.getUuid());
+                log(Log.INFO, "Device information found: " + c.getUuid());
             }
 
             return  (mManufacturerCharacteristic != null) &&
@@ -297,9 +297,9 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                 mEmgBuffCharacteristic = llService.getCharacteristic(EMG_BUFF_CHAR_UUID);
                 mEmgPwrCharacteristic  = llService.getCharacteristic(EMG_PWR_CHAR_UUID);
 
-                Log.v(TAG, "Characteristics for service " + llService.getUuid());
+                log(Log.INFO, "Characteristics for service " + llService.getUuid());
                 for (BluetoothGattCharacteristic c : llService.getCharacteristics() ) {
-                    Log.v(TAG, "Found: " + c.getUuid());
+                    log(Log.INFO, "Found: " + c.getUuid());
                 }
             }
 
@@ -341,7 +341,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                     //mImuMagCharacteristic != null && // TODO: mag not supported in firmware yet
                     mImuAttitudeCharacteristic != null;
 
-            Log.d(TAG, "Optional services found. Logging: " + supportsLogging + " IMU: " + supportsImu);
+            log(Log.INFO, "Optional services found. Logging: " + supportsLogging + " IMU: " + supportsImu);
 
             return supportsLogging && supportsImu;
 		}
@@ -353,7 +353,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 
             synchronized (this) {
                 if (mLogging) {
-                    Log.d(TAG, "Created stream logger");
+                    log(Log.INFO, "Created stream logger");
                     streamLogger = new FirebaseStreamLogger(EmgImuManager.this);
                 }
             }
@@ -367,7 +367,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 
         @Override
 		protected void onDeviceDisconnected() {
-		    Log.d(TAG, "onDeviceDisconnected");
+            log(Log.INFO, "onDeviceDisconnected");
 
 		    // Clear the Device Information characteristics
             mManufacturerCharacteristic = null;
@@ -390,7 +390,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 
             synchronized (this) {
                 if (mLogging && streamLogger != null) {
-                    Log.d(TAG, "Closing stream logger");
+                    log(Log.INFO, "Closing stream logger");
                     streamLogger.close();
                     streamLogger = null;
                 }
@@ -430,12 +430,12 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
             case 5:
             case 6:
             case 7:
-                Log.d(TAG, "Dropped PWR samples detected but tolerable. " + err);
+                log(Log.WARN, "Dropped PWR samples detected but tolerable. " + err);
                 mLastPwrCount += err;
                 break;
             default:
                 // TODO: sometime err is 0. Determine if this is duplicate packets.
-                Log.d(TAG, "Too many dropped samples detected: " + err);
+                log(Log.WARN, "Too many dropped samples detected: " + err);
                 mLastPwrCount = counter;
                 mPwrT0 = timestamp_real - (long) (mLastPwrCount * 1000 / COUNTER_HZ);
                 break;
@@ -446,7 +446,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 
         long diff = resolved_ms - timestamp_real;
         if (abs(diff) > 200) {
-            Log.e(TAG, "Timebase drift. Diff: " + diff + " Resolved: " + resolved_ms + " transmitted: " + timestamp_real);
+            log(Log.ERROR, "Timebase drift. Diff: " + diff + " Resolved: " + resolved_ms + " transmitted: " + timestamp_real);
             mPwrT0 = timestamp_real - (long) (mLastPwrCount * 1000 / COUNTER_HZ);
             resolved_ms = mPwrT0 + (long) (mLastPwrCount * 1000 / COUNTER_HZ);
         }
@@ -506,12 +506,12 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
             case 5:
             case 6:
             case 7:
-                Log.d(TAG, "Dropped PWR samples detected but tolerable. " + err);
+                log(Log.WARN, "Dropped PWR samples detected but tolerable. " + err);
                 mLastBufferCount += err;
                 break;
             default:
                 // TODO: sometime err is 0. Determine if this is duplicate packets.
-                Log.d(TAG, "Too many dropped samples detected. Err: " + err + " Counter: " + counter + " Aliased: " + counter_aliased + " Count: " + mLastBufferCount);
+                log(Log.WARN, "Too many dropped samples detected. Err: " + err + " Counter: " + counter + " Aliased: " + counter_aliased + " Count: " + mLastBufferCount);
                 mLastBufferCount = counter;
                 mBufT0 = timestamp_real - (long) (mLastBufferCount * 1000 / COUNTER_HZ);
                 break;
@@ -522,7 +522,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 
         long diff = resolved_ms - timestamp_real;
         if (abs(diff) > 200) {
-            Log.e(TAG, "Timebase drift. Diff: " + diff + " Resolved: " + resolved_ms + " transmitted: " + timestamp_real);
+            log(Log.ERROR, "Timebase drift. Diff: " + diff + " Resolved: " + resolved_ms + " transmitted: " + timestamp_real);
             mBufT0 = timestamp_real - (long) (mLastBufferCount * 1000 / COUNTER_HZ);
             resolved_ms = mBufT0 + (long) (mLastBufferCount * 1000 / COUNTER_HZ);
         }
@@ -587,7 +587,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                 microvolts_per_lsb = full_scale_range / (1<<24);
 
                 buf_ts_ms = resolveBufCounter(timestamp, counter, 500.0 / samples);
-                Log.d(TAG, " Counter: " + counter + " timestamp: " + timestamp + " ms: " + buf_ts_ms + " scale: " + microvolts_per_lsb);
+                log(Log.DEBUG, " Counter: " + counter + " timestamp: " + timestamp + " ms: " + buf_ts_ms + " scale: " + microvolts_per_lsb);
 
                 // representation of the data is 3 bytes per sample, 8 channels, and then N samples
                 data = new double[channels][samples];
@@ -603,7 +603,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 
                 break;
             default:
-                Log.e(TAG, "Unsupported data format");
+                log(Log.ERROR, "Unsupported data format");
                 return;
         }
 
@@ -660,7 +660,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         float quat[] = new float[4];
         for (int i = 0; i < 4; i++)
             quat[i] = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT16, i * 2) * scale;
-        Log.d(TAG, "Received quaternion: " + quat[0] + " " + quat[1] + " " + quat[2] + " " + quat[3]);
+        log(Log.DEBUG, "Received quaternion: " + quat[0] + " " + quat[1] + " " + quat[2] + " " + quat[3]);
         mCallbacks.onImuAttitudeReceived(device, quat);
 
         if (mLogging && streamLogger != null) {
@@ -708,7 +708,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 
                 writeCharacteristic(mRecordAccessControlPointCharacteristic,
                         Data.opCode(OP_CODE_REPORT_NUMBER_OF_RECORDS, OPERATOR_ALL_RECORDS))
-                        .done(dev -> Log.d(TAG, "Request number of records from RACP"))
+                        .done(dev -> log(Log.INFO, "Request number of records from RACP"))
                         .fail((dev, status) -> logFetchFailed(dev,"Failed to request number of records from RACP"))
                         .enqueue();
 
@@ -749,7 +749,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                     storeRecordsToDb();
                     break;
                 case RESPONSE_NO_RECORDS_FOUND:
-                    Log.d(TAG, "No records found (op code)");
+                    log(Log.INFO, "No records found (op code)");
                     if (successCallback != null)
                         successCallback.onFetchSucceeded(getBluetoothDevice());
                     break;
@@ -786,9 +786,9 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         if (mRecords.size() > 1) {
             // If multiple records calculate dt in ms.
             dt_ms = mRecords.get(1).timestamp - mRecords.get(0).timestamp;
-            Log.d(TAG, "Difference in timestamps " + dt_ms);
+            log(Log.DEBUG, "Difference in timestamps " + dt_ms);
             dt_ms = dt_ms / mRecords.get(0).emgPwr.size();
-            Log.d(TAG, "Calculated sample period as " + dt_ms + " ms");
+            log(Log.DEBUG, "Calculated sample period as " + dt_ms + " ms");
         }
         for (EmgLogRecord r : mRecords) {
             int i = 0;
@@ -835,7 +835,6 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 
         log(Log.VERBOSE, "Sending sync signal with offset " + dt);
 
-
         final int size = 6;
         MutableData data = new MutableData(new byte[size]);
         data.setByte(OP_CODE_SET_TIMESTAMP, 0);
@@ -845,7 +844,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         // No need to use a success callback to continue trail as the device
         // sends an acknowledgement on RACP and we trigger from that
         writeCharacteristic(mRecordAccessControlPointCharacteristic, data)
-                .done(device -> Log.d(TAG, "Send timestamp to RACP"))
+                .done(device -> log(Log.INFO, "Send timestamp to RACP"))
                 .fail((device, status) -> logFetchFailed(device, "Synchronization failed (" + status + ")"))
                 .enqueue();
 
@@ -869,8 +868,8 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
     public void logFetchAbort() {
         writeCharacteristic(mRecordAccessControlPointCharacteristic,
                 Data.opCode(OP_CODE_ABORT_OPERATION, OPERATOR_NULL))
-                .done(device -> Log.d(TAG, "Sent abort operation to RACP"))
-                .fail((device, status) -> Log.d(TAG, "Failed to send abort operation to RACP: " + status))
+                .done(device -> log(Log.INFO, "Sent abort operation to RACP"))
+                .fail((device, status) -> log(Log.WARN, "Failed to send abort operation to RACP: " + status))
                 .enqueue();
     }
 
@@ -897,7 +896,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         this.successCallback = successCallback;
         this.failCallback = failCallback;
 
-        Log.d(TAG, "getAllRecords()");
+        log(Log.INFO, "fetchLogRecords()");
 
         // Indicate when the synchronization of the device has completed that we should
         // then start downloading records
@@ -917,14 +916,14 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         enableIndications(mRecordAccessControlPointCharacteristic)
             .done(dev ->
             {
-                Log.d(TAG, "RACP indication enabled");
+                log(Log.VERBOSE, "RACP indication enabled");
 
                 setNotificationCallback(mEmgLogCharacteristic)
                         .with((d, data) -> parseLog(d, data));
                 enableNotifications(mEmgLogCharacteristic)
                         .done(device ->
                         {
-                            Log.d(TAG, "Log characteristic indication enabled");
+                            log(Log.VERBOSE, "Log characteristic indication enabled");
                             syncDevice();
                         })
                         .fail((d, status) -> logFetchFailed(d,"Failed to enable Log characteristic notifications (" + status + ")"))
@@ -1021,7 +1020,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
     private STREAMING_MODE mStreamingMode = STREAMING_MODE.STREAMING_UNKNOWN;
     final void enableBufferedStreamingMode() {
 
-        Log.d(TAG, "enabledBufferedStreamingMode: " + mSynced);
+        log(Log.INFO, "enabledBufferedStreamingMode: " + mSynced);
 
         enableEmgBuffNotifications();
         disableEmgPwrNotifications();
@@ -1030,7 +1029,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 
     final void enablePowerStreamingMode() {
 
-        Log.d(TAG, "enablePowerStreamingMode: " + mSynced);
+        log(Log.INFO, "enablePowerStreamingMode: " + mSynced);
 
         enableEmgPwrNotifications();
         disableEmgBuffNotifications();
@@ -1132,7 +1131,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
     }
 
     void setClickThreshold(float min, float max) {
-        Log.d(TAG, "New threshold " + min + " " + max);
+        log(Log.INFO, "New threshold " + min + " " + max);
 
         threshold_low = min;
         threshold_high = max;
@@ -1149,11 +1148,11 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         threshold_low = sharedPref.getFloat(devicePrefName(EmgImuService.THRESHOLD_LOW_PREFERENCE), threshold_low);
         threshold_high = sharedPref.getFloat(devicePrefName(EmgImuService.THRESHOLD_HIGH_PREFERENCE), threshold_high);
 
-        Log.d(TAG, "Loaded threshold " + threshold_low + " " + threshold_high);
+        log(Log.INFO, "Loaded threshold " + threshold_low + " " + threshold_high);
     }
 
     void setPwrRange(float min, float max) {
-        Log.d(TAG, "New range " + min + " " + max);
+        log(Log.INFO, "New range " + min + " " + max);
 
         min_pwr = min;
         max_pwr = max;
@@ -1170,7 +1169,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         min_pwr = sharedPref.getFloat(devicePrefName(EmgImuService.MIN_PWR_PREFERENCE), min_pwr);
         max_pwr = sharedPref.getFloat(devicePrefName(EmgImuService.MAX_PWR_PREFERENCE), max_pwr);
 
-        Log.d(TAG, "Loaded range " + min_pwr + " " + max_pwr + " From preference: " + devicePrefName(EmgImuService.MIN_PWR_PREFERENCE));
+        log(Log.INFO, "Loaded range " + min_pwr + " " + max_pwr + " From preference: " + devicePrefName(EmgImuService.MIN_PWR_PREFERENCE));
     }
 
     float getHighThreshold() {
@@ -1211,10 +1210,6 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         return mHardwareRevision;
     }
 
-    public boolean isDeviceReady() {
-        return mReady;
-    }
-
     public String getLoggingRef() {
         if (mLogging == false || streamLogger == null) {
             return "";
@@ -1227,15 +1222,25 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         return mChannels;
     }
 
+    public void filterInfoPrint(@NonNull final String message) {
+        if (message.startsWith("Notification received")) {
+            // Drop this message as we get too verbose
+        } else {
+            Log.i(TAG, getBluetoothDevice() + " " + message);
+        }
+    }
     public void log(final int priority, @NonNull final String message)
     {
+        final int threshold = Log.VERBOSE;
+        if (priority < threshold)
+            return;
+
         switch(priority) {
-            case Log.INFO:
-                // Suppress excessive info
-                // Log.i(TAG, getBluetoothDevice() + " " + message);
-                break;
             case Log.VERBOSE: Log.v(TAG, getBluetoothDevice() + " " + message); break;
             case Log.DEBUG: Log.d(TAG, getBluetoothDevice() + " " + message); break;
+            case Log.INFO: filterInfoPrint(message);  break;
+            case Log.WARN: Log.w(TAG, getBluetoothDevice() + " " + message); break;
+            // TODO: log errors to the cloud somewhere
             case Log.ERROR: Log.e(TAG, getBluetoothDevice() + " " + message); break;
             default: Log.d(TAG, getBluetoothDevice() + " " + message); break;
         }
