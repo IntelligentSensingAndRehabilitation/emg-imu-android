@@ -131,12 +131,14 @@ public class ConfigActivity extends EmgImuBaseActivity {
 
 	@Override
 	public void onDeviceDisconnected(final BluetoothDevice device) {
+		Log.d(TAG, "Disconnected");
 		if (mAdapter != null)
-			mAdapter.onDeviceRemoved(device);
+			mAdapter.onDeviceStateChanged(device);
 	}
 
 	@Override
 	public void onLinkLossOccurred(@NonNull BluetoothDevice device) {
+		Log.d(TAG, "Link loss");
 		if (mAdapter != null)
 			mAdapter.onDeviceStateChanged(device);
 	}
