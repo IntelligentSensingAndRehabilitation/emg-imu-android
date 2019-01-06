@@ -714,7 +714,8 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 
     @Override
     public void onLinkLossOccurred(@NonNull BluetoothDevice device) {
-
+        super.onLinkLossOccurred(device);
+        Log.d(TAG, "onLinkLossOccurred");
     }
 
     @Override

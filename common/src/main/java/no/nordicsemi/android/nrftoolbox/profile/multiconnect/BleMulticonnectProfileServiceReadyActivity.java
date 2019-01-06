@@ -91,6 +91,10 @@ public abstract class BleMulticonnectProfileServiceReadyActivity<E extends BleMu
 					final int state = intent.getIntExtra(BleMulticonnectProfileService.EXTRA_CONNECTION_STATE, BleMulticonnectProfileService.STATE_DISCONNECTED);
 
 					switch (state) {
+						case BleMulticonnectProfileService.STATE_LINK_LOSS: {
+							onLinkLossOccurred(bluetoothDevice);
+							break;
+						}
 						case BleMulticonnectProfileService.STATE_CONNECTED: {
 							onDeviceConnected(bluetoothDevice);
 							break;

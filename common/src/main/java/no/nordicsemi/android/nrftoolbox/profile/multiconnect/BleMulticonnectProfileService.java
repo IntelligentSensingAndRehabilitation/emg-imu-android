@@ -70,6 +70,7 @@ public abstract class BleMulticonnectProfileService extends Service implements B
 	public static final String EXTRA_ERROR_MESSAGE = "no.nordicsemi.android.nrftoolbox.EXTRA_ERROR_MESSAGE";
 	public static final String EXTRA_ERROR_CODE = "no.nordicsemi.android.nrftoolbox.EXTRA_ERROR_CODE";
 
+	public static final int STATE_LINK_LOSS = -1;
 	public static final int STATE_DISCONNECTED = 0;
 	public static final int STATE_CONNECTED = 1;
 	public static final int STATE_CONNECTING = 2;
@@ -457,6 +458,14 @@ public abstract class BleMulticonnectProfileService extends Service implements B
 		if (!mBinded && mManagedDevices.isEmpty()) {
 			stopSelf();
 		}
+	}
+
+	@Override
+	public void onLinkLossOccurred(final BluetoothDevice device) {
+		final Intent broadcast = new Intent(BROADCAST_CONNECTION_STATE);
+		broadcast.putExtra(EXTRA_DEVICE, device);
+		broadcast.putExtra(EXTRA_CONNECTION_STATE, STATE_LINK_LOSS);
+		LocalBroadcastManager.getInstance(this).sendBroadcast(broadcast);
 	}
 
 	@Override
