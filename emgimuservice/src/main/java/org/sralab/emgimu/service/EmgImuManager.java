@@ -98,7 +98,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
     private final static UUID EMG_LOG_CHAR_UUID = UUID.fromString("00001240-1212-EFDE-1523-785FEF13D123");
 
     private final static byte OP_CODE_REPORT_STORED_RECORDS = 1;
-    private final static byte OP_CODE_DELETE_STORED_RECORDS = 2;
+    //private final static byte OP_CODE_DELETE_STORED_RECORDS = 2;
     private final static byte OP_CODE_ABORT_OPERATION = 3;
     private final static byte OP_CODE_REPORT_NUMBER_OF_RECORDS = 4;
     private final static byte OP_CODE_NUMBER_OF_STORED_RECORDS_RESPONSE = 5;
@@ -111,8 +111,8 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
     //private final static byte OPERATOR_LESS_THEN_OR_EQUAL = 2;
     //private final static byte OPERATOR_GREATER_THEN_OR_EQUAL = 3;
     //private final static byte OPERATOR_WITHING_RANGE = 4;
-    private final static byte OPERATOR_FIRST_RECORD = 5;
-    private final static byte OPERATOR_LAST_RECORD = 6;
+    //private final static byte OPERATOR_FIRST_RECORD = 5;
+    //private final static byte OPERATOR_LAST_RECORD = 6;
 
 
 
@@ -121,22 +121,22 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
      * The syntax of the operand is: [Filter Type][Minimum][Maximum].<br/>
      * This filter selects the records by the sequence number.
      */
-    private final static int FILTER_TYPE_SEQUENCE_NUMBER = 1;
+    //private final static int FILTER_TYPE_SEQUENCE_NUMBER = 1;
     /**
      * The filter type is used for range operators ({@link #OPERATOR_LESS_THEN_OR_EQUAL}, {@link #OPERATOR_GREATER_THEN_OR_EQUAL}, {@link #OPERATOR_WITHING_RANGE}.<br/>
      * The syntax of the operand is: [Filter Type][Minimum][Maximum].<br/>
      * This filter selects the records by the user facing time (base time + offset time).
      */
-    private final static int FILTER_TYPE_USER_FACING_TIME = 2;
+    //private final static int FILTER_TYPE_USER_FACING_TIME = 2;
     private final static int RESPONSE_SUCCESS = 1;
     private final static int RESPONSE_OP_CODE_NOT_SUPPORTED = 2;
-    private final static int RESPONSE_INVALID_OPERATOR = 3;
-    private final static int RESPONSE_OPERATOR_NOT_SUPPORTED = 4;
-    private final static int RESPONSE_INVALID_OPERAND = 5;
+    //private final static int RESPONSE_INVALID_OPERATOR = 3;
+    //private final static int RESPONSE_OPERATOR_NOT_SUPPORTED = 4;
+    //private final static int RESPONSE_INVALID_OPERAND = 5;
     private final static int RESPONSE_NO_RECORDS_FOUND = 6;
     private final static int RESPONSE_ABORT_UNSUCCESSFUL = 7;
     private final static int RESPONSE_PROCEDURE_NOT_COMPLETED = 8;
-    private final static int RESPONSE_OPERAND_NOT_SUPPORTED = 9;
+    //private final static int RESPONSE_OPERAND_NOT_SUPPORTED = 9;
 
     private FirebaseEmgLogger fireLogger;
     private FirebaseStreamLogger streamLogger;
@@ -219,7 +219,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
             // Especially if we can use a bonded device and have this cached?
             readCharacteristic(mManufacturerCharacteristic)
                     .with((device, data) -> mManufacturer = data.getStringValue(0))
-                    .fail((device, status) -> Log.d(TAG, "Could not read manufacturer"))
+                    .fail((device, status) -> Log.d(TAG, "Could not read manufacturer (" + status + ")"))
                     .enqueue();
 
             readCharacteristic(mHardwareCharacteristic)
@@ -677,7 +677,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                 writeCharacteristic(mRecordAccessControlPointCharacteristic,
                         Data.opCode(OP_CODE_REPORT_NUMBER_OF_RECORDS, OPERATOR_ALL_RECORDS))
                         .done(dev -> Log.d(TAG, "Request number of records from RACP"))
-                        .fail((dev, status) -> logFetchFailed("Failed to request number of records from RACP"))
+                        .fail((dev, status) -> logFetchFailed(dev,"Failed to request number of records from RACP"))
                         .enqueue();
 
             } else {
@@ -703,7 +703,8 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                  fireLogger.prepareLog(T0);
              } else {
                  log(Log.VERBOSE, "No records found");
-                 mCallbacks.onEmgLogFetchCompleted(device);
+                 if (successCallback != null)
+                     successCallback.onFetchSucceeded(getBluetoothDevice());
              }
          } else if (opCode == OP_CODE_RESPONSE_CODE) {
             final int requestedOpCode = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, offset);
@@ -717,13 +718,14 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                     break;
                 case RESPONSE_NO_RECORDS_FOUND:
                     Log.d(TAG, "No records found (op code)");
-                    mCallbacks.onEmgLogFetchCompleted(device);
+                    if (successCallback != null)
+                        successCallback.onFetchSucceeded(getBluetoothDevice());
                     break;
                 case RESPONSE_OP_CODE_NOT_SUPPORTED:
                 case RESPONSE_PROCEDURE_NOT_COMPLETED:
                 case RESPONSE_ABORT_UNSUCCESSFUL:
                 default:
-                    logFetchFailed("Received bad op code on RACP. Either unknown or not completed/successful");
+                    logFetchFailed(device, "Received bad op code on RACP. Either unknown or not completed/successful");
                     break;
             }
         }
@@ -737,7 +739,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         writeCharacteristic(mRecordAccessControlPointCharacteristic,
                 Data.opCode(OP_CODE_REPORT_STORED_RECORDS, OPERATOR_ALL_RECORDS))
                 .done(device -> Log.d(TAG, "Send report all records to RACP"))
-                .fail((device, status) -> logFetchFailed("Failed to request all records"))
+                .fail((device, status) -> logFetchFailed(device,"Failed to request all records"))
                 .enqueue();
     }
 
@@ -779,8 +781,8 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         bundle.putString("NUM_RECORDS", Integer.toString(mRecords.size()));
         mFirebaseAnalytics.logEvent("DOWNLOAD_SENSOR_LOG", bundle);
 
-        // Note: this does not wait for firebase to complete the set event
-        mCallbacks.onEmgLogFetchCompleted(getBluetoothDevice());
+        if (successCallback != null)
+            successCallback.onFetchSucceeded(getBluetoothDevice());
     }
 
     private boolean mSynced;
@@ -812,7 +814,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         // sends an acknowledgement on RACP and we trigger from that
         writeCharacteristic(mRecordAccessControlPointCharacteristic, data)
                 .done(device -> Log.d(TAG, "Send timestamp to RACP"))
-                .fail((device, status) -> logFetchFailed("Synchronization failed"))
+                .fail((device, status) -> logFetchFailed(device, "Synchronization failed (" + status + ")"))
                 .enqueue();
 
     }
@@ -833,15 +835,10 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
      * Sends abort operation signal to the device
      */
     public void logFetchAbort() {
-        if (mRecordAccessControlPointCharacteristic == null)
-            return;
-
         writeCharacteristic(mRecordAccessControlPointCharacteristic,
                 Data.opCode(OP_CODE_ABORT_OPERATION, OPERATOR_NULL))
                 .done(device -> Log.d(TAG, "Sent abort operation to RACP"))
-                .fail((device, status) -> {
-                    Log.d(TAG, "Failed to send abort operation to RACP: " + status);
-                })
+                .fail((device, status) -> Log.d(TAG, "Failed to send abort operation to RACP: " + status))
                 .enqueue();
     }
 
@@ -850,8 +847,23 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
      * data will be returned to Glucose Measurement characteristic as a notification followed by Record Access Control Point indication with status code ({@link #RESPONSE_SUCCESS} or other in case of
      * error.
      */
+    /*
+        public interface LogFetchSuccessCallback {
+        void onFetchSucceeded(@NonNull final BluetoothDevice device);
+    }
+
+    public interface LogFetchFailedCallback {
+        void onFetchFailed(@NonNull final BluetoothDevice device, String reason);
+    }
+     */
+
+    LogFetchSuccessCallback successCallback;
+    LogFetchFailedCallback failCallback;
+
     private boolean mFetchRecords = false;
-    public void getAllRecords() {
+    public void fetchLogRecords(LogFetchSuccessCallback successCallback, LogFetchFailedCallback failCallback) {
+        this.successCallback = successCallback;
+        this.failCallback = failCallback;
 
         Log.d(TAG, "getAllRecords()");
 
@@ -883,23 +895,23 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                             Log.d(TAG, "Log characteristic indication enabled");
                             syncDevice();
                         })
-                        .fail((d, status) -> logFetchFailed("Failed to enable Log characteristic notifications"))
+                        .fail((d, status) -> logFetchFailed(d,"Failed to enable Log characteristic notifications (" + status + ")"))
                         .enqueue();
             })
-            .fail((device, status) -> logFetchFailed("Failed to enable RACP characteristic indications"))
+            .fail((device, status) -> logFetchFailed(device, "Failed to enable RACP characteristic indications (" + status + ")"))
             .enqueue();
 
     }
 
-    private void logFetchFailed(String reason)
+    private void logFetchFailed(@NonNull final BluetoothDevice device, String reason)
     {
         mFetchRecords = false;
 
         // TODO: decide if this is needed or benficial
         logFetchAbort();
 
-        if (mCallbacks != null)
-            mCallbacks.onEmgLogFetchFailed(getBluetoothDevice(), reason);
+        if (failCallback != null)
+            failCallback.onFetchFailed(device, reason);
     }
 
 
@@ -1191,5 +1203,13 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
             case Log.ERROR: Log.e(TAG, getBluetoothDevice() + " " + message); break;
             default: Log.d(TAG, getBluetoothDevice() + " " + message); break;
         }
+    }
+
+    public interface LogFetchSuccessCallback {
+        void onFetchSucceeded(@NonNull final BluetoothDevice device);
+    }
+
+    public interface LogFetchFailedCallback {
+        void onFetchFailed(@NonNull final BluetoothDevice device, String reason);
     }
 }

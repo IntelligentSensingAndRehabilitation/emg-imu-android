@@ -170,16 +170,6 @@ public class ConfigActivity extends EmgImuBaseActivity {
 	}
 
 	@Override
-	public void onEmgLogFetchCompleted(BluetoothDevice device) {
-
-	}
-
-	@Override
-	public void onEmgLogFetchFailed(BluetoothDevice device, String reason) {
-
-	}
-
-	@Override
 	public void onEmgBuffReceived(BluetoothDevice device, int count, double[][] data) {
 		if (mAdapter != null)
 			mAdapter.onBuffValueReceived(device);

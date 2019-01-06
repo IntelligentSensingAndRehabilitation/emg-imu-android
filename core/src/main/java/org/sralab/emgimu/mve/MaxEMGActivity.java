@@ -221,16 +221,6 @@ public class MaxEMGActivity extends EmgImuBaseActivity implements EmgPowerView.O
     }
 
     @Override
-    public void onEmgLogFetchCompleted(BluetoothDevice device) {
-
-    }
-
-    @Override
-    public void onEmgLogFetchFailed(BluetoothDevice device, String reason) {
-
-    }
-
-    @Override
     //! Callback from the view when the max is changed
     public void onMaxChanged(float newMax) {
         Log.d(TAG, "View changed max: " + newMax);

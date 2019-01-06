@@ -481,16 +481,6 @@ public class EmgImuServiceHolder<E extends EmgImuService.EmgImuBinder> implement
         }
     }
 
-    @Override
-    public void onEmgLogFetchCompleted(BluetoothDevice device) {
-
-    }
-
-    @Override
-    public void onEmgLogFetchFailed(BluetoothDevice device, String reason) {
-
-    }
-
     public interface Callbacks {
         // Data callbacks
         void onEmgPwrReceived(final BluetoothDevice device, int value);

@@ -721,7 +721,7 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
         if(logFetchStartId.get(device.getAddress()) != null) {
             mBinder.log(device, LogContract.Log.Level.INFO, "onDeviceReady. requesting log download");
             final EmgImuManager manager = (EmgImuManager) getBleManager(device);
-            manager.getAllRecords();
+            manager.fetchLogRecords(device1 -> onEmgLogFetchCompleted(device1), (device12, reason) -> onEmgLogFetchFailed(device12, reason));
         } else {
             mBinder.log(device, LogContract.Log.Level.WARNING, "onDeviceReady. no log request active.");
         }
@@ -1107,7 +1107,6 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 
     /******** These callbacks are for managing the EMG logging via RACP ********/
 
-    @Override
     public void onEmgLogFetchCompleted(BluetoothDevice device) {
         mBinder.log(device, LogContract.Log.Level.DEBUG, "onEmgLogFetchCompleted: " + logFetchStartId);
 
@@ -1119,7 +1118,6 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
         }
     }
 
-    @Override
     public void onEmgLogFetchFailed(final BluetoothDevice device, String reason) {
         mBinder.log(device, LogContract.Log.Level.DEBUG, "onEmgLogFetchFailed: " + logFetchStartId);
 

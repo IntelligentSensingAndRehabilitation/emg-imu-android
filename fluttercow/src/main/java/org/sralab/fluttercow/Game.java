@@ -301,16 +301,6 @@ public class Game extends EmgImuBaseActivity {
     }
 
     @Override
-    public void onEmgLogFetchCompleted(BluetoothDevice device) {
-
-    }
-
-    @Override
-    public void onEmgLogFetchFailed(BluetoothDevice device, String reason) {
-
-    }
-
-    @Override
     protected int getAboutTextId() {
         return R.string.cow_about_text;
     }
