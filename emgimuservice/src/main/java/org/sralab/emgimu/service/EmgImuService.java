@@ -604,6 +604,10 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
     public void onError(BluetoothDevice device, String message, int errorCode) {
         super.onError(device, message, errorCode);
 
+        if (errorCode == GattError.GATT_INVALID_PDU) {
+            Log.e(TAG, "Received invalid PDU. Will continue", new Exception("backtrack"));
+            return;
+        }
         mBinder.log(device, LogContract.Log.Level.WARNING, "onError: " + message +
                 " errorCode: " + errorCode + "(" + GattError.parseConnectionError(errorCode) + ")");
         Log.e(TAG, "onError", new Exception("backtrack"));
