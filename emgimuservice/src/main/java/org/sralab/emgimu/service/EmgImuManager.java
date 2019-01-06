@@ -48,6 +48,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 
+import no.nordicsemi.android.ble.ReadRequest;
 import no.nordicsemi.android.ble.Request;
 import no.nordicsemi.android.ble.callback.DataReceivedCallback;
 import no.nordicsemi.android.ble.callback.FailCallback;
@@ -71,6 +72,11 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
     private final static UUID FIRMWARE_REVISION_CHARACTERISTIC = UUID.fromString("00002A26-0000-1000-8000-00805f9b34fb");
 
     private BluetoothGattCharacteristic mManufacturerCharacteristic, mSerialNumberCharacteristic, mHardwareCharacteristic, mFirmwareCharacteristic;
+
+    /** Battery information **/
+    private final static UUID BATTERY_SERVICE = UUID.fromString("0000180F-0000-1000-8000-00805f9b34fb");
+    private final static UUID BATTERY_LEVEL_CHARACTERISTIC = UUID.fromString("00002A19-0000-1000-8000-00805f9b34fb");
+    private BluetoothGattCharacteristic mBatteryCharacteristic;
 
     /** EMG Service UUID **/
 	public final static UUID EMG_SERVICE_UUID = UUID.fromString("00001234-1212-EFDE-1523-785FEF13D123");
@@ -240,6 +246,14 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
             readCharacteristic(mSerialNumberCharacteristic)
                     .with((device, data) -> Log.d(TAG, "Serial number; " + data.getStringValue(0)))
                     .enqueue();
+
+            setNotificationCallback(mBatteryCharacteristic).with((device ,data) -> parseBattery(device, data));
+            enableNotifications(mBatteryCharacteristic)
+                    .done(device -> log(Log.DEBUG, "Battery characteristic notification enabled"))
+                    .fail((d, status) -> log(Log.DEBUG, "Failed to enable battery characteristic notification "))
+                    .enqueue();
+            readCharacteristic(mBatteryCharacteristic).with((device, data) -> parseBattery(device, data))
+                    .enqueue();
         }
 
 		boolean isDeviceInfoServiceSupported(final BluetoothGatt gatt) {
@@ -264,6 +278,17 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                     (mFirmwareCharacteristic != null);
         }
 
+        boolean isBatteryServiceSupported(final BluetoothGatt gatt) {
+            final BluetoothGattService batteryService = gatt.getService(BATTERY_SERVICE);
+            if (batteryService != null) {
+                mBatteryCharacteristic = batteryService.getCharacteristic(BATTERY_LEVEL_CHARACTERISTIC);
+            } else {
+                return false;
+            }
+
+            return  mBatteryCharacteristic != null;
+        }
+
 		@Override
 		protected boolean isRequiredServiceSupported(final BluetoothGatt gatt) {
 			final BluetoothGattService llService = gatt.getService(EMG_SERVICE_UUID);
@@ -279,11 +304,18 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
             }
 
             boolean deviceInfoSupported = isDeviceInfoServiceSupported(gatt);
+            if (!deviceInfoSupported)
+                log(Log.ERROR, "Device info is not supported");
+
+			boolean batterySupported = isBatteryServiceSupported(gatt);
+            if (!batterySupported)
+                log(Log.ERROR, "Battery is not supported");
 
 			return  (mEmgRawCharacteristic != null) &&
                     (mEmgPwrCharacteristic != null) &&
                     (mEmgBuffCharacteristic != null) &&
-                    deviceInfoSupported;
+                    deviceInfoSupported &&
+                    batterySupported;
 		}
 
 		@Override
@@ -1153,14 +1185,16 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         return max_pwr;
     }
 
+    private int batteryLevel;
     public double getBatteryVoltage() {
-        int battery = getBatteryValue();
-        if (battery == -1)
-            return -1;
-
         // Hardcoded conversion based on the firmware
-        double voltage = 3.0 + 1.35 * (battery / 100.0);
+        double voltage = 3.0 + 1.35 * (batteryLevel / 100.0);
         return voltage;
+    }
+
+    private void parseBattery(@NonNull final BluetoothDevice device, @NonNull final Data data) {
+        batteryLevel = data.getIntValue(Data.FORMAT_UINT8, 0);
+        log(Log.DEBUG, "Received battery level: " + batteryLevel);
     }
 
     public String getManufacturer() {
