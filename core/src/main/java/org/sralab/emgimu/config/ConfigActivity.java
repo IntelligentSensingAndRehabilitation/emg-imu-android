@@ -133,7 +133,7 @@ public class ConfigActivity extends EmgImuBaseActivity {
 	public void onDeviceDisconnected(final BluetoothDevice device) {
 		Log.d(TAG, "Disconnected");
 		if (mAdapter != null)
-			mAdapter.onDeviceStateChanged(device);
+			mAdapter.onDeviceRemoved(device);
 	}
 
 	@Override
@@ -179,8 +179,6 @@ public class ConfigActivity extends EmgImuBaseActivity {
 
 	@Override
 	public void onEmgBuffReceived(BluetoothDevice device, int count, double[][] data) {
-		if (mAdapter != null)
-			mAdapter.onBuffValueReceived(device);
 	}
 
 
