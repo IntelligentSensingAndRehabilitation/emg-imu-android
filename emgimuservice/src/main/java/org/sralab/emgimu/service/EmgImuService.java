@@ -548,6 +548,10 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
         synchronized(logFetchStartId) {
             Integer startThreadId = logFetchStartId.get(device.getAddress()).second;
 
+            // To avoid this being double called remove the timer
+            mServiceLogger.i("Removing connection timeout runnable from " + device.getAddress());
+            getHandler().removeCallbacks(logFetchStartId.get(device.getAddress()).first);
+
             // If there is only one thread remaining, then appropriate to stop it
             if (logFetchStartId.size() == 1) {
 
