@@ -407,6 +407,11 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 		}
     };
 
+    @Override
+    protected boolean shouldAutoConnect() {
+        return true;
+    }
+
     private long mPwrT0;
     private long mLastPwrCount;
 
