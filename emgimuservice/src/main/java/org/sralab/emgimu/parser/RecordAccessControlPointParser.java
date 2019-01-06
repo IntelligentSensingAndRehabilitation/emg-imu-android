@@ -63,7 +63,7 @@ public class RecordAccessControlPointParser {
 		case OP_CODE_DELETE_STORED_RECORDS:
 		case OP_CODE_ABORT_OPERATION:
 		case OP_CODE_REPORT_NUMBER_OF_RECORDS:
-			builder.append(getOpCode(opCode)).append("\n");
+			builder.append(getOpCode(opCode)).append("");
 			break;
 		case OP_CODE_NUMBER_OF_STORED_RECORDS_RESPONSE: {
 			builder.append(getOpCode(opCode)).append(": ");
@@ -76,7 +76,7 @@ public class RecordAccessControlPointParser {
 			final int targetOpCode = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 2);
 			builder.append(getOpCode(targetOpCode)).append(": ");
 			final int status = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 3);
-			builder.append(getStatus(status)).append("\n");
+			builder.append(getStatus(status)).append("");
 			break;
 		}
 		case OP_CODE_SET_TIMESTAMP:
