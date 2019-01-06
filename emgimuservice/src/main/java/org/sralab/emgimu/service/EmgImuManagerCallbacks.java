@@ -26,6 +26,9 @@ import no.nordicsemi.android.ble.BleManagerCallbacks;
 
 public interface EmgImuManagerCallbacks extends BleManagerCallbacks {
 
+    // Callback for battery updates
+    void onBatteryReceived(final BluetoothDevice device, float battery);
+
     // Callbacks for EMG updates
     void onEmgRawReceived(final BluetoothDevice device, int value);
     void onEmgBuffReceived(BluetoothDevice device, int count, double[][] data);

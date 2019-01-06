@@ -27,6 +27,13 @@ public abstract class EmgImuBaseActivity extends BleMulticonnectProfileServiceRe
             final BluetoothDevice bluetoothDevice = intent.getParcelableExtra(EmgImuService.EXTRA_DEVICE);
             final String action = intent.getAction();
             switch (action) {
+                case EmgImuService.BROADCAST_BATTERY_LEVEL: {
+                    Log.d("BaseActivity", "Battery ");
+                    final float value = intent.getIntExtra(EmgImuService.EXTRA_BATTERY_LEVEL, -1);
+                    if (value > 0)
+                        onBatteryReceived(bluetoothDevice, value);
+                    break;
+                }
                 case EmgImuService.BROADCAST_EMG_RAW: {
                     final int value = intent.getIntExtra(EmgImuService.EXTRA_EMG_RAW, -1);
                     if (value > 0)
@@ -94,6 +101,7 @@ public abstract class EmgImuBaseActivity extends BleMulticonnectProfileServiceRe
 
     private static IntentFilter makeIntentFilter() {
         final IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(EmgImuService.EXTRA_BATTERY_LEVEL);
         intentFilter.addAction(EmgImuService.BROADCAST_EMG_RAW);
         intentFilter.addAction(EmgImuService.BROADCAST_EMG_PWR);
         intentFilter.addAction(EmgImuService.BROADCAST_EMG_BUFF);

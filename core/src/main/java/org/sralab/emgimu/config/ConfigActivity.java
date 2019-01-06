@@ -170,6 +170,12 @@ public class ConfigActivity extends EmgImuBaseActivity {
 	}
 
 	@Override
+	public void onBatteryReceived(BluetoothDevice device, float battery) {
+		if (mAdapter != null)
+			mAdapter.onBatteryValueReceived(device);
+	}
+
+	@Override
 	public void onEmgBuffReceived(BluetoothDevice device, int count, double[][] data) {
 		if (mAdapter != null)
 			mAdapter.onBuffValueReceived(device);

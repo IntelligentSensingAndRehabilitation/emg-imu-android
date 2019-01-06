@@ -98,6 +98,10 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 
     public final static String EXTRA_DEVICE = "org.sralab.emgimu.EXTRA_DEVICE";
 
+    // Broadcast messsages for battery updates
+    public static final String BROADCAST_BATTERY_LEVEL = "org.sralab.emgimu.BROADCAST_BATTERY_LEVEL";
+    public static final String EXTRA_BATTERY_LEVEL = "org.sralab.emgimu.EXTRA_BATTERY";
+
     // Broadcast messages for EMG activity
     public static final String BROADCAST_EMG_RAW = "org.sralab.emgimu.BROADCAST_EMG_RAW";
     public static final String BROADCAST_EMG_PWR = "org.sralab.emgimu.BROADCAST_EMG_PWR";
@@ -997,6 +1001,14 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 		nm.cancel(device.getAddress(), NOTIFICATION_ID);
 		*/
 	}
+
+    @Override
+    public void onBatteryReceived(BluetoothDevice device, float battery) {
+        final Intent broadcast = new Intent(BROADCAST_BATTERY_LEVEL);
+        broadcast.putExtra(EXTRA_DEVICE, device);
+        broadcast.putExtra(EXTRA_BATTERY_LEVEL, battery);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(broadcast);
+    }
 
     @Override
     public void onEmgRawReceived(final BluetoothDevice device, int value)
