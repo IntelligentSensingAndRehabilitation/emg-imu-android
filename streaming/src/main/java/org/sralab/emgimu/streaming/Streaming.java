@@ -117,47 +117,6 @@ public class Streaming extends EmgImuBaseActivity {
     }
 
     @Override
-    public void onEmgLogRecordReceived(BluetoothDevice device, EmgLogRecord record) {
-
-    }
-
-    @Override
-    public void onOperationStarted(BluetoothDevice device) {
-
-    }
-
-    @Override
-    public void onOperationCompleted(BluetoothDevice device) {
-
-    }
-
-    @Override
-    public void onOperationFailed(BluetoothDevice device) {
-
-    }
-
-    @Override
-    public void onOperationAborted(BluetoothDevice device) {
-
-    }
-
-    @Override
-    public void onOperationNotSupported(BluetoothDevice device) {
-
-    }
-
-    @Override
-    public void onDatasetClear(BluetoothDevice device) {
-
-    }
-
-    @Override
-    public void onNumberOfRecordsRequested(BluetoothDevice device, int value) {
-
-    }
-
-
-    @Override
     public void onDeviceConnecting(final BluetoothDevice device) {
         super.onDeviceConnecting(device);
         if (mAdapter != null)
@@ -228,6 +187,16 @@ public class Streaming extends EmgImuBaseActivity {
 
     @Override
     public void onImuAttitudeReceived(BluetoothDevice device, float[] quaternion) {
+
+    }
+
+    @Override
+    public void onEmgLogFetchCompleted(BluetoothDevice device) {
+
+    }
+
+    @Override
+    public void onEmgLogFetchFailed(BluetoothDevice device, String reason) {
 
     }
 

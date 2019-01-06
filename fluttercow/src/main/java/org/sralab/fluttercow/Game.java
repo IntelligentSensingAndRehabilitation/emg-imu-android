@@ -300,48 +300,15 @@ public class Game extends EmgImuBaseActivity {
 
     }
 
-    /**** Methods required to use the EMG logging via RACP ****/
     @Override
-    public void onEmgLogRecordReceived(BluetoothDevice device, EmgLogRecord record) {
+    public void onEmgLogFetchCompleted(BluetoothDevice device) {
 
     }
 
     @Override
-    public void onOperationStarted(BluetoothDevice device) {
+    public void onEmgLogFetchFailed(BluetoothDevice device, String reason) {
 
     }
-
-    @Override
-    public void onOperationCompleted(BluetoothDevice device) {
-
-    }
-
-    @Override
-    public void onOperationFailed(BluetoothDevice device) {
-
-    }
-
-    @Override
-    public void onOperationAborted(BluetoothDevice device) {
-
-    }
-
-    @Override
-    public void onOperationNotSupported(BluetoothDevice device) {
-
-    }
-
-    @Override
-    public void onDatasetClear(BluetoothDevice device) {
-
-    }
-
-    @Override
-    public void onNumberOfRecordsRequested(BluetoothDevice device, int value) {
-
-    }
-
-    /**** End of methods required to use the EMG logging via RACP ****/
 
     @Override
     protected int getAboutTextId() {

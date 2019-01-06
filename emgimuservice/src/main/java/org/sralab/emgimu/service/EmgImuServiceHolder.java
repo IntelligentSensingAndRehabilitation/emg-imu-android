@@ -482,42 +482,12 @@ public class EmgImuServiceHolder<E extends EmgImuService.EmgImuBinder> implement
     }
 
     @Override
-    public void onEmgLogRecordReceived(BluetoothDevice device, EmgLogRecord record) {
+    public void onEmgLogFetchCompleted(BluetoothDevice device) {
 
     }
 
     @Override
-    public void onOperationStarted(BluetoothDevice device) {
-
-    }
-
-    @Override
-    public void onOperationCompleted(BluetoothDevice device) {
-
-    }
-
-    @Override
-    public void onOperationFailed(BluetoothDevice device) {
-
-    }
-
-    @Override
-    public void onOperationAborted(BluetoothDevice device) {
-
-    }
-
-    @Override
-    public void onOperationNotSupported(BluetoothDevice device) {
-
-    }
-
-    @Override
-    public void onDatasetClear(BluetoothDevice device) {
-
-    }
-
-    @Override
-    public void onNumberOfRecordsRequested(BluetoothDevice device, int value) {
+    public void onEmgLogFetchFailed(BluetoothDevice device, String reason) {
 
     }
 

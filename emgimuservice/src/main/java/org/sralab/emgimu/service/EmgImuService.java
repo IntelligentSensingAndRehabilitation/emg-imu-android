@@ -1102,51 +1102,29 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
     }
 
     /******** These callbacks are for managing the EMG logging via RACP ********/
-    @Override
-    public void onEmgLogRecordReceived(BluetoothDevice device, EmgLogRecord record) {
-
-    }
 
     @Override
-    public void onOperationStarted(BluetoothDevice device) {
-
-    }
-
-    @Override
-    public void onOperationCompleted(BluetoothDevice device) {
-        mBinder.log(device, LogContract.Log.Level.DEBUG, "onOperationCompleted: " + logFetchStartId);
+    public void onEmgLogFetchCompleted(BluetoothDevice device) {
+        mBinder.log(device, LogContract.Log.Level.DEBUG, "onEmgLogFetchCompleted: " + logFetchStartId);
 
         if (logFetchStartId.get(device.getAddress()) != null) {
             mBinder.log(device, LogContract.Log.Level.INFO, "Log retrieval complete");
             smartStop(device);
         } else {
-            mBinder.log(device, LogContract.Log.Level.WARNING, "onOperationCompleted without log fetch intent");
+            mBinder.log(device, LogContract.Log.Level.WARNING, "onEmgLogFetchCompleted without log fetch intent");
         }
     }
 
     @Override
-    public void onOperationFailed(BluetoothDevice device) {
+    public void onEmgLogFetchFailed(final BluetoothDevice device, String reason) {
+        mBinder.log(device, LogContract.Log.Level.DEBUG, "onEmgLogFetchFailed: " + logFetchStartId);
 
-    }
-
-    @Override
-    public void onOperationAborted(BluetoothDevice device) {
-
-    }
-
-    @Override
-    public void onOperationNotSupported(BluetoothDevice device) {
-
-    }
-
-    @Override
-    public void onDatasetClear(BluetoothDevice device) {
-
-    }
-
-    @Override
-    public void onNumberOfRecordsRequested(BluetoothDevice device, int value) {
-
+        if (logFetchStartId.get(device.getAddress()) != null) {
+            mBinder.log(device, LogContract.Log.Level.INFO, "Log fetch failed");
+            smartStop(device);
+        } else {
+            mBinder.log(device, LogContract.Log.Level.WARNING, "onEmgLogFetchFailed without log fetch intent");
+        }
     }
 
     /********* End EMG Logging RACP callbacks ********/

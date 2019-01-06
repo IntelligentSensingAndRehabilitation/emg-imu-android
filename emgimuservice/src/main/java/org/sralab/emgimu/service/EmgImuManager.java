@@ -141,24 +141,10 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
     private FirebaseEmgLogger fireLogger;
     private FirebaseStreamLogger streamLogger;
     private List<EmgLogRecord> mRecords = new ArrayList<>();
-    private boolean mAbort;
 
     private boolean mReady = false;
 
     private BluetoothGattCharacteristic mRecordAccessControlPointCharacteristic, mEmgLogCharacteristic;
-
-    enum CHARACTERISTIC_TYPE {
-        EMG_RAW,
-        EMG_BUFF,
-        EMG_PWR,
-        EMG_RACP,
-        EMG_LOG,
-        IMU_ACCEL,
-        IMU_GYRO,
-        IMU_MAG,
-        IMU_ATTITUDE,
-        UNKNOWN
-    };
 
     //! Data relating to logging to FireBase
     private boolean mLogging = true;
@@ -254,23 +240,6 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
             readCharacteristic(mSerialNumberCharacteristic)
                     .with((device, data) -> Log.d(TAG, "Serial number; " + data.getStringValue(0)))
                     .enqueue();
-
-            // Set callbacks regarding log fetching
-            // TODO: this should be only enabled when we intend to fetch logs
-            setIndicationCallback(mRecordAccessControlPointCharacteristic)
-                    .with((device, data) -> parseRACPIndication(device, data));
-            enableIndications(mRecordAccessControlPointCharacteristic)
-                    .done(device -> Log.d(TAG, "RACP indication enabled"))
-                    .fail((device, status) -> Log.e(TAG, "RACP indication not enabled"))
-                    .enqueue();
-
-            setNotificationCallback(mEmgLogCharacteristic)
-                    .with((device, data) -> parseLog(device, data));
-            enableNotifications(mEmgLogCharacteristic)
-                    .done(device -> Log.d(TAG, "Log characteristic indication enabled"))
-                    .fail((device, status) -> Log.e(TAG, "Log characteristic indication not enabled"))
-                    .enqueue();
-
         }
 
 		boolean isDeviceInfoServiceSupported(final BluetoothGatt gatt) {
@@ -618,26 +587,6 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         }
     }
 
-    private void parseLog(final BluetoothDevice device, final Data characteristic) {
-        int totalSize = characteristic.getValue().length;
-        long timestamp = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 0);
-        timestamp = timestampToReal(timestamp);
-        if (totalSize < 6) {
-            throw new NegativeArraySizeException("Log characteristic too short to contain any values");
-        }
-        int offset = 4;
-        List<Integer> emgPwr = new ArrayList<Integer>();
-        while (offset < totalSize) {
-            int val = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, offset);
-            emgPwr.add(val);
-            offset += 2;
-        }
-        log(Log.VERBOSE, "Log record received with " + emgPwr.size() + " samples and timestamp " + new Date(timestamp));
-        final EmgLogRecord emgRecord = new EmgLogRecord(timestamp, emgPwr);
-        mRecords.add(emgRecord);
-        mCallbacks.onEmgLogRecordReceived(device, emgRecord);
-    }
-
     private void parseEmgRaw(final BluetoothDevice device, final Data characteristic) {
         // Have to manually combine to get the endian right
         int raw_val = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0) +
@@ -687,7 +636,26 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         }
     }
 
-    private void parseRACPIndication(final BluetoothDevice device, final Data characteristic) {
+    private void parseLog(final BluetoothDevice device, final Data characteristic) {
+        int totalSize = characteristic.getValue().length;
+        long timestamp = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 0);
+        timestamp = timestampToReal(timestamp);
+        if (totalSize < 6) {
+            throw new NegativeArraySizeException("Log characteristic too short to contain any values");
+        }
+        int offset = 4;
+        List<Integer> emgPwr = new ArrayList<Integer>();
+        while (offset < totalSize) {
+            int val = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, offset);
+            emgPwr.add(val);
+            offset += 2;
+        }
+        log(Log.VERBOSE, "Log record received with " + emgPwr.size() + " samples and timestamp " + new Date(timestamp));
+        final EmgLogRecord emgRecord = new EmgLogRecord(timestamp, emgPwr);
+        mRecords.add(emgRecord);
+    }
+
+    private void parseRACPIndication(final BluetoothDevice device, @NonNull final Data characteristic) {
         log(Log.VERBOSE, "RACP Indication: \"" + RecordAccessControlPointParser.parse(characteristic) + "\" received");
 
         // Record Access Control Point characteristic
@@ -695,29 +663,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         final int opCode = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, offset);
         offset += 2; // skip the operator
 
-        if (opCode == OP_CODE_NUMBER_OF_STORED_RECORDS_RESPONSE) {
-            // We've obtained the number of all records
-            final int number = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, offset);
-
-            mCallbacks.onNumberOfRecordsRequested(device, number);
-
-            // Request the records
-            if (number > 0) {
-                // TODO: this could be made more precise. It ignores the timestamp on device
-
-                // ms since a fixed date
-                float dt = 5000;
-                long now = new Date().getTime();
-                long T0 = now - (long) (dt * number);
-
-                log(Log.VERBOSE, "There are " + number + " records. Preparing firebase log for T0: " + T0);
-
-                fireLogger.prepareLog(T0);
-            } else {
-                log(Log.VERBOSE, "No records found");
-                mCallbacks.onOperationCompleted(device);
-            }
-        } else if (opCode == OP_CODE_SET_TIMESTAMP_COMPLETE) {
+         if (opCode == OP_CODE_SET_TIMESTAMP_COMPLETE) {
             // Now the timestamp has been acknowledged, we can fetch the records
 
             if(mFetchRecords) {
@@ -725,48 +671,116 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 
                 log(Log.VERBOSE, "Timestamp set. Requesting all records.");
 
-                clear();
-                mCallbacks.onOperationStarted(getBluetoothDevice());
+                // Clear any prior records before fetching
+                mRecords.clear();
 
                 writeCharacteristic(mRecordAccessControlPointCharacteristic,
                         Data.opCode(OP_CODE_REPORT_NUMBER_OF_RECORDS, OPERATOR_ALL_RECORDS))
-                        .done(dev -> Log.d(TAG, "Send request number of records to RACP"))
-                        .fail((dev, status) -> {
-                            Log.d(TAG, "Failed to send request number of records to RACP: " + status);
-                        })
+                        .done(dev -> Log.d(TAG, "Request number of records from RACP"))
+                        .fail((dev, status) -> logFetchFailed("Failed to request number of records from RACP"))
                         .enqueue();
 
             } else {
                 log(Log.VERBOSE, "Device synced, but no record request made.");
             }
 
-        } else if (opCode == OP_CODE_RESPONSE_CODE) {
+        } else if (opCode == OP_CODE_NUMBER_OF_STORED_RECORDS_RESPONSE) {
+             // We've obtained the number of all records
+             final int number = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, offset);
+
+             // Request the records
+             if (number > 0) {
+                 // TODO: this could be made more precise. It ignores the timestamp on device
+
+                 // ms since a fixed date
+                 float dt = 5000;
+                 long now = new Date().getTime();
+                 long T0 = now - (long) (dt * number);
+
+                 log(Log.VERBOSE, "There are " + number + " records. Preparing firebase log for T0: " + T0);
+
+                 // This calls back to firebaseLogReady
+                 fireLogger.prepareLog(T0);
+             } else {
+                 log(Log.VERBOSE, "No records found");
+                 mCallbacks.onEmgLogFetchCompleted(device);
+             }
+         } else if (opCode == OP_CODE_RESPONSE_CODE) {
             final int requestedOpCode = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, offset);
             final int responseCode = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, offset + 1);
             log(Log.VERBOSE, "Response result for: " + requestedOpCode + " is: " + responseCode);
 
             switch (responseCode) {
                 case RESPONSE_SUCCESS:
-                    if (!mAbort) {
-                        // Defer operation complete operator until log is saved
-                        storeRecordsToDb();
-                    } else
-                        mCallbacks.onOperationAborted(device);
+                    // Defer operation complete operator until log is saved
+                    storeRecordsToDb();
                     break;
                 case RESPONSE_NO_RECORDS_FOUND:
-                    mCallbacks.onOperationCompleted(device);
+                    Log.d(TAG, "No records found (op code)");
+                    mCallbacks.onEmgLogFetchCompleted(device);
                     break;
                 case RESPONSE_OP_CODE_NOT_SUPPORTED:
-                    mCallbacks.onOperationNotSupported(device);
-                    break;
                 case RESPONSE_PROCEDURE_NOT_COMPLETED:
                 case RESPONSE_ABORT_UNSUCCESSFUL:
                 default:
-                    mCallbacks.onOperationFailed(device);
+                    logFetchFailed("Received bad op code on RACP. Either unknown or not completed/successful");
                     break;
             }
-            mAbort = false;
         }
+    }
+
+    /**** code for downloading logs and uploading to firestore ****/
+
+    public void firebaseLogReady(FirebaseEmgLogger logger) {
+        log(Log.VERBOSE, "Log ready. Requesting records from device");
+
+        writeCharacteristic(mRecordAccessControlPointCharacteristic,
+                Data.opCode(OP_CODE_REPORT_STORED_RECORDS, OPERATOR_ALL_RECORDS))
+                .done(device -> Log.d(TAG, "Send report all records to RACP"))
+                .fail((device, status) -> logFetchFailed("Failed to request all records"))
+                .enqueue();
+    }
+
+    private void storeRecordsToDb() {
+        log(Log.VERBOSE, "storeRecordsToDb");
+
+        List<Long> timestamps = new ArrayList<>();
+
+        // TODO: come up with better way of getting the sampling rate that takes into account device
+        // for now this is mathematically accurate.
+        double dt_ms = 5000;
+        if (mRecords.size() > 1) {
+            // If multiple records calculate dt in ms.
+            dt_ms = mRecords.get(1).timestamp - mRecords.get(0).timestamp;
+            Log.d(TAG, "Difference in timestamps " + dt_ms);
+            dt_ms = dt_ms / mRecords.get(0).emgPwr.size();
+            Log.d(TAG, "Calculated sample period as " + dt_ms + " ms");
+        }
+        for (EmgLogRecord r : mRecords) {
+            int i = 0;
+            long timestamp = r.timestamp;
+            for (Integer pwr : r.emgPwr) {
+                fireLogger.addSample(timestamp + (long) (i * dt_ms), pwr);
+                i = i + 1;
+            }
+        }
+
+        log(Log.VERBOSE,"Entries added.");
+
+        fireLogger.updateDb();
+
+        // Record analytic data that might be useful
+        // Obtain the FirebaseAnalytics instance.
+        FirebaseAnalytics mFirebaseAnalytics = FirebaseAnalytics.getInstance(getContext());
+
+        Bundle bundle = new Bundle();
+        bundle.putString("DEVICE_NAME", getBluetoothDevice().getName());
+        bundle.putString("DEVICE_MAC", getBluetoothDevice().getAddress());
+        bundle.putString("NUM_RECORDS", Integer.toString(mRecords.size()));
+        mFirebaseAnalytics.logEvent("DOWNLOAD_SENSOR_LOG", bundle);
+
+        // Note: this does not wait for firebase to complete the set event
+        mCallbacks.onEmgLogFetchCompleted(getBluetoothDevice());
     }
 
     private boolean mSynced;
@@ -785,28 +799,8 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 
         final int dt = (int) nowToTimestamp();
 
-        if (mRecordAccessControlPointCharacteristic == null) {
-            if (BuildConfig.DEBUG)
-                throw new RuntimeException("mRecordAccessControlPointCharacteristic was null. This shouldn't really happen.");
-            return;
-        }
-
         log(Log.VERBOSE, "Sending sync signal with offset " + dt);
 
-        final BluetoothGattCharacteristic characteristic = mRecordAccessControlPointCharacteristic;
-
-        // TODO:
-        /*
-        // Send our custom "sync" RACP message
-
-        characteristic.setValue(new byte[size]);
-        characteristic.setValue(OP_CODE_SET_TIMESTAMP, BluetoothGattCharacteristic.FORMAT_UINT8, 0);
-        characteristic.setValue(0, BluetoothGattCharacteristic.FORMAT_UINT8, 1); // operator doesn't matter
-        // sending 4 bytes for timestamp
-        characteristic.setValue(dt, BluetoothGattCharacteristic.FORMAT_UINT32, 2);
-        // write this
-        writeCharacteristic(characteristic);
-        */
 
         final int size = 6;
         MutableData data = new MutableData(new byte[size]);
@@ -814,11 +808,11 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         data.setByte(0, 1);
         data.setValue(dt, BluetoothGattCharacteristic.FORMAT_UINT32, 2);
 
+        // No need to use a success callback to continue trail as the device
+        // sends an acknowledgement on RACP and we trigger from that
         writeCharacteristic(mRecordAccessControlPointCharacteristic, data)
                 .done(device -> Log.d(TAG, "Send timestamp to RACP"))
-                .fail((device, status) -> {
-                    Log.d(TAG, "Failed to send timestamp to RACP: " + status);
-                })
+                .fail((device, status) -> logFetchFailed("Synchronization failed"))
                 .enqueue();
 
     }
@@ -836,68 +830,11 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
     }
 
     /**
-     * Returns a list of CGM records obtained from this device. The key in the array is the
-     */
-    public List<EmgLogRecord> getRecords() {
-        return mRecords;
-    }
-
-    /**
-     * Clears the records list locally
-     */
-    public void clear() {
-        mRecords.clear();
-        mCallbacks.onDatasetClear(getBluetoothDevice());
-    }
-
-    /**
-     * Sends the request to obtain the last (most recent) record from glucose device. The data will be returned to Glucose Measurement characteristic as a notification followed by Record Access
-     * Control Point indication with status code ({@link #RESPONSE_SUCCESS} or other in case of error.
-     */
-    public void getLastRecord() {
-        if (mRecordAccessControlPointCharacteristic == null)
-            return;
-
-        clear();
-        mCallbacks.onOperationStarted(getBluetoothDevice());
-
-        writeCharacteristic(mRecordAccessControlPointCharacteristic,
-                Data.opCode(OP_CODE_REPORT_STORED_RECORDS, OPERATOR_LAST_RECORD))
-                .done(device -> Log.d(TAG, "Sent report stored record to RACP"))
-                .fail((device, status) -> {
-                    Log.d(TAG, "Failed to send report stored record to RACP: " + status);
-                })
-                .enqueue();
-    }
-
-    /**
-     * Sends the request to obtain the first (oldest) record from glucose device. The data will be returned to Glucose Measurement characteristic as a notification followed by Record Access Control
-     * Point indication with status code ({@link #RESPONSE_SUCCESS} or other in case of error.
-     */
-    public void getFirstRecord() {
-        if (mRecordAccessControlPointCharacteristic == null)
-            return;
-
-        clear();
-        mCallbacks.onOperationStarted(getBluetoothDevice());
-
-        writeCharacteristic(mRecordAccessControlPointCharacteristic,
-                Data.opCode(OP_CODE_REPORT_STORED_RECORDS, OPERATOR_FIRST_RECORD))
-                .done(device -> Log.d(TAG, "Sent request first stored to RACP"))
-                .fail((device, status) -> {
-                    Log.d(TAG, "Failed to request first stored to RACP: " + status);
-                })
-                .enqueue();
-    }
-
-    /**
      * Sends abort operation signal to the device
      */
-    public void abort() {
+    public void logFetchAbort() {
         if (mRecordAccessControlPointCharacteristic == null)
             return;
-
-        mAbort = true;
 
         writeCharacteristic(mRecordAccessControlPointCharacteristic,
                 Data.opCode(OP_CODE_ABORT_OPERATION, OPERATOR_NULL))
@@ -916,63 +853,55 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
     private boolean mFetchRecords = false;
     public void getAllRecords() {
 
-        if (mRecordAccessControlPointCharacteristic == null)
-            return;
-
         Log.d(TAG, "getAllRecords()");
 
         // Indicate when the synchronization of the device has completed that we should
         // then start downloading records
         mFetchRecords = true;
-        syncDevice();
+
+        // Set callbacks regarding log fetching. This is fairly ugly code
+        // the chain of success callbacks. Alternatively could block on these
+        // since service is probably not doing anything else, but avoiding
+        // that for now. Essentially it
+        // 1. enable RACP indications
+        // 2. enable Log notifications
+        // 3. calls syncDevice
+        // if those fails it calls to logFetchFailed
+
+        setIndicationCallback(mRecordAccessControlPointCharacteristic)
+                .with((dev, data) -> parseRACPIndication(dev, data));
+        enableIndications(mRecordAccessControlPointCharacteristic)
+            .done(dev ->
+            {
+                Log.d(TAG, "RACP indication enabled");
+
+                setNotificationCallback(mEmgLogCharacteristic)
+                        .with((d, data) -> parseLog(d, data));
+                enableNotifications(mEmgLogCharacteristic)
+                        .done(device ->
+                        {
+                            Log.d(TAG, "Log characteristic indication enabled");
+                            syncDevice();
+                        })
+                        .fail((d, status) -> logFetchFailed("Failed to enable Log characteristic notifications"))
+                        .enqueue();
+            })
+            .fail((device, status) -> logFetchFailed("Failed to enable RACP characteristic indications"))
+            .enqueue();
+
     }
 
-    /**
-     * Sends the request to obtain all records from glucose device. Initially we want to notify him/her about the number of the records so the {@link #OP_CODE_REPORT_NUMBER_OF_RECORDS} is send. The
-     * data will be returned to Glucose Measurement characteristic as a notification followed by Record Access Control Point indication with status code ({@link #RESPONSE_SUCCESS} or other in case of
-     * error.
-     */
-    public void refreshRecords() {
-        if (mRecordAccessControlPointCharacteristic == null)
-            return;
+    private void logFetchFailed(String reason)
+    {
+        mFetchRecords = false;
 
-        getAllRecords();
-        /*
-        if (mRecords.size() == 0) {
-            getAllRecords();
-        } else {
-            mCallbacks.onOperationStarted(mBluetoothDevice);
+        // TODO: decide if this is needed or benficial
+        logFetchAbort();
 
-            // obtain the last sequence number
-            final int sequenceNumber = mRecords.keyAt(mRecords.size() - 1) + 1;
-
-            final BluetoothGattCharacteristic characteristic = mRecordAccessControlPointCharacteristic;
-            setOpCode(characteristic, OP_CODE_REPORT_STORED_RECORDS, OPERATOR_GREATER_THEN_OR_EQUAL, sequenceNumber);
-            writeCharacteristic(characteristic);
-            // Info:
-            // Operators OPERATOR_GREATER_THEN_OR_EQUAL, OPERATOR_LESS_THEN_OR_EQUAL and OPERATOR_RANGE are not supported by the CGMS sample from SDK
-            // The "Operation not supported" response will be received
-        }
-        */
+        if (mCallbacks != null)
+            mCallbacks.onEmgLogFetchFailed(getBluetoothDevice(), reason);
     }
 
-    public void deleteAllRecords() {
-        if (mRecordAccessControlPointCharacteristic == null)
-            return;
-
-        clear();
-        mCallbacks.onOperationStarted(getBluetoothDevice());
-
-        writeCharacteristic(mRecordAccessControlPointCharacteristic,
-                Data.opCode(OP_CODE_DELETE_STORED_RECORDS, OPERATOR_ALL_RECORDS))
-                .done(device -> {
-                    Log.d(TAG, "Send delete all records to RACP");
-                })
-                .fail((device, status) -> {
-                    Log.d(TAG, "Failed to send delete all records to RACP: " + status);
-                })
-                .enqueue();
-    }
 
     /****** helper methods to enable and disable notifications *******/
 
@@ -1146,50 +1075,6 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         return mEmgBuff;
     }
 
-    /**** code for downloading logs and uploading to firestore ****/
-
-    private void storeRecordsToDb() {
-        log(Log.VERBOSE, "storeRecordsToDb");
-
-        List<Long> timestamps = new ArrayList<>();
-
-        // TODO: come up with better way of getting the sampling rate that takes into account device
-        // for now this is mathematically accurate.
-        double dt_ms = 5000;
-        if (mRecords.size() > 1) {
-            // If multiple records calculate dt in ms.
-            dt_ms = mRecords.get(1).timestamp - mRecords.get(0).timestamp;
-            Log.d(TAG, "Difference in timestamps " + dt_ms);
-            dt_ms = dt_ms / mRecords.get(0).emgPwr.size();
-            Log.d(TAG, "Calculated sample period as " + dt_ms + " ms");
-        }
-        for (EmgLogRecord r : mRecords) {
-            int i = 0;
-            long timestamp = r.timestamp;
-            for (Integer pwr : r.emgPwr) {
-                fireLogger.addSample(timestamp + (long) (i * dt_ms), pwr);
-                i = i + 1;
-            }
-        }
-
-        log(Log.VERBOSE,"Entries added.");
-
-        fireLogger.updateDb();
-
-        // Record analytic data that might be useful
-        // Obtain the FirebaseAnalytics instance.
-        FirebaseAnalytics mFirebaseAnalytics = FirebaseAnalytics.getInstance(getContext());
-
-        Bundle bundle = new Bundle();
-        bundle.putString("DEVICE_NAME", getBluetoothDevice().getName());
-        bundle.putString("DEVICE_MAC", getBluetoothDevice().getAddress());
-        bundle.putString("NUM_RECORDS", Integer.toString(mRecords.size()));
-        // TODO: store battery value once this is obtained
-        mFirebaseAnalytics.logEvent("DOWNLOAD_SENSOR_LOG", bundle);
-
-        // Note: this does not wait for firebase to complete the set event
-        mCallbacks.onOperationCompleted(getBluetoothDevice());
-    }
 
     public String getAddress() {
         if (getBluetoothDevice() == null)
@@ -1197,20 +1082,6 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         return getBluetoothDevice().getAddress();
     }
 
-    public void firebaseLogReady(FirebaseEmgLogger logger) {
-        log(Log.VERBOSE, "Log ready. Requesting records from device");
-
-
-        writeCharacteristic(mRecordAccessControlPointCharacteristic,
-                Data.opCode(OP_CODE_REPORT_STORED_RECORDS, OPERATOR_ALL_RECORDS))
-                .done(device -> {
-                    Log.d(TAG, "Send report all records to RACP");
-                })
-                .fail((device, status) -> {
-                    Log.d(TAG, "Failed to send report all records to RACP: " + status);
-                })
-                .enqueue();
-    }
 
     private String devicePrefName(String pref) {
         return pref + "_" + getBluetoothDevice();

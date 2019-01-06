@@ -136,46 +136,6 @@ public class MaxEMGActivity extends EmgImuBaseActivity implements EmgPowerView.O
     }
 
     @Override
-    public void onEmgLogRecordReceived(BluetoothDevice device, EmgLogRecord record) {
-
-    }
-
-    @Override
-    public void onOperationStarted(BluetoothDevice device) {
-
-    }
-
-    @Override
-    public void onOperationCompleted(BluetoothDevice device) {
-
-    }
-
-    @Override
-    public void onOperationFailed(BluetoothDevice device) {
-
-    }
-
-    @Override
-    public void onOperationAborted(BluetoothDevice device) {
-
-    }
-
-    @Override
-    public void onOperationNotSupported(BluetoothDevice device) {
-
-    }
-
-    @Override
-    public void onDatasetClear(BluetoothDevice device) {
-
-    }
-
-    @Override
-    public void onNumberOfRecordsRequested(BluetoothDevice device, int value) {
-
-    }
-
-    @Override
     public void onDeviceConnected(BluetoothDevice device) {
         Log.d(TAG, "Device connected: " + device);
 
@@ -257,6 +217,16 @@ public class MaxEMGActivity extends EmgImuBaseActivity implements EmgPowerView.O
 
     @Override
     public void onImuAttitudeReceived(BluetoothDevice device, float[] quaternion) {
+
+    }
+
+    @Override
+    public void onEmgLogFetchCompleted(BluetoothDevice device) {
+
+    }
+
+    @Override
+    public void onEmgLogFetchFailed(BluetoothDevice device, String reason) {
 
     }
 

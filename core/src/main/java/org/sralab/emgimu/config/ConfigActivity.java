@@ -170,51 +170,21 @@ public class ConfigActivity extends EmgImuBaseActivity {
 	}
 
 	@Override
+	public void onEmgLogFetchCompleted(BluetoothDevice device) {
+
+	}
+
+	@Override
+	public void onEmgLogFetchFailed(BluetoothDevice device, String reason) {
+
+	}
+
+	@Override
 	public void onEmgBuffReceived(BluetoothDevice device, int count, double[][] data) {
 		if (mAdapter != null)
 			mAdapter.onBuffValueReceived(device);
 	}
 
-	/**** These callbacks are related to handling the RACP endpoints ****/
-	@Override
-	public void onEmgLogRecordReceived(BluetoothDevice device, EmgLogRecord record) {
-
-	}
-
-	@Override
-	public void onOperationStarted(BluetoothDevice device) {
-
-	}
-
-	@Override
-	public void onOperationCompleted(BluetoothDevice device) {
-
-	}
-
-	@Override
-	public void onOperationFailed(BluetoothDevice device) {
-
-	}
-
-	@Override
-	public void onOperationAborted(BluetoothDevice device) {
-
-	}
-
-	@Override
-	public void onOperationNotSupported(BluetoothDevice device) {
-
-	}
-
-	@Override
-	public void onDatasetClear(BluetoothDevice device) {
-
-	}
-
-	@Override
-	public void onNumberOfRecordsRequested(BluetoothDevice device, int value) {
-
-	}
 
     @Override
     public void onDeviceSelected(final BluetoothDevice device, final String name) {
