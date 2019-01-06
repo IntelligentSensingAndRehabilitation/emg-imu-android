@@ -48,11 +48,13 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 
+import no.nordicsemi.android.ble.PhyRequest;
 import no.nordicsemi.android.ble.ReadRequest;
 import no.nordicsemi.android.ble.Request;
 import no.nordicsemi.android.ble.callback.DataReceivedCallback;
 import no.nordicsemi.android.ble.callback.FailCallback;
 import no.nordicsemi.android.ble.callback.MtuCallback;
+import no.nordicsemi.android.ble.callback.PhyCallback;
 import no.nordicsemi.android.ble.callback.SuccessCallback;
 import no.nordicsemi.android.ble.data.Data;
 import no.nordicsemi.android.ble.data.MutableData;
@@ -218,7 +220,14 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         @Override
         protected void initialize() {
             log(Log.INFO, "Initializing connection");
-            requestMtu(517).with((device, mtu) -> Log.d(TAG, "MTU CHanged")).enqueue();
+            requestMtu(517)
+                    .with((device, mtu) -> log(Log.INFO, "MTU Changed"))
+                    .fail((device, status) -> log(Log.WARN, "Could not set MTU"))
+                    .enqueue();
+
+            setPreferredPhy(PhyRequest.PHY_LE_2M_MASK, PhyRequest.PHY_LE_2M_MASK, PhyRequest.PHY_OPTION_NO_PREFERRED)
+                    .fail((device, status) -> log(Log.WARN, "Could not set phy"))
+                    .enqueue();
 
             /**** Get information about device *****/
             // TODO: if we aren't really doing anything with this data do not fetch on connection
