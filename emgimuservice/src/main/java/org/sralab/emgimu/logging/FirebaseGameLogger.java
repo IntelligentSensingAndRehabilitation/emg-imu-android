@@ -9,6 +9,7 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreSettings;
+import com.google.firebase.Timestamp;
 
 import org.sralab.emgimu.service.EmgImuService;
 
@@ -25,8 +26,8 @@ import java.util.TimeZone;
 class GamePlayRecord {
     String name;
     List<String> logReference;
-    long startTime;
-    long stopTime;
+    Timestamp startTime;
+    Timestamp stopTime;
     double performance;
     String details;
 
@@ -37,28 +38,22 @@ class GamePlayRecord {
 
     public Date getStartTime()
     {
-        // Note in DB this is stored as a Date object
-        Calendar calendar = new GregorianCalendar();
-        calendar.setTimeInMillis(startTime);
-        return calendar.getTime();
+        return startTime.toDate();
     }
 
     public Date getStopTime()
     {
-        if (stopTime == 0)
+        if (stopTime == null)
             return getStartTime();
 
-        // Note in DB this is stored as a Date object
-        Calendar calendar = new GregorianCalendar();
-        calendar.setTimeInMillis(stopTime);
-        return calendar.getTime();
+        return stopTime.toDate();
     }
 
     public long getDuration() {
-        if (stopTime == 0)
+        if (stopTime == null)
             return 0;
 
-        return stopTime - startTime;
+        return stopTime.toDate().getTime() - startTime.toDate().getTime();
     }
 
     public List<String> getLogReference() {
@@ -92,7 +87,7 @@ public class FirebaseGameLogger {
 
     private GamePlayRecord record;
 
-    public FirebaseGameLogger(EmgImuService.EmgImuBinder service, String game) {
+    public FirebaseGameLogger(EmgImuService.EmgImuBinder service, String game, long startTime) {
 
         FirebaseAuth mAuth = FirebaseAuth.getInstance();
         mUser = mAuth.getCurrentUser(); // Log in performed by main service
@@ -113,17 +108,29 @@ public class FirebaseGameLogger {
         }
 
         record = new GamePlayRecord();
-        record.startTime = new Date().getTime();
-        record.stopTime = 0;
+        record.startTime = new Timestamp(new Date(startTime));
+        record.stopTime = null;
         record.name = game;
         record.performance = 0;
         record.logReference = service.getLoggingReferences();
 
-        save();
+        Handler mainHandler = new Handler(Looper.getMainLooper());
+        mainHandler.post(()-> {
+            DocumentReference doc = getDocument();
+            doc.get().addOnSuccessListener(documentSnapshot -> {
+                if (documentSnapshot.exists()) {
+                    Log.d(TAG, "Loaded previous document: " + getDocument().getPath());
+                    record = documentSnapshot.toObject(GamePlayRecord.class);
+                } else {
+                    Log.d(TAG, "Game record did not exist. Creating new one.");
+                    save();
+                }
+            });
+        });
     }
 
     public void finalize(double performance, String details) {
-        record.stopTime = new Date().getTime();
+        record.stopTime = Timestamp.now();
         record.performance = performance;
         record.details = details;
 
@@ -136,7 +143,7 @@ public class FirebaseGameLogger {
         df.setTimeZone(tz);
 
         Calendar calendar = new GregorianCalendar();
-        calendar.setTimeInMillis(record.startTime);
+        calendar.setTimeInMillis(record.startTime.toDate().getTime());
         Date D = calendar.getTime();
         String FN = df.format(D);
 

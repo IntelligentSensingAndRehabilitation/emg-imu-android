@@ -1,0 +1,84 @@
+apply plugin: 'com.android.library'
+apply plugin: 'io.fabric'
+
+android {
+
+    compileSdkVersion rootProject.compileSdk
+    buildToolsVersion rootProject.buildTools
+
+    defaultConfig {
+        minSdkVersion rootProject.minSdk
+        targetSdkVersion rootProject.compileSdk
+        versionCode rootProject.versionCode
+        versionName rootProject.versionName
+
+        ndk {
+            abiFilters 'armeabi-v7a', 'x86'
+        }
+    }
+
+    compileOptions {
+        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_1_8
+    }
+
+    lintOptions {
+        abortOnError false
+    }
+
+    aaptOptions {
+        noCompress = ['.unity3d', '.ress', '.resource', '.obb']
+    }
+
+    buildTypes {
+        debug {
+            minifyEnabled false
+            useProguard false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-unity.txt'
+            jniDebuggable true
+        }
+        release {
+            minifyEnabled false
+            useProguard false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-unity.txt'
+            signingConfig signingConfigs.debug
+        }
+    }
+
+    packagingOptions {
+        doNotStrip '*/armeabi-v7a/*.so'
+        doNotStrip '*/x86/*.so'
+    }
+
+    /*
+    bundle {
+        language {
+            enableSplit = false
+        }
+        density {
+            enableSplit = false
+        }
+        abi {
+            enableSplit = true
+        }
+    }
+    */
+}
+
+dependencies {
+    implementation project(':ble')
+    implementation project(':common')
+    implementation project(':emgimuservice')
+
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation "com.android.support:appcompat-v7:$supportLib"
+    implementation "com.android.support:design:$supportLib"
+    implementation 'no.nordicsemi.android.support.v18:scanner:1.0.0'
+    implementation 'no.nordicsemi.android:log:2.1.1'
+    implementation "com.google.firebase:firebase-auth:$firebaseAuthVer"
+    implementation "com.google.firebase:firebase-core:$firebaseCoreVer"
+    implementation "com.google.firebase:firebase-firestore:$firebaseFirestoreVer"
+    implementation "com.crashlytics.sdk.android:crashlytics:$crashlyticsVer"
+}
+
+apply plugin: 'com.google.gms.google-services'

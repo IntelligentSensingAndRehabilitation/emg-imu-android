@@ -25,10 +25,19 @@ import android.bluetooth.BluetoothDevice;
 import no.nordicsemi.android.ble.BleManagerCallbacks;
 
 public interface EmgImuManagerCallbacks extends BleManagerCallbacks {
+
+    // Callbacks for EMG updates
     void onEmgRawReceived(final BluetoothDevice device, int value);
     void onEmgBuffReceived(BluetoothDevice device, int count, double[][] data);
     void onEmgPwrReceived(final BluetoothDevice device, int value);
     void onEmgClick(final BluetoothDevice device);
+
+    // Callbacks for IMU updates
+    // TODO: parse this and set up callbacks
+    void onImuAccelReceived(final BluetoothDevice device, float[][] accel);
+    void onImuGyroReceived(final BluetoothDevice device, float[][] gyro);
+    //void onImuMagReceived(final BluetoothDevice device, double[][] mag);
+    void onImuAttitudeReceived(final BluetoothDevice device, float[] quaternion);
 
     // TODO: consider splitting this into two sets of callbacks since not
     // all listeners need to be able to handle retrieving logs

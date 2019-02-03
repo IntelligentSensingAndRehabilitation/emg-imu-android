@@ -57,6 +57,8 @@ public class GameView extends SurfaceView{
     public BarGraph emgPwrBarGraph;
     private List<Obstacle> obstacles = new ArrayList<Obstacle>();
     private List<PowerUp> powerUps = new ArrayList<PowerUp>();
+
+    private double difficulty = 5.0;
     
     private PauseButton pauseButton;
     private ToggleButton modeButton;
@@ -76,6 +78,11 @@ public class GameView extends SurfaceView{
 
         modeButton = new ToggleButton(this, game);
         modeButton.setMode(game.getMode());
+    }
+
+    public void setDifficulty(double difficulty)
+    {
+        this.difficulty = difficulty;
     }
     
     private void startTimer() {
@@ -308,7 +315,7 @@ public class GameView extends SurfaceView{
      */
     private void createObstacle(){
         if(obstacles.size() < 1){
-            obstacles.add(new Obstacle(this, game));
+            obstacles.add(new Obstacle(this, game, difficulty));
         }
     }
     

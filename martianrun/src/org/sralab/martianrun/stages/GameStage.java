@@ -29,12 +29,19 @@ import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Scaling;
 import com.badlogic.gdx.utils.viewport.ScalingViewport;
 
-import org.sralab.martianrun.EmgImuServiceHolder;
+import com.google.gson.Gson;
+
+import org.sralab.emgimu.logging.FirebaseGameLogger;
+import org.sralab.emgimu.service.EmgImuService;
+import org.sralab.emgimu.service.EmgImuServiceHolder;
 import org.sralab.martianrun.actors.*;
 import org.sralab.martianrun.actors.menu.*;
 import org.sralab.martianrun.enums.Difficulty;
 import org.sralab.martianrun.enums.GameState;
 import org.sralab.martianrun.utils.*;
+
+import java.util.ArrayList;
+import java.util.Date;
 
 public class GameStage extends Stage implements ContactListener {
 
@@ -71,6 +78,10 @@ public class GameStage extends Stage implements ContactListener {
     private Vector3 touchPoint;
 
     private EmgImuServiceHolder mServiceHolder;
+    private long startTime = new Date().getTime();
+
+    private FirebaseGameLogger mGameLogger;
+    private ArrayList<Integer> roundLen = new ArrayList<>();
 
     public GameStage(final EmgImuServiceHolder serviceHolder) {
         super(new ScalingViewport(Scaling.stretch, VIEWPORT_WIDTH, VIEWPORT_HEIGHT,
@@ -87,6 +98,8 @@ public class GameStage extends Stage implements ContactListener {
         mServiceHolder = serviceHolder;
         mServiceHolder.setCallbacks(new EmgImuServiceHolder.Callbacks() {
 
+            private EmgImuService.EmgImuBinder mService;
+
             @Override
             public void onEmgPwrReceived(BluetoothDevice device, int value) {
                 android.util.Log.d("GameStage", "Update received");
@@ -98,7 +111,40 @@ public class GameStage extends Stage implements ContactListener {
                 if (runner != null)
                     runner.jump();
             }
+
+            @Override
+            public void onImuAccelReceived(BluetoothDevice device, float[][] accel) {
+
+            }
+
+            @Override
+            public void onImuAttitudeReceived(BluetoothDevice device, float[] quaternion) {
+
+            }
+
+            @Override
+            public void onServiceBinded(final EmgImuService.EmgImuBinder binder)
+            {
+                Log.d(TAG, "Creating game logger now service is bound");
+                mGameLogger = new FirebaseGameLogger(binder, "Martian Run", startTime);
+                mService = binder;
+            }
+
+            @Override
+            public void onServiceUnbinded()
+            {
+                mService = null;
+            }
+
+            @Override
+            public void onDeviceReady(BluetoothDevice device) {
+                if (mService != null)
+                    mService.streamPwr(device);
+            }
+
         });
+
+
     }
 
     private void setUpStageBase() {
@@ -559,6 +605,9 @@ public class GameStage extends Stage implements ContactListener {
 
     private void onGameOver() {
         Log.d(TAG, "onGameOver()");
+
+        roundLen.add( (int) totalTimePassed);
+
         GameManager.getInstance().setGameState(GameState.OVER);
         GameManager.getInstance().resetDifficulty();
         totalTimePassed = 0;
@@ -578,6 +627,31 @@ public class GameStage extends Stage implements ContactListener {
         setUpGameLabel();
         setUpAboutText();
         setUpAbout();
+    }
+
+    @Override
+    public void dispose() {
+        Log.d(TAG, "Dispose. Writing to log");
+        super.dispose();
+        saveLog();
+    }
+
+    public void pause() {
+        Log.d(TAG, "Pausing");
+        saveLog();
+    }
+
+    private void saveLog() {
+        Log.d(TAG, "Writing log");
+        Gson gson = new Gson();
+        String json = gson.toJson(roundLen);
+
+        double p = 0;
+        for(Integer len : roundLen)
+            p += len;
+        p /= roundLen.size();
+
+        mGameLogger.finalize(p, json);
     }
 
 }

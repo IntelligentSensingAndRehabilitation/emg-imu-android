@@ -20,7 +20,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.GL20;
 
-import org.sralab.martianrun.EmgImuServiceHolder;
+import org.sralab.emgimu.service.EmgImuServiceHolder;
 import org.sralab.martianrun.stages.GameStage;
 
 public class GameScreen implements Screen {
@@ -57,9 +57,7 @@ public class GameScreen implements Screen {
     }
 
     @Override
-    public void pause() {
-
-    }
+    public void pause() { stage.pause(); }
 
     @Override
     public void resume() {
@@ -68,7 +66,7 @@ public class GameScreen implements Screen {
 
     @Override
     public void dispose() {
-
+        stage.dispose();
     }
 
 }

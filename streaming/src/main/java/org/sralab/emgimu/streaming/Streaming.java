@@ -13,10 +13,13 @@ import android.widget.CheckBox;
 import android.widget.EditText;
 
 import com.crashlytics.android.Crashlytics;
+import com.crashlytics.android.core.CrashlyticsCore;
 
 import org.sralab.emgimu.EmgImuBaseActivity;
 import org.sralab.emgimu.service.EmgImuService;
 import org.sralab.emgimu.service.EmgLogRecord;
+
+import java.text.NumberFormat;
 
 import io.fabric.sdk.android.Fabric;
 import no.nordicsemi.android.nrftoolbox.widget.DividerItemDecoration;
@@ -33,7 +36,11 @@ public class Streaming extends EmgImuBaseActivity {
 
     @Override
     protected void onCreateView(final Bundle savedInstanceState) {
-        Fabric.with(this, new Crashlytics());
+
+        CrashlyticsCore crashlyticsCore = new CrashlyticsCore.Builder()
+                .disabled(BuildConfig.DEBUG)
+                .build();
+        Fabric.with(this, new Crashlytics.Builder().core(crashlyticsCore).build());
 
         setContentView(R.layout.activity_streaming);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -53,10 +60,17 @@ public class Streaming extends EmgImuBaseActivity {
 
             @Override
             public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-                double range = Double.parseDouble(charSequence.toString());
-                if (mAdapter != null)
+                if (mAdapter == null)
+                    return;
+
+                try {
+                    double range = Double.parseDouble(charSequence.toString());
                     mAdapter.setRange(range);
-                Log.d(TAG, "Range change to: " + range);
+                    Log.d(TAG, "Range change to: " + range);
+                } catch (NumberFormatException e) {
+                    // Do nothing until valid number entered
+                }
+
             }
 
             @Override
@@ -82,9 +96,13 @@ public class Streaming extends EmgImuBaseActivity {
 
         mAdapter.toggleFiltering(enableFilter.isChecked());
 
-        double range = Double.parseDouble(mRangeText.getText().toString());
-        mAdapter.setRange(range);
-        Log.d(TAG, "Range set to: " + range);
+        try {
+            double range = Double.parseDouble(mRangeText.getText().toString());
+            mAdapter.setRange(range);
+            Log.d(TAG, "Range set to: " + range);
+        } catch (NumberFormatException e) {
+            // Do nothing if not valid
+        }
     }
 
     @Override
@@ -196,6 +214,21 @@ public class Streaming extends EmgImuBaseActivity {
 
     @Override
     public void onEmgPwrReceived(final BluetoothDevice device, int value) {
+    }
+
+    @Override
+    public void onImuAccelReceived(BluetoothDevice device, float[][] accel) {
+
+    }
+
+    @Override
+    public void onImuGyroReceived(BluetoothDevice device, float[][] gyro) {
+
+    }
+
+    @Override
+    public void onImuAttitudeReceived(BluetoothDevice device, float[] quaternion) {
+
     }
 
     @Override

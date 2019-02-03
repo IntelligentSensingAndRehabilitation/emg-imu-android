@@ -20,6 +20,7 @@ import android.util.Log;
 
 import com.badlogic.gdx.Game;
 
+import org.sralab.emgimu.service.EmgImuServiceHolder;
 import org.sralab.martianrun.screens.GameScreen;
 import org.sralab.martianrun.utils.AssetsManager;
 import org.sralab.martianrun.utils.AudioUtils;
@@ -46,9 +47,9 @@ public class MartianRun extends Game {
 
     @Override
     public void dispose() {
-        Log.d(TAG, "dispose()");
-        super.dispose();
+        super.dispose(); // calls screen dispose
         AudioUtils.dispose();
         AssetsManager.dispose();
+        Log.d(TAG, "dispose");
     }
 }

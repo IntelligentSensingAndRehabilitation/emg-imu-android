@@ -13,15 +13,19 @@ import org.sralab.emgimu.config.R;
 import org.sralab.emgimu.service.EmgImuService;
 import org.sralab.emgimu.service.EmgLogRecord;
 
+import java.text.NumberFormat;
+
 public class MaxEMGActivity extends EmgImuBaseActivity implements EmgPowerView.OnMaxChangedEventListener {
 
     private final static String TAG = MaxEMGActivity.class.getSimpleName();
     private EmgImuService.EmgImuBinder mService;
 
     private EmgPowerView mPwrView;
+    private EditText maxScaleInput;
 
-    private double mMax = Double.NaN;
-    private double mMin = Double.NaN;
+    private float mMax = Float.NaN;
+    private float mMin = Float.NaN;
+    private float mRange = Float.NaN;
 
     private BluetoothDevice mDevice;
     
@@ -48,17 +52,20 @@ public class MaxEMGActivity extends EmgImuBaseActivity implements EmgPowerView.O
 
         Button mSaveThreshold = findViewById(R.id.save_threshold_button);
         mSaveThreshold.setOnClickListener(view -> {
-            double thresh = mPwrView.getThreshold();
-            double min = mPwrView.getMin();
+            float min = mPwrView.getMin();
+            float max = mPwrView.getMax();
 
-            min = min + (thresh - min) * 0.5;
+            Log.d(TAG, "Saving range: " + min + " " + max);
+            mService.setPwrRange(mDevice, min, max);
 
-            Log.d(TAG, "Saving threshold " + thresh + " and minimum " + min);
+            float threshold_high = mPwrView.getThreshold();
+            float threshold_low = min + (threshold_high - min) * 0.5f;
 
-            mService.setThreshold(mDevice, min, thresh);
+            Log.d(TAG, "Saving thresholds " + threshold_low + " threshold " + threshold_high);
+            mService.setClickThreshold(mDevice, threshold_low, threshold_high);
         });
 
-        EditText maxScaleInput = findViewById(R.id.emg_max_scale);
+        maxScaleInput = findViewById(R.id.emg_max_scale);
         maxScaleInput.addTextChangedListener(new TextWatcher() {
 
             @Override
@@ -69,15 +76,23 @@ public class MaxEMGActivity extends EmgImuBaseActivity implements EmgPowerView.O
 
             @Override
             public void afterTextChanged(Editable editable) {
-                double range = Double.parseDouble(editable.toString());
-                mPwrView.setMaxRange(range);
-                Log.d(TAG, "Range change to: " + range);
+                try {
+                    mRange = Float.parseFloat(editable.toString());
+                    mPwrView.setMaxRange(mRange);
+                    Log.d(TAG, "Range change to: " + mRange);
+                } catch (NumberFormatException e) {
+                    // Do nothing until valid number entered
+                }
             }
 
         });
-        double range = Double.parseDouble(maxScaleInput.getText().toString());
-        mPwrView.setMaxRange(range);
-        Log.d(TAG, "Range change to: " + range);
+        try {
+            mRange = Float.parseFloat(maxScaleInput.getText().toString());
+            mPwrView.setMaxRange(mRange);
+            Log.d(TAG, "Range change to: " + mRange);
+        } catch (NumberFormatException e) {
+            // Do nothing until valid number entered
+        }
     }
 
     //! Clear the prior max by setting to zero
@@ -85,7 +100,7 @@ public class MaxEMGActivity extends EmgImuBaseActivity implements EmgPowerView.O
         updateMax(0);
     }
 
-    void updateMax(double newMax) {
+    void updateMax(float newMax) {
         mMax = newMax;
         mPwrView.setMaxPower(mMax);
     }
@@ -94,7 +109,7 @@ public class MaxEMGActivity extends EmgImuBaseActivity implements EmgPowerView.O
         updateMin(Short.MAX_VALUE);
     }
 
-    void updateMin(double newMin) {
+    void updateMin(float newMin) {
         mMin = newMin;
         mPwrView.setMinPower(mMin);
     }
@@ -177,37 +192,27 @@ public class MaxEMGActivity extends EmgImuBaseActivity implements EmgPowerView.O
 
     }
 
-    int discardCounter;
-
     @Override
     public void onDeviceReady(BluetoothDevice device) {
         // TODO: add dropdown to allow selecting device
         Log.d("DeviceAdapter", "Device added. Requested streaming: " + device);
         mService.streamPwr(device);
 
-        discardCounter = 20;
-
         mDevice = device;
 
-        double thresh = mService.getMaxThreshold(device);
-        Log.d(TAG, "Threshold loaded: " + thresh);
-        mPwrView.setThreshold(thresh);
+        mPwrView.setThreshold(mService.getClickThreshold(device));
+        mPwrView.setMinPower(mService.getMinPwr(device));
+        mPwrView.setMaxPower(mService.getMaxPwr(device));
     }
 
-    double mLpfValue = Double.NaN;
-    final double LPF_ALPHA = 0.1;
+    float mLpfValue = Float.NaN;
+    final float LPF_ALPHA = 0.1f;
 
     @Override
     public void onEmgPwrReceived(final BluetoothDevice device, int value) {
 
-        // Let ADC warm up on chip
-        if (discardCounter > 0) {
-            discardCounter--;
-            return;
-        }
-
         // Initialize with first sample
-        if (Double.isNaN(mLpfValue)) {
+        if (Float.isNaN(mLpfValue)) {
             mLpfValue = value;
             Log.d(TAG, "First value is: " + value);
         }
@@ -215,6 +220,10 @@ public class MaxEMGActivity extends EmgImuBaseActivity implements EmgPowerView.O
         mLpfValue = mLpfValue * (1-LPF_ALPHA) + value * LPF_ALPHA;
 
         mPwrView.setCurrentPower(mLpfValue);
+
+        if (mLpfValue > mRange) {
+            maxScaleInput.setText(Float.toString(mLpfValue));
+        }
 
         if (mLpfValue > mMax || Double.isNaN(mMax)) {
             updateMax(mLpfValue);
@@ -226,8 +235,23 @@ public class MaxEMGActivity extends EmgImuBaseActivity implements EmgPowerView.O
     }
 
     @Override
+    public void onImuAccelReceived(BluetoothDevice device, float[][] accel) {
+
+    }
+
+    @Override
+    public void onImuGyroReceived(BluetoothDevice device, float[][] gyro) {
+
+    }
+
+    @Override
+    public void onImuAttitudeReceived(BluetoothDevice device, float[] quaternion) {
+
+    }
+
+    @Override
     //! Callback from the view when the max is changed
-    public void onMaxChanged(double newMax) {
+    public void onMaxChanged(float newMax) {
         Log.d(TAG, "View changed max: " + newMax);
         mMax = newMax;
     }

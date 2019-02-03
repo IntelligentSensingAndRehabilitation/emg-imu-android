@@ -20,10 +20,12 @@ import android.view.WindowManager;
 import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import android.util.Log;
 
 import com.crashlytics.android.Crashlytics;
+import com.crashlytics.android.core.CrashlyticsCore;
 import com.google.firebase.analytics.FirebaseAnalytics;
 import com.google.gson.Gson;
 
@@ -85,6 +87,8 @@ public class Game extends EmgImuBaseActivity {
     
     /** The amount of collected coins */
     int coins;
+
+    double difficulty = 2.0;
     
     /** This will increase the revive price */
     public int numberOfRevive = 1;
@@ -93,9 +97,15 @@ public class Game extends EmgImuBaseActivity {
 
     private FirebaseAnalytics mFirebaseAnalytics;
 
+    private long startTime = new Date().getTime();
+
     @Override
     protected void onCreateView(Bundle savedInstanceState) {
-        Fabric.with(this, new Crashlytics());
+
+        CrashlyticsCore crashlyticsCore = new CrashlyticsCore.Builder()
+                .disabled(BuildConfig.DEBUG)
+                .build();
+        Fabric.with(this, new Crashlytics.Builder().core(crashlyticsCore).build());
 
         accomplishmentBox = new AccomplishmentBox();
         handler = new MyHandler(this);
@@ -103,6 +113,7 @@ public class Game extends EmgImuBaseActivity {
         loadCoins();
 
         view = new GameView(this);
+        view.setDifficulty(difficulty);
         setContentView(view);
 
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -133,7 +144,7 @@ public class Game extends EmgImuBaseActivity {
         Log.d(TAG, "onServiceBinded");
         mDevices = binder.getManagedDevices();
         mService = binder;
-        mGameLogger = new FirebaseGameLogger(mService, "Flutter Cow");
+        mGameLogger = new FirebaseGameLogger(mService, "Flutter Cow", startTime);
     }
 
     @Override
@@ -273,6 +284,21 @@ public class Game extends EmgImuBaseActivity {
         }
     }
 
+    @Override
+    public void onImuAccelReceived(BluetoothDevice device, float[][] accel) {
+
+    }
+
+    @Override
+    public void onImuGyroReceived(BluetoothDevice device, float[][] gyro) {
+
+    }
+
+    @Override
+    public void onImuAttitudeReceived(BluetoothDevice device, float[] quaternion) {
+
+    }
+
     /**** Methods required to use the EMG logging via RACP ****/
     @Override
     public void onEmgLogRecordReceived(BluetoothDevice device, EmgLogRecord record) {
@@ -347,10 +373,14 @@ public class Game extends EmgImuBaseActivity {
      */
     @Override
     protected void onPause() {
+        Log.d(TAG, "onPause");
         view.pause();
         if(musicPlayer.isPlaying()){
             musicPlayer.pause();
         }
+
+        updateLog();
+
         super.onPause();
     }
 
@@ -361,26 +391,46 @@ public class Game extends EmgImuBaseActivity {
      */
     @Override
     protected void onResume() {
+        Log.d(TAG, "onResume");
         view.drawOnce();
         if(musicShouldPlay){
             musicPlayer.start();
         }
         super.onResume();
     }
-    
+
+    private class Details {
+        ArrayList<Integer> roundLength;
+        double difficulty;
+    };
+
     @Override
     protected void onDestroy() {
+        updateLog();
+        super.onDestroy();
+    }
+
+    private void updateLog() {
+
+        // If exiting before service is bound then do not try
+        // and save
+        if (mGameLogger == null)
+            return;
+
         Gson gson = new Gson();
-        String json = gson.toJson(roundLen);
+
+        Details d = new Details();
+        d.roundLength = roundLen;
+        d.difficulty = difficulty;
+        String json = gson.toJson(d);
 
         double p = 0;
         for(Integer len : roundLen)
             p += len;
         p /= roundLen.size();
 
+        Log.d(TAG, "Updating with: " + json);
         mGameLogger.finalize(p, json);
-
-        super.onDestroy();
     }
 
     public void increaseCoin(){
@@ -424,6 +474,7 @@ public class Game extends EmgImuBaseActivity {
 
     private void resetView() {
         view = new GameView(this);
+        view.setDifficulty(difficulty);
         setContentView(view);
         view.resume();
     }

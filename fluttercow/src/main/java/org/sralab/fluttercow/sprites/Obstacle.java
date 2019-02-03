@@ -13,22 +13,26 @@ import org.sralab.fluttercow.GameView;
 import org.sralab.fluttercow.R;
 
 import android.graphics.Canvas;
+import android.util.Log;
 
 public class Obstacle extends Sprite{
     private Spider spider;
     private WoodLog log;
-    
+    private double difficulty;
+
     private static int collideSound = -1;
     private static int passSound = -1;
-    
+
     /** Necessary so the onPass method is just called once */
     public boolean isAlreadyPassed = false;
 
-    public Obstacle(GameView view, Game game) {
+    public Obstacle(GameView view, Game game, double difficulty) {
         super(view, game);
         spider = new Spider(view, game);
         log = new WoodLog(view, game);
-        
+
+        this.difficulty = difficulty;
+
         if(collideSound == -1){
             collideSound = Game.soundPool.load(game, R.raw.crash, 1);
         }
@@ -46,16 +50,18 @@ public class Obstacle extends Sprite{
      */
     private void initPos(){
         int height = game.getResources().getDisplayMetrics().heightPixels;
-        int gab = height / 4 - view.getSpeedX();
-        if(gab < height / 5){
-            gab = height / 5;
-        }
-        int random = (int) (Math.random() * height * 2 / 5);
-        int y1 = (height / 10) + random - spider.height;
-        int y2 = (height / 10) + random + gab;
-        
-        spider.init(game.getResources().getDisplayMetrics().widthPixels, y1);
-        log.init(game.getResources().getDisplayMetrics().widthPixels, y2);
+        int gap = (int) ((float) height / difficulty);
+
+
+        int ground = (int) (height * Frontground.GROUND_HEIGHT);
+        int random = (int) (Math.random() * (height - gap - ground));
+        int spider_ypos = ground + random - spider.height - gap / 2;
+        int log_ypos = ground + random +  gap / 2;
+
+        Log.d("Obstacle", "Difficult: " + difficulty + " gap " + gap + " ground " + ground + " spider " + spider_ypos + " log " + log_ypos + " spider height " + spider.height);
+
+        spider.init(game.getResources().getDisplayMetrics().widthPixels, spider_ypos);
+        log.init(game.getResources().getDisplayMetrics().widthPixels, log_ypos);
     }
 
     /**

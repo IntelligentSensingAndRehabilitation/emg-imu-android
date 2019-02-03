@@ -1,6 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    android:sharedUserId="org.sralab.emgimu"
-    package="org.sralab.emgimu.service">
+    package="org.sralab.emgimu.service"
+    android:sharedUserId="org.sralab.emgimu">
 
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.BLUETOOTH" />
@@ -9,26 +10,53 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 
+    <!-- Required to request whitelisting for power optimization to allow log fetching to occur -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+
     <!-- Required for analytics -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
-    <application android:allowBackup="true" android:label="@string/app_name"
-        android:supportsRtl="true">
-
+    <application>
         <service
-            android:name="org.sralab.emgimu.service.EmgImuService"
+            android:name=".EmgImuService"
             android:label="@string/emgimu_feature_title" />
-
         <service
-            android:exported="false"
-            android:name="org.sralab.emgimu.logging.EmgLogFetchJobService">
+            android:name="org.sralab.emgimu.logging.EmgLogFetchJobService"
+            android:exported="false">
             <intent-filter>
-                <action android:name="com.firebase.jobdispatcher.ACTION_EXECUTE"/>
+                <action android:name="com.firebase.jobdispatcher.ACTION_EXECUTE" />
             </intent-filter>
         </service>
+
+        <service android:name=".MyFirebaseMessagingService"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
+
+        <!--
+            meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_stat_ic_notification" /
+        -->
+        <!--
+             Set color used with incoming notification messages. This is used when no color is set for the incoming
+             notification message. See README(https://goo.gl/6BKBk7) for more.
+        -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="@string/default_notification_channel_id" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/sral_orange" />
         <meta-data
             android:name="io.fabric.ApiKey"
             android:value="8751562450c786ca67410fd4e08fbb7c9303dbea" />
+
     </application>
+
 </manifest>
