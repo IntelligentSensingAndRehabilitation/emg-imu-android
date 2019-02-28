@@ -354,7 +354,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
             }
             boolean supportsImu = mImuAccelCharacteristic != null &&
                     mImuGyroCharacteristic != null &&
-                    //mImuMagCharacteristic != null && // TODO: mag not supported in firmware yet
+                    mImuMagCharacteristic != null &&
                     mImuAttitudeCharacteristic != null;
 
             log(Log.INFO, "Optional services found. Logging: " + supportsLogging + " IMU: " + supportsImu);
@@ -676,6 +676,20 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 
         if (mLogging && streamLogger != null) {
             streamLogger.addGyroSample(new Date().getTime(), gyro);
+        }
+    }
+
+    private void parseImuMag(final BluetoothDevice device, final Data characteristic) {
+        final float MAG_SCALE = 1.0f; // TODO: look this up
+        float mag[][] = new float[3][3];
+        for (int idx = 0; idx < 3; idx++) // 3 comes from "BUNDLE" param in firmware
+            for (int chan = 0; chan < 3; chan++)
+                mag[idx][chan] = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT16, (chan + idx * 3) * 2) * MAG_SCALE;
+
+        //mCallbacks.onImuMagReceived(device, mag);
+
+        if (mLogging && streamLogger != null) {
+            streamLogger.addMagSample(new Date().getTime(), mag);
         }
     }
 
@@ -1010,8 +1024,6 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
     }
 
     private void enableImuNotifications() {
-        // TODO: add mag when firmware supports
-
         setNotificationCallback(mImuAccelCharacteristic)
                 .with((device, data) -> parseImuAccel(device ,data));
         enableNotifications(mImuAccelCharacteristic)
@@ -1023,11 +1035,18 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         enableNotifications(mImuGyroCharacteristic)
                 .fail((device, status) -> log(Log.ERROR, "Unable to enable Gyro notification"))
                 .enqueue();
+
+        setNotificationCallback(mImuMagCharacteristic)
+                .with((device, data) -> parseImuMag(device ,data));
+        enableNotifications(mImuMagCharacteristic)
+                .fail((device, status) -> log(Log.ERROR, "Unable to enable Mag notification"))
+                .enqueue();
     }
 
     private void disableImuNotifications() {
         disableNotifications(mImuGyroCharacteristic).enqueue();
         disableNotifications(mImuGyroCharacteristic).enqueue();
+        disableNotifications(mImuMagCharacteristic).enqueue();
     }
 
     /**** Public API for controlling what we are listening to ****/
