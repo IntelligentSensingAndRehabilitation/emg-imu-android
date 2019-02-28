@@ -2,7 +2,7 @@ package org.sralab.emgimu.streaming.messages;
 
 public class ImuGyroMessage {
 
-    public final String MSG = "ImuAttitude";
+    public final String MSG = "ImuGyro";
     public String bluetoothMac;
     public long timestamp;
     public float [][] data;
