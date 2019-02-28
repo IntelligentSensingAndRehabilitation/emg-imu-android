@@ -29,6 +29,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.PowerManager;
 import android.provider.Settings;
+import android.support.annotation.NonNull;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -68,7 +69,7 @@ public class ConfigActivity extends EmgImuBaseActivity {
 	}
 
 	private void setGUI() {
-		final RecyclerView recyclerView = mDevicesView = (RecyclerView) findViewById(android.R.id.list);
+		final RecyclerView recyclerView = mDevicesView = findViewById(android.R.id.list);
 		recyclerView.setLayoutManager(new LinearLayoutManager(this));
 		recyclerView.addItemDecoration(new DividerItemDecoration(this, DividerItemDecoration.VERTICAL_LIST));
 	}
@@ -93,10 +94,8 @@ public class ConfigActivity extends EmgImuBaseActivity {
 	}
 
 	@Override
-	public void onBatteryValueReceived(final BluetoothDevice device, final int value)
-	{
-		if (mAdapter != null)
-			mAdapter.onBatteryValueReceived(device);
+	public void onBondingFailed(@NonNull BluetoothDevice device) {
+
 	}
 
 	@Override
@@ -132,8 +131,16 @@ public class ConfigActivity extends EmgImuBaseActivity {
 
 	@Override
 	public void onDeviceDisconnected(final BluetoothDevice device) {
+		Log.d(TAG, "Disconnected");
 		if (mAdapter != null)
 			mAdapter.onDeviceRemoved(device);
+	}
+
+	@Override
+	public void onLinkLossOccurred(@NonNull BluetoothDevice device) {
+		Log.d(TAG, "Link loss");
+		if (mAdapter != null)
+			mAdapter.onDeviceStateChanged(device);
 	}
 
 	@Override
@@ -141,17 +148,6 @@ public class ConfigActivity extends EmgImuBaseActivity {
 		super.onDeviceNotSupported(device);
 		if (mAdapter != null)
 			mAdapter.onDeviceRemoved(device);
-	}
-
-	@Override
-	public void onLinklossOccur(final BluetoothDevice device) {
-		if (mAdapter != null)
-			mAdapter.onDeviceStateChanged(device);
-
-		// The link loss may also be called when Bluetooth adapter was disabled
-		if (BluetoothAdapter.getDefaultAdapter().isEnabled()) {
-			// Do nothing. We could notify the user here.
-		}
 	}
 
     @Override
@@ -176,51 +172,15 @@ public class ConfigActivity extends EmgImuBaseActivity {
 	}
 
 	@Override
-	public void onEmgBuffReceived(BluetoothDevice device, int count, double[][] data) {
+	public void onBatteryReceived(BluetoothDevice device, float battery) {
 		if (mAdapter != null)
-			mAdapter.onBuffValueReceived(device);
-	}
-
-	/**** These callbacks are related to handling the RACP endpoints ****/
-	@Override
-	public void onEmgLogRecordReceived(BluetoothDevice device, EmgLogRecord record) {
-
+			mAdapter.onBatteryValueReceived(device);
 	}
 
 	@Override
-	public void onOperationStarted(BluetoothDevice device) {
-
+	public void onEmgBuffReceived(BluetoothDevice device, int count, double[][] data) {
 	}
 
-	@Override
-	public void onOperationCompleted(BluetoothDevice device) {
-
-	}
-
-	@Override
-	public void onOperationFailed(BluetoothDevice device) {
-
-	}
-
-	@Override
-	public void onOperationAborted(BluetoothDevice device) {
-
-	}
-
-	@Override
-	public void onOperationNotSupported(BluetoothDevice device) {
-
-	}
-
-	@Override
-	public void onDatasetClear(BluetoothDevice device) {
-
-	}
-
-	@Override
-	public void onNumberOfRecordsRequested(BluetoothDevice device, int value) {
-
-	}
 
     @Override
     public void onDeviceSelected(final BluetoothDevice device, final String name) {

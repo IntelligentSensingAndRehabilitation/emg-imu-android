@@ -32,6 +32,7 @@ import android.content.IntentFilter;
 import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
+import android.support.annotation.NonNull;
 import android.support.annotation.StringRes;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
@@ -46,6 +47,7 @@ import java.util.List;
 
 import no.nordicsemi.android.ble.BleManager;
 import no.nordicsemi.android.ble.BleManagerCallbacks;
+import no.nordicsemi.android.ble.callback.FailCallback;
 import no.nordicsemi.android.ble.utils.ILogger;
 import no.nordicsemi.android.log.ILogSession;
 import no.nordicsemi.android.log.LogContract;
@@ -58,7 +60,6 @@ public abstract class BleMulticonnectProfileService extends Service implements B
 	public static final String BROADCAST_SERVICES_DISCOVERED = "no.nordicsemi.android.nrftoolbox.BROADCAST_SERVICES_DISCOVERED";
 	public static final String BROADCAST_DEVICE_READY = "no.nordicsemi.android.nrftoolbox.DEVICE_READY";
 	public static final String BROADCAST_BOND_STATE = "no.nordicsemi.android.nrftoolbox.BROADCAST_BOND_STATE";
-	public static final String BROADCAST_BATTERY_LEVEL = "no.nordicsemi.android.nrftoolbox.BROADCAST_BATTERY_LEVEL";
 	public static final String BROADCAST_ERROR = "no.nordicsemi.android.nrftoolbox.BROADCAST_ERROR";
 
 	public static final String EXTRA_DEVICE = "no.nordicsemi.android.nrftoolbox.EXTRA_DEVICE";
@@ -66,7 +67,6 @@ public abstract class BleMulticonnectProfileService extends Service implements B
 	public static final String EXTRA_BOND_STATE = "no.nordicsemi.android.nrftoolbox.EXTRA_BOND_STATE";
 	public static final String EXTRA_SERVICE_PRIMARY = "no.nordicsemi.android.nrftoolbox.EXTRA_SERVICE_PRIMARY";
 	public static final String EXTRA_SERVICE_SECONDARY = "no.nordicsemi.android.nrftoolbox.EXTRA_SERVICE_SECONDARY";
-	public static final String EXTRA_BATTERY_LEVEL = "no.nordicsemi.android.nrftoolbox.EXTRA_BATTERY_LEVEL";
 	public static final String EXTRA_ERROR_MESSAGE = "no.nordicsemi.android.nrftoolbox.EXTRA_ERROR_MESSAGE";
 	public static final String EXTRA_ERROR_CODE = "no.nordicsemi.android.nrftoolbox.EXTRA_ERROR_CODE";
 
@@ -137,16 +137,20 @@ public abstract class BleMulticonnectProfileService extends Service implements B
 				return;
 			mManagedDevices.add(device);
 
+			Log.d(TAG, "Service connect called");
 			BleManager<BleManagerCallbacks> manager = mBleManagers.get(device);
 			if (manager != null) {
-				if (session != null)
-					manager.setLogger(session);
-				manager.connect(device);
+				manager.connect(device).enqueue();
 			} else {
 				mBleManagers.put(device, manager = initializeManager());
 				manager.setGattCallbacks(BleMulticonnectProfileService.this);
-				manager.setLogger(session);
-				manager.connect(device);
+				manager.connect(device)
+						.fail((device1, status) ->
+							{
+								mManagedDevices.remove(device1);
+								mBleManagers.remove(device1);
+							})
+						.enqueue();
 			}
 		}
 
@@ -159,7 +163,7 @@ public abstract class BleMulticonnectProfileService extends Service implements B
 		public void disconnect(final BluetoothDevice device) {
 			final BleManager<BleManagerCallbacks> manager = mBleManagers.get(device);
 			if (manager != null && manager.isConnected()) {
-				manager.disconnect();
+				manager.disconnect().enqueue();
 			}
 			mManagedDevices.remove(device);
 		}
@@ -175,6 +179,17 @@ public abstract class BleMulticonnectProfileService extends Service implements B
 		}
 
 		/**
+		 * Returns <code>true</code> if the device has finished initializing.
+		 * @param device the target device
+		 * @return <code>true</code> if device is connected to the sensor and has finished
+		 * initializing. False otherwise.
+		 */
+		public final boolean isReady(final BluetoothDevice device) {
+			final BleManager<BleManagerCallbacks> manager = mBleManagers.get(device);
+			return manager != null && manager.isReady();
+		}
+
+		/**
 		 * Returns the connection state of given device.
 		 * @param device the target device
 		 * @return the connection state, as in {@link BleManager#getConnectionState()}.
@@ -182,16 +197,6 @@ public abstract class BleMulticonnectProfileService extends Service implements B
 		public final int getConnectionState(final BluetoothDevice device) {
 			final BleManager<BleManagerCallbacks> manager = mBleManagers.get(device);
 			return manager != null ? manager.getConnectionState() : BluetoothGatt.STATE_DISCONNECTED;
-		}
-
-		/**
-		 * Returns the last received battery level value.
-		 * @param device the device of which battery level should be returned
-		 * @return battery value or -1 if no value was received or Battery Level characteristic was not found
-		 */
-		public int getBatteryValue(final BluetoothDevice device) {
-			final BleManager<BleManagerCallbacks> manager = mBleManagers.get(device);
-			return manager.getBatteryValue();
 		}
 
 		/**
@@ -261,12 +266,6 @@ public abstract class BleMulticonnectProfileService extends Service implements B
 
 		if (!mActivityIsChangingConfiguration) {
 			onRebind();
-			// This method will read the Battery Level value from each connected device, if possible and then try to enable battery notifications (if it has NOTIFY property).
-			// If the Battery Level characteristic has only the NOTIFY property, it will only try to enable notifications.
-			for (final BleManager<BleManagerCallbacks> manager : mBleManagers.values()) {
-				if (manager.isConnected())
-					manager.readBatteryLevel();
-			}
 		}
 	}
 
@@ -286,12 +285,6 @@ public abstract class BleMulticonnectProfileService extends Service implements B
 		if (!mActivityIsChangingConfiguration) {
 			if (!mManagedDevices.isEmpty()) {
 				onUnbind();
-				// When we are connected, but the application is not open, we are not really interested in battery level notifications.
-				// But we will still be receiving other values, if enabled.
-				for (final BleManager<BleManagerCallbacks> manager : mBleManagers.values()) {
-					if (manager.isConnected())
-						manager.setBatteryNotifications(false);
-				}
 			} else {
 				// The last activity has disconnected from the service and there are no devices to manage. The service may be stopped.
 				stopSelf();
@@ -416,14 +409,8 @@ public abstract class BleMulticonnectProfileService extends Service implements B
 		for (final BluetoothDevice device : mManagedDevices) {
 			final BleManager<BleManagerCallbacks> manager = mBleManagers.get(device);
 			if (!manager.isConnected())
-				manager.connect(device);
+				manager.connect(device).enqueue();
 		}
-	}
-
-	@Override
-	public boolean shouldEnableBatteryLevelNotifications(final BluetoothDevice device) {
-		// By default the Battery Level notifications will be enabled only the activity is bound.
-		return mBinded;
 	}
 
 	@Override
@@ -474,7 +461,7 @@ public abstract class BleMulticonnectProfileService extends Service implements B
 	}
 
 	@Override
-	public void onLinklossOccur(final BluetoothDevice device) {
+	public void onLinkLossOccurred(final BluetoothDevice device) {
 		final Intent broadcast = new Intent(BROADCAST_CONNECTION_STATE);
 		broadcast.putExtra(EXTRA_DEVICE, device);
 		broadcast.putExtra(EXTRA_CONNECTION_STATE, STATE_LINK_LOSS);
@@ -510,14 +497,6 @@ public abstract class BleMulticonnectProfileService extends Service implements B
 		LocalBroadcastManager.getInstance(this).sendBroadcast(broadcast);
 
 		// no need for disconnecting, it will be disconnected by the manager automatically
-	}
-
-	@Override
-	public void onBatteryValueReceived(final BluetoothDevice device, final int value) {
-		final Intent broadcast = new Intent(BROADCAST_BATTERY_LEVEL);
-		broadcast.putExtra(EXTRA_DEVICE, device);
-		broadcast.putExtra(EXTRA_BATTERY_LEVEL, value);
-		LocalBroadcastManager.getInstance(this).sendBroadcast(broadcast);
 	}
 
 	@Override

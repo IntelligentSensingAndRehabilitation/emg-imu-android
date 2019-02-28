@@ -44,6 +44,9 @@ import org.sralab.emgimu.service.EmgImuService;
 import org.sralab.emgimu.visualization.LineGraphView;
 
 public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder> {
+
+    private static final String TAG = DeviceAdapter.class.getSimpleName();
+
 	private final EmgImuService.EmgImuBinder mService;
 	private final List<BluetoothDevice> mDevices;
     private final Map<BluetoothDevice, LineGraphView> mDeviceLineGraphMap = new HashMap<BluetoothDevice, LineGraphView>();
@@ -52,8 +55,6 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
 		mService = binder;
 		mDevices = mService.getManagedDevices();
 	}
-
-	public int attachedViews = 0;
 
 	@Override
 	public ViewHolder onCreateViewHolder(final ViewGroup parent, final int viewType) {
@@ -85,7 +86,6 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
         // When a view is recycled, we must dettach the graph from it's
         // view so it can be used again later
         holder.layoutView.removeAllViews();
-        holder.mLineGraph = null;
     }
 
     @Override
@@ -113,19 +113,32 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
         notifyDataSetChanged(); // we don't have position of the removed device here
 
         // Remove the graphing elements from our local cache
-        mDeviceLineGraphMap.remove(device);
+        //mDeviceLineGraphMap.remove(device);
+
+        // HACK: delete all graphs. Because a view gets recycled we need to
+        // add the graph to a different layout at this point. Clearing all
+        // graphs forces this to happen.
+        mDeviceLineGraphMap.clear();
 	}
 
 	public void onDeviceStateChanged(final BluetoothDevice device) {
 		final int position = mDevices.indexOf(device);
+
+		Log.d(TAG, "Device updated: " + position);
         if (position >= 0)
             notifyItemChanged(position);
+        else
+            // In principle we should know which device was updated. However
+            // if the service removes a device from the list when it goes to
+            // disconnected, then the device might be dropped.
+            notifyDataSetChanged(); // we don't have position of the removed device here
 	}
 
     public void onDeviceReady(final BluetoothDevice device) {
         Log.d("DeviceAdapter", "Device added. Requested streaming: " + device);
         mService.streamPwr(device);
     }
+
 	public void onPwrValueReceived(final BluetoothDevice device) {
 
         // If graph exists for this device, update it with new data
@@ -133,37 +146,24 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
         if (mLineGraph != null) {
             final int pwrValue = mService.getEmgPwrValue(device);
             mLineGraph.addValue(pwrValue);
+        } else {
+            Log.w(TAG, "Graph missing");
         }
 
         final int position = mDevices.indexOf(device);
-        if (position >= 0)
+        if (position >= 0) {
             notifyItemChanged(position);
-    }
+        }else
+            Log.e(TAG, "Device missing");
 
-
-    public void onBuffValueReceived(final BluetoothDevice device) {
-
-        // If graph exists for this device, update it with new data
-        LineGraphView mLineGraph = mDeviceLineGraphMap.get(device);
-        if (mLineGraph != null) {
-            final double [] buffValue = mService.getEmgBuffValue(device)[0];
-            for (int i = 0; i < buffValue.length; i++)
-                mLineGraph.addValue(buffValue[i]);
-        }
-
-        final int position = mDevices.indexOf(device);
-        if (position >= 0)
-            notifyItemChanged(position);
+        //notifyDataSetChanged();
     }
 
 	public class ViewHolder extends RecyclerView.ViewHolder {
 		private TextView batteryView;
         private TextView addressView;
         private ViewGroup layoutView;
-        private ImageButton downloadMode;
         private ImageButton actionDisconnect;
-
-        private LineGraphView mLineGraph;
 
         ColorStateList connectedColor;
         ColorStateList disconnectedColor;
@@ -171,65 +171,40 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
         public ViewHolder(final View itemView) {
 			super(itemView);
 
-			addressView = (TextView) itemView.findViewById(R.id.address);
-            batteryView = (TextView) itemView.findViewById(R.id.battery);
-            layoutView =  (ViewGroup) itemView.findViewById(R.id.graph_pwr);
-            downloadMode = (ImageButton) itemView.findViewById(R.id.action_pwr_buffered);
-            actionDisconnect = (ImageButton) itemView.findViewById(R.id.action_disconnect);
-
-            // Graphing elements will be assigned once we have a position
-            mLineGraph = null;
+			addressView = itemView.findViewById(R.id.address);
+            batteryView = itemView.findViewById(R.id.battery);
+            layoutView = itemView.findViewById(R.id.graph_pwr);
+            actionDisconnect = itemView.findViewById(R.id.action_disconnect);
 
             connectedColor = ContextCompat.getColorStateList(itemView.getContext(), R.color.sral_red);
             disconnectedColor = ContextCompat.getColorStateList(itemView.getContext(), R.color.sral_orange);
 
             // Configure Disconnect button
-            actionDisconnect.setOnClickListener(new View.OnClickListener() {
-				@Override
-				public void onClick(final View v) {
-                    final int position = getAdapterPosition();
-                    final BluetoothDevice device = mDevices.get(position);
-					mService.disconnect(device);
-					// The device might have not been connected, so there will be no callback
-					onDeviceRemoved(device);
-				}
-			});
-
-            downloadMode.setOnClickListener(v -> {
+            actionDisconnect.setOnClickListener(v -> {
                 final int position = getAdapterPosition();
                 final BluetoothDevice device = mDevices.get(position);
-
-                // Catch race condition where device is not connected but button is pressed
-                boolean connected = mService.isConnected(device);
-                if (!connected)
-                    return;
-
-                switch(mService.getStreamingMode(device)) {
-                    case STREAMING_BUFFERED:
-                        mService.streamPwr(device);
-                        downloadMode.setImageResource(R.drawable.ic_action_download_normal);
-                        break;
-                    case STREAMINNG_POWER:
-                        mService.streamBuffered(device);
-                        downloadMode.setImageResource(R.drawable.ic_action_download_pressed);
-                        break;
-                }
+                mService.disconnect(device);
+                // The device might have not been connected, so there will be no callback
+                onDeviceRemoved(device);
             });
+
         }
 
         // We want one line graph and graph view per device. The ViewHolder constructor
-        // can be created multiple times in the line cycle of the view so cannot create there
-        private void createGraphIfMissing(final BluetoothDevice device) {
+        // can be created multiple times in the life cycle of the view so cannot create there
+        private LineGraphView getGraph(final BluetoothDevice device) {
 
+
+            LineGraphView mLineGraph = mDeviceLineGraphMap.get(device);
+
+            // See if graph has been cached and if so use this
             if (mLineGraph == null) {
-                mLineGraph = mDeviceLineGraphMap.get(device);
-
-                // See if graph has been cached and if so use this
-                if (mLineGraph == null) {
-                    mLineGraph = new LineGraphView(itemView.getContext(), layoutView);
-                    mDeviceLineGraphMap.put(device, mLineGraph);
-                }
+                Log.d(TAG, "Creating graph");
+                mLineGraph = new LineGraphView(itemView.getContext(), layoutView);
+                mDeviceLineGraphMap.put(device, mLineGraph);
             }
+
+            return mLineGraph;
         }
 
 		private void bind(final BluetoothDevice device) {
@@ -247,8 +222,7 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
             actionDisconnect.setBackgroundTintList(color);
 
             // Update the graph
-            createGraphIfMissing(device);
-            mLineGraph.repaint();
+            getGraph(device).repaint();
 		}
 	}
 }

@@ -1,8 +1,6 @@
-include ':core', ':common', ':fluttercow', ':emgimuservice', ':emgimu', ':streaming' , ':martianrun'
+include ':core', ':common',  ':emgimuservice', ':emgimu'
+include ':fluttercow', ':streaming' , ':martianrun'
 include ':powerhammer'
 // Uncomment these lines if you want to import the DFULibrary as a project, not from jcenter
 // include ':dfu'
 // project(':dfu').projectDir = file('../DFULibrary/dfu')
-
-include ':ble'
-project(':ble').projectDir = file('../../Android-BLE-Library/ble')

@@ -16,6 +16,7 @@ import android.media.SoundPool;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.support.annotation.NonNull;
 import android.view.WindowManager;
 import android.widget.Toast;
 
@@ -178,6 +179,11 @@ public class Game extends EmgImuBaseActivity {
     }
 
     @Override
+    public void onBondingFailed(@NonNull BluetoothDevice device) {
+
+    }
+
+    @Override
     public void onDeviceDisconnecting(final BluetoothDevice device) {
         Log.d(TAG, "onDeviceDisconnecting");
         view.pause();
@@ -189,19 +195,14 @@ public class Game extends EmgImuBaseActivity {
     }
 
     @Override
-    public void onDeviceNotSupported(final BluetoothDevice device) {
-        Log.d(TAG, "onDeviceNotSupported");
-        super.onDeviceNotSupported(device);
+    public void onLinkLossOccurred(@NonNull BluetoothDevice device) {
+
     }
 
     @Override
-    public void onLinklossOccur(final BluetoothDevice device) {
-
-        // The link loss may also be called when Bluetooth adapter was disabled
-        if (BluetoothAdapter.getDefaultAdapter().isEnabled()) {
-            // Do nothing. We could notify the user here.
-            Log.d(TAG, "onLinklossOccur");
-        }
+    public void onDeviceNotSupported(final BluetoothDevice device) {
+        Log.d(TAG, "onDeviceNotSupported");
+        super.onDeviceNotSupported(device);
     }
 
     private double last_rescaled = 0.5;
@@ -213,6 +214,11 @@ public class Game extends EmgImuBaseActivity {
         last_rescaled = rescaled;
 
         return rescaled;
+    }
+
+    @Override
+    public void onBatteryReceived(BluetoothDevice device, float battery) {
+
     }
 
     @Override
@@ -298,49 +304,6 @@ public class Game extends EmgImuBaseActivity {
     public void onImuAttitudeReceived(BluetoothDevice device, float[] quaternion) {
 
     }
-
-    /**** Methods required to use the EMG logging via RACP ****/
-    @Override
-    public void onEmgLogRecordReceived(BluetoothDevice device, EmgLogRecord record) {
-
-    }
-
-    @Override
-    public void onOperationStarted(BluetoothDevice device) {
-
-    }
-
-    @Override
-    public void onOperationCompleted(BluetoothDevice device) {
-
-    }
-
-    @Override
-    public void onOperationFailed(BluetoothDevice device) {
-
-    }
-
-    @Override
-    public void onOperationAborted(BluetoothDevice device) {
-
-    }
-
-    @Override
-    public void onOperationNotSupported(BluetoothDevice device) {
-
-    }
-
-    @Override
-    public void onDatasetClear(BluetoothDevice device) {
-
-    }
-
-    @Override
-    public void onNumberOfRecordsRequested(BluetoothDevice device, int value) {
-
-    }
-
-    /**** End of methods required to use the EMG logging via RACP ****/
 
     @Override
     protected int getAboutTextId() {

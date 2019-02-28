@@ -150,26 +150,20 @@ public class FirebaseEmgLogger {
         Handler mainHandler = new Handler(Looper.getMainLooper());
         mainHandler.post(()->{
             Task<DocumentSnapshot> task = getDocument(DN).get()
-                    .addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
-                        @Override
-                        public void onSuccess(DocumentSnapshot documentSnapshot) {
-                            if (documentSnapshot.exists()) {
-                                Log.d(TAG, "Loaded previous document: " + getDocument(DN).getPath());
-                                log = documentSnapshot.toObject(FirebaseEmgLogEntry.class);
-                            } else {
-                                Log.d(TAG, "No document found. Creating new one: " + DN);
-                                log = new FirebaseEmgLogEntry();
-                            }
-                            mManager.firebaseLogReady(FirebaseEmgLogger.this);
-                        }
-                    })
-                    .addOnFailureListener(new OnFailureListener() {
-                        @Override
-                        public void onFailure(@NonNull Exception e) {
-                            Log.e(TAG, "Unable to load previous log: " + DN);
+                    .addOnSuccessListener(documentSnapshot -> {
+                        if (documentSnapshot.exists()) {
+                            Log.d(TAG, "Loaded previous document: " + getDocument(DN).getPath());
+                            log = documentSnapshot.toObject(FirebaseEmgLogEntry.class);
+                        } else {
+                            Log.d(TAG, "No document found. Creating new one: " + DN);
                             log = new FirebaseEmgLogEntry();
-                            mManager.firebaseLogReady(FirebaseEmgLogger.this);
                         }
+                        mManager.firebaseLogReady(FirebaseEmgLogger.this);
+                    })
+                    .addOnFailureListener(e -> {
+                        Log.e(TAG, "Unable to load previous log: " + DN);
+                        log = new FirebaseEmgLogEntry();
+                        mManager.firebaseLogReady(FirebaseEmgLogger.this);
                     });
         });
     }

@@ -26,6 +26,9 @@ import no.nordicsemi.android.ble.BleManagerCallbacks;
 
 public interface EmgImuManagerCallbacks extends BleManagerCallbacks {
 
+    // Callback for battery updates
+    void onBatteryReceived(final BluetoothDevice device, float battery);
+
     // Callbacks for EMG updates
     void onEmgRawReceived(final BluetoothDevice device, int value);
     void onEmgBuffReceived(BluetoothDevice device, int count, double[][] data);
@@ -38,18 +41,4 @@ public interface EmgImuManagerCallbacks extends BleManagerCallbacks {
     void onImuGyroReceived(final BluetoothDevice device, float[][] gyro);
     //void onImuMagReceived(final BluetoothDevice device, double[][] mag);
     void onImuAttitudeReceived(final BluetoothDevice device, float[] quaternion);
-
-    // TODO: consider splitting this into two sets of callbacks since not
-    // all listeners need to be able to handle retrieving logs
-    /**
-     * Called when new CGM value has been obtained from the sensor.
-     */
-    void onEmgLogRecordReceived(final BluetoothDevice device, final EmgLogRecord record);
-    void onOperationStarted(final BluetoothDevice device);
-    void onOperationCompleted(final BluetoothDevice device);
-    void onOperationFailed(final BluetoothDevice device);
-    void onOperationAborted(final BluetoothDevice device);
-    void onOperationNotSupported(final BluetoothDevice device);
-    void onDatasetClear(final BluetoothDevice device);
-    void onNumberOfRecordsRequested(final BluetoothDevice device, final int value);
 }

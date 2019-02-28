@@ -36,6 +36,7 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.support.annotation.NonNull;
 import android.support.annotation.StringRes;
 import android.support.v4.app.NotificationManagerCompat;
 import android.support.v4.content.ContextCompat;
@@ -96,6 +97,10 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 	private final static String ACTION_SILENT = "no.nordicsemi.android.nrftoolbox.proximity.ACTION_SILENT";
 
     public final static String EXTRA_DEVICE = "org.sralab.emgimu.EXTRA_DEVICE";
+
+    // Broadcast messsages for battery updates
+    public static final String BROADCAST_BATTERY_LEVEL = "org.sralab.emgimu.BROADCAST_BATTERY_LEVEL";
+    public static final String EXTRA_BATTERY_LEVEL = "org.sralab.emgimu.EXTRA_BATTERY";
 
     // Broadcast messages for EMG activity
     public static final String BROADCAST_EMG_RAW = "org.sralab.emgimu.BROADCAST_EMG_RAW";
@@ -180,11 +185,6 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
                 //final EmgImuManager manager = getBleManager(device);
             }
             return true;
-        }
-
-        public boolean isReady(final BluetoothDevice device) {
-            final EmgImuManager mManager = (EmgImuManager) getBleManager(device);
-            return mManager.isDeviceReady();
         }
 
         /**
@@ -552,6 +552,10 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
         synchronized(logFetchStartId) {
             Integer startThreadId = logFetchStartId.get(device.getAddress()).second;
 
+            // To avoid this being double called remove the timer
+            mServiceLogger.i("Removing connection timeout runnable from " + device.getAddress());
+            getHandler().removeCallbacks(logFetchStartId.get(device.getAddress()).first);
+
             // If there is only one thread remaining, then appropriate to stop it
             if (logFetchStartId.size() == 1) {
 
@@ -600,6 +604,10 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
     public void onError(BluetoothDevice device, String message, int errorCode) {
         super.onError(device, message, errorCode);
 
+        if (errorCode == GattError.GATT_INVALID_PDU) {
+            Log.e(TAG, "Received invalid PDU. Will continue", new Exception("backtrack"));
+            return;
+        }
         mBinder.log(device, LogContract.Log.Level.WARNING, "onError: " + message +
                 " errorCode: " + errorCode + "(" + GattError.parseConnectionError(errorCode) + ")");
         Log.e(TAG, "onError", new Exception("backtrack"));
@@ -709,6 +717,12 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 	}
 
     @Override
+    public void onLinkLossOccurred(@NonNull BluetoothDevice device) {
+        super.onLinkLossOccurred(device);
+        Log.d(TAG, "onLinkLossOccurred");
+    }
+
+    @Override
     public void onDeviceReady(BluetoothDevice device) {
         super.onDeviceReady(device);
 
@@ -716,10 +730,15 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
         if(logFetchStartId.get(device.getAddress()) != null) {
             mBinder.log(device, LogContract.Log.Level.INFO, "onDeviceReady. requesting log download");
             final EmgImuManager manager = (EmgImuManager) getBleManager(device);
-            manager.getAllRecords();
+            manager.fetchLogRecords(device1 -> onEmgLogFetchCompleted(device1), (device12, reason) -> onEmgLogFetchFailed(device12, reason));
         } else {
             mBinder.log(device, LogContract.Log.Level.WARNING, "onDeviceReady. no log request active.");
         }
+    }
+
+    @Override
+    public void onBondingFailed(@NonNull BluetoothDevice device) {
+
     }
 
     private void serviceUpdateSavedDevices
@@ -989,6 +1008,14 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 	}
 
     @Override
+    public void onBatteryReceived(BluetoothDevice device, float battery) {
+        final Intent broadcast = new Intent(BROADCAST_BATTERY_LEVEL);
+        broadcast.putExtra(EXTRA_DEVICE, device);
+        broadcast.putExtra(EXTRA_BATTERY_LEVEL, battery);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(broadcast);
+    }
+
+    @Override
     public void onEmgRawReceived(final BluetoothDevice device, int value)
     {
         final Intent broadcast = new Intent(BROADCAST_EMG_RAW);
@@ -1096,51 +1123,27 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
     }
 
     /******** These callbacks are for managing the EMG logging via RACP ********/
-    @Override
-    public void onEmgLogRecordReceived(BluetoothDevice device, EmgLogRecord record) {
 
-    }
-
-    @Override
-    public void onOperationStarted(BluetoothDevice device) {
-
-    }
-
-    @Override
-    public void onOperationCompleted(BluetoothDevice device) {
-        mBinder.log(device, LogContract.Log.Level.DEBUG, "onOperationCompleted: " + logFetchStartId);
+    public void onEmgLogFetchCompleted(BluetoothDevice device) {
+        mBinder.log(device, LogContract.Log.Level.DEBUG, "onEmgLogFetchCompleted: " + logFetchStartId);
 
         if (logFetchStartId.get(device.getAddress()) != null) {
             mBinder.log(device, LogContract.Log.Level.INFO, "Log retrieval complete");
             smartStop(device);
         } else {
-            mBinder.log(device, LogContract.Log.Level.WARNING, "onOperationCompleted without log fetch intent");
+            mBinder.log(device, LogContract.Log.Level.WARNING, "onEmgLogFetchCompleted without log fetch intent");
         }
     }
 
-    @Override
-    public void onOperationFailed(BluetoothDevice device) {
+    public void onEmgLogFetchFailed(final BluetoothDevice device, String reason) {
+        mBinder.log(device, LogContract.Log.Level.DEBUG, "onEmgLogFetchFailed: " + logFetchStartId);
 
-    }
-
-    @Override
-    public void onOperationAborted(BluetoothDevice device) {
-
-    }
-
-    @Override
-    public void onOperationNotSupported(BluetoothDevice device) {
-
-    }
-
-    @Override
-    public void onDatasetClear(BluetoothDevice device) {
-
-    }
-
-    @Override
-    public void onNumberOfRecordsRequested(BluetoothDevice device, int value) {
-
+        if (logFetchStartId.get(device.getAddress()) != null) {
+            mBinder.log(device, LogContract.Log.Level.INFO, "Log fetch failed");
+            smartStop(device);
+        } else {
+            mBinder.log(device, LogContract.Log.Level.WARNING, "onEmgLogFetchFailed without log fetch intent");
+        }
     }
 
     /********* End EMG Logging RACP callbacks ********/

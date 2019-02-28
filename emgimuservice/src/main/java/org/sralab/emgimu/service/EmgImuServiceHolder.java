@@ -12,6 +12,7 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.os.IBinder;
+import android.support.annotation.NonNull;
 import android.support.v4.content.LocalBroadcastManager;
 
 import java.util.ArrayList;
@@ -70,10 +71,6 @@ public class EmgImuServiceHolder<E extends EmgImuService.EmgImuBinder> implement
                             onDeviceDisconnected(bluetoothDevice);
                             break;
                         }
-                        case BleMulticonnectProfileService.STATE_LINK_LOSS: {
-                            onLinklossOccur(bluetoothDevice);
-                            break;
-                        }
                         case BleMulticonnectProfileService.STATE_CONNECTING: {
                             onDeviceConnecting(bluetoothDevice);
                             break;
@@ -115,10 +112,10 @@ public class EmgImuServiceHolder<E extends EmgImuService.EmgImuBinder> implement
                     }
                     break;
                 }
-                case BleMulticonnectProfileService.BROADCAST_BATTERY_LEVEL: {
-                    final int value = intent.getIntExtra(BleMulticonnectProfileService.EXTRA_BATTERY_LEVEL, -1);
+                case EmgImuService.BROADCAST_BATTERY_LEVEL: {
+                    final float value = intent.getIntExtra(EmgImuService.EXTRA_BATTERY_LEVEL, -1);
                     if (value > 0)
-                        onBatteryValueReceived(bluetoothDevice, value);
+                        onBatteryReceived(bluetoothDevice, value);
                     break;
                 }
                 case BleMulticonnectProfileService.BROADCAST_ERROR: {
@@ -281,8 +278,8 @@ public class EmgImuServiceHolder<E extends EmgImuService.EmgImuBinder> implement
         intentFilter.addAction(BleMulticonnectProfileService.BROADCAST_SERVICES_DISCOVERED);
         intentFilter.addAction(BleMulticonnectProfileService.BROADCAST_DEVICE_READY);
         intentFilter.addAction(BleMulticonnectProfileService.BROADCAST_BOND_STATE);
-        intentFilter.addAction(BleMulticonnectProfileService.BROADCAST_BATTERY_LEVEL);
         intentFilter.addAction(BleMulticonnectProfileService.BROADCAST_ERROR);
+        intentFilter.addAction(EmgImuService.BROADCAST_BATTERY_LEVEL);
         intentFilter.addAction(EmgImuService.BROADCAST_EMG_RAW);
         intentFilter.addAction(EmgImuService.BROADCAST_EMG_PWR);
         intentFilter.addAction(EmgImuService.BROADCAST_EMG_BUFF);
@@ -314,8 +311,8 @@ public class EmgImuServiceHolder<E extends EmgImuService.EmgImuBinder> implement
     }
 
     @Override
-    public void onLinklossOccur(final BluetoothDevice device) {
-        // empty default implementation
+    public void onLinkLossOccurred(@NonNull BluetoothDevice device) {
+
     }
 
     @Override
@@ -341,19 +338,12 @@ public class EmgImuServiceHolder<E extends EmgImuService.EmgImuBinder> implement
     }
 
     @Override
+    public void onBondingFailed(@NonNull BluetoothDevice device) {
+
+    }
+
+    @Override
     public void onDeviceNotSupported(final BluetoothDevice device) {
-    }
-
-    @Override
-    public final boolean shouldEnableBatteryLevelNotifications(final BluetoothDevice device) {
-        // This method will never be called.
-        // Please see BleMulticonnectProfileService#shouldEnableBatteryLevelNotifications(BluetoothDevice) instead.
-        throw new UnsupportedOperationException("This method should not be called");
-    }
-
-    @Override
-    public void onBatteryValueReceived(final BluetoothDevice device, final int value) {
-        // empty default implementation
     }
 
     @Override
@@ -453,6 +443,11 @@ public class EmgImuServiceHolder<E extends EmgImuService.EmgImuBinder> implement
     }
 
     @Override
+    public void onBatteryReceived(BluetoothDevice device, float battery) {
+
+    }
+
+    @Override
     public void onEmgRawReceived(BluetoothDevice device, int value) {
 
     }
@@ -488,46 +483,6 @@ public class EmgImuServiceHolder<E extends EmgImuService.EmgImuBinder> implement
         if (mCallbacks != null) {
             mCallbacks.onImuAttitudeReceived(device, quaternion);
         }
-    }
-
-    @Override
-    public void onEmgLogRecordReceived(BluetoothDevice device, EmgLogRecord record) {
-
-    }
-
-    @Override
-    public void onOperationStarted(BluetoothDevice device) {
-
-    }
-
-    @Override
-    public void onOperationCompleted(BluetoothDevice device) {
-
-    }
-
-    @Override
-    public void onOperationFailed(BluetoothDevice device) {
-
-    }
-
-    @Override
-    public void onOperationAborted(BluetoothDevice device) {
-
-    }
-
-    @Override
-    public void onOperationNotSupported(BluetoothDevice device) {
-
-    }
-
-    @Override
-    public void onDatasetClear(BluetoothDevice device) {
-
-    }
-
-    @Override
-    public void onNumberOfRecordsRequested(BluetoothDevice device, int value) {
-
     }
 
     public interface Callbacks {
