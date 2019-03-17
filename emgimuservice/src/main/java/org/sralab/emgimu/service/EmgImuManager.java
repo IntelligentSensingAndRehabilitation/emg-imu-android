@@ -241,7 +241,11 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                     .with((device, data) -> {
                         mHardwareRevision = data.getStringValue(0);
                         Log.d(TAG, "Hardware revision: " + mHardwareRevision);
-                        mChannels = 1; // TODO: need to actually detect type
+                        if (mHardwareRevision.equals("v0.1")) {
+                            mChannels = 8;
+                            Log.d(TAG, "Setting channels to 8");
+                        } else
+                            mChannels = 1;
                     })
                     .enqueue();
 

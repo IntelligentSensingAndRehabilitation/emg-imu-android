@@ -93,7 +93,9 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
         // Find the device and channel index that corresponds to a row
         int deviceIndex = 0;
         for (deviceIndex = 0; deviceIndex < mDevices.size(); deviceIndex++) {
-            if (getPosition(mDevices.get(deviceIndex)) >= position) {
+            final BluetoothDevice dev = mDevices.get(deviceIndex);
+            int devLastPos = getPosition(dev) +  mService.getChannelCount(dev);
+            if (devLastPos >= position) {
                 break;
             }
         }
