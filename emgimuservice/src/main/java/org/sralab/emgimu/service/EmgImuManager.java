@@ -53,6 +53,7 @@ import no.nordicsemi.android.ble.ReadRequest;
 import no.nordicsemi.android.ble.Request;
 import no.nordicsemi.android.ble.callback.DataReceivedCallback;
 import no.nordicsemi.android.ble.callback.FailCallback;
+import no.nordicsemi.android.ble.callback.InvalidRequestCallback;
 import no.nordicsemi.android.ble.callback.MtuCallback;
 import no.nordicsemi.android.ble.callback.PhyCallback;
 import no.nordicsemi.android.ble.callback.SuccessCallback;
@@ -92,12 +93,14 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
     public final static UUID IMU_GYRO_CHAR_UUID = UUID.fromString("00002236-1212-EFDE-1523-785FEF13D123");
     public final static UUID IMU_MAG_CHAR_UUID = UUID.fromString("00002237-1212-EFDE-1523-785FEF13D123");
     public final static UUID IMU_ATTITUDE_CHAR_UUID = UUID.fromString("00002238-1212-EFDE-1523-785FEF13D123");
+    public final static UUID IMU_CALIBRATION_CHAR_UUID = UUID.fromString("00002239-1212-EFDE-1523-785FEF13D123");
 
     private final double EMG_FS = 2000.0;
     private final int EMG_BUFFER_LEN = (40 / 2); // elements in UINT16
 
     private BluetoothGattCharacteristic mEmgRawCharacteristic, mEmgBuffCharacteristic, mEmgPwrCharacteristic;
     private BluetoothGattCharacteristic mImuAccelCharacteristic, mImuGyroCharacteristic, mImuMagCharacteristic, mImuAttitudeCharacteristic;
+    private BluetoothGattCharacteristic mImuCalibrationCharacteristic;
 
     /**
      * Record Access Control Point characteristic UUID
@@ -351,6 +354,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                 mImuGyroCharacteristic = iaService.getCharacteristic(IMU_GYRO_CHAR_UUID);
                 mImuMagCharacteristic = iaService.getCharacteristic(IMU_MAG_CHAR_UUID);
                 mImuAttitudeCharacteristic = iaService.getCharacteristic(IMU_ATTITUDE_CHAR_UUID);
+                mImuCalibrationCharacteristic = iaService.getCharacteristic(IMU_CALIBRATION_CHAR_UUID);
             }
             boolean supportsImu = mImuAccelCharacteristic != null &&
                     mImuGyroCharacteristic != null &&
@@ -393,6 +397,10 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 
             // Clear the IMU characteristics
             mImuAccelCharacteristic = null;
+            mImuGyroCharacteristic = null;
+            mImuMagCharacteristic = null;
+            mImuAttitudeCharacteristic = null;
+            mImuCalibrationCharacteristic = null;
 
             // Clear the EMG characteristics
             mEmgPwrCharacteristic = null;
@@ -704,6 +712,40 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         if (mLogging && streamLogger != null) {
             streamLogger.addAttitudeSample(new Date().getTime(), quat);
         }
+    }
+
+    private void writeImuCalibration() {
+        Log.d(TAG, "Writing calibration");
+        MutableData characteristic = new MutableData(new bytes[48]);
+
+        // Mag scales for making data spherical
+        //characteristic.setValue(1.0f, BluetoothGattCharacteristic.FORMAT_FLOAT, 0);
+        characteristic.setValue(0, BluetoothGattCharacteristic.FORMAT_FLOAT, 4);
+        characteristic.setValue(0, BluetoothGattCharacteristic.FORMAT_FLOAT, 8);
+        characteristic.setValue(0, BluetoothGattCharacteristic.FORMAT_FLOAT, 12);
+        //characteristic.setValue(1.0f, BluetoothGattCharacteristic.FORMAT_FLOAT, 16);
+        characteristic.setValue(0, BluetoothGattCharacteristic.FORMAT_FLOAT, 20);
+        characteristic.setValue(0, BluetoothGattCharacteristic.FORMAT_FLOAT, 24);
+        characteristic.setValue(0, BluetoothGattCharacteristic.FORMAT_FLOAT, 28);
+        //characteristic.setValue(1.0f, BluetoothGattCharacteristic.FORMAT_FLOAT, 32);
+
+        // Mag bias
+        characteristic.setValue(0, BluetoothGattCharacteristic.FORMAT_SINT16, 36);
+        characteristic.setValue(0, BluetoothGattCharacteristic.FORMAT_SINT16, 38);
+        characteristic.setValue(0, BluetoothGattCharacteristic.FORMAT_SINT16, 40);
+
+        // Accel bias
+        characteristic.setValue(0, BluetoothGattCharacteristic.FORMAT_SINT16, 42);
+        characteristic.setValue(0, BluetoothGattCharacteristic.FORMAT_SINT16, 44);
+        characteristic.setValue(0, BluetoothGattCharacteristic.FORMAT_SINT16, 46);
+
+        Log.d(TAG, "Calibration characteristic: " + mImuCalibrationCharacteristic);
+        //Log.d(TAG, "New value: " + characteristic.getStringValue());
+        writeCharacteristic(mImuCalibrationCharacteristic, characteristic)
+                .invalid(() -> Log.d(TAG, "Invalid request"))
+                .done(dev -> log(Log.INFO, "Sent new calibration settings"))
+                .fail((dev, status) -> logFetchFailed(dev,"Failed to send calibration"))
+                .enqueue();
     }
 
     private void parseLog(final BluetoothDevice device, final Data characteristic) {
@@ -1077,6 +1119,8 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         enableEmgPwrNotifications();
         disableEmgBuffNotifications();
         mStreamingMode = STREAMING_MODE.STREAMINNG_POWER;
+
+        writeImuCalibration();
     }
 
     STREAMING_MODE getStreamingMode() { return mStreamingMode; }
