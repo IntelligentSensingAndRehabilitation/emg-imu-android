@@ -244,6 +244,9 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                         if (mHardwareRevision.equals("v0.1")) {
                             mChannels = 8;
                             Log.d(TAG, "Setting channels to 8");
+                        } else if (mHardwareRevision.equals("v0.7")) {
+                            mChannels = 2;
+                            Log.d(TAG, "Setting channels to 2");
                         } else
                             mChannels = 1;
                     })
@@ -594,9 +597,10 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                 }
 
                 break;
+            case 0x21:
             case 0x81:
 
-                channels = 8;
+                channels = format >> 4;
                 samples = 9;
 
                 final double ads1298_gain = 8;
@@ -609,7 +613,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 
                 // representation of the data is 3 bytes per sample, 8 channels, and then N samples
                 data = new double[channels][samples];
-                for (int ch = 0; ch < 8; ch++) {
+                for (int ch = 0; ch < channels; ch++) {
                     for (int sample = 0; sample < samples; sample++) {
                         int idx = HDR_LEN + 3 * (ch + channels * sample);
                         byte sign = ((buffer[idx + 2] & 0x80) == 0x80) ? (byte) 0xff : (byte) 0x00;
@@ -626,6 +630,8 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         }
 
         if (mChannels != channels){
+            log(Log.ERROR, "Current channel expected: " + mChannels);
+            log(Log.ERROR, "Received: " + channels);
             throw new RuntimeException("Channel count seemed to change between calls");
         }
 
