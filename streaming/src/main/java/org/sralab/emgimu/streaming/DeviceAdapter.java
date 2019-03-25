@@ -184,8 +184,10 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
             // If graph exists for this device, update it with new data
             LineGraphView mLineGraph = mDeviceLineGraphMap.get(new Pair<>(device, channel));
             if (mLineGraph != null) {
-                for (double buffValue : data[channel])
+                for (double buffValue : data[channel]) {
                     mLineGraph.addValue(buffValue);
+                }
+
             }
 
         }

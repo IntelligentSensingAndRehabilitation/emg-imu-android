@@ -241,7 +241,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                     .with((device, data) -> {
                         mHardwareRevision = data.getStringValue(0);
                         Log.d(TAG, "Hardware revision: " + mHardwareRevision);
-                        if (mHardwareRevision.equals("v0.1")) {
+                        if (mHardwareRevision.equals("v0.3")) {
                             mChannels = 8;
                             Log.d(TAG, "Setting channels to 8");
                         } else if (mHardwareRevision.equals("v0.7")) {
@@ -604,23 +604,23 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                 samples = 9;
 
                 final double ads1298_gain = 8;
-                final double vref = 2.5e6;
-                double full_scale_range = 2 * vref / ads1298_gain;
+                final double vref = 2.42e6;
+                double full_scale_range = vref / ads1298_gain;
                 microvolts_per_lsb = full_scale_range / (1<<24);
 
                 buf_ts_ms = resolveBufCounter(timestamp, counter, 500.0 / samples);
-                log(Log.DEBUG, " Counter: " + counter + " timestamp: " + timestamp + " ms: " + buf_ts_ms + " scale: " + microvolts_per_lsb);
+                //log(Log.DEBUG, " Counter: " + counter + " timestamp: " + timestamp + " ms: " + buf_ts_ms + " scale: " + microvolts_per_lsb);
 
                 // representation of the data is 3 bytes per sample, 8 channels, and then N samples
                 data = new double[channels][samples];
                 for (int ch = 0; ch < channels; ch++) {
                     for (int sample = 0; sample < samples; sample++) {
                         int idx = HDR_LEN + 3 * (ch + channels * sample);
-                        byte sign = ((buffer[idx + 2] & 0x80) == 0x80) ? (byte) 0xff : (byte) 0x00;
-                        byte [] t_array = {buffer[idx], buffer[idx+1], buffer[idx+2], sign};
+                        byte sign = ((buffer[idx] & 0x80) == 0x80) ? (byte) 0xff : (byte) 0x00;
+                        byte [] t_array = {sign, buffer[idx], buffer[idx+1], buffer[idx]};
                         data[ch][sample] = microvolts_per_lsb * ByteBuffer.wrap(t_array).order(ByteOrder.BIG_ENDIAN).getInt();
                     }
-                    //Log.d(TAG, "Data[" + ch + "] = " + Arrays.toString(data[ch]));
+                    // Log.d(TAG, "Data[" + ch + "] = " + Arrays.toString(data[ch]));
                 }
 
                 break;
