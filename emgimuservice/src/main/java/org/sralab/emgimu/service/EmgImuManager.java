@@ -714,20 +714,30 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         }
     }
 
+    private static final int EXPONENT_MASK = 0xff000000;
+    private static final int EXPONENT_SHIFT = 24;
+    private static final int MANTISSA_MASK = 0x00ffffff;
+    private static final int MANTISSA_SHIFT = 0;
+//    private static final int CONST_ONE = MutableData.floatToInt(1.0f);
+
     private void writeImuCalibration() {
         Log.d(TAG, "Writing calibration");
-        MutableData characteristic = new MutableData(new bytes[48]);
+        MutableData characteristic = new MutableData(new byte[48]);
 
         // Mag scales for making data spherical
-        //characteristic.setValue(1.0f, BluetoothGattCharacteristic.FORMAT_FLOAT, 0);
+        int bits = Float.floatToIntBits(1.0f);
+        int exponent = (bits & EXPONENT_MASK) >>> EXPONENT_SHIFT;
+        int mantissa = (bits & MANTISSA_MASK) >>> MANTISSA_SHIFT;
+
+        characteristic.setValue(mantissa, exponent, BluetoothGattCharacteristic.FORMAT_FLOAT, 0);
         characteristic.setValue(0, BluetoothGattCharacteristic.FORMAT_FLOAT, 4);
         characteristic.setValue(0, BluetoothGattCharacteristic.FORMAT_FLOAT, 8);
         characteristic.setValue(0, BluetoothGattCharacteristic.FORMAT_FLOAT, 12);
-        //characteristic.setValue(1.0f, BluetoothGattCharacteristic.FORMAT_FLOAT, 16);
+        characteristic.setValue(mantissa, exponent, BluetoothGattCharacteristic.FORMAT_FLOAT, 16);
         characteristic.setValue(0, BluetoothGattCharacteristic.FORMAT_FLOAT, 20);
         characteristic.setValue(0, BluetoothGattCharacteristic.FORMAT_FLOAT, 24);
         characteristic.setValue(0, BluetoothGattCharacteristic.FORMAT_FLOAT, 28);
-        //characteristic.setValue(1.0f, BluetoothGattCharacteristic.FORMAT_FLOAT, 32);
+        characteristic.setValue(mantissa, exponent, BluetoothGattCharacteristic.FORMAT_FLOAT, 32);
 
         // Mag bias
         characteristic.setValue(0, BluetoothGattCharacteristic.FORMAT_SINT16, 36);
