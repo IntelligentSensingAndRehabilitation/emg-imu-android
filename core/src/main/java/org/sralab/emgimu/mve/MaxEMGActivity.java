@@ -168,7 +168,6 @@ public class MaxEMGActivity extends EmgImuBaseActivity implements EmgPowerView.O
         // TODO: add dropdown to allow selecting device
         Log.d("DeviceAdapter", "Device added. Requested streaming: " + device);
         mService.streamPwr(device);
-        mService.enableImu(device);
 
         mDevice = device;
 

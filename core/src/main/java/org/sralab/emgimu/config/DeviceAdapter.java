@@ -137,7 +137,6 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
     public void onDeviceReady(final BluetoothDevice device) {
         Log.d("DeviceAdapter", "Device added. Requested streaming: " + device);
         mService.streamPwr(device);
-        mService.enableImu(device);
     }
 
 	public void onPwrValueReceived(final BluetoothDevice device) {
