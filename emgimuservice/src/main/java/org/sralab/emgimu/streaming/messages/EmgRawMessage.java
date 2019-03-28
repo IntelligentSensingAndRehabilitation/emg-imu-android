@@ -1,6 +1,8 @@
 package org.sralab.emgimu.streaming.messages;
 
+import java.nio.ByteBuffer;
 import java.util.Arrays;
+import android.util.Base64;
 
 public class EmgRawMessage {
     public final String MSG = "EmgRaw";
@@ -8,7 +10,7 @@ public class EmgRawMessage {
     public long timestamp;
     public int channels;
     public int samples;
-    double [][] data;
+    String data;
 
     private static double[][] arrayCopy(double[][] src) {
         double[][] dst = new double[src.length][];
@@ -23,6 +25,15 @@ public class EmgRawMessage {
         this.timestamp = timestamp;
         this.channels = channels;
         this.samples = samples;
-        this.data = arrayCopy(data); // avoid data being modified before serialized
+
+        float [] float_data = new float[channels * samples];
+        for(int i = 0; i < channels; i++)
+            for (int j = 0; j < samples; j++)
+                float_data[i * samples + j] = (float) data[i][j];
+
+        ByteBuffer buf = ByteBuffer.allocate(Float.SIZE / Byte.SIZE * float_data.length);
+        buf.asFloatBuffer().put(float_data);
+        String base64_data = Base64.encodeToString(buf.array(), Base64.NO_WRAP);
+        this.data = base64_data;
     }
 }
