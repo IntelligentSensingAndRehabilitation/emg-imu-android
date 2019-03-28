@@ -28,6 +28,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
+import java.util.zip.GZIPOutputStream;
 
 import no.nordicsemi.android.log.LogContract;
 
@@ -66,15 +67,17 @@ public class FirebaseStreamLogger {
 
         FirebaseStorage storage = FirebaseStorage.getInstance();
         storageRef = storage.getReference().child(getFilename());
-
-
+        
+        // Create stream objects and use buffers to prevent deadlocks
         PipedOutputStream pos = new PipedOutputStream();
         PipedInputStream pis = new PipedInputStream();
-        // Create stream objects and use buffers to prevent deadlocks
-        dataStream = new BufferedOutputStream(pos, (int) 10e6);
+
         try {
             // Connect streams
             pis.connect(pos);
+
+            // Use in stream compression
+            dataStream = new GZIPOutputStream(pos);
             dataStream.write("[".getBytes());
             firstEntry = true;
         } catch (IOException e) {
@@ -138,7 +141,7 @@ public class FirebaseStreamLogger {
     }
 
     private String getFilename() {
-        return "streams/" + mUser.getUid() + "/" + mDeviceMac + "/" + dateName + ".json";
+        return "streams/" + mUser.getUid() + "/" + mDeviceMac + "/" + dateName + ".json.gz";
     }
 
     synchronized
