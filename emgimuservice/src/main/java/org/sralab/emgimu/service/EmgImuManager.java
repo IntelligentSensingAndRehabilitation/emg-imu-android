@@ -721,7 +721,11 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 //    private static final int CONST_ONE = MutableData.floatToInt(1.0f);
 
     private void writeImuCalibration() {
-        Log.d(TAG, "Writing calibration");
+        if (mImuCalibrationCharacteristic == null) {
+            log(Log.ERROR, "Calibration characteristic not found");
+            return;
+        }
+        log(Log.DEBUG, "Writing calibration");
         MutableData characteristic = new MutableData(new byte[48]);
 
         // Mag scales for making data spherical
