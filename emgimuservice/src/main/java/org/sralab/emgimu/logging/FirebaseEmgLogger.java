@@ -72,9 +72,7 @@ public class FirebaseEmgLogger {
         }
 
         mDb = FirebaseFirestore.getInstance();
-        FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder()
-                .setTimestampsInSnapshotsEnabled(true)
-                .build();
+        FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder().build();
         mDb.setFirestoreSettings(settings);
         if (mDb == null) {
             Log.e(TAG, "Unable to get Firestore DB");

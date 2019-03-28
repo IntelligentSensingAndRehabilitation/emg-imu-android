@@ -462,9 +462,7 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
     {
         Log.d(TAG, "Updating token for user in firestore");
         FirebaseFirestore mDb = FirebaseFirestore.getInstance();
-        FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder()
-                .setTimestampsInSnapshotsEnabled(true)
-                .build();
+        FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder().build();
         mDb.setFirestoreSettings(settings);
         DocumentReference doc = mDb.collection("fcmTokens").document(mCurrentUser.getUid());
 
