@@ -728,25 +728,26 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         log(Log.DEBUG, "Writing calibration");
         MutableData characteristic = new MutableData(new byte[48]);
 
-        // Mag scales for making data spherical
-        int bits = Float.floatToIntBits(1.0f);
-        int exponent = (bits & EXPONENT_MASK) >>> EXPONENT_SHIFT;
-        int mantissa = (bits & MANTISSA_MASK) >>> MANTISSA_SHIFT;
+        float Ainv[] = {0.00629611f,  0.00077126f, -0.00107255f, 0.00077126f,  0.00621144f,  0.00076924f, -0.00107255f,  0.00076924f,  0.00240923f};
+        int b[] = {331, -39, 538};
 
-        characteristic.setValue(mantissa, exponent, BluetoothGattCharacteristic.FORMAT_FLOAT, 0);
-        characteristic.setValue(0, BluetoothGattCharacteristic.FORMAT_FLOAT, 4);
-        characteristic.setValue(0, BluetoothGattCharacteristic.FORMAT_FLOAT, 8);
-        characteristic.setValue(0, BluetoothGattCharacteristic.FORMAT_FLOAT, 12);
-        characteristic.setValue(mantissa, exponent, BluetoothGattCharacteristic.FORMAT_FLOAT, 16);
-        characteristic.setValue(0, BluetoothGattCharacteristic.FORMAT_FLOAT, 20);
-        characteristic.setValue(0, BluetoothGattCharacteristic.FORMAT_FLOAT, 24);
-        characteristic.setValue(0, BluetoothGattCharacteristic.FORMAT_FLOAT, 28);
-        characteristic.setValue(mantissa, exponent, BluetoothGattCharacteristic.FORMAT_FLOAT, 32);
+        // Pack floating point calibration
+        for (int i = 0; i < 9; i++) {
+            // Mag scales for making data spherical. Note the scaling by 1000 to keep magnitude
+            // reasonable.
+            int bits = Float.floatToIntBits(Ainv[i] * 1000f);
+            characteristic.setValue(bits, BluetoothGattCharacteristic.FORMAT_SINT32, i*4);
+
+            // Alternative approach
+            // int exponent = (bits & EXPONENT_MASK) >>> EXPONENT_SHIFT;
+            // int mantissa = (bits & MANTISSA_MASK) >>> MANTISSA_SHIFT;
+            // characteristic.setValue(mantissa, exponent, BluetoothGattCharacteristic.FORMAT_FLOAT, i*4);
+        }
 
         // Mag bias
-        characteristic.setValue(0, BluetoothGattCharacteristic.FORMAT_SINT16, 36);
-        characteristic.setValue(0, BluetoothGattCharacteristic.FORMAT_SINT16, 38);
-        characteristic.setValue(0, BluetoothGattCharacteristic.FORMAT_SINT16, 40);
+        characteristic.setValue(b[0], BluetoothGattCharacteristic.FORMAT_SINT16, 36);
+        characteristic.setValue(b[1], BluetoothGattCharacteristic.FORMAT_SINT16, 38);
+        characteristic.setValue(b[2], BluetoothGattCharacteristic.FORMAT_SINT16, 40);
 
         // Accel bias
         characteristic.setValue(0, BluetoothGattCharacteristic.FORMAT_SINT16, 42);
@@ -754,6 +755,8 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         characteristic.setValue(0, BluetoothGattCharacteristic.FORMAT_SINT16, 46);
 
         Log.d(TAG, "Calibration characteristic: " + mImuCalibrationCharacteristic);
+        Log.d(TAG, Arrays.toString(characteristic.getValue()));
+
         //Log.d(TAG, "New value: " + characteristic.getStringValue());
         writeCharacteristic(mImuCalibrationCharacteristic, characteristic)
                 .invalid(() -> Log.d(TAG, "Invalid request"))
