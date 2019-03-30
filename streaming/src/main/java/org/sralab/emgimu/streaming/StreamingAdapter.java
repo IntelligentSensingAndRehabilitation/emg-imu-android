@@ -38,7 +38,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder> {
+public class DeviceAdapter extends EmgImuAdapterActivity.DeviceAdapter {
 
     private final String TAG = DeviceAdapter.class.getSimpleName();
 
