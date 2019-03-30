@@ -26,7 +26,6 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
     }
 
-    dynamicFeatures = [":imu_calibration"]
 }
 
 dependencies {
@@ -39,6 +38,7 @@ dependencies {
     implementation project(':streaming')
     implementation project(':martianrun')
     implementation project(':powerhammer')
+    implementation project(':imu_calibration')
 
     // Because too many methods
     api 'com.android.support:multidex:1.0.3'
