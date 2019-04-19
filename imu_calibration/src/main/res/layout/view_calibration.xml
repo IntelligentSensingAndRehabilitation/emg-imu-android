@@ -13,24 +13,25 @@
         <TextView
             android:id="@+id/textView2"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Current Calibration"/>
+            android:layout_height="match_parent"
+            android:text="@string/current_calibration"/>
 
 
         <Button
-            android:id="@+id/button"
+            android:id="@+id/calibrate_button"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Start Calibration"/>
+            android:layout_height="match_parent"
+            android:text="@string/start_calibration"/>
 
         <ImageButton
             android:id="@+id/action_disconnect"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_alignParentEnd="true"
             android:backgroundTint="@color/sral_orange"
-            app:backgroundTint="@color/sral_orange"
-            android:layout_alignParentRight="true"
-            android:src="@drawable/ic_action_disconnect"/>
+            android:clickable="false"
+            android:src="@drawable/ic_action_disconnect"
+            app:backgroundTint="@color/sral_orange" />
     </LinearLayout>
 
 

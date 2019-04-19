@@ -245,12 +245,21 @@ public abstract class EmgImuAdapterActivity extends EmgImuBaseActivity {
         public class ViewHolder extends RecyclerView.ViewHolder {
             private ViewGroup mLayoutView;
 
+            private BluetoothDevice mDev;
+
             public ViewHolder(final View itemView) {
                 super(itemView);
             }
 
             private void bind(final BluetoothDevice device) {
+                mDev = device;
             }
+
+            public BluetoothDevice getDevice() {
+                return mDev;
+            }
+
+
         }
     }
 }
