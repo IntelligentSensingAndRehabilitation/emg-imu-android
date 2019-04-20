@@ -27,12 +27,13 @@ import java.security.InvalidParameterException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Observable;
 import java.util.TimeZone;
 import java.util.zip.GZIPOutputStream;
 
 import no.nordicsemi.android.log.LogContract;
 
-public class FirebaseStreamLogger {
+public class FirebaseStreamLogger extends Observable {
 
     private String TAG = FirebaseStreamLogger.class.getSimpleName();
 
@@ -105,6 +106,8 @@ public class FirebaseStreamLogger {
                     synchronized (this) {
                         this.notify();
                     }
+                    setChanged();
+                    notifyObservers();
                 });
 
                 // Using thread notification as wait to alert when complete

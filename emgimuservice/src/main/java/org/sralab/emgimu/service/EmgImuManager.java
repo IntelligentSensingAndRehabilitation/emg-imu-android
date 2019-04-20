@@ -28,10 +28,21 @@ import android.bluetooth.BluetoothGattService;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
+import com.google.firebase.Timestamp;
 import com.google.firebase.analytics.FirebaseAnalytics;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.EventListener;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.FirebaseFirestoreException;
+import com.google.firebase.firestore.ServerTimestamp;
 
 import org.sralab.emgimu.logging.FirebaseEmgLogger;
 import org.sralab.emgimu.logging.FirebaseStreamLogger;
@@ -39,14 +50,20 @@ import org.sralab.emgimu.parser.RecordAccessControlPointParser;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.security.InvalidParameterException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.Deque;
 import java.util.GregorianCalendar;
-import java.util.LinkedList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.TimeZone;
 import java.util.UUID;
+
+import javax.annotation.Nullable;
 
 import no.nordicsemi.android.ble.PhyRequest;
 import no.nordicsemi.android.ble.ReadRequest;
@@ -422,11 +439,6 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 		}
     };
 
-    @Override
-    protected boolean shouldAutoConnect() {
-        return true;
-    }
-
     private long mPwrT0;
     private long mLastPwrCount;
 
@@ -712,6 +724,105 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         if (mLogging && streamLogger != null) {
             streamLogger.addAttitudeSample(new Date().getTime(), quat);
         }
+    }
+
+    public class FirebaseMagCalibration {
+
+        public FirebaseMagCalibration() {
+
+        }
+
+        //@ServerTimestamp Timestamp date;
+        public String path;
+        public String sensor;
+        public String uuid;
+        public float [] Ainv;
+        public float [] b;
+        public float len_var;
+        public byte [] calibration_image;
+    }
+
+    void finishCalibration() {
+        // TODO: needs a callback for when the stream logging stops to time
+        // the write
+        disableImu();
+        synchronized (this) {
+            if (mLogging && streamLogger != null) {
+                log(Log.INFO, "Closing stream logger");
+                String path = streamLogger.getReference();
+
+                // Called when the stream logger completes the upload
+                streamLogger.addObserver((o, arg) -> {
+
+                    log(Log.INFO, "Streamed uploaded");
+
+                    FirebaseAuth mAuth = FirebaseAuth.getInstance();
+                    FirebaseUser mUser = mAuth.getCurrentUser();
+
+                    if (mUser == null) {
+                        log(Log.ERROR, "Should have a user assigned here");
+                        throw new InvalidParameterException("No FirebaseUser");
+                    }
+
+                    FirebaseFirestore mDb = FirebaseFirestore.getInstance();
+                    if (mDb == null) {
+                        log(Log.ERROR, "Unable to get Firestore DB");
+                        throw new InvalidParameterException("No Firestore DB");
+                    }
+
+                    TimeZone tz = TimeZone.getTimeZone("UTC");
+                    DateFormat df = new SimpleDateFormat("yyyyMMdd-HHmmss'Z'"); // Quoted "Z" to indicate UTC, no timezone offset
+                    df.setTimeZone(tz);
+                    String dateName = df.format(new Date());
+                    String fileName = getAddress() + "_" + dateName;
+
+                    // Create entry
+                    //FirebaseMagCalibration calibration = new FirebaseMagCalibration("a", "b", "c"); //getAddress(), path, mUser.getUid());
+                    Map<String, Object> calibration = new HashMap<>();
+                    calibration.put("path", path);
+                    calibration.put("uuid", mUser.getUid());
+                    calibration.put("sensor",getAddress());
+
+                    // Write it
+                    Handler mainHandler = new Handler(Looper.getMainLooper());
+                    mainHandler.post(()-> {
+                        DocumentReference doc = mDb.collection("magCalibration").document(fileName);
+
+                        doc.addSnapshotListener((documentSnapshot, e) -> {
+                            log(Log.DEBUG, "Snapshot update event");
+                            if (documentSnapshot.exists()) {
+
+                                log(Log.DEBUG, "Snapshot exists");
+                                Double len_var = documentSnapshot.getDouble("len_var");
+
+                                if (len_var == null) {
+                                    log(Log.DEBUG, "Not computed yet");
+                                } else if (len_var > 0.01) {
+                                    log(Log.WARN, "Poor calibration. Not using");
+                                } else {
+                                    log(Log.INFO, "Calibration: " + documentSnapshot.getData());
+                                }
+                                // Keeps complaining about no null constructor
+                                // FirebaseMagCalibration updatedCalibration = documentSnapshot.toObject(FirebaseMagCalibration.class);
+
+                            } else {
+                                log(Log.DEBUG, "Calibration document did not exist");
+                            }
+                        });
+
+                        doc.set(calibration)
+                                .addOnSuccessListener(aVoid -> Log.d(TAG, "Wrote: " + doc.getPath() + " successfully"))
+                                .addOnFailureListener(e -> Log.e(TAG, "Unable to save log: " + e.getMessage()));
+                    });
+
+                });
+                streamLogger.close();
+                streamLogger = null;
+            } else {
+                log(Log.ERROR, "Unable to calibrate as data was not streaming");
+            }
+        }
+
     }
 
     private static final int EXPONENT_MASK = 0xff000000;
