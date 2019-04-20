@@ -8,7 +8,6 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.Timestamp;
 
 import org.sralab.emgimu.service.EmgImuService;
@@ -98,10 +97,6 @@ public class FirebaseGameLogger {
         }
 
         mDb = FirebaseFirestore.getInstance();
-        FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder()
-                .setTimestampsInSnapshotsEnabled(true)
-                .build();
-        mDb.setFirestoreSettings(settings);
         if (mDb == null) {
             Log.e(TAG, "Unable to get Firestore DB");
             throw new InvalidParameterException("No Firestore DB");
