@@ -10,6 +10,8 @@ import android.widget.Button;
 
 import org.sralab.emgimu.EmgImuAdapterActivity;
 
+import java.security.InvalidParameterException;
+
 public class CalibrationAdapter extends EmgImuAdapterActivity.DeviceAdapter {
 
     private final String TAG = CalibrationAdapter.class.getSimpleName();
@@ -53,6 +55,15 @@ public class CalibrationAdapter extends EmgImuAdapterActivity.DeviceAdapter {
                 getService().enableImu(dev);
 
                 Log.d(TAG, "Enabled IMU streaming");
+            });
+
+            Button testButton = itemView.findViewById(R.id.test_button);
+            testButton.setOnClickListener(v -> {
+
+                BluetoothDevice dev =  getDevice();
+                Log.d(TAG, "My device is " + dev);
+
+                getService().finishCalibration(dev);
             });
         }
 

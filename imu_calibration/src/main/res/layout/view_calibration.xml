@@ -16,6 +16,11 @@
             android:layout_height="match_parent"
             android:text="@string/current_calibration"/>
 
+        <Button
+            android:id="@+id/test_button"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:text="Test"/>
 
         <Button
             android:id="@+id/calibrate_button"
