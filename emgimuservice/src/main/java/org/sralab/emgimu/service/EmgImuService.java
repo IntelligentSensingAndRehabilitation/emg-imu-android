@@ -308,10 +308,10 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
             return manager.getChannelCount();
         }
 
-        public void finishCalibration(final BluetoothDevice device) {
+        public void finishCalibration(final BluetoothDevice device, EmgImuManager.calibrationListener listener) {
             // TODO: needs to have some type of callback listener to visualize
             final EmgImuManager manager = (EmgImuManager) getBleManager(device);
-            manager.finishCalibration();
+            manager.finishCalibration(listener);
         }
 
         public int getLoggerProfileTitle() {

@@ -1,16 +1,22 @@
 package org.sralab.emgimu.imu_calibration;
 
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothGatt;
+import android.graphics.Bitmap;
 import android.support.annotation.NonNull;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.TextView;
 
 import org.sralab.emgimu.EmgImuAdapterActivity;
+import org.sralab.emgimu.service.EmgImuManager;
 
 import java.security.InvalidParameterException;
+import java.util.List;
 
 public class CalibrationAdapter extends EmgImuAdapterActivity.DeviceAdapter {
 
@@ -22,28 +28,44 @@ public class CalibrationAdapter extends EmgImuAdapterActivity.DeviceAdapter {
             final ViewGroup parent, final int viewType) {
 
         final View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.view_calibration, parent, false);
-        int height = parent.getMeasuredHeight();
-
-        ViewGroup.LayoutParams params = view.getLayoutParams();
-        params.height = height;
-        view.setLayoutParams(params);
-
         return new MyViewHolder(view);
     }
 
     @Override
     public void onDeviceReady(BluetoothDevice device) {
+        Log.d(TAG, "onDeviceReady");
         super.onDeviceReady(device);
+        notifyDataSetChanged();
     }
 
     class MyViewHolder extends EmgImuAdapterActivity.DeviceAdapter.ViewHolder {
 
+        private TextView status;
+        private ImageView calibrationIm;
+        private Button startButton;
+        private Button finishButton;
+        private TextView sensorId;
+
+        @Override
+        public void bind(BluetoothDevice device) {
+            super.bind(device);
+            Log.d(TAG, "Binding: " + device);
+            boolean connected = getService().getConnectionState(getDevice()) == BluetoothGatt.STATE_CONNECTED;
+            finishButton.setEnabled(connected);
+            startButton.setEnabled(connected);
+            sensorId.setText("Sensor: " + getDevice().getAddress());
+        }
 
         MyViewHolder(final View itemView) {
             super(itemView);
 
-            Button calibrateButton = itemView.findViewById(R.id.calibrate_button);
-            calibrateButton.setOnClickListener(v -> {
+            status = itemView.findViewById(R.id.calibration_status);
+            calibrationIm = itemView.findViewById(R.id.calibration_image);
+
+            sensorId = itemView.findViewById(R.id.sensor_id);
+
+            startButton = itemView.findViewById(R.id.start_calibration_button);
+            startButton.setOnClickListener(v -> {
 
                 // TODO: could add state awareness to toggle between enabled or not
                 // but really the view holder should not have any state information
@@ -55,16 +77,41 @@ public class CalibrationAdapter extends EmgImuAdapterActivity.DeviceAdapter {
                 getService().enableImu(dev);
 
                 Log.d(TAG, "Enabled IMU streaming");
+                
+                status.setText("Collecting. Please rotate sensor.");
             });
 
-            Button testButton = itemView.findViewById(R.id.test_button);
-            testButton.setOnClickListener(v -> {
+            finishButton = itemView.findViewById(R.id.finish_calibration_button);
+            finishButton.setOnClickListener(v -> {
 
                 BluetoothDevice dev =  getDevice();
                 Log.d(TAG, "My device is " + dev);
 
-                getService().finishCalibration(dev);
+                EmgImuManager.calibrationListener listener = new EmgImuManager.calibrationListener() {
+                    @Override
+                    public void onUploading() {
+                        status.setText("Uploading");
+                    }
+
+                    @Override
+                    public void onComputing() {
+                        status.setText("Computing");
+                    }
+
+                    @Override
+                    public void onReceivedCal(List<Float> Ainv, List<Float> b, float len_var) {
+                        status.setText(String.format("Completed. Length error %.1f%%", 100 * Math.sqrt(len_var)));
+                    }
+
+                    @Override
+                    public void onReceivedIm(Bitmap im) {
+                        calibrationIm.setImageBitmap(im);
+                    }
+                };
+
+                getService().finishCalibration(dev, listener);
             });
+
         }
 
     }

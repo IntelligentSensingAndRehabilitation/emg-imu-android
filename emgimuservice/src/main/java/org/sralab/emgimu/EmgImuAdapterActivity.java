@@ -243,7 +243,6 @@ public abstract class EmgImuAdapterActivity extends EmgImuBaseActivity {
 
 
         public class ViewHolder extends RecyclerView.ViewHolder {
-            private ViewGroup mLayoutView;
 
             private BluetoothDevice mDev;
 
@@ -251,7 +250,7 @@ public abstract class EmgImuAdapterActivity extends EmgImuBaseActivity {
                 super(itemView);
             }
 
-            private void bind(final BluetoothDevice device) {
+            public void bind(final BluetoothDevice device) {
                 mDev = device;
             }
 
