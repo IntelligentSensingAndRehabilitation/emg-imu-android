@@ -124,6 +124,8 @@ public class CalibrationAdapter extends EmgImuAdapterActivity.DeviceAdapter {
             finishButton = itemView.findViewById(R.id.finish_calibration_button);
             finishButton.setOnClickListener(v -> {
 
+                finishButton.setEnabled(false);
+
                 BluetoothDevice dev =  getDevice();
                 Log.d(TAG, "My device is " + dev);
 
