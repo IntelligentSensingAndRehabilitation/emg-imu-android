@@ -688,12 +688,12 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
     }
 
     private void parseImuMag(final BluetoothDevice device, final Data characteristic) {
-        final float MAG_SCALE = 1.0f; // TODO: look this up
         float mag[][] = new float[3][3];
         for (int idx = 0; idx < 3; idx++) // 3 comes from "BUNDLE" param in firmware
             for (int chan = 0; chan < 3; chan++)
-                mag[idx][chan] = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT16, (chan + idx * 3) * 2) * MAG_SCALE;
+                mag[idx][chan] = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT16, (chan + idx * 3) * 2);
 
+        Log.d(TAG, "Mag: " + mag[0][0] + " " + mag[0][1] + " " + mag[0][2]);
         //mCallbacks.onImuMagReceived(device, mag);
 
         if (mLogging && streamLogger != null) {
