@@ -791,7 +791,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 
                                 if (len_var == null) {
                                     log(Log.DEBUG, "Not computed yet");
-                                } else if (len_var > 0.01) {
+                                } else if (len_var > 0.1) {
                                     log(Log.WARN, "Poor calibration. Not using");
                                     if (listener != null) listener.onError("Poor quality calibration");
                                 } else {
