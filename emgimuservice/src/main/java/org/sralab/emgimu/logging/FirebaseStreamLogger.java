@@ -121,7 +121,7 @@ public class FirebaseStreamLogger extends Observable {
                     }
                 }
 
-                Log.d(TAG, "uploadTask thread ended");
+                Log.d(TAG, "uploadTask thread ended for " + getReference());
 
             }
         };
