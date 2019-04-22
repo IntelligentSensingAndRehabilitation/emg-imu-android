@@ -745,7 +745,10 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                 // Called when the stream logger completes the upload
                 streamLogger.addObserver((o, arg) -> {
 
-                    log(Log.INFO, "Streamed uploaded");
+                    // We are essentially using closing and opening to flush a log to the
+                    // server, so start a new one.
+                    log(Log.INFO, "Streamed uploaded. Creating a new stream logger.");
+                    streamLogger = new FirebaseStreamLogger(EmgImuManager.this);
 
                     FirebaseAuth mAuth = FirebaseAuth.getInstance();
                     FirebaseUser mUser = mAuth.getCurrentUser();

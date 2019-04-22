@@ -131,6 +131,7 @@ public class CalibrationAdapter extends EmgImuAdapterActivity.DeviceAdapter {
                     @Override
                     public void onUploading() {
                         status.setText("Uploading...");
+                        getService().disableImu(dev); // Can stop updates
                     }
 
                     @Override
