@@ -706,7 +706,6 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         float quat[] = new float[4];
         for (int i = 0; i < 4; i++)
             quat[i] = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT16, i * 2) * scale;
-        log(Log.DEBUG, "Received quaternion: " + quat[0] + " " + quat[1] + " " + quat[2] + " " + quat[3]);
         mCallbacks.onImuAttitudeReceived(device, quat);
 
         if (mLogging && streamLogger != null) {
@@ -728,7 +727,8 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
     void startCalibration(CalibrationListener listener) {
         // Zero out prior calibration as first step
         FirebaseMagCalibration zeroCalibration = new FirebaseMagCalibration();
-        zeroCalibration.Ainv = new ArrayList<>(Arrays.asList(1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f));
+        // Notice using 1e-3 as the scale is increased by 1000 when sending.
+        zeroCalibration.Ainv = new ArrayList<>(Arrays.asList(1.0e-3f, 0.0f, 0.0f, 0.0f, 1.0e-3f, 0.0f, 0.0f, 0.0f, 1.0e-3f));
         zeroCalibration.b = new ArrayList<>(Arrays.asList(0f,0f,0f));
         writeImuCalibration(zeroCalibration, listener);
     }

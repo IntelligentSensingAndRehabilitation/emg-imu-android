@@ -154,11 +154,13 @@ public class CalibrationAdapter extends EmgImuAdapterActivity.DeviceAdapter {
                         String msg = status.getText().toString();
                         msg = msg + ". Saved to device.";
                         status.setText(msg);
+                        bind(dev); // Update UI based on state
                     }
 
                     @Override
                     public void onError(String err) {
                         status.setText(err);
+                        bind(dev); // Update UI based on state
                     }
 
                 };
