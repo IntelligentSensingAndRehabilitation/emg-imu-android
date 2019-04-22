@@ -297,7 +297,10 @@ public class EmgImuServiceHolder<E extends EmgImuService.EmgImuBinder> implement
 
     @Override
     public void onDeviceConnected(BluetoothDevice device) {
-
+        if (mService.isReady(device)) {
+            // For when we are already connected
+            onDeviceReady(device);
+        }
     }
 
     @Override
