@@ -15,7 +15,6 @@ import android.widget.TextView;
 import org.sralab.emgimu.EmgImuAdapterActivity;
 import org.sralab.emgimu.service.EmgImuManager;
 
-import java.security.InvalidParameterException;
 import java.util.List;
 
 public class CalibrationAdapter extends EmgImuAdapterActivity.DeviceAdapter {
@@ -87,7 +86,7 @@ public class CalibrationAdapter extends EmgImuAdapterActivity.DeviceAdapter {
                 BluetoothDevice dev =  getDevice();
                 Log.d(TAG, "My device is " + dev);
 
-                EmgImuManager.calibrationListener listener = new EmgImuManager.calibrationListener() {
+                EmgImuManager.CalibrationListener listener = new EmgImuManager.CalibrationListener() {
                     @Override
                     public void onUploading() {
                         status.setText("Uploading");
@@ -107,6 +106,19 @@ public class CalibrationAdapter extends EmgImuAdapterActivity.DeviceAdapter {
                     public void onReceivedIm(Bitmap im) {
                         calibrationIm.setImageBitmap(im);
                     }
+
+                    @Override
+                    public void onSent() {
+                        String msg = status.getText().toString();
+                        msg = msg + ". Saved to device.";
+                        status.setText(msg);
+                    }
+
+                    @Override
+                    public void onError(String err) {
+                        status.setText(err);
+                    }
+
                 };
 
                 getService().finishCalibration(dev, listener);

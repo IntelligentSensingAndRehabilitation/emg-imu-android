@@ -56,7 +56,6 @@ import com.firebase.jobdispatcher.Job;
 import com.firebase.jobdispatcher.Lifetime;
 import com.firebase.jobdispatcher.RetryStrategy;
 import com.firebase.jobdispatcher.Trigger;
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.Timestamp;
 import com.google.firebase.analytics.FirebaseAnalytics;
 import com.google.firebase.auth.FirebaseAuth;
@@ -65,12 +64,9 @@ import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.iid.FirebaseInstanceId;
-import com.google.firebase.iid.InstanceIdResult;
 
-import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -308,7 +304,7 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
             return manager.getChannelCount();
         }
 
-        public void finishCalibration(final BluetoothDevice device, EmgImuManager.calibrationListener listener) {
+        public void finishCalibration(final BluetoothDevice device, EmgImuManager.CalibrationListener listener) {
             // TODO: needs to have some type of callback listener to visualize
             final EmgImuManager manager = (EmgImuManager) getBleManager(device);
             manager.finishCalibration(listener);

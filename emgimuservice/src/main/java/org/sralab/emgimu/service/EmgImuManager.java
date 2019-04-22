@@ -29,7 +29,6 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.media.Image;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -37,16 +36,11 @@ import android.support.annotation.NonNull;
 import android.util.Base64;
 import android.util.Log;
 
-import com.google.firebase.Timestamp;
 import com.google.firebase.analytics.FirebaseAnalytics;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
-import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.FirebaseFirestoreException;
-import com.google.firebase.firestore.ServerTimestamp;
 
 import org.sralab.emgimu.logging.FirebaseEmgLogger;
 import org.sralab.emgimu.logging.FirebaseStreamLogger;
@@ -68,20 +62,9 @@ import java.util.Map;
 import java.util.TimeZone;
 import java.util.UUID;
 
-import javax.annotation.Nullable;
-
 import no.nordicsemi.android.ble.PhyRequest;
-import no.nordicsemi.android.ble.ReadRequest;
-import no.nordicsemi.android.ble.Request;
-import no.nordicsemi.android.ble.callback.DataReceivedCallback;
-import no.nordicsemi.android.ble.callback.FailCallback;
-import no.nordicsemi.android.ble.callback.InvalidRequestCallback;
-import no.nordicsemi.android.ble.callback.MtuCallback;
-import no.nordicsemi.android.ble.callback.PhyCallback;
-import no.nordicsemi.android.ble.callback.SuccessCallback;
 import no.nordicsemi.android.ble.data.Data;
 import no.nordicsemi.android.ble.data.MutableData;
-import no.nordicsemi.android.log.Logger;
 import no.nordicsemi.android.ble.BleManager;
 
 import static java.lang.Math.abs;
@@ -732,15 +715,17 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
     }
 
 
-    public interface calibrationListener
+    public interface CalibrationListener
     {
         void onUploading();
         void onComputing();
         void onReceivedCal(List<Float> Ainv, List<Float> b, float len_var);
         void onReceivedIm(Bitmap im);
+        void onSent();
+        void onError(String msg);
     }
 
-    void finishCalibration(calibrationListener listener) {
+    void finishCalibration(CalibrationListener listener) {
         // TODO: needs a callback for when the stream logging stops to time
         // the write
         disableImu();
@@ -797,6 +782,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                                     log(Log.DEBUG, "Not computed yet");
                                 } else if (len_var > 0.01) {
                                     log(Log.WARN, "Poor calibration. Not using");
+                                    if (listener != null) listener.onError("Poor quality calibration");
                                 } else {
                                     log(Log.INFO, "Calibration: " + documentSnapshot.getData());
                                     FirebaseMagCalibration updatedCalibration = documentSnapshot.toObject(FirebaseMagCalibration.class);
@@ -805,7 +791,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                                     if (updatedCalibration.calibration_image == null)
                                     {
                                         if (listener != null) listener.onReceivedCal(updatedCalibration.Ainv, updatedCalibration.b, updatedCalibration.len_var);
-                                        writeImuCalibration(updatedCalibration);
+                                        writeImuCalibration(updatedCalibration, listener);
                                     }
                                     else
                                     {
@@ -846,7 +832,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
     private static final int MANTISSA_SHIFT = 0;
 //    private static final int CONST_ONE = MutableData.floatToInt(1.0f);
 
-    private void writeImuCalibration(FirebaseMagCalibration cal) {
+    private void writeImuCalibration(FirebaseMagCalibration cal, CalibrationListener listener) {
         if (mImuCalibrationCharacteristic == null) {
             log(Log.ERROR, "Calibration characteristic not found");
             return;
@@ -883,8 +869,15 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         //Log.d(TAG, "New value: " + characteristic.getStringValue());
         writeCharacteristic(mImuCalibrationCharacteristic, characteristic)
                 .invalid(() -> Log.d(TAG, "Invalid request"))
-                .done(dev -> log(Log.INFO, "Sent new calibration settings"))
-                .fail((dev, status) -> logFetchFailed(dev,"Failed to send calibration"))
+                .done(dev -> {
+                    log(Log.INFO, "Sent new calibration settings");
+                    if (listener != null) listener.onSent();
+                })
+                .fail((dev, status) ->
+                {
+                    log(Log.ERROR, "Failed to send calibration");
+                    if (listener != null) listener.onError("Failed to send calibration");
+                })
                 .enqueue();
     }
 
