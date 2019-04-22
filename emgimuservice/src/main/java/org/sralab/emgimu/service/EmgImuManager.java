@@ -854,9 +854,9 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         }
 
         // Mag bias
-        characteristic.setValue(cal.b.get(0), BluetoothGattCharacteristic.FORMAT_SINT16, 36);
-        characteristic.setValue(cal.b.get(1), BluetoothGattCharacteristic.FORMAT_SINT16, 38);
-        characteristic.setValue(cal.b.get(2), BluetoothGattCharacteristic.FORMAT_SINT16, 40);
+        characteristic.setValue((int) Math.round(cal.b.get(0)), BluetoothGattCharacteristic.FORMAT_SINT16, 36);
+        characteristic.setValue((int) Math.round(cal.b.get(1)), BluetoothGattCharacteristic.FORMAT_SINT16, 38);
+        characteristic.setValue((int) Math.round(cal.b.get(2)), BluetoothGattCharacteristic.FORMAT_SINT16, 40);
 
         // Accel bias
         characteristic.setValue(0, BluetoothGattCharacteristic.FORMAT_SINT16, 42);

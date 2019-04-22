@@ -89,12 +89,12 @@ public class CalibrationAdapter extends EmgImuAdapterActivity.DeviceAdapter {
                 EmgImuManager.CalibrationListener listener = new EmgImuManager.CalibrationListener() {
                     @Override
                     public void onUploading() {
-                        status.setText("Uploading");
+                        status.setText("Uploading...");
                     }
 
                     @Override
                     public void onComputing() {
-                        status.setText("Computing");
+                        status.setText("Computing...");
                     }
 
                     @Override
