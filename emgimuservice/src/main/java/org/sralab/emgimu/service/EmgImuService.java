@@ -304,6 +304,12 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
             return manager.getChannelCount();
         }
 
+        public void startCalibration(final BluetoothDevice device, EmgImuManager.CalibrationListener listener) {
+            // TODO: needs to have some type of callback listener to visualize
+            final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+            manager.startCalibration(listener);
+        }
+
         public void finishCalibration(final BluetoothDevice device, EmgImuManager.CalibrationListener listener) {
             // TODO: needs to have some type of callback listener to visualize
             final EmgImuManager manager = (EmgImuManager) getBleManager(device);

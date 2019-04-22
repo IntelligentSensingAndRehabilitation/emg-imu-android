@@ -49,11 +49,19 @@ public class CalibrationAdapter extends EmgImuAdapterActivity.DeviceAdapter {
         public void bind(BluetoothDevice device) {
             super.bind(device);
             Log.d(TAG, "Binding: " + device);
-            boolean connected = getService().getConnectionState(getDevice()) == BluetoothGatt.STATE_CONNECTED;
-            finishButton.setEnabled(connected);
-            startButton.setEnabled(connected);
-            sensorId.setText("Sensor: " + getDevice().getAddress());
+            if (device != null) {
+                boolean connected = getService().isReady(device);
+                startButton.setEnabled(connected);
+                sensorId.setText("Sensor: " + getDevice().getAddress());
+            } else {
+                finishButton.setEnabled(false);
+                startButton.setEnabled(false);
+                status.setText("");
+                sensorId.setText("Sensor: Connecting...");
+            }
         }
+
+
 
         MyViewHolder(final View itemView) {
             super(itemView);
@@ -73,11 +81,44 @@ public class CalibrationAdapter extends EmgImuAdapterActivity.DeviceAdapter {
                 BluetoothDevice dev =  getDevice();
                 Log.d(TAG, "My device is " + dev);
 
-                getService().enableImu(dev);
+                status.setText("Zeroing initial calibration...");
 
-                Log.d(TAG, "Enabled IMU streaming");
-                
-                status.setText("Collecting. Please rotate sensor.");
+                getService().startCalibration(dev, new EmgImuManager.CalibrationListener() {
+                    @Override
+                    public void onUploading() {
+
+                    }
+
+                    @Override
+                    public void onComputing() {
+
+                    }
+
+                    @Override
+                    public void onReceivedCal(List<Float> Ainv, List<Float> b, float len_var) {
+
+                    }
+
+                    @Override
+                    public void onReceivedIm(Bitmap im) {
+
+                    }
+
+                    @Override
+                    public void onSent() {
+                        Log.d(TAG, "Device zeroed");
+                        status.setText("Collecting. Please rotate sensor.");
+                        getService().enableImu(getDevice());
+                        finishButton.setEnabled(true);
+                        startButton.setEnabled(false);
+                    }
+
+                    @Override
+                    public void onError(String msg) {
+
+                    }
+                });
+
             });
 
             finishButton = itemView.findViewById(R.id.finish_calibration_button);

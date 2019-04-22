@@ -725,6 +725,14 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         void onError(String msg);
     }
 
+    void startCalibration(CalibrationListener listener) {
+        // Zero out prior calibration as first step
+        FirebaseMagCalibration zeroCalibration = new FirebaseMagCalibration();
+        zeroCalibration.Ainv = new ArrayList<>(Arrays.asList(1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f));
+        zeroCalibration.b = new ArrayList<>(Arrays.asList(0f,0f,0f));
+        writeImuCalibration(zeroCalibration, listener);
+    }
+
     void finishCalibration(CalibrationListener listener) {
         // TODO: needs a callback for when the stream logging stops to time
         // the write
