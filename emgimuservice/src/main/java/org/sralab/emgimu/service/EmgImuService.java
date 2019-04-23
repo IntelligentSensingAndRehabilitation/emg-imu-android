@@ -92,7 +92,7 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 	private final static String ACTION_FIND = "no.nordicsemi.android.nrftoolbox.proximity.ACTION_FIND";
 	private final static String ACTION_SILENT = "no.nordicsemi.android.nrftoolbox.proximity.ACTION_SILENT";
 
-    public final static String EXTRA_DEVICE = "org.sralab.emgimu.EXTRA_DEVICE";
+    public final static String EXTRA_DEVICE = BleMulticonnectProfileService.EXTRA_DEVICE;
 
     // Broadcast messsages for battery updates
     public static final String BROADCAST_BATTERY_LEVEL = "org.sralab.emgimu.BROADCAST_BATTERY_LEVEL";
