@@ -156,13 +156,20 @@ public class AttitudeTrackActivity extends UnityPlayerActivity
 
         @Override
         public void onImuAttitudeReceived(BluetoothDevice device, float[] q) {
+
             String quat_s = String.join(",",
                     Float.toString(q[0]),
                     Float.toString(q[1]),
                     Float.toString(q[2]),
                     Float.toString(q[3]));
 
-            mUnityPlayer.UnitySendMessage("Player", "OnJavaQuaternionReceived", quat_s);
+            // When exiting a few broadcasts can come through at the end
+            if (mService != null) {
+                int idx = mService.getManagedDevices().indexOf(device);
+                quat_s += ", " + Integer.toString(idx);
+
+                mUnityPlayer.UnitySendMessage("Player", "OnJavaQuaternionReceived", quat_s);
+            }
         }
 
         @Override
