@@ -1,5 +1,6 @@
 package org.sralab.emgimu.imu_calibration;
 
+import android.bluetooth.BluetoothDevice;
 import android.os.Bundle;
 import android.support.v7.widget.RecyclerView;
 import android.view.WindowManager;
@@ -20,4 +21,8 @@ public class ImuCalibration extends EmgImuAdapterActivity {
         super.onCreateView(new CalibrationAdapter(), recyclerView);
     }
 
+    @Override
+    public void onImuMagReceived(BluetoothDevice device, float[][] mag) {
+
+    }
 }

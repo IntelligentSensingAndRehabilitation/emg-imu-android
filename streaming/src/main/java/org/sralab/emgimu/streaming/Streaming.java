@@ -1,5 +1,6 @@
 package org.sralab.emgimu.streaming;
 
+import android.bluetooth.BluetoothDevice;
 import android.os.Bundle;
 import android.support.v7.widget.RecyclerView;
 import android.text.Editable;

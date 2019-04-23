@@ -301,6 +301,11 @@ public class Game extends EmgImuBaseActivity {
     }
 
     @Override
+    public void onImuMagReceived(BluetoothDevice device, float[][] mag) {
+
+    }
+
+    @Override
     public void onImuAttitudeReceived(BluetoothDevice device, float[] quaternion) {
 
     }

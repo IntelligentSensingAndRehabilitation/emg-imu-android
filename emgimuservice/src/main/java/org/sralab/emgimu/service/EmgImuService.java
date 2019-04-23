@@ -1114,6 +1114,20 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
     }
 
     @Override
+    public void onImuMagReceived(BluetoothDevice device, float[][] mag) {
+        float [] linearizedData = new float[3 * 3];
+
+        for (int i = 0; i < 3; i++)
+            for (int j = 0; j < 3; j++)
+                linearizedData[i + j * 3] = mag[i][j];
+
+        final Intent broadcast = new Intent(BROADCAST_IMU_MAG);
+        broadcast.putExtra(EXTRA_DEVICE, device);
+        broadcast.putExtra(EXTRA_IMU_MAG, linearizedData);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(broadcast);
+    }
+
+    @Override
     public void onImuAttitudeReceived(BluetoothDevice device, float[] quaternion) {
         final Intent broadcast = new Intent(BROADCAST_IMU_ATTITUDE);
         broadcast.putExtra(EXTRA_DEVICE, device);

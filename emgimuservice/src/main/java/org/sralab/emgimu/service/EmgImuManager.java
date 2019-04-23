@@ -693,8 +693,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
             for (int chan = 0; chan < 3; chan++)
                 mag[idx][chan] = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT16, (chan + idx * 3) * 2);
 
-        Log.d(TAG, "Mag: " + mag[0][0] + " " + mag[0][1] + " " + mag[0][2]);
-        //mCallbacks.onImuMagReceived(device, mag);
+        mCallbacks.onImuMagReceived(device, mag);
 
         if (mLogging && streamLogger != null) {
             streamLogger.addMagSample(new Date().getTime(), mag);

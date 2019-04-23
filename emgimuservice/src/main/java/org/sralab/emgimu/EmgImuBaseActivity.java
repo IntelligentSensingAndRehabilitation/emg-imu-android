@@ -69,6 +69,58 @@ public abstract class EmgImuBaseActivity extends BleMulticonnectProfileServiceRe
                     onEmgClick(bluetoothDevice);
                     break;
                 }
+                case EmgImuService.BROADCAST_IMU_ACCEL: {
+                    final float [] value = intent.getFloatArrayExtra(EmgImuService.EXTRA_IMU_ACCEL);
+                    final int CHANNELS = 3;
+                    final int SAMPLES = 3;
+                    if (value != null) {
+                        float [][] data = new float[CHANNELS][SAMPLES];
+                        for (int idx = 0; idx < value.length; idx++) {
+                            int i = idx % CHANNELS;
+                            int j = idx / CHANNELS;
+                            data[i][j] = value[idx];
+                        }
+                        onImuAccelReceived(bluetoothDevice, data);
+                    }
+
+                    break;
+                }
+                case EmgImuService.BROADCAST_IMU_GYRO: {
+                    final float [] value = intent.getFloatArrayExtra(EmgImuService.EXTRA_IMU_GYRO);
+                    final int CHANNELS = 3;
+                    final int SAMPLES = 3;
+                    if (value != null) {
+                        float [][] data = new float[CHANNELS][SAMPLES];
+                        for (int idx = 0; idx < value.length; idx++) {
+                            int i = idx % CHANNELS;
+                            int j = idx / CHANNELS;
+                            data[i][j] = value[idx];
+                        }
+                        onImuGyroReceived(bluetoothDevice, data);
+                    }
+
+                    break;
+                }
+                case EmgImuService.BROADCAST_IMU_MAG: {
+                    final float [] value = intent.getFloatArrayExtra(EmgImuService.EXTRA_IMU_MAG);
+                    final int CHANNELS = 3;
+                    final int SAMPLES = 3;
+                    if (value != null) {
+                        float [][] data = new float[CHANNELS][SAMPLES];
+                        for (int idx = 0; idx < value.length; idx++) {
+                            int i = idx % CHANNELS;
+                            int j = idx / CHANNELS;
+                            data[i][j] = value[idx];
+                        }
+                        onImuMagReceived(bluetoothDevice, data);
+                    }
+                    break;
+                }
+                case EmgImuService.BROADCAST_IMU_ATTITUDE: {
+                    final float [] quat = intent.getFloatArrayExtra(EmgImuService.EXTRA_IMU_ATTITUDE);
+                    onImuAttitudeReceived(bluetoothDevice, quat);
+                    break;
+                }
             }
         }
     };
@@ -106,6 +158,10 @@ public abstract class EmgImuBaseActivity extends BleMulticonnectProfileServiceRe
         intentFilter.addAction(EmgImuService.BROADCAST_EMG_PWR);
         intentFilter.addAction(EmgImuService.BROADCAST_EMG_BUFF);
         intentFilter.addAction(EmgImuService.BROADCAST_EMG_CLICK);
+        intentFilter.addAction(EmgImuService.BROADCAST_IMU_ACCEL);
+        intentFilter.addAction(EmgImuService.BROADCAST_IMU_GYRO);
+        intentFilter.addAction(EmgImuService.BROADCAST_IMU_MAG);
+        intentFilter.addAction(EmgImuService.BROADCAST_IMU_ATTITUDE);
         return intentFilter;
     }
 

@@ -7,7 +7,6 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.View;
-import android.view.ViewGroup;
 
 import com.crashlytics.android.Crashlytics;
 import com.crashlytics.android.core.CrashlyticsCore;
@@ -131,6 +130,11 @@ public abstract class EmgImuAdapterActivity extends EmgImuBaseActivity {
     }
 
     @Override
+    public void onImuMagReceived(BluetoothDevice device, float[][] gyro) {
+        mAdapter.onImuMagReceived(device, gyro);
+    }
+
+    @Override
     public void onImuAttitudeReceived(BluetoothDevice device, float[] quaternion) {
         mAdapter.onImuAttitudeReceived(device, quaternion);
     }
@@ -238,6 +242,8 @@ public abstract class EmgImuAdapterActivity extends EmgImuBaseActivity {
         public void onImuAccelReceived(BluetoothDevice device, float[][] accel) {}
 
         public void onImuGyroReceived(BluetoothDevice device, float[][] gyro) {}
+
+        public void onImuMagReceived(BluetoothDevice device, float[][] gyro) {}
 
         public void onImuAttitudeReceived(BluetoothDevice device, float[] quaternion) {}
 
