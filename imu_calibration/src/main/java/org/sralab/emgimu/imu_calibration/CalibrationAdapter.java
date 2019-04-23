@@ -95,7 +95,7 @@ public class CalibrationAdapter extends EmgImuAdapterActivity.DeviceAdapter {
                     }
 
                     @Override
-                    public void onReceivedCal(List<Float> Ainv, List<Float> b, float len_var) {
+                    public void onReceivedCal(List<Float> Ainv, List<Float> b, float len_var, List<Float> angles) {
 
                     }
 
@@ -142,8 +142,10 @@ public class CalibrationAdapter extends EmgImuAdapterActivity.DeviceAdapter {
                     }
 
                     @Override
-                    public void onReceivedCal(List<Float> Ainv, List<Float> b, float len_var) {
-                        status.setText(String.format("Completed. Length error %.1f%%", 100 * Math.sqrt(len_var)));
+                    public void onReceivedCal(List<Float> Ainv, List<Float> b, float len_var, List<Float> angles) {
+                        status.setText(String.format("Completed. Length error %.1f%%. Angles <%.1f, %.1f, %.1f>",
+                                100 * Math.sqrt(len_var),
+                                angles.get(0), angles.get(1), angles.get(2)));
                     }
 
                     @Override

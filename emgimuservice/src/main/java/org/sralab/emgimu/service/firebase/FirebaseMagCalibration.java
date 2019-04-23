@@ -16,6 +16,7 @@ public class FirebaseMagCalibration {
     public String uuid;
     public List<Float> Ainv;
     public List<Float> b;
+    public List<Float> angles;
     public float len_var;
     public Blob calibration_image;
 

@@ -718,7 +718,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
     {
         void onUploading();
         void onComputing();
-        void onReceivedCal(List<Float> Ainv, List<Float> b, float len_var);
+        void onReceivedCal(List<Float> Ainv, List<Float> b, float len_var, List<Float> angles);
         void onReceivedIm(Bitmap im);
         void onSent();
         void onError(String msg);
@@ -801,7 +801,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                                     // The first update will have no image but has the values. Can use here.
                                     if (updatedCalibration.calibration_image == null)
                                     {
-                                        if (listener != null) listener.onReceivedCal(updatedCalibration.Ainv, updatedCalibration.b, updatedCalibration.len_var);
+                                        if (listener != null) listener.onReceivedCal(updatedCalibration.Ainv, updatedCalibration.b, updatedCalibration.len_var, updatedCalibration.angles);
                                         writeImuCalibration(updatedCalibration, listener);
                                     }
                                     else
