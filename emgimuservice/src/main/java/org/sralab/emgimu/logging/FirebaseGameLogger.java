@@ -83,10 +83,13 @@ public class FirebaseGameLogger {
 
     private FirebaseUser mUser;
     private FirebaseFirestore mDb;
+    private EmgImuService.EmgImuBinder mService;
 
     private GamePlayRecord record;
 
     public FirebaseGameLogger(EmgImuService.EmgImuBinder service, String game, long startTime) {
+
+        mService = service;
 
         FirebaseAuth mAuth = FirebaseAuth.getInstance();
         mUser = mAuth.getCurrentUser(); // Log in performed by main service
@@ -107,7 +110,7 @@ public class FirebaseGameLogger {
         record.stopTime = null;
         record.name = game;
         record.performance = 0;
-        record.logReference = service.getLoggingReferences();
+        record.logReference = mService.getLoggingReferences();
 
         Handler mainHandler = new Handler(Looper.getMainLooper());
         mainHandler.post(()-> {
@@ -128,6 +131,7 @@ public class FirebaseGameLogger {
         record.stopTime = Timestamp.now();
         record.performance = performance;
         record.details = details;
+        record.logReference = mService.getLoggingReferences();
 
         save();
     }
