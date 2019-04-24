@@ -205,6 +205,7 @@ public class AttitudeTrackActivity extends UnityPlayerActivity
 
         @Override
         public void onServiceUnbinded() {
+            mGameLogger.finalize(0, "");
             mGameLogger = null;
             mService = null;
             Log.d(TAG, "Service unbound");
@@ -221,40 +222,5 @@ public class AttitudeTrackActivity extends UnityPlayerActivity
             //mService.enableImu(device);
         }
     };
-
-    //! Data format logged to Firebase
-    private class Details {
-        ArrayList<Float> roundPower;
-        double difficulty;
-    };
-
-    //! Called from Unity when a round ends to store the power
-    public void LogRound(String data) {
-
-        Log.i("TAG", "The data was "+data);
-
-        float score = Float.valueOf(data);
-        roundPwr.add(score);
-
-        // If exiting before service is bound then do not try
-        // and save
-        if (mGameLogger == null)
-            return;
-
-        Gson gson = new Gson();
-
-        Details d = new Details();
-        d.roundPower = roundPwr;
-        d.difficulty = difficulty;
-        String json = gson.toJson(d);
-
-        double p = 0;
-        for(Float pwr : roundPwr)
-            p += pwr;
-        p /= roundPwr.size();
-
-        Log.d(TAG, "Updating with: " + json);
-        mGameLogger.finalize(p, json);
-    }
 
 }
