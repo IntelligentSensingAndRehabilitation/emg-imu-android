@@ -18,6 +18,7 @@ import org.sralab.emgimu.service.EmgImuServiceHolder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 
 import io.fabric.sdk.android.Fabric;
 
@@ -154,19 +155,34 @@ public class AttitudeTrackActivity extends UnityPlayerActivity
             mUnityPlayer.UnitySendMessage("Player", "OnJavaAccelReceived", accel_s);
         }
 
+        List<Long> lastUpdateTimes = new ArrayList<Long>();
+
         @Override
         public void onImuAttitudeReceived(BluetoothDevice device, float[] q) {
-
-            String quat_s = String.join(",",
-                    Float.toString(q[0]),
-                    Float.toString(q[1]),
-                    Float.toString(q[2]),
-                    Float.toString(q[3]));
 
             // When exiting a few broadcasts can come through at the end
             if (mService != null) {
                 int idx = mService.getManagedDevices().indexOf(device);
-                quat_s += ", " + Integer.toString(idx);
+
+                long time = System.nanoTime();
+
+                // Throttle updates to get unity to keep up
+                final long minPeriodNs = (long) 0.01e9; // 10 ms
+                if (lastUpdateTimes.size() < idx + 1)
+                    lastUpdateTimes.add(idx, time);
+                else if ((time - lastUpdateTimes.get(idx)) < minPeriodNs)
+                    return;
+                lastUpdateTimes.set(idx, time);
+
+                Log.d(TAG, "IMU: " + idx);
+
+                String quat_s = String.join(",",
+                        Float.toString(q[0]),
+                        Float.toString(q[1]),
+                        Float.toString(q[2]),
+                        Float.toString(q[3]),
+                        Integer.toString(idx));
+
 
                 mUnityPlayer.UnitySendMessage("Player", "OnJavaQuaternionReceived", quat_s);
             }
