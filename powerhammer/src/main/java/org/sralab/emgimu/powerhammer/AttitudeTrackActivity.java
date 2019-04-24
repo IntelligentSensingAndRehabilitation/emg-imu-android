@@ -167,12 +167,19 @@ public class AttitudeTrackActivity extends UnityPlayerActivity
                 long time = System.nanoTime();
 
                 // Throttle updates to get unity to keep up
-                final long minPeriodNs = (long) 0.01e9; // 10 ms
+                final long minPeriodNs = (long) 0.050e9; // 50 ms
                 if (lastUpdateTimes.size() < idx + 1)
-                    lastUpdateTimes.add(idx, time);
-                else if ((time - lastUpdateTimes.get(idx)) < minPeriodNs)
+                    for (int i = lastUpdateTimes.size(); i < idx + 1; i++)
+                        lastUpdateTimes.add(i, time);
+                else if ((time - lastUpdateTimes.get(idx)) < minPeriodNs) {
                     return;
+                }
+
                 lastUpdateTimes.set(idx, time);
+
+                // Hack -- set the two sensors to stagger their updates
+                if (lastUpdateTimes.size() > (1-idx))
+                    lastUpdateTimes.set(1-idx, time - minPeriodNs / 2);
 
                 Log.d(TAG, "IMU: " + idx);
 
@@ -211,7 +218,7 @@ public class AttitudeTrackActivity extends UnityPlayerActivity
             }
 
             mService.enableAttitude(device);
-            mService.enableImu(device);
+            //mService.enableImu(device);
         }
     };
 
