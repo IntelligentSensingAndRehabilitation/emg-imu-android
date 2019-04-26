@@ -11,8 +11,10 @@ import android.view.WindowManager;
 import android.widget.Button;
 
 import org.sralab.emgimu.EmgImuAdapterActivity;
+import org.sralab.emgimu.logging.FirebaseGameLogger;
 import org.sralab.emgimu.service.EmgImuService;
 
+import java.util.Date;
 import java.util.List;
 
 public class ImuCalibration extends EmgImuAdapterActivity {
@@ -21,6 +23,7 @@ public class ImuCalibration extends EmgImuAdapterActivity {
 
     private static final int REQUEST_VIDEO_CAPTURE = 1;
     boolean recording = false;
+    long recordingStartTime;
 
     @Override
     protected void onCreateView(Bundle savedInstanceState) {
@@ -60,6 +63,7 @@ public class ImuCalibration extends EmgImuAdapterActivity {
             Intent takeVideoIntent = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
             if (takeVideoIntent.resolveActivity(getPackageManager()) != null) {
                 recording = true;
+                recordingStartTime =  new Date().getTime();
                 startActivityForResult(takeVideoIntent, REQUEST_VIDEO_CAPTURE);
             }
         });
@@ -72,6 +76,8 @@ public class ImuCalibration extends EmgImuAdapterActivity {
             //videoView.setVideoURI(videoUri);
             Log.d(TAG, "Received video: " + videoUri);
             recording = false;
+            FirebaseGameLogger mGameLogger = new FirebaseGameLogger(getService(), getString(R.string.title_imu_calibration), recordingStartTime);
+            mGameLogger.finalize(0, videoUri.toString());
         }
     }
 
@@ -87,5 +93,5 @@ public class ImuCalibration extends EmgImuAdapterActivity {
         else
             return super.isChangingConfigurations();
     }
-    
+
 }
