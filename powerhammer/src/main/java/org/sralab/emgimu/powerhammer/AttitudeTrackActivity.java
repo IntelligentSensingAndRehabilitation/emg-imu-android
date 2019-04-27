@@ -34,6 +34,7 @@ public class AttitudeTrackActivity extends UnityPlayerActivity
     // Variables for logging
     private FirebaseGameLogger mGameLogger;
     private ArrayList<Float> roundPwr = new ArrayList<>();
+    private long startAttitudeTime;
 
     // Setup activity layout
     @Override protected void onCreate(Bundle savedInstanceState)
@@ -160,6 +161,12 @@ public class AttitudeTrackActivity extends UnityPlayerActivity
         @Override
         public void onImuAttitudeReceived(BluetoothDevice device, float[] q) {
 
+            // Throw out first five seconds of data to let sensor converge
+            if ((System.nanoTime() - startAttitudeTime) < 5e9)
+                return;
+
+            Log.d(TAG, "Update");
+
             // When exiting a few broadcasts can come through at the end
             if (mService != null) {
                 int idx = mService.getManagedDevices().indexOf(device);
@@ -218,8 +225,12 @@ public class AttitudeTrackActivity extends UnityPlayerActivity
                 return;
             }
 
+            Log.d(TAG, "onDeviceReady()");
+
             mService.enableAttitude(device);
             //mService.enableImu(device);
+
+            startAttitudeTime = System.nanoTime();
         }
     };
 
