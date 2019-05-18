@@ -59,6 +59,8 @@
 		<type fullname="UnityEngine.Terrain" preserve="nothing"/>
 		<type fullname="UnityEngine.FlareLayer" preserve="nothing"/>
 		<type fullname="UnityEngine.TerrainLayer" preserve="nothing"/>
+		<type fullname="UnityEngine.LineRenderer" preserve="nothing"/>
+		<type fullname="UnityEngine.ConfigurableJoint" preserve="nothing"/>
 	</assembly>
 	<assembly fullname="Assembly-CSharp">
 		<type fullname="BallControl" preserve="nothing"/>
@@ -68,6 +70,7 @@
 		<type fullname="Player" preserve="nothing"/>
 		<type fullname="SceneLoader" preserve="nothing"/>
 		<type fullname="SoundButton" preserve="nothing"/>
+		<type fullname="TapToPlaceObject" preserve="nothing"/>
 		<type fullname="Target" preserve="nothing"/>
 	</assembly>
 	<assembly fullname="Unity.TextMeshPro">
@@ -84,6 +87,13 @@
 		<type fullname="UnityEngine.XR.ARFoundation.ARCameraBackground" preserve="nothing"/>
 		<type fullname="UnityEngine.XR.ARFoundation.ARCameraManager" preserve="nothing"/>
 		<type fullname="UnityEngine.XR.ARFoundation.ARInputManager" preserve="nothing"/>
+		<type fullname="UnityEngine.XR.ARFoundation.ARPlane" preserve="nothing"/>
+		<type fullname="UnityEngine.XR.ARFoundation.ARPlaneManager" preserve="nothing"/>
+		<type fullname="UnityEngine.XR.ARFoundation.ARPlaneMeshVisualizer" preserve="nothing"/>
+		<type fullname="UnityEngine.XR.ARFoundation.ARPointCloud" preserve="nothing"/>
+		<type fullname="UnityEngine.XR.ARFoundation.ARPointCloudManager" preserve="nothing"/>
+		<type fullname="UnityEngine.XR.ARFoundation.ARPointCloudParticleVisualizer" preserve="nothing"/>
+		<type fullname="UnityEngine.XR.ARFoundation.ARRaycastManager" preserve="nothing"/>
 		<type fullname="UnityEngine.XR.ARFoundation.ARSession" preserve="nothing"/>
 		<type fullname="UnityEngine.XR.ARFoundation.ARSessionOrigin" preserve="nothing"/>
 	</assembly>

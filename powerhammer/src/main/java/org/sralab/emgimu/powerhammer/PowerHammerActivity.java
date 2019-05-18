@@ -125,7 +125,7 @@ public class PowerHammerActivity extends UnityPlayerActivity
 
             String val = Float.toString(value / (float) difficulty);
             // takes in Object, Function Mame, Parameters
-            mUnityPlayer.UnitySendMessage("Player", "OnJavaEmgPowerReceived", val);
+            mUnityPlayer.UnitySendMessage("EventSystem", "OnJavaEmgPowerReceived", val);
         }
 
         @Override
