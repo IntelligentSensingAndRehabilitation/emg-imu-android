@@ -77,8 +77,18 @@
 		<type fullname="TMPro.TMP_StyleSheet" preserve="nothing"/>
 		<type fullname="TMPro.TextMeshProUGUI" preserve="nothing"/>
 	</assembly>
+	<assembly fullname="Unity.XR.ARFoundation">
+		<type fullname="UnityEngine.XR.ARFoundation.ARCameraBackground" preserve="nothing"/>
+		<type fullname="UnityEngine.XR.ARFoundation.ARCameraManager" preserve="nothing"/>
+		<type fullname="UnityEngine.XR.ARFoundation.ARInputManager" preserve="nothing"/>
+		<type fullname="UnityEngine.XR.ARFoundation.ARSession" preserve="nothing"/>
+		<type fullname="UnityEngine.XR.ARFoundation.ARSessionOrigin" preserve="nothing"/>
+	</assembly>
 	<assembly fullname="UnityEditor.TestRunner">
 		<type fullname="UnityEditor.TestTools.TestRunner.TestListCacheData" preserve="nothing"/>
+	</assembly>
+	<assembly fullname="UnityEngine.SpatialTracking">
+		<type fullname="UnityEngine.SpatialTracking.TrackedPoseDriver" preserve="nothing"/>
 	</assembly>
 	<assembly fullname="UnityEngine.UI">
 		<type fullname="UnityEngine.EventSystems.EventSystem" preserve="nothing"/>

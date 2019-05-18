@@ -48,7 +48,7 @@ public class PowerHammerActivity extends UnityPlayerActivity
         mServiceHolder.setCallbacks(mEmgImuCallbacks);
 
         super.onCreate(savedInstanceState);
-        mUnityPlayer.UnitySendMessage("SceneLoader", "loadScene", "1");
+        mUnityPlayer.UnitySendMessage("SceneLoader", "loadScene", "3");
     }
 
     @Override
