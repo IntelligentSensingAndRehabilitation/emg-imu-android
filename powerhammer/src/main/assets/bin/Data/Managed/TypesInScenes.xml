@@ -77,6 +77,9 @@
 		<type fullname="TMPro.TMP_StyleSheet" preserve="nothing"/>
 		<type fullname="TMPro.TextMeshProUGUI" preserve="nothing"/>
 	</assembly>
+	<assembly fullname="Unity.XR.ARCore.Editor">
+		<type fullname="UnityEditor.XR.ARCore.ARCoreSettings" preserve="nothing"/>
+	</assembly>
 	<assembly fullname="Unity.XR.ARFoundation">
 		<type fullname="UnityEngine.XR.ARFoundation.ARCameraBackground" preserve="nothing"/>
 		<type fullname="UnityEngine.XR.ARFoundation.ARCameraManager" preserve="nothing"/>

@@ -22,6 +22,8 @@ import java.util.List;
 
 import io.fabric.sdk.android.Fabric;
 
+import org.sralab.emgimu.R;
+
 public class AttitudeTrackActivity extends UnityPlayerActivity
 {
     private static final String TAG = AttitudeTrackActivity.class.getSimpleName();

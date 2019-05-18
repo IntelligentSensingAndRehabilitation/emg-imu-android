@@ -30,6 +30,7 @@ android {
         exclude 'META-INF/proguard/androidx-annotations.pro'
     }
 
+    dynamicFeatures = [':powerhammer']
 }
 
 dependencies {
@@ -41,7 +42,6 @@ dependencies {
     implementation project(':fluttercow')
     implementation project(':streaming')
     implementation project(':martianrun')
-    implementation project(':powerhammer')
     implementation project(':imu_calibration')
 
     // Because too many methods

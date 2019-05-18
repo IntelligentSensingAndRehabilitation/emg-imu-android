@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Date;
 
 import io.fabric.sdk.android.Fabric;
+import org.sralab.emgimu.R;
 
 public class PowerHammerActivity extends UnityPlayerActivity
 {

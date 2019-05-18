@@ -25,6 +25,10 @@ allprojects {
         google()
         jcenter()
 
+        flatDir {
+            dirs 'libs'
+        }
+
         mavenCentral()
         maven { url 'https://maven.fabric.io/public' }
     }
