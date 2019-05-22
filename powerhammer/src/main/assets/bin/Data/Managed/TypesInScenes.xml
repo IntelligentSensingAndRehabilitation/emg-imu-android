@@ -69,6 +69,7 @@
 		<type fullname="HammerControl" preserve="nothing"/>
 		<type fullname="Player" preserve="nothing"/>
 		<type fullname="SceneLoader" preserve="nothing"/>
+		<type fullname="SoccerGameController" preserve="nothing"/>
 		<type fullname="SoundButton" preserve="nothing"/>
 		<type fullname="TapToPlaceObject" preserve="nothing"/>
 		<type fullname="Target" preserve="nothing"/>

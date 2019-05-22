@@ -2,4 +2,5 @@
 <resources>
     <string name="powerhammer_name">Power Hammer</string>
     <string name="attitudetrack_name">Attitude Track</string>
+    <string name="soccer_name">AR Soccer</string>
 </resources>
