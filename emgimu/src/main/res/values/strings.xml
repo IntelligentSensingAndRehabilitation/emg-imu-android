@@ -3,4 +3,6 @@
     <string name="powerhammer_name">Power Hammer</string>
     <string name="attitudetrack_name">Attitude Track</string>
     <string name="soccer_name">AR Soccer</string>
+    <string name="title_controller">Controller</string>
+    <string name="title_activity_controller">Controller</string>
 </resources>
