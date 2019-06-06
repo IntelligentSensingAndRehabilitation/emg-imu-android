@@ -67,8 +67,8 @@ public class EmgDecoder {
     }
 
     private final int WINDOW_LENGTH = 50;
-    public final int CHANNELS = 8;
-    public final int EMBEDDINGS_SIZE = 2;
+    public static final int CHANNELS = 8;
+    public static final int EMBEDDINGS_SIZE = 2;
 
     protected ByteBuffer output = null;
 

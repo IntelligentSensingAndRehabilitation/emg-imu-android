@@ -10,6 +10,7 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import org.sralab.emgimu.visualization.LineGraphView;
+import org.sralab.emgimu.visualization.VectorGraphView;
 
 import java.util.Arrays;
 
@@ -19,8 +20,8 @@ public class Controller extends AppCompatActivity {
 
     private EmgDecoder emgDecoder = null;
 
-    private LineGraphView inputGraph;
-    private LineGraphView outputGraph;
+    private VectorGraphView inputGraph;
+    private VectorGraphView outputGraph;
 
 
     @Override
@@ -32,16 +33,14 @@ public class Controller extends AppCompatActivity {
 
 
         ViewGroup decoder_inputs = findViewById(R.id.decoder_inputs);
-        inputGraph = new LineGraphView(decoder_inputs.getContext(), decoder_inputs);
+        inputGraph = new VectorGraphView(decoder_inputs.getContext(), decoder_inputs, EmgDecoder.CHANNELS);
         inputGraph.setWindowSize(250);
         inputGraph.setRange(10);
-        inputGraph.enableFiltering(true);
 
         ViewGroup decoder_outputs = findViewById(R.id.decoder_outputs);
-        outputGraph = new LineGraphView(decoder_outputs.getContext(), decoder_outputs);
+        outputGraph = new VectorGraphView(decoder_outputs.getContext(), decoder_outputs, EmgDecoder.EMBEDDINGS_SIZE);
         outputGraph.setWindowSize(250);
         outputGraph.setRange(10);
-        outputGraph.enableFiltering(true);
 
         FloatingActionButton fab = findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -49,7 +48,7 @@ public class Controller extends AppCompatActivity {
             public void onClick(View v) {
 
                 Log.d(TAG, "Processing");
-                float coordinates[] = new float[emgDecoder.EMBEDDINGS_SIZE];
+                float coordinates[] = new float[EmgDecoder.EMBEDDINGS_SIZE];
 
                 for (int i = 0; i < 100; i++) {
                     float data[] = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
@@ -57,8 +56,8 @@ public class Controller extends AppCompatActivity {
 
                     emgDecoder.decode(data, coordinates);
 
-                    inputGraph.addValue(data[0]);
-                    outputGraph.addValue(coordinates[0]);
+                    inputGraph.addValue(data);
+                    outputGraph.addValue(coordinates);
                 }
 
                 inputGraph.repaint();
