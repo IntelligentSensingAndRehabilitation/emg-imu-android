@@ -12,7 +12,7 @@
 
     <application>
         <activity
-            android:name=".Controller"
+            android:name=".LearningGameActivity"
             android:label="@string/title_activity_controller"
             android:theme="@style/AppTheme.NoActionBar">
 

@@ -1,24 +1,26 @@
 package org.sralab.emgimu.controller;
 
+import android.bluetooth.BluetoothDevice;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 
-import org.sralab.emgimu.visualization.LineGraphView;
+import androidx.annotation.NonNull;
+
+import org.sralab.emgimu.EmgImuBaseActivity;
+import org.sralab.emgimu.service.EmgImuService;
 import org.sralab.emgimu.visualization.VectorGraphView;
 
 import java.util.Arrays;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class Controller extends AppCompatActivity {
+public class LearningGameActivity extends EmgImuBaseActivity {
 
-    private static final String TAG = Controller.class.getSimpleName();
+    private static final String TAG = LearningGameActivity.class.getSimpleName();
 
     private EmgDecoder emgDecoder = null;
 
@@ -31,12 +33,9 @@ public class Controller extends AppCompatActivity {
     private Timer gameTimer;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_controller);
-        Toolbar toolbar = findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
-
+    protected void onCreateView(Bundle savedInstanceState) {
+        setContentView(R.layout.activity_learning_game);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         ViewGroup decoder_inputs = findViewById(R.id.decoder_inputs);
         inputGraph = new VectorGraphView(decoder_inputs.getContext(), decoder_inputs, EmgDecoder.CHANNELS);
@@ -100,5 +99,70 @@ public class Controller extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         gameTimer.cancel();
+    }
+
+    @Override
+    protected void onServiceBinded(EmgImuService.EmgImuBinder binder) {
+
+    }
+
+    @Override
+    protected void onServiceUnbinded() {
+
+    }
+
+    @Override
+    protected int getAboutTextId() {
+        return 0;
+    }
+
+    @Override
+    public void onBatteryReceived(BluetoothDevice device, float battery) {
+
+    }
+
+    @Override
+    public void onEmgBuffReceived(BluetoothDevice device, int count, double[][] data) {
+
+    }
+
+    @Override
+    public void onImuAccelReceived(BluetoothDevice device, float[][] accel) {
+
+    }
+
+    @Override
+    public void onImuGyroReceived(BluetoothDevice device, float[][] gyro) {
+
+    }
+
+    @Override
+    public void onImuMagReceived(BluetoothDevice device, float[][] mag) {
+
+    }
+
+    @Override
+    public void onImuAttitudeReceived(BluetoothDevice device, float[] quaternion) {
+
+    }
+
+    @Override
+    public void onDeviceConnected(@NonNull BluetoothDevice device) {
+
+    }
+
+    @Override
+    public void onDeviceDisconnected(@NonNull BluetoothDevice device) {
+
+    }
+
+    @Override
+    public void onLinkLossOccurred(@NonNull BluetoothDevice device) {
+
+    }
+
+    @Override
+    public void onBondingFailed(@NonNull BluetoothDevice device) {
+
     }
 }
