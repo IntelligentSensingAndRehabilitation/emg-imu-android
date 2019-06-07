@@ -9,21 +9,35 @@
     tools:context=".Controller"
     tools:showIn="@layout/activity_controller">
 
+    <org.sralab.emgimu.controller.GameView
+        android:id="@+id/game_view"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <View
+        android:id="@+id/divider2"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="?android:attr/listDivider" />
+
     <FrameLayout
         android:id="@+id/decoder_outputs"
         android:layout_width="match_parent"
         android:layout_height="100dp"
-        android:backgroundTint="#00663333" />
+        android:backgroundTint="#00663333" >
+
+    </FrameLayout>
+
+    <View
+        android:id="@+id/divider"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="?android:attr/listDivider" />
 
     <FrameLayout
         android:id="@+id/decoder_inputs"
         android:layout_width="match_parent"
-        android:layout_height="100dp"/>
-
-    <Button
-        android:id="@+id/button"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Button" />
+        android:layout_height="100dp" />
 
 </LinearLayout>

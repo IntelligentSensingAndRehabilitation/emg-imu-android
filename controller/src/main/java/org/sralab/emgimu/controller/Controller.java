@@ -13,6 +13,8 @@ import org.sralab.emgimu.visualization.LineGraphView;
 import org.sralab.emgimu.visualization.VectorGraphView;
 
 import java.util.Arrays;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class Controller extends AppCompatActivity {
 
@@ -23,6 +25,10 @@ public class Controller extends AppCompatActivity {
     private VectorGraphView inputGraph;
     private VectorGraphView outputGraph;
 
+    private GameView gameView;
+    private GameController gameController = new GameController();
+
+    private Timer gameTimer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,6 +48,8 @@ public class Controller extends AppCompatActivity {
         outputGraph.setWindowSize(250);
         outputGraph.setRange(10);
 
+        gameView = findViewById(R.id.game_view);
+
         FloatingActionButton fab = findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -58,6 +66,8 @@ public class Controller extends AppCompatActivity {
 
                     inputGraph.addValue(data);
                     outputGraph.addValue(coordinates);
+
+                    gameView.setOutputCoordinate(coordinates[0], coordinates[1]);
                 }
 
                 inputGraph.repaint();
@@ -72,6 +82,23 @@ public class Controller extends AppCompatActivity {
         } catch (Exception e) {
             Log.e(TAG, "Error: ", e);
         }
+
+        // Set up periodic timer that updates the game model/controller then
+        // then the view
+        gameTimer = new Timer();
+        gameTimer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                gameController.update(0.0f, 0.0f);
+                gameView.setGoalCoordinate(gameController.getGoalX(), gameController.getGoalY());
+            }
+        }, 10, 10);
+
     }
 
+    @Override
+    protected void onPause() {
+        super.onPause();
+        gameTimer.cancel();
+    }
 }
