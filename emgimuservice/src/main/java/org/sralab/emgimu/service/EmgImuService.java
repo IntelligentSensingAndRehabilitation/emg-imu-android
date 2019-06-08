@@ -368,6 +368,11 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
             return references;
         }
 
+        public NetworkStreaming getNetworkStreaming() {
+            //! Return handle to object that can forward data stream
+            return networkStreaming;
+        }
+
 	}
 
 	@Override
@@ -462,8 +467,7 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
         bundle.putString(FirebaseAnalytics.Param.ITEM_ID, "EMG_IMU_SERVICE_CREATED");
         mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.SELECT_CONTENT, bundle);
 
-        //networkStreaming = new NetworkStreaming();
-        //networkStreaming.start();
+        networkStreaming = new NetworkStreaming();
 	}
 
     private void storeToken()
@@ -654,7 +658,7 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
         bundle.putString(FirebaseAnalytics.Param.ITEM_ID, "EMG_IMU_SERVICE_STOPPED");
         mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.SELECT_CONTENT, bundle);
 
-        if (networkStreaming != null)
+        if (networkStreaming != null && networkStreaming.isConnected())
             networkStreaming.stop();
     }
 

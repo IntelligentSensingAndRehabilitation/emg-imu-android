@@ -7,6 +7,7 @@ import com.google.gson.Gson;
 
 import org.sralab.emgimu.streaming.messages.EmgPwrMessage;
 import org.sralab.emgimu.streaming.messages.EmgRawMessage;
+import org.sralab.emgimu.streaming.messages.TrackingXYCoordinate;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -26,17 +27,8 @@ public class NetworkStreaming {
      * data and does not alter the behavior of the sensors (at least
      * for now).
      *
-     * Data format will be as follows:
-     *   sync byte (0x0C)
-     *   packet_size (1 byte)
-     *   sensor_id (either byte numerical ID or bluetooth MAC address)
-     *   data_type
-     *      0x00 EMG raw
-     *      0x01 EMG power
-     *      0x80 IMU Accel
-     *      0x81 IMU Gyro
-     *      0x82 IMU Mag
-     *    payload - format based on data_type
+     * Sends data as simple JSON messages compatible with how it is
+     * stored in the server logs.
      */
 
     private ClientThread clientThread;
@@ -46,8 +38,8 @@ public class NetworkStreaming {
         Log.d(TAG, "Streaming initialized.");
     }
 
-    public void start() {
-        clientThread = new ClientThread();
+    public void start(String ip_address, int port) {
+        clientThread = new ClientThread(ip_address, port);
         socketThread = new Thread(clientThread);
         socketThread.start();
     }
@@ -90,27 +82,39 @@ public class NetworkStreaming {
         clientThread.write(json.getBytes());
     }
 
+    public void streamTrackingXY(float x, float y) {
+        Gson gson = new Gson();
+        TrackingXYCoordinate xy = new TrackingXYCoordinate(x, y);
+        String json = gson.toJson(xy);
+        clientThread.write(json.getBytes());
+    }
+
     private boolean mRun;
 
     class ClientThread implements Runnable {
 
         private Socket socket;
-        private static final int SERVERPORT = 5000;
-        private static final String SERVER_IP = "192.168.1.93";
+        private int port;
+        private String ip_address;
 
         private OutputStream outputStream;
+
+        public ClientThread(String ip_address, int port) {
+            this.ip_address = ip_address;
+            this.port = port;
+        }
 
         @Override
         public void run() {
 
             mRun = true;
 
-            Log.d(TAG, "Opening socket. IP: " + SERVER_IP + " Port: " + SERVERPORT);
+            Log.d(TAG, "Opening socket. IP: " + this.ip_address + " Port: " + this.port);
 
             try {
-                InetAddress serverAddr = InetAddress.getByName(SERVER_IP);
+                InetAddress serverAddr = InetAddress.getByName(this.ip_address);
 
-                socket = new Socket(serverAddr, SERVERPORT);
+                socket = new Socket(serverAddr, this.port);
                 outputStream = socket.getOutputStream();
 
                 while(mRun) {

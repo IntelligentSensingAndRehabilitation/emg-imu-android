@@ -4,7 +4,6 @@ import android.bluetooth.BluetoothDevice;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.util.Log;
-import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 
@@ -12,12 +11,30 @@ import androidx.annotation.NonNull;
 
 import org.sralab.emgimu.EmgImuBaseActivity;
 import org.sralab.emgimu.service.EmgImuService;
+import org.sralab.emgimu.streaming.NetworkStreaming;
 import org.sralab.emgimu.visualization.VectorGraphView;
 
 import java.util.Arrays;
 import java.util.Timer;
 import java.util.TimerTask;
 
+/**
+ * Learning and visualization of a neural network that maps an array of EMG
+ * activity into control signals. This is comprised of several components
+ * both locally and in the cloud.
+ *
+ * EmgDecoder - wrapper class for the TensorFlow Lite model that maps EMG data
+ * to control signals.
+ *
+ * GameController - model and controller of the game chase signal
+ *
+ * GameView - simple cursor visualization
+ *
+ * This system works by streaming the EMG and chase coordinate data to a server
+ * or the cloud where a model will be trained to perform this mapping. The model
+ * will be periodically distilled and sent from the server back to this activity
+ * to refine control.
+ */
 public class LearningGameActivity extends EmgImuBaseActivity {
 
     private static final String TAG = LearningGameActivity.class.getSimpleName();
@@ -31,6 +48,11 @@ public class LearningGameActivity extends EmgImuBaseActivity {
     private GameController gameController = new GameController();
 
     private Timer gameTimer;
+
+    private NetworkStreaming networkStreaming;
+
+    private String ip_address = "192.168.2.1";
+    private int port = 5000;
 
     @Override
     protected void onCreateView(Bundle savedInstanceState) {
@@ -49,37 +71,14 @@ public class LearningGameActivity extends EmgImuBaseActivity {
 
         gameView = findViewById(R.id.game_view);
 
+        // Do nothing for now but keep for later
         FloatingActionButton fab = findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-                Log.d(TAG, "Processing");
-                float coordinates[] = new float[EmgDecoder.EMBEDDINGS_SIZE];
-
-                for (int i = 0; i < 100; i++) {
-                    float data[] = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
-
-
-                    emgDecoder.decode(data, coordinates);
-
-                    inputGraph.addValue(data);
-                    outputGraph.addValue(coordinates);
-
-                    gameView.setOutputCoordinate(coordinates[0], coordinates[1]);
-                }
-
-                inputGraph.repaint();
-                outputGraph.repaint();
-
-                Log.d(TAG, "Output: " + Arrays.toString(coordinates));
-            }
-        });
+        fab.setOnClickListener(v -> Log.d(TAG, "Click"));
 
         try {
             emgDecoder = new EmgDecoder(this);
         } catch (Exception e) {
-            Log.e(TAG, "Error: ", e);
+            Log.e(TAG, "Error creating TF Lite model.", e);
         }
 
         // Set up periodic timer that updates the game model/controller then
@@ -90,6 +89,10 @@ public class LearningGameActivity extends EmgImuBaseActivity {
             public void run() {
                 gameController.update(0.0f, 0.0f);
                 gameView.setGoalCoordinate(gameController.getGoalX(), gameController.getGoalY());
+
+                if (networkStreaming != null && networkStreaming.isConnected()) {
+                    networkStreaming.streamTrackingXY(gameController.getGoalX(), gameController.getGoalY());
+                }
             }
         }, 10, 10);
 
@@ -99,6 +102,14 @@ public class LearningGameActivity extends EmgImuBaseActivity {
     protected void onPause() {
         super.onPause();
         gameTimer.cancel();
+    }
+
+    @Override
+    public void onDeviceReady(BluetoothDevice device) {
+        getService().streamBuffered(device);
+
+        networkStreaming = getService().getNetworkStreaming();
+        networkStreaming.start(ip_address,port);
     }
 
     @Override
@@ -123,7 +134,38 @@ public class LearningGameActivity extends EmgImuBaseActivity {
 
     @Override
     public void onEmgBuffReceived(BluetoothDevice device, int count, double[][] data) {
+        Log.d(TAG, "Processing");
 
+        float coordinates[] = new float[EmgDecoder.EMBEDDINGS_SIZE];
+
+        final int CHANNELS = data.length;
+        final int SAMPLES = data[0].length;
+
+        if (BuildConfig.DEBUG && CHANNELS != EmgDecoder.CHANNELS) {
+            Log.e(TAG, "Size of data not compatible with model type");
+            return;
+        }
+
+        float input_data[] = new float[CHANNELS];
+
+        for (int i = 0; i < SAMPLES; i++) {
+
+            for (int j = 0; j < SAMPLES; j++) {
+                input_data[j]= (float) data[i][j];
+            }
+
+            emgDecoder.decode(input_data, coordinates);
+
+            inputGraph.addValue(input_data);
+            outputGraph.addValue(coordinates);
+
+            gameView.setOutputCoordinate(coordinates[0], coordinates[1]);
+        }
+
+        inputGraph.repaint();
+        outputGraph.repaint();
+
+        Log.d(TAG, "Output: " + Arrays.toString(coordinates));
     }
 
     @Override
