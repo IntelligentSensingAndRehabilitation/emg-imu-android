@@ -67,6 +67,7 @@ import com.google.firebase.iid.FirebaseInstanceId;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -1043,7 +1044,7 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 
         if (networkStreaming != null && networkStreaming.isConnected()) {
             double [] data = {(double) value};
-            networkStreaming.streamEmgPwr(device, 0, data);
+            networkStreaming.streamEmgPwr(device, new Date().getTime(), data);
         }
     }
 
@@ -1065,7 +1066,7 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
         LocalBroadcastManager.getInstance(this).sendBroadcast(broadcast);
 
         if (networkStreaming != null && networkStreaming.isConnected()) {
-            networkStreaming.streamEmgBuffer(device, 0, SAMPLES, CHANNELS, data);
+            networkStreaming.streamEmgBuffer(device, new Date().getTime(), SAMPLES, CHANNELS, data);
         }
     }
 
