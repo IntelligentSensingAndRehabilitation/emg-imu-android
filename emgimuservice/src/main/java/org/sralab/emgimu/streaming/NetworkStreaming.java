@@ -45,6 +45,7 @@ public class NetworkStreaming {
     }
 
     public void stop() {
+        Log.d(TAG, "Stopping socket thread");
         mRun = false;
         socketThread.interrupt();
         try {
@@ -117,17 +118,21 @@ public class NetworkStreaming {
                 socket = new Socket(serverAddr, this.port);
                 outputStream = socket.getOutputStream();
 
+                Log.d(TAG, "Streaming socket opened");
+
                 while(mRun) {
                     synchronized (outputStream) {
                         try {
                             outputStream.wait(10);
                         } catch (InterruptedException e) {
+                            Log.d(TAG, "Interruption indicates stopping requested.");
                             e.printStackTrace();
                         }
                     }
                 }
 
-                Log.d(TAG, "Streaming socket");
+                socket.close();
+                Log.d(TAG, "Streaming socket closed");
 
             } catch (UnknownHostException e1) {
                 e1.printStackTrace();
