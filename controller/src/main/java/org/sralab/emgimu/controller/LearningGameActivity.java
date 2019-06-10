@@ -14,6 +14,7 @@ import org.sralab.emgimu.service.EmgImuService;
 import org.sralab.emgimu.streaming.NetworkStreaming;
 import org.sralab.emgimu.visualization.VectorGraphView;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -51,7 +52,7 @@ public class LearningGameActivity extends EmgImuBaseActivity {
 
     private NetworkStreaming networkStreaming;
 
-    private String ip_address = "192.168.2.1";
+    private String ip_address = "192.168.0.7";
     private int port = 5000;
 
     @Override
@@ -62,12 +63,12 @@ public class LearningGameActivity extends EmgImuBaseActivity {
         ViewGroup decoder_inputs = findViewById(R.id.decoder_inputs);
         inputGraph = new VectorGraphView(decoder_inputs.getContext(), decoder_inputs, EmgDecoder.CHANNELS);
         inputGraph.setWindowSize(250);
-        inputGraph.setRange(10);
+        //inputGraph.setRange(10);
 
         ViewGroup decoder_outputs = findViewById(R.id.decoder_outputs);
         outputGraph = new VectorGraphView(decoder_outputs.getContext(), decoder_outputs, EmgDecoder.EMBEDDINGS_SIZE);
         outputGraph.setWindowSize(250);
-        outputGraph.setRange(10);
+        //outputGraph.setRange(10);
 
         gameView = findViewById(R.id.game_view);
 
@@ -87,14 +88,16 @@ public class LearningGameActivity extends EmgImuBaseActivity {
         gameTimer.schedule(new TimerTask() {
             @Override
             public void run() {
-                gameController.update(0.0f, 0.0f);
-                gameView.setGoalCoordinate(gameController.getGoalX(), gameController.getGoalY());
+                runOnUiThread(() -> {
+                    gameController.update(0.0f, 0.0f);
+                    gameView.setGoalCoordinate(gameController.getGoalX(), gameController.getGoalY());
+                });
 
                 if (networkStreaming != null && networkStreaming.isConnected()) {
                     networkStreaming.streamTrackingXY(gameController.getGoalX(), gameController.getGoalY());
                 }
             }
-        }, 10, 10);
+        }, 0, 25);
 
     }
 
@@ -106,10 +109,12 @@ public class LearningGameActivity extends EmgImuBaseActivity {
 
     @Override
     public void onDeviceReady(BluetoothDevice device) {
+        Log.d(TAG, "Device ready: " + device);
         getService().streamBuffered(device);
 
         networkStreaming = getService().getNetworkStreaming();
         networkStreaming.start(ip_address,port);
+        emgDecoder.setNewModelStream(networkStreaming);
     }
 
     @Override
@@ -134,38 +139,39 @@ public class LearningGameActivity extends EmgImuBaseActivity {
 
     @Override
     public void onEmgBuffReceived(BluetoothDevice device, int count, double[][] data) {
-        Log.d(TAG, "Processing");
 
         float coordinates[] = new float[EmgDecoder.EMBEDDINGS_SIZE];
 
-        final int CHANNELS = data.length;
+        int CHANNELS = data.length;
         final int SAMPLES = data[0].length;
 
-        if (BuildConfig.DEBUG && CHANNELS != EmgDecoder.CHANNELS) {
+        /*if (BuildConfig.DEBUG && CHANNELS != EmgDecoder.CHANNELS) {
             Log.e(TAG, "Size of data not compatible with model type");
             return;
-        }
+        }*/
 
         float input_data[] = new float[CHANNELS];
 
         for (int i = 0; i < SAMPLES; i++) {
 
-            for (int j = 0; j < SAMPLES; j++) {
-                input_data[j]= (float) data[i][j];
+            for (int j = 0; j < CHANNELS; j++) {
+                input_data[j]= (float) data[0][i];
             }
 
-            emgDecoder.decode(input_data, coordinates);
-
+            boolean res = emgDecoder.decode(input_data, coordinates);
+            if (res) {
+                runOnUiThread(() -> {
+                    Log.d(TAG, "Output: " + Arrays.toString(coordinates));
+                    gameView.setOutputCoordinate(coordinates[0], coordinates[1]);
+                    outputGraph.addValue(coordinates);
+                    outputGraph.repaint();
+                });
+            }
             inputGraph.addValue(input_data);
-            outputGraph.addValue(coordinates);
 
-            gameView.setOutputCoordinate(coordinates[0], coordinates[1]);
         }
 
-        inputGraph.repaint();
-        outputGraph.repaint();
-
-        Log.d(TAG, "Output: " + Arrays.toString(coordinates));
+        runOnUiThread(() -> inputGraph.repaint());
     }
 
     @Override

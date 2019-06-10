@@ -12,6 +12,8 @@ import org.sralab.emgimu.streaming.messages.EmgPwrMessage;
 import org.sralab.emgimu.streaming.messages.EmgRawMessage;
 import org.sralab.emgimu.streaming.messages.TrackingXYCoordinate;
 
+import java.io.BufferedInputStream;
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetAddress;
@@ -39,6 +41,7 @@ public class NetworkStreaming {
 
     private Socket socket;
     private OutputStream outputStream;
+    private DataInputStream inputStream;
 
     public NetworkStreaming() {
         Log.d(TAG, "Streaming initialized.");
@@ -63,7 +66,9 @@ public class NetworkStreaming {
 
             try {
                 socket = new Socket(serverAddr, port);
+                socket.setSoTimeout(10);
                 outputStream = socket.getOutputStream();
+                inputStream = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
             } catch (IOException e) {
                 e.printStackTrace();
                 Log.e(TAG, "Unable to open network socket");
@@ -90,18 +95,44 @@ public class NetworkStreaming {
         return socket.isConnected();
     }
 
+    public interface MessageReceiver {
+        void receiveMessage(byte [] msg);
+    };
+
+    public void checkForMessage(int size, MessageReceiver receiver) {
+        if (handler != null && isConnected()) {
+            handler.post(() -> {
+                try {
+                    Log.d(TAG, "Checking input stream data available");
+
+                    if (inputStream.available() >= size) {
+                        Log.d(TAG, "Data avilable on stream");
+                        byte [] msg = new byte[size];
+                        int data = inputStream.read(msg);
+                        if (data != size) {
+                            Log.e(TAG, "Did not receive expected size");
+                            return;
+                        }
+                        if (receiver != null) {
+                            receiver.receiveMessage(msg);
+                        }
+                    }
+                } catch (IOException e) {
+                    Log.e(TAG, "Could not read message from network stream", e);
+                }
+            });
+        }
+    }
+
     private void write(byte[] b) {
         if (handler != null) {
-            handler.post(new Runnable() {
-                @Override
-                public void run() {
-                    //Log.d(TAG, "Writing " + b.length + " bytes and " + ByteBuffer.allocate(4).putInt(b.length).array().length);
-                    try {
-                        outputStream.write(ByteBuffer.allocate(4).putInt(b.length).array());
-                        outputStream.write(b);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+            handler.post(() -> {
+                //Log.d(TAG, "Writing " + b.length + " bytes and " + ByteBuffer.allocate(4).putInt(b.length).array().length);
+                try {
+                    outputStream.write(ByteBuffer.allocate(4).putInt(b.length).array());
+                    outputStream.write(b);
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
             });
         }

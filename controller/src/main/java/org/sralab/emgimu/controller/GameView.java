@@ -86,7 +86,7 @@ public class GameView extends View {
 
     public void setOutputCoordinate(float x, float y) {
         this.output_x = x;
-        this.output_x = y;
+        this.output_y = y;
 
         invalidate();
     }
