@@ -28,8 +28,6 @@ public class EmgDecoder {
     protected GpuDelegate delegate;
     protected Interpreter.Options options;
 
-    private static final int MODEL_SIZE = 32064;
-
     public EmgDecoder(Activity activity) throws IOException
     {
         model = loadModelFile(activity);
@@ -74,11 +72,6 @@ public class EmgDecoder {
     NetworkStreaming.MessageReceiver modelReceiver = msg -> {
         Log.d(TAG, "Received model message. Creating a new interpreter");
 
-        if (msg.length != MODEL_SIZE) {
-            Log.e(TAG, "Wrong model size received");
-            return;
-        }
-
         /* This should work but doesn't seem to */
         /*ByteBuffer newModel = ByteBuffer.allocate(msg.length);
         newModel.order(ByteOrder.nativeOrder());
@@ -115,7 +108,7 @@ public class EmgDecoder {
         if (modelStream == null)
             return;
 
-        modelStream.checkForMessage(MODEL_SIZE, modelReceiver); // modelReceiver
+        modelStream.checkForMessage(modelReceiver); // modelReceiver
     }
 
     public void close() {
@@ -176,7 +169,6 @@ public class EmgDecoder {
                 return false;
             }
         } else if (sample_counter % 50 == 2) {
-            Log.d(TAG, "Attempting to update model");
             updateModel();
         }
 

@@ -99,21 +99,32 @@ public class NetworkStreaming {
         void receiveMessage(byte [] msg);
     };
 
-    public void checkForMessage(int size, MessageReceiver receiver) {
+    int lastMessageSize = 0;
+
+    public void checkForMessage(MessageReceiver receiver) {
         if (handler != null && isConnected()) {
             handler.post(() -> {
                 try {
-                    Log.d(TAG, "Checking input stream data available");
 
-                    if (inputStream.available() >= size) {
-                        Log.d(TAG, "Data avilable on stream");
-                        byte [] msg = new byte[size];
+                    // First see if a message size is available, if needed
+                    if (lastMessageSize == 0) {
+                        if (inputStream.available() >= 4) {
+                            lastMessageSize = inputStream.readInt();
+                        }
+                    }
+
+                    // Then see if entire message has already arrived
+                    if (lastMessageSize > 0 && inputStream.available() >= lastMessageSize) {
+
+                        Log.d(TAG, "Data avilable on stream: " + lastMessageSize);
+                        byte[] msg = new byte[lastMessageSize];
                         int data = inputStream.read(msg);
-                        if (data != size) {
+                        if (data != lastMessageSize) {
                             Log.e(TAG, "Did not receive expected size");
                             return;
                         }
                         if (receiver != null) {
+                            lastMessageSize = 0; // Wait for next one
                             receiver.receiveMessage(msg);
                         }
                     }
