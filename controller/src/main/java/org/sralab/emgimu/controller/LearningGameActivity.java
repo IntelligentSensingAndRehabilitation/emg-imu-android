@@ -52,7 +52,7 @@ public class LearningGameActivity extends EmgImuBaseActivity {
 
     private NetworkStreaming networkStreaming;
 
-    private String ip_address = "192.168.0.7";
+    private String ip_address = "192.168.43.73";
     private int port = 5000;
 
     @Override

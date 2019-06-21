@@ -132,6 +132,19 @@ public class EmgDecoder {
     float [][] floatInputBuffer = new float[WINDOW_LENGTH][CHANNELS];
     float [] floatOutputBuffer = new float[EMBEDDINGS_SIZE];
 
+    private void centerInput() {
+        for (int i = 0; i < CHANNELS; i++) {
+            float mean = 0;
+            for (int j = 0; j < WINDOW_LENGTH; j++) {
+                mean += floatInputBuffer[j][i];
+            }
+            mean /= WINDOW_LENGTH;
+            for (int j = 0; j < WINDOW_LENGTH; j++) {
+                floatInputBuffer[j][i] -= mean;
+            }
+        }
+    }
+
     public boolean writeToInput(float [] data)
     {
         // TODO: consider a larger rolling window to minimized copy shifting
@@ -159,6 +172,7 @@ public class EmgDecoder {
         writeToInput(data);
 
         if (sample_counter++ % 50 == 0) {
+            //centerInput();
             if (interpreter != null) {
                 synchronized (this) {
                     interpreter.run(floatInputBuffer, floatOutputBuffer);
