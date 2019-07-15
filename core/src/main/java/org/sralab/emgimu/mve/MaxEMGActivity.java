@@ -2,7 +2,7 @@ package org.sralab.emgimu.mve;
 
 import android.bluetooth.BluetoothDevice;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
@@ -12,9 +12,6 @@ import android.widget.EditText;
 import org.sralab.emgimu.EmgImuBaseActivity;
 import org.sralab.emgimu.config.R;
 import org.sralab.emgimu.service.EmgImuService;
-import org.sralab.emgimu.service.EmgLogRecord;
-
-import java.text.NumberFormat;
 
 public class MaxEMGActivity extends EmgImuBaseActivity implements EmgPowerView.OnMaxChangedEventListener {
 

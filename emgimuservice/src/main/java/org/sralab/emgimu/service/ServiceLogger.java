@@ -2,7 +2,7 @@ package org.sralab.emgimu.service;
 
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
-import android.support.annotation.StringRes;
+import androidx.annotation.StringRes;
 import android.util.Log;
 
 import no.nordicsemi.android.ble.utils.ILogger;

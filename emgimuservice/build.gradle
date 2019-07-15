@@ -1,5 +1,4 @@
 apply plugin: 'com.android.library'
-apply plugin: 'io.fabric'
 
 android {
 
@@ -29,8 +28,8 @@ dependencies {
     implementation project(":common")
 
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation "com.android.support:appcompat-v7:$supportLib"
-    implementation "com.android.support:design:$supportLib"
+    implementation 'androidx.appcompat:appcompat:1.0.2'
+    implementation 'com.google.android.material:material:1.0.0'
     implementation 'no.nordicsemi.android:log:2.1.1'
     implementation "no.nordicsemi.android:ble:$nordicBleLVer"
 
@@ -44,7 +43,7 @@ dependencies {
     implementation "com.google.firebase:firebase-messaging:$firebaseMessagingVer"
     implementation "com.crashlytics.sdk.android:crashlytics:$crashlyticsVer"
 
-    implementation 'com.google.code.gson:gson:2.8.2'
+    implementation 'com.google.code.gson:gson:2.8.5'
 }
 
 apply plugin: 'com.google.gms.google-services'

@@ -44,8 +44,8 @@ dependencies {
     implementation(name: 'arcore_client', ext:'aar')
     implementation(name: 'unityandroidpermissions', ext:'aar')
 
-    implementation "com.android.support:appcompat-v7:$supportLib"
-    implementation "com.android.support:design:$supportLib"
+    implementation 'androidx.appcompat:appcompat:1.0.2'
+    implementation 'com.google.android.material:material:1.0.0'
     implementation 'no.nordicsemi.android.support.v18:scanner:1.0.0'
     implementation 'no.nordicsemi.android:log:2.1.1'
     implementation "no.nordicsemi.android:ble:$nordicBleLVer"

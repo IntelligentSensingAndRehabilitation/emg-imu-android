@@ -2,15 +2,12 @@ package org.sralab.emgimu.logging;
 
 import android.os.Handler;
 import android.os.Looper;
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import android.util.Log;
 
-import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.Tasks;
-import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
@@ -21,7 +18,6 @@ import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import org.sralab.emgimu.service.EmgImuManager;
 
 import java.security.InvalidParameterException;
-import java.util.concurrent.ExecutionException;
 
 import no.nordicsemi.android.log.LogContract;
 
