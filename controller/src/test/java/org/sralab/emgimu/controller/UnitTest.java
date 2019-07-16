@@ -1,22 +1,23 @@
 package org.sralab.emgimu.controller;
 
+import android.content.Context;
+
+import androidx.test.core.app.ApplicationProvider;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.robolectric.RobolectricTestRunner;
 
-import android.content.Context;
 import java.io.IOException;
 
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(RobolectricTestRunner.class)
 public class UnitTest {
 
-    @Mock
-    Context mockContext;
+    private Context context = ApplicationProvider.getApplicationContext();
 
     @Test
     public void emgDecoderLoad() throws IOException {
-        EmgDecoder emgDecoder = new EmgDecoder(mockContext);
+        EmgDecoder emgDecoder = new EmgDecoder(context);
 
         float zeros[] = new float[8];
         for (int i = 0; i < 8; i++)
