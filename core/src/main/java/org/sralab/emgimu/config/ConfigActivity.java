@@ -21,7 +21,6 @@
  */
 package org.sralab.emgimu.config;
 
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.Intent;
 import android.net.Uri;
@@ -29,19 +28,16 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.PowerManager;
 import android.provider.Settings;
-import android.support.annotation.NonNull;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
+import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 import android.util.Log;
 import android.widget.TextView;
 
 import org.sralab.emgimu.EmgImuBaseActivity;
 import org.sralab.emgimu.service.EmgImuService;
-import org.sralab.emgimu.service.EmgLogRecord;
 
 import no.nordicsemi.android.nrftoolbox.widget.DividerItemDecoration;
-
-import org.sralab.emgimu.config.R;
 
 public class ConfigActivity extends EmgImuBaseActivity {
 	private static final String TAG = "ConfigActivity";

@@ -2,19 +2,19 @@ package org.sralab.emgimu.controller;
 
 import android.bluetooth.BluetoothDevice;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
 import android.util.Log;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 
 import androidx.annotation.NonNull;
 
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+
 import org.sralab.emgimu.EmgImuBaseActivity;
 import org.sralab.emgimu.service.EmgImuService;
 import org.sralab.emgimu.streaming.NetworkStreaming;
 import org.sralab.emgimu.visualization.VectorGraphView;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Timer;
 import java.util.TimerTask;

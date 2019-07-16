@@ -36,7 +36,7 @@ dependencies {
 
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation "no.nordicsemi.android:ble:$nordicBleLVer"
-    implementation 'org.tensorflow:tensorflow-lite:0.0.0-nightly'
-    implementation 'org.tensorflow:tensorflow-lite-gpu:0.0.0-nightly'
-    implementation 'com.android.support:design:28.0.0'
+    implementation 'org.tensorflow:tensorflow-lite:1.14.0'
+    implementation 'org.tensorflow:tensorflow-lite-gpu:1.14.0'
+    implementation 'com.google.android.material:material:1.0.0'
 }

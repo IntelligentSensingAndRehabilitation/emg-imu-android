@@ -7,7 +7,6 @@
 
 package org.sralab.fluttercow;
 
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.SharedPreferences;
 import android.media.AudioManager;
@@ -16,7 +15,7 @@ import android.media.SoundPool;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import android.view.WindowManager;
 import android.widget.Toast;
 
@@ -33,9 +32,6 @@ import com.google.gson.Gson;
 import org.sralab.emgimu.EmgImuBaseActivity;
 import org.sralab.emgimu.logging.FirebaseGameLogger;
 import org.sralab.emgimu.service.EmgImuService;
-import org.sralab.emgimu.service.EmgLogRecord;
-import org.sralab.emgimu.streaming.messages.EmgPwrMessage;
-import org.sralab.fluttercow.sprites.PlayableCharacter;
 
 import io.fabric.sdk.android.Fabric;
 
