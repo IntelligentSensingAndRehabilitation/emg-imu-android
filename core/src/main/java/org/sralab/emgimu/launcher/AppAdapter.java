@@ -26,6 +26,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -33,19 +34,21 @@ import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import org.sralab.emgimu.config.R;
+
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
-import org.sralab.emgimu.config.R;
-
 public class AppAdapter extends BaseAdapter {
+	private static final String TAG = AppAdapter.class.getSimpleName();
 	private static final String CATEGORY = "org.sralab.emgimu.LAUNCHER";
 
 	private final Context mContext;
 	private final PackageManager mPackageManager;
 	private final LayoutInflater mInflater;
-	private final List<ResolveInfo> mApplications;
+	private final List<ResolveInfo> mApplications = new ArrayList<>();
 
 	public AppAdapter(final Context context) {
 		mContext = context;
@@ -56,8 +59,21 @@ public class AppAdapter extends BaseAdapter {
 		final Intent intent = new Intent(Intent.ACTION_MAIN);
 		intent.addCategory(CATEGORY);
 
-		final List<ResolveInfo> appList = mApplications = pm.queryIntentActivities(intent, 0);
-		Collections.sort(appList, new ResolveInfo.DisplayNameComparator(pm));
+		final List<ResolveInfo> resList = pm.queryIntentActivities(intent, 0);
+
+		// Prevent adding duplicates to the layout. Not sure why resolve list insists
+		// on doing this for anything in a instant-package.
+		List<String> packageNames = new ArrayList<>();
+		for (ResolveInfo resolveInfo : resList) {
+			if (!packageNames.contains(resolveInfo.activityInfo.name)) {
+				mApplications.add(resolveInfo);
+				packageNames.add(resolveInfo.activityInfo.name);
+				Log.d(TAG, "Adding: " + resolveInfo.activityInfo.name);
+			} else
+				Log.d(TAG, "Not Adding: " + resolveInfo.activityInfo.name);
+		}
+
+		Collections.sort(mApplications, new ResolveInfo.DisplayNameComparator(pm));
 	}
 
 	@Override
