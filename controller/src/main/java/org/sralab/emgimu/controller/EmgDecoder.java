@@ -1,6 +1,6 @@
 package org.sralab.emgimu.controller;
 
-import android.app.Activity;
+import android.content.Context;
 import android.content.res.AssetFileDescriptor;
 import android.util.Log;
 
@@ -10,12 +10,9 @@ import org.tensorflow.lite.gpu.GpuDelegate;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 
@@ -28,9 +25,9 @@ public class EmgDecoder {
     protected GpuDelegate delegate;
     protected Interpreter.Options options;
 
-    public EmgDecoder(Activity activity) throws IOException
+    public EmgDecoder(Context context) throws IOException
     {
-        model = loadModelFile(activity);
+        model = loadModelFile(context);
         options = new Interpreter.Options();
 
         if (false) {
@@ -55,8 +52,8 @@ public class EmgDecoder {
     }
 
     /** Memory-map the model file in Assets. */
-    private MappedByteBuffer loadModelFile(Activity activity) throws IOException {
-        AssetFileDescriptor fileDescriptor = activity.getAssets().openFd(getModelPath());
+    private MappedByteBuffer loadModelFile(Context context) throws IOException {
+        AssetFileDescriptor fileDescriptor = context.getAssets().openFd(getModelPath());
         FileInputStream inputStream = new FileInputStream(fileDescriptor.getFileDescriptor());
         FileChannel fileChannel = inputStream.getChannel();
         long startOffset = fileDescriptor.getStartOffset();
