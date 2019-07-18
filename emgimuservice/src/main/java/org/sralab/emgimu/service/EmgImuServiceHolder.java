@@ -140,7 +140,7 @@ public class EmgImuServiceHolder<E extends EmgImuService.EmgImuBinder> implement
                     final double[] value = intent.getDoubleArrayExtra(EmgImuService.EXTRA_EMG_BUFF);
                     final int CHANNELS = intent.getIntExtra(EmgImuService.EXTRA_EMG_CHANNELS, 0);
                     final int SAMPLES = value.length / CHANNELS;
-                    final int count = intent.getIntExtra(EmgImuService.EXTRA_EMG_COUNT, 0);
+                    final int ts_ms = intent.getIntExtra(EmgImuService.EXTRA_EMG_TS_MS, 0);
                     if (value != null) {
                         double [][] data = new double[CHANNELS][SAMPLES];
                         for (int idx = 0; idx < value.length; idx++) {
@@ -148,7 +148,7 @@ public class EmgImuServiceHolder<E extends EmgImuService.EmgImuBinder> implement
                             int j = idx / CHANNELS;
                             data[i][j] = value[idx];
                         }
-                        onEmgBuffReceived(bluetoothDevice, count, data);
+                        onEmgBuffReceived(bluetoothDevice, ts_ms, data);
                     }
                     else {
                         throw new RuntimeException("Cannot parse EMG data");
@@ -457,7 +457,7 @@ public class EmgImuServiceHolder<E extends EmgImuService.EmgImuBinder> implement
     }
 
     @Override
-    public void onEmgBuffReceived(BluetoothDevice device, int count, double[][] data) {
+    public void onEmgBuffReceived(BluetoothDevice device, long ts_ms, double[][] data) {
 
     }
 

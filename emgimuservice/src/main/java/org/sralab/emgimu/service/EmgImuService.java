@@ -109,7 +109,7 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
     public static final String EXTRA_EMG_PWR = "org.sralab.emgimu.EXTRA_EMG_PWR";
     public static final String EXTRA_EMG_BUFF = "org.sralab.emgimu.EXTRA_EMG_BUFF";
     public static final String EXTRA_EMG_CHANNELS = "org.sralab.emgimu.EXTRA_EMG_CHANNELS";
-    public static final String EXTRA_EMG_COUNT = "org.sralab.emgimu.EXTRA_EMG_COUNT";
+    public static final String EXTRA_EMG_TS_MS = "org.sralab.emgimu.EXTRA_EMG_TS_MS";
 
     public static final String INTENT_FETCH_LOG = "org.sralab.INTENT_FETCH_LOG";
     public static final String INTENT_DEVICE_MAC = "org.sralab.INTENT_DEVICE_MAC";
@@ -1049,7 +1049,7 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
     }
 
     @Override
-    public void onEmgBuffReceived(BluetoothDevice device, int count, double[][] data) {
+    public void onEmgBuffReceived(BluetoothDevice device, long ts_ms, double[][] data) {
         final int CHANNELS = data.length;
         final int SAMPLES = data[0].length;
 	    double [] linearizedData = new double[CHANNELS * SAMPLES];
@@ -1061,12 +1061,12 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
         final Intent broadcast = new Intent(BROADCAST_EMG_BUFF);
         broadcast.putExtra(EXTRA_DEVICE, device);
         broadcast.putExtra(EXTRA_EMG_CHANNELS, CHANNELS);
-        broadcast.putExtra(EXTRA_EMG_COUNT, count);
+        broadcast.putExtra(EXTRA_EMG_TS_MS, ts_ms);
         broadcast.putExtra(EXTRA_EMG_BUFF, linearizedData);
         LocalBroadcastManager.getInstance(this).sendBroadcast(broadcast);
 
         if (networkStreaming != null && networkStreaming.isConnected()) {
-            networkStreaming.streamEmgBuffer(device, new Date().getTime(), SAMPLES, CHANNELS, data);
+            networkStreaming.streamEmgBuffer(device, ts_ms, SAMPLES, CHANNELS, data);
         }
     }
 

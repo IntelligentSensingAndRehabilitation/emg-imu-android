@@ -115,8 +115,8 @@ public abstract class EmgImuAdapterActivity extends EmgImuBaseActivity {
     }
 
     @Override
-    public void onEmgBuffReceived(BluetoothDevice device, int count, double[][] data) {
-        mAdapter.onEmgBuffReceived(device, count, data);
+    public void onEmgBuffReceived(BluetoothDevice device, long ts_ms, double[][] data) {
+        mAdapter.onEmgBuffReceived(device, ts_ms, data);
     }
 
     @Override
@@ -237,7 +237,7 @@ public abstract class EmgImuAdapterActivity extends EmgImuBaseActivity {
 
         public void onBatteryReceived(BluetoothDevice device, float battery) {}
 
-        public void onEmgBuffReceived(BluetoothDevice device, int count, double[][] data) {}
+        public void onEmgBuffReceived(BluetoothDevice device, long ts_ms, double[][] data) {}
 
         public void onImuAccelReceived(BluetoothDevice device, float[][] accel) {}
 

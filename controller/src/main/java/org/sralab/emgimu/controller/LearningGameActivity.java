@@ -138,7 +138,7 @@ public class LearningGameActivity extends EmgImuBaseActivity {
     }
 
     @Override
-    public void onEmgBuffReceived(BluetoothDevice device, int count, double[][] data) {
+    public void onEmgBuffReceived(BluetoothDevice device, long ts_ms, double[][] data) {
 
         float coordinates[] = new float[EmgDecoder.EMBEDDINGS_SIZE];
 

@@ -126,7 +126,7 @@ public class StreamingAdapter extends EmgImuAdapterActivity.DeviceAdapter {
 
     // Used to only update graphically for a subset of new data
     private int updateCounter = 0;
-    public void onEmgBuffReceived(final BluetoothDevice device, int count, final double[][] data) {
+    public void onEmgBuffReceived(final BluetoothDevice device, long ts_ms, final double[][] data) {
 
         int channels = getService().getChannelCount(device);
 
