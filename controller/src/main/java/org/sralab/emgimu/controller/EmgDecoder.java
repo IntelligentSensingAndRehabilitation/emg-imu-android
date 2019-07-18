@@ -18,6 +18,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
+import java.util.Arrays;
 
 public class EmgDecoder {
 
@@ -30,7 +31,7 @@ public class EmgDecoder {
 
     public EmgDecoder(Activity activity) throws IOException
     {
-        model = loadModelFile(activity);
+        model = loadModelFile(activity, "model.tflite");
         options = new Interpreter.Options();
 
         if (false) {
@@ -47,6 +48,12 @@ public class EmgDecoder {
 
         options.setNumThreads(2);
 
+        if (BuildConfig.DEBUG) {
+            if (!test(activity)) {
+                throw new RuntimeException("TF Lite tests failed");
+            }
+        }
+
         interpreter = new Interpreter(model, options);
     }
 
@@ -55,8 +62,8 @@ public class EmgDecoder {
     }
 
     /** Memory-map the model file in Assets. */
-    private MappedByteBuffer loadModelFile(Activity activity) throws IOException {
-        AssetFileDescriptor fileDescriptor = activity.getAssets().openFd(getModelPath());
+    private MappedByteBuffer loadModelFile(Activity activity, String model) throws IOException {
+        AssetFileDescriptor fileDescriptor = activity.getAssets().openFd(model);
         FileInputStream inputStream = new FileInputStream(fileDescriptor.getFileDescriptor());
         FileChannel fileChannel = inputStream.getChannel();
         long startOffset = fileDescriptor.getStartOffset();
@@ -187,5 +194,56 @@ public class EmgDecoder {
         }
 
         return false;
+    }
+
+    private void zeroInputs() {
+        for (int i = 0; i < WINDOW_LENGTH; i++)
+            for (int j = 0; j < CHANNELS; j++)
+                floatInputBuffer[i][j] = 0;
+    }
+
+    boolean test(Activity activity) {
+        ByteBuffer testModel;
+        try {
+            testModel = loadModelFile(activity, "test.tflite");
+        } catch (IOException e) {
+            e.printStackTrace();
+            return false;
+        }
+        Interpreter testInterpreter = new Interpreter(testModel, options);
+
+        boolean pass = true;
+        zeroInputs();
+        testInterpreter.run(floatInputBuffer, floatOutputBuffer);
+        pass = pass && floatOutputBuffer[0] == 0 && floatOutputBuffer[1] == 0;
+        Log.d(TAG, "Test 1: " + floatOutputBuffer[0] + " " + floatOutputBuffer[1]);
+
+        zeroInputs();
+        floatInputBuffer[0][0] = 1.0f;
+        testInterpreter.run(floatInputBuffer, floatOutputBuffer);
+        pass = pass && floatOutputBuffer[0] == 0 && floatOutputBuffer[1] == 1;
+        Log.d(TAG, "Test 2: " + floatOutputBuffer[0] + " " + floatOutputBuffer[1]);
+
+        zeroInputs();
+        floatInputBuffer[0][CHANNELS-1] = 1.0f;
+        testInterpreter.run(floatInputBuffer, floatOutputBuffer);
+        pass = pass && floatOutputBuffer[0] == 7 && floatOutputBuffer[1] == -6;
+        Log.d(TAG, "Test 3: " + floatOutputBuffer[0] + " " + floatOutputBuffer[1]);
+
+        zeroInputs();
+        floatInputBuffer[WINDOW_LENGTH-1][0] = 1.0f;
+        testInterpreter.run(floatInputBuffer, floatOutputBuffer);
+        pass = pass && floatOutputBuffer[0] == 1992 && floatOutputBuffer[1] == -1991;
+        Log.d(TAG, "Test 4: " + floatOutputBuffer[0] + " " + floatOutputBuffer[1]);
+
+        zeroInputs();
+        floatInputBuffer[WINDOW_LENGTH-1][CHANNELS-1] = 1.0f;
+        testInterpreter.run(floatInputBuffer, floatOutputBuffer);
+        pass = pass && floatOutputBuffer[0] == 1999 && floatOutputBuffer[1] == -1998;
+        Log.d(TAG, "Test 5: " + floatOutputBuffer[0] + " " + floatOutputBuffer[1]);
+
+        testInterpreter.close();
+
+        return pass;
     }
 }
