@@ -140,7 +140,7 @@ public class EmgImuServiceHolder<E extends EmgImuService.EmgImuBinder> implement
                     final double[] value = intent.getDoubleArrayExtra(EmgImuService.EXTRA_EMG_BUFF);
                     final int CHANNELS = intent.getIntExtra(EmgImuService.EXTRA_EMG_CHANNELS, 0);
                     final int SAMPLES = value.length / CHANNELS;
-                    final int ts_ms = intent.getIntExtra(EmgImuService.EXTRA_EMG_TS_MS, 0);
+                    final long ts_ms = intent.getLongExtra(EmgImuService.EXTRA_EMG_TS_MS, 0);
                     if (value != null) {
                         double [][] data = new double[CHANNELS][SAMPLES];
                         for (int idx = 0; idx < value.length; idx++) {
