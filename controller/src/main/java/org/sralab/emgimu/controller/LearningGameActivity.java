@@ -155,7 +155,7 @@ public class LearningGameActivity extends EmgImuBaseActivity {
         for (int i = 0; i < SAMPLES; i++) {
 
             for (int j = 0; j < CHANNELS; j++) {
-                input_data[j]= (float) data[0][i];
+                input_data[j]= (float) data[j][i];
             }
 
             boolean res = emgDecoder.decode(input_data, coordinates);
