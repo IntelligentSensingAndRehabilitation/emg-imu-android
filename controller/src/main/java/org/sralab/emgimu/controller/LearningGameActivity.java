@@ -85,7 +85,7 @@ public class LearningGameActivity extends EmgImuBaseActivity {
 
         // Set up periodic timer that updates the game model/controller then
         // then the view
-        final int dt_ms = 100;
+        final int dt_ms = 20;
         gameTimer = new Timer();
         gameTimer.schedule(new TimerTask() {
             @Override
