@@ -85,12 +85,13 @@ public class LearningGameActivity extends EmgImuBaseActivity {
 
         // Set up periodic timer that updates the game model/controller then
         // then the view
+        final int dt_ms = 100;
         gameTimer = new Timer();
         gameTimer.schedule(new TimerTask() {
             @Override
             public void run() {
                 runOnUiThread(() -> {
-                    gameController.update(0.0f, 0.0f);
+                    gameController.update(0.0f, 0.0f, dt_ms);
                     gameView.setGoalCoordinate(gameController.getGoalX(), gameController.getGoalY());
                 });
 
@@ -98,7 +99,7 @@ public class LearningGameActivity extends EmgImuBaseActivity {
                     networkStreaming.streamTrackingXY(gameController.getGoalX(), gameController.getGoalY());
                 }
             }
-        }, 0, 25);
+        }, 0, dt_ms);
 
     }
 
