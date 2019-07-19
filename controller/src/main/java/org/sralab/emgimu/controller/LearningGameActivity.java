@@ -54,6 +54,7 @@ public class LearningGameActivity extends EmgImuBaseActivity {
 
     private String ip_address = "192.168.1.83";
     private int port = 5000;
+    private final float RMS_SPACING = 10;
 
     @Override
     protected void onCreateView(Bundle savedInstanceState) {
@@ -63,7 +64,7 @@ public class LearningGameActivity extends EmgImuBaseActivity {
         ViewGroup decoder_inputs = findViewById(R.id.decoder_inputs);
         inputGraph = new VectorGraphView(decoder_inputs.getContext(), decoder_inputs, EmgDecoder.CHANNELS);
         inputGraph.setWindowSize(250);
-        //inputGraph.setRange(10);
+        inputGraph.setRange(RMS_SPACING * EmgDecoder.CHANNELS / 2);
 
         ViewGroup decoder_outputs = findViewById(R.id.decoder_outputs);
         outputGraph = new VectorGraphView(decoder_outputs.getContext(), decoder_outputs, EmgDecoder.EMBEDDINGS_SIZE);
@@ -144,6 +145,7 @@ public class LearningGameActivity extends EmgImuBaseActivity {
 
         int CHANNELS = data.length;
         final int SAMPLES = data[0].length;
+        float [] rms = new float[CHANNELS];
 
         /*if (BuildConfig.DEBUG && CHANNELS != EmgDecoder.CHANNELS) {
             Log.e(TAG, "Size of data not compatible with model type");
@@ -160,18 +162,28 @@ public class LearningGameActivity extends EmgImuBaseActivity {
 
             boolean res = emgDecoder.decode(input_data, coordinates);
             if (res) {
+
+                emgDecoder.get_rms(rms);
                 runOnUiThread(() -> {
+                    Log.d(TAG, "RMS: " + Arrays.toString(rms));
+
+                    // Space them apart
+                    for (int k = 0; k < EmgDecoder.CHANNELS; k++) {
+                        rms[k] = rms[k] +  RMS_SPACING * k - RMS_SPACING * EmgDecoder.CHANNELS / 2;
+                    }
+                    inputGraph.addValue(rms);
+                    inputGraph.repaint();
+
                     Log.d(TAG, "Output: " + Arrays.toString(coordinates));
                     gameView.setOutputCoordinate(coordinates[0], coordinates[1]);
                     outputGraph.addValue(coordinates);
                     outputGraph.repaint();
                 });
             }
-            inputGraph.addValue(input_data);
+
 
         }
 
-        runOnUiThread(() -> inputGraph.repaint());
     }
 
     @Override

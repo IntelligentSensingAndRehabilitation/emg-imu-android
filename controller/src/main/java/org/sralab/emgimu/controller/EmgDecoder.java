@@ -26,13 +26,18 @@ public class EmgDecoder {
 
     protected ByteBuffer model;
     protected Interpreter interpreter;
+    protected ByteBuffer rmsModel;
+    protected Interpreter rmsInterpreter;
     protected GpuDelegate delegate;
     protected Interpreter.Options options;
+    protected Interpreter.Options rmsOptions;
 
     public EmgDecoder(Activity activity) throws IOException
     {
         model = loadModelFile(activity, "model.tflite");
+        rmsModel = loadModelFile(activity, "rms.tflite");
         options = new Interpreter.Options();
+        rmsOptions = new Interpreter.Options();
 
         if (false) {
             // TODO: right now this causes an error
@@ -55,6 +60,7 @@ public class EmgDecoder {
         }
 
         interpreter = new Interpreter(model, options);
+        rmsInterpreter = new Interpreter(rmsModel, rmsOptions);
     }
 
     private String getModelPath() {
@@ -122,6 +128,10 @@ public class EmgDecoder {
         if (interpreter != null) {
             interpreter.close();
             interpreter = null;
+        }
+        if (rmsInterpreter != null) {
+            rmsInterpreter.close();
+            rmsInterpreter = null;
         }
         if (delegate != null) {
             delegate.close();
@@ -194,6 +204,14 @@ public class EmgDecoder {
         }
 
         return false;
+    }
+
+    float rmsOutputBuffer[] = new float[CHANNELS];
+    public void get_rms(float [] rms)
+    {
+        rmsInterpreter.run(floatInputBuffer, rmsOutputBuffer);
+        for(int i = 0; i < CHANNELS; i++)
+            rms[i] = rmsOutputBuffer[i];
     }
 
     private void zeroInputs() {
