@@ -47,6 +47,8 @@ public class LearningGameActivity extends EmgImuBaseActivity {
 
     private GameView gameView;
     private GameController gameController = new GameController();
+    //! Track the most recent coordinates
+    private float coordinates[] = new float[EmgDecoder.EMBEDDINGS_SIZE];
 
     private Timer gameTimer;
 
@@ -96,7 +98,8 @@ public class LearningGameActivity extends EmgImuBaseActivity {
                 });
 
                 if (networkStreaming != null && networkStreaming.isConnected()) {
-                    networkStreaming.streamTrackingXY(gameController.getGoalX(), gameController.getGoalY());
+                    networkStreaming.streamTrackingXY(gameController.getGoalX(), gameController.getGoalY(),
+                            coordinates[0], coordinates[1]);
                 }
             }
         }, 0, dt_ms);
@@ -141,8 +144,6 @@ public class LearningGameActivity extends EmgImuBaseActivity {
 
     @Override
     public void onEmgBuffReceived(BluetoothDevice device, long ts_ms, double[][] data) {
-
-        float coordinates[] = new float[EmgDecoder.EMBEDDINGS_SIZE];
 
         int CHANNELS = data.length;
         final int SAMPLES = data[0].length;
