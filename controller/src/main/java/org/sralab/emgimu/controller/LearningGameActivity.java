@@ -75,7 +75,7 @@ public class LearningGameActivity extends EmgImuBaseActivity {
 
         // Do nothing for now but keep for later
         FloatingActionButton fab = findViewById(R.id.fab);
-        fab.setOnClickListener(v -> Log.d(TAG, "Click"));
+        fab.setOnClickListener(v -> gameController.toggleMode());
 
         try {
             emgDecoder = new EmgDecoder(this);
