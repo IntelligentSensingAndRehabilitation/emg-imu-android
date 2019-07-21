@@ -10,34 +10,37 @@ import org.tensorflow.lite.gpu.GpuDelegate;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
-import java.util.Arrays;
 
 public class EmgDecoder {
 
     private static final String TAG = EmgDecoder.class.getSimpleName();
 
-    protected ByteBuffer model;
-    protected Interpreter interpreter;
-    protected ByteBuffer rmsModel;
-    protected Interpreter rmsInterpreter;
-    protected GpuDelegate delegate;
-    protected Interpreter.Options options;
-    protected Interpreter.Options rmsOptions;
+    private ByteBuffer model;
+    private Interpreter interpreter;
+    private Interpreter rmsInterpreter;
+    private GpuDelegate delegate;
+    private Interpreter.Options options;
+    private Activity activity;
+    private final String modelSaveFile = "emgDecoder.tflite";
 
-    public EmgDecoder(Activity activity) throws IOException
+    EmgDecoder(Activity activity) throws IOException
     {
-        model = loadModelFile(activity, "model.tflite");
-        rmsModel = loadModelFile(activity, "rms.tflite");
+        this.activity = activity;
+        try {
+            // See if there is a save model to default to start with
+            model = loadFileModel(modelSaveFile);
+        } catch (IOException e) {
+            model = loadAssetModel("model.tflite");
+        }
+
+        ByteBuffer rmsModel = loadAssetModel("rms.tflite");
         options = new Interpreter.Options();
-        rmsOptions = new Interpreter.Options();
+        Interpreter.Options rmsOptions = new Interpreter.Options();
 
         if (false) {
             // TODO: right now this causes an error
@@ -54,7 +57,7 @@ public class EmgDecoder {
         options.setNumThreads(2);
 
         if (BuildConfig.DEBUG) {
-            if (!test(activity)) {
+            if (!test()) {
                 throw new RuntimeException("TF Lite tests failed");
             }
         }
@@ -63,18 +66,22 @@ public class EmgDecoder {
         rmsInterpreter = new Interpreter(rmsModel, rmsOptions);
     }
 
-    private String getModelPath() {
-        return "model.tflite";
-    }
-
     /** Memory-map the model file in Assets. */
-    private MappedByteBuffer loadModelFile(Activity activity, String model) throws IOException {
+    private MappedByteBuffer loadAssetModel(String model) throws IOException {
         AssetFileDescriptor fileDescriptor = activity.getAssets().openFd(model);
         FileInputStream inputStream = new FileInputStream(fileDescriptor.getFileDescriptor());
         FileChannel fileChannel = inputStream.getChannel();
         long startOffset = fileDescriptor.getStartOffset();
         long declaredLength = fileDescriptor.getDeclaredLength();
         return fileChannel.map(FileChannel.MapMode.READ_ONLY, startOffset, declaredLength);
+    }
+
+    /** Memory-map the model in file. */
+    private MappedByteBuffer loadFileModel(String model) throws IOException {
+        File modelFile = new File(activity.getFilesDir(), model);
+        FileInputStream inputStream = new FileInputStream(modelFile);
+        FileChannel fileChannel = inputStream.getChannel();
+        return fileChannel.map(FileChannel.MapMode.READ_ONLY, 0, modelFile.length());
     }
 
     private NetworkStreaming modelStream;
@@ -85,23 +92,12 @@ public class EmgDecoder {
     NetworkStreaming.MessageReceiver modelReceiver = msg -> {
         Log.d(TAG, "Received model message. Creating a new interpreter");
 
-        /* This should work but doesn't seem to */
-        /*ByteBuffer newModel = ByteBuffer.allocate(msg.length);
-        newModel.order(ByteOrder.nativeOrder());
-        newModel.put(msg);*/
-
         MappedByteBuffer newModel;
         try {
-            File tempFile = File.createTempFile("model", "tflite", null);
-            FileOutputStream fos = new FileOutputStream(tempFile);
+            FileOutputStream fos = activity.openFileOutput(modelSaveFile, activity.MODE_PRIVATE);
             fos.write(msg);
 
-            FileInputStream inputStream = null;
-            inputStream = new FileInputStream(tempFile);
-
-            FileChannel fileChannel = inputStream.getChannel();
-            newModel = fileChannel.map(FileChannel.MapMode.READ_ONLY, 0, msg.length);
-
+            newModel = loadFileModel(modelSaveFile);
             Interpreter newInterpreter = new Interpreter(newModel, options);
 
             synchronized (this) {
@@ -140,29 +136,16 @@ public class EmgDecoder {
         model = null;
     }
 
-    public static final int WINDOW_LENGTH = 250;
-    public static final int CHANNELS = 8;
-    public static final int EMBEDDINGS_SIZE = 2;
+    private static final int WINDOW_LENGTH = 250;
+    static final int CHANNELS = 8;
+    static final int EMBEDDINGS_SIZE = 2;
 
     protected ByteBuffer output = null;
 
-    float [][] floatInputBuffer = new float[WINDOW_LENGTH][CHANNELS];
-    float [] floatOutputBuffer = new float[EMBEDDINGS_SIZE];
+    private float [][] floatInputBuffer = new float[WINDOW_LENGTH][CHANNELS];
+    private float [] floatOutputBuffer = new float[EMBEDDINGS_SIZE];
 
-    private void centerInput() {
-        for (int i = 0; i < CHANNELS; i++) {
-            float mean = 0;
-            for (int j = 0; j < WINDOW_LENGTH; j++) {
-                mean += floatInputBuffer[j][i];
-            }
-            mean /= WINDOW_LENGTH;
-            for (int j = 0; j < WINDOW_LENGTH; j++) {
-                floatInputBuffer[j][i] -= mean;
-            }
-        }
-    }
-
-    public boolean writeToInput(float [] data)
+    private void writeToInput(float[] data)
     {
         // TODO: consider a larger rolling window to minimized copy shifting
         for (int j = 0; j < CHANNELS; j++) {
@@ -171,20 +154,15 @@ public class EmgDecoder {
             }
             floatInputBuffer[WINDOW_LENGTH-1][j] = data[j];
         }
-
-        return true;
     }
 
-    public boolean readFromOutput(float [] coordinates)
+    private void readFromOutput(float[] coordinates)
     {
-        for (int i = 0; i < EMBEDDINGS_SIZE; i++)
-            coordinates[i] = floatOutputBuffer[i];
-
-        return true;
+        System.arraycopy(floatOutputBuffer, 0, coordinates, 0, EMBEDDINGS_SIZE);
     }
 
     private int sample_counter = 0;
-    public boolean decode(float [] data, float [] coordinates)
+    boolean decode(float[] data, float[] coordinates)
     {
         writeToInput(data);
 
@@ -207,7 +185,7 @@ public class EmgDecoder {
     }
 
     float rmsOutputBuffer[] = new float[CHANNELS];
-    public void get_rms(float [] rms)
+    void get_rms(float[] rms)
     {
         rmsInterpreter.run(floatInputBuffer, rmsOutputBuffer);
         for(int i = 0; i < CHANNELS; i++)
@@ -220,10 +198,10 @@ public class EmgDecoder {
                 floatInputBuffer[i][j] = 0;
     }
 
-    boolean test(Activity activity) {
+    private boolean test() {
         ByteBuffer testModel;
         try {
-            testModel = loadModelFile(activity, "test.tflite");
+            testModel = loadAssetModel("test.tflite");
         } catch (IOException e) {
             e.printStackTrace();
             return false;
