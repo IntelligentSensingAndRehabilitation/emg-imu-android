@@ -34,7 +34,7 @@ public class GameView extends View {
     private void drawCircle(Canvas canvas, String color, float x, float y) {
         int nx = (int) (x * getWidth());
         int ny = (int) (y * getHeight());
-        int radius = 10;
+        int radius = 25;
 
         // Use Color.parseColor to define HTML colors
         paint.setColor(Color.parseColor(color));
@@ -50,8 +50,9 @@ public class GameView extends View {
         paint.setColor(Color.WHITE);
         canvas.drawPaint(paint);
 
-        drawCircle(canvas, "#000000", this.goal_x, this.goal_y);
-        drawCircle(canvas, "#0000FF", this.output_x, this.output_y);
+        // TODO: for some reason resources aren't found
+        drawCircle(canvas, "#F26B21", this.goal_x, this.goal_y);
+        drawCircle(canvas, "#AC9C9E", this.output_x, this.output_y);
     }
 
     private int measureDimension(int desiredSize, int measureSpec) {
