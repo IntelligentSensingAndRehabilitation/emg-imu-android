@@ -50,8 +50,8 @@ public class GameController {
             vel = -vel;
             theta = theta + (float) Math.PI / 4; // Make 8 angles
         }
-        goal_x = 0.5f + (float) Math.cos(theta) * radius + (float) rng.nextGaussian() / 100.0f;
-        goal_y = 0.5f + (float) Math.sin(theta) * radius + (float) rng.nextGaussian() / 100.0f;
+        goal_x = 0.5f + (float) Math.cos(theta) * radius;
+        goal_y = 0.5f + (float) Math.sin(theta) * radius;
     }
 
     private void update_drifting(float decoded_x, float decoded_y, float dt_ms) {
