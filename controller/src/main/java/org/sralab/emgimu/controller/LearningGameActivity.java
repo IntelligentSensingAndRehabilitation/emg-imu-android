@@ -15,6 +15,7 @@ import org.sralab.emgimu.service.EmgImuService;
 import org.sralab.emgimu.streaming.NetworkStreaming;
 import org.sralab.emgimu.visualization.VectorGraphView;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -59,9 +60,23 @@ public class LearningGameActivity extends EmgImuBaseActivity {
     private final float RMS_SPACING = 10;
 
     @Override
+    protected void onStart() {
+        super.onStart();
+
+    }
+    @Override
     protected void onCreateView(Bundle savedInstanceState) {
         setContentView(R.layout.activity_learning_game);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+
+        try {
+            emgDecoder = new EmgDecoder(this);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        if (emgDecoder == null) {
+            throw new RuntimeException("Unable to create TensorFlow Lite Decoder");
+        }
 
         ViewGroup decoder_inputs = findViewById(R.id.decoder_inputs);
         inputGraph = new VectorGraphView(decoder_inputs.getContext(), decoder_inputs, EmgDecoder.CHANNELS);
@@ -78,12 +93,6 @@ public class LearningGameActivity extends EmgImuBaseActivity {
         // Do nothing for now but keep for later
         FloatingActionButton fab = findViewById(R.id.fab);
         fab.setOnClickListener(v -> gameController.toggleMode());
-
-        try {
-            emgDecoder = new EmgDecoder(this);
-        } catch (Exception e) {
-            Log.e(TAG, "Error creating TF Lite model.", e);
-        }
 
         // Set up periodic timer that updates the game model/controller then
         // then the view
