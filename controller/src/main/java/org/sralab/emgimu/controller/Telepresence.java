@@ -1,0 +1,205 @@
+package org.sralab.emgimu.controller;
+
+import android.bluetooth.BluetoothDevice;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.WindowManager;
+import android.widget.CompoundButton;
+import android.widget.TextView;
+import android.widget.ToggleButton;
+
+import androidx.annotation.NonNull;
+
+import org.sralab.emgimu.EmgImuBaseActivity;
+import org.sralab.emgimu.controller.telepresence.APIService;
+import org.sralab.emgimu.controller.telepresence.Post;
+import org.sralab.emgimu.controller.telepresence.RetrofitClient;
+import org.sralab.emgimu.controller.telepresence.Status;
+import org.sralab.emgimu.service.EmgImuService;
+
+import java.io.IOException;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+
+// Note for using retrofit from this
+// https://android.jlelse.eu/consuming-rest-api-using-retrofit-library-in-android-ed47aef01ecb
+// Interfaces generated with
+// http://www.jsonschema2pojo.org/
+
+
+public class Telepresence extends EmgImuBaseActivity {
+
+    private EmgDecoder emgDecoder = null;
+    private final static String TAG = Telepresence.class.getSimpleName();
+    private float coordinates[] = new float[EmgDecoder.EMBEDDINGS_SIZE];
+    private String ip_address = "http://192.168.1.124:8000";  // Default robot IP address
+    private GameView gameView;
+    private TextView responseText;
+    private Retrofit teleprescenceService = RetrofitClient.getClient(ip_address);
+
+    private APIService getAPIService() {
+        return teleprescenceService.create(APIService.class);
+    }
+
+    @Override
+    protected void onCreateView(Bundle savedInstanceState) {
+        setContentView(R.layout.activity_telepresence);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+
+        try {
+            emgDecoder = new EmgDecoder(this);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        if (emgDecoder == null) {
+            throw new RuntimeException("Unable to create TensorFlow Lite Decoder");
+        }
+
+        gameView = findViewById(R.id.game_view);
+        gameView.setShowGoal(false);
+
+        ToggleButton enableDisable = findViewById(R.id.button_enable_robot);
+        enableDisable.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked) {
+                sendControlCommand(0.8f, 0);
+            } else {
+                sendControlCommand(0, 0);
+            }
+
+        });
+
+        responseText = findViewById(R.id.testViewResponse);
+
+        sendControlCommand(0f, 0f);
+    }
+
+    private void sendControlCommand(float speed, float turn) {
+
+        Log.d(TAG, "Sending control message: " + speed + " " + turn);
+
+        getAPIService().control(new Post(speed, turn)).enqueue(new Callback<Status>() {
+            @Override
+            public void onResponse(Call<Status> call, Response<Status> response) {
+
+                Log.i(TAG, "onResponse: for " + call.request()); // + " " + response.body().toString());
+                if (response.isSuccessful()) {
+                    float motor1 = response.body().getMotor1();
+                    float motor2 = response.body().getMotor2();
+
+                    Log.i(TAG, "Response received: " + motor1 + " " + motor2);
+                    responseText.setText(response.body().toString());
+                } else {
+                    Log.e(TAG, response.message());
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Status> call, Throwable t) {
+                Log.e(TAG, "Unable to submit post to API.", t);
+            }
+        });
+    }
+    @Override
+    public void onDeviceReady(BluetoothDevice device) {
+        Log.d(TAG, "Device ready: " + device);
+        getService().streamBuffered(device);
+    }
+
+    @Override
+    public void onEmgBuffReceived(BluetoothDevice device, long ts_ms, double[][] data) {
+
+        int CHANNELS = data.length;
+        final int SAMPLES = data[0].length;
+        float[] rms = new float[CHANNELS];
+
+        if (BuildConfig.DEBUG && CHANNELS != EmgDecoder.CHANNELS) {
+            Log.e(TAG, "Size of data not compatible with model type");
+            return;
+        }
+
+        float input_data[] = new float[CHANNELS];
+
+        for (int i = 0; i < SAMPLES; i++) {
+
+            for (int j = 0; j < CHANNELS; j++) {
+                input_data[j] = (float) data[j][i];
+            }
+
+            boolean res = emgDecoder.decode(input_data, coordinates);
+
+            if (res) {
+
+                float speed = 2 * (coordinates[1] - 0.5f);
+                float turn = 2 * (coordinates[0] - 0.5f);
+
+                sendControlCommand(speed, turn);
+                runOnUiThread(() -> gameView.setOutputCoordinate(coordinates[0], coordinates[1]));
+            }
+        }
+    }
+
+
+    @Override
+    protected void onServiceBinded(EmgImuService.EmgImuBinder binder) {
+
+    }
+
+    @Override
+    protected void onServiceUnbinded() {
+
+    }
+
+    @Override
+    protected int getAboutTextId() {
+        return 0;
+    }
+
+    @Override
+    public void onBatteryReceived(BluetoothDevice device, float battery) {
+
+    }
+
+
+    @Override
+    public void onImuAccelReceived(BluetoothDevice device, float[][] accel) {
+
+    }
+
+    @Override
+    public void onImuGyroReceived(BluetoothDevice device, float[][] gyro) {
+
+    }
+
+    @Override
+    public void onImuMagReceived(BluetoothDevice device, float[][] mag) {
+
+    }
+
+    @Override
+    public void onImuAttitudeReceived(BluetoothDevice device, float[] quaternion) {
+
+    }
+
+    @Override
+    public void onDeviceConnected(@NonNull BluetoothDevice device) {
+
+    }
+
+    @Override
+    public void onDeviceDisconnected(@NonNull BluetoothDevice device) {
+
+    }
+
+    @Override
+    public void onLinkLossOccurred(@NonNull BluetoothDevice device) {
+
+    }
+
+    @Override
+    public void onBondingFailed(@NonNull BluetoothDevice device) {
+
+    }
+}

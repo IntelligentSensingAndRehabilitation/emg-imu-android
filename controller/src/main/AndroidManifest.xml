@@ -12,15 +12,24 @@
 
     <application>
         <activity
+            android:name=".Telepresence"
+            android:label="Teleprescence"
+            android:theme="@style/AppTheme.NoActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="org.sralab.emgimu.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
             android:name=".LearningGameActivity"
             android:label="@string/title_activity_controller"
             android:theme="@style/AppTheme.NoActionBar">
-
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="org.sralab.emgimu.LAUNCHER" />
             </intent-filter>
-
         </activity>
     </application>
 

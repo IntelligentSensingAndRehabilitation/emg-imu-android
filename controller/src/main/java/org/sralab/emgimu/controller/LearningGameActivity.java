@@ -55,15 +55,10 @@ public class LearningGameActivity extends EmgImuBaseActivity {
 
     private NetworkStreaming networkStreaming;
 
-    private String ip_address = "192.168.1.83";
+    private String ip_address = "10.30.155.96";
     private int port = 5000;
     private final float RMS_SPACING = 10;
 
-    @Override
-    protected void onStart() {
-        super.onStart();
-
-    }
     @Override
     protected void onCreateView(Bundle savedInstanceState) {
         setContentView(R.layout.activity_learning_game);

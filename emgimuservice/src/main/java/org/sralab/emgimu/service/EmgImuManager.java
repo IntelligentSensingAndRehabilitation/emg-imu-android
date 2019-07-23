@@ -233,9 +233,9 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                     .fail((device, status) -> log(Log.WARN, "Could not set MTU"))
                     .enqueue();
 
-            setPreferredPhy(PhyRequest.PHY_LE_2M_MASK, PhyRequest.PHY_LE_2M_MASK, PhyRequest.PHY_OPTION_NO_PREFERRED)
+            /*setPreferredPhy(PhyRequest.PHY_LE_2M_MASK, PhyRequest.PHY_LE_2M_MASK, PhyRequest.PHY_OPTION_NO_PREFERRED)
                     .fail((device, status) -> log(Log.WARN, "Could not set phy"))
-                    .enqueue();
+                    .enqueue();*/
 
             /**** Get information about device *****/
             // TODO: if we aren't really doing anything with this data do not fetch on connection

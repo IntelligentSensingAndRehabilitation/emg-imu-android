@@ -20,6 +20,8 @@ public class GameView extends View {
     protected float goal_x = 0.25f;
     protected float goal_y = 0.25f;
 
+    public boolean showGoal = true;
+
     public GameView(Context context)
     {
         super(context);
@@ -51,7 +53,9 @@ public class GameView extends View {
         canvas.drawPaint(paint);
 
         // TODO: for some reason resources aren't found
-        drawCircle(canvas, "#F26B21", this.goal_x, this.goal_y);
+        if (showGoal) {
+            drawCircle(canvas, "#F26B21", this.goal_x, this.goal_y);
+        }
         drawCircle(canvas, "#AC9C9E", this.output_x, this.output_y);
     }
 
@@ -97,5 +101,9 @@ public class GameView extends View {
         this.goal_y = y;
 
         invalidate();
+    }
+
+    public void setShowGoal(boolean showGoal) {
+        this.showGoal = showGoal;
     }
 }
