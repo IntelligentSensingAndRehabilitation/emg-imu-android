@@ -1,6 +1,6 @@
 package org.sralab.emgimu.controller;
 
-import android.app.Activity;
+import android.content.Context;
 import android.content.res.AssetFileDescriptor;
 import android.util.Log;
 
@@ -16,7 +16,7 @@ import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 
-public class EmgDecoder {
+public class EmgDecoder implements IEmgDecoder {
 
     private static final String TAG = EmgDecoder.class.getSimpleName();
 
@@ -25,20 +25,31 @@ public class EmgDecoder {
     private Interpreter rmsInterpreter;
     private GpuDelegate delegate;
     private Interpreter.Options options;
-    private Activity activity;
+    private Context context;
     private final String modelSaveFile = "emgDecoder.tflite";
 
-    EmgDecoder(Activity activity) throws IOException
-    {
-        this.activity = activity;
+    // Constructor is in this initialize method as we need context and
+    // cannot pass a parameter to constructor with an interface if we
+    // want to create with reflection.
+    public boolean initialize(Context context) {
+        this.context = context;
         try {
             // See if there is a save model to default to start with
             model = loadFileModel(modelSaveFile);
         } catch (IOException e) {
-            model = loadAssetModel("model.tflite");
+            try {
+                model = loadAssetModel("model.tflite");
+            } catch (IOException e1) {
+                return false;
+            }
         }
 
-        ByteBuffer rmsModel = loadAssetModel("rms.tflite");
+        ByteBuffer rmsModel = null;
+        try {
+            rmsModel = loadAssetModel("rms.tflite");
+        } catch (IOException e) {
+            return false;
+        }
         options = new Interpreter.Options();
         Interpreter.Options rmsOptions = new Interpreter.Options();
 
@@ -58,17 +69,19 @@ public class EmgDecoder {
 
         if (BuildConfig.DEBUG) {
             if (!test()) {
-                throw new RuntimeException("TF Lite tests failed");
+                return false;
             }
         }
 
         interpreter = new Interpreter(model, options);
         rmsInterpreter = new Interpreter(rmsModel, rmsOptions);
+
+        return true;
     }
 
     /** Memory-map the model file in Assets. */
     private MappedByteBuffer loadAssetModel(String model) throws IOException {
-        AssetFileDescriptor fileDescriptor = activity.getAssets().openFd(model);
+        AssetFileDescriptor fileDescriptor = context.getAssets().openFd(model);
         FileInputStream inputStream = new FileInputStream(fileDescriptor.getFileDescriptor());
         FileChannel fileChannel = inputStream.getChannel();
         long startOffset = fileDescriptor.getStartOffset();
@@ -78,7 +91,7 @@ public class EmgDecoder {
 
     /** Memory-map the model in file. */
     private MappedByteBuffer loadFileModel(String model) throws IOException {
-        File modelFile = new File(activity.getFilesDir(), model);
+        File modelFile = new File(context.getFilesDir(), model);
         FileInputStream inputStream = new FileInputStream(modelFile);
         FileChannel fileChannel = inputStream.getChannel();
         return fileChannel.map(FileChannel.MapMode.READ_ONLY, 0, modelFile.length());
@@ -94,7 +107,7 @@ public class EmgDecoder {
 
         MappedByteBuffer newModel;
         try {
-            FileOutputStream fos = activity.openFileOutput(modelSaveFile, activity.MODE_PRIVATE);
+            FileOutputStream fos = context.openFileOutput(modelSaveFile, context.MODE_PRIVATE);
             fos.write(msg);
 
             newModel = loadFileModel(modelSaveFile);
@@ -162,8 +175,17 @@ public class EmgDecoder {
     }
 
     private int sample_counter = 0;
-    boolean decode(float[] data, float[] coordinates)
+
+    @Override
+    public int getChannels() {
+        return CHANNELS;
+    }
+
+    public boolean decode(float[] data, float[] coordinates)
     {
+        if (model == null || interpreter == null) {
+            throw new RuntimeException("Attempted to call decoded on uninitialized EMG Decoder model");
+        }
         writeToInput(data);
 
         if (sample_counter++ % 50 == 0) {
