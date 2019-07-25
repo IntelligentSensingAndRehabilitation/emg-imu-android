@@ -156,13 +156,18 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 
     private NetworkStreaming networkStreaming;
     private IEmgDecoder emgDecoder;
+    private OnEmgDecodedListener emgDecodedCallback;
 
-	/**
+    public interface OnEmgDecodedListener {
+        void onEmgDecoded(float [] decoded);
+    }
+
+    /**
 	 * This local binder is an interface for the bonded activity to operate with the proximity sensor
 	 */
 	public class EmgImuBinder extends LocalBinder {
 
-	    @Override
+        @Override
         /**
          * Override the parent method to ensure that the device list is updated, even
          * if we are not connected to the device. The onDeviceDisconnected callback only
@@ -189,6 +194,7 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 
         /**
          * Returns the last received EMG raw value.
+         *
          * @param device the device of which battery level should be returned
          * @return emg value or -1 if no value was received or characteristic was not found
          */
@@ -199,6 +205,7 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 
         /**
          * Returns the last received EMG PWR value.
+         *
          * @param device the device of which battery level should be returned
          * @return emg value or -1 if no value was received or characteristic was not found
          */
@@ -209,6 +216,7 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 
         /**
          * Returns the last received EMG PWR rescaled.
+         *
          * @param device the device of which battery level should be returned
          * @return emg value or -1 if no value was received or characteristic was not found
          */
@@ -219,10 +227,11 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 
         /**
          * Returns the last received EMG buffered value.
+         *
          * @param device the device of which battery level should be returned
          * @return emg value or -1 if no value was received or characteristic was not found
          */
-        public double [][] getEmgBuffValue(final BluetoothDevice device) {
+        public double[][] getEmgBuffValue(final BluetoothDevice device) {
             final EmgImuManager manager = (EmgImuManager) getBleManager(device);
             return manager.getEmgBuff();
         }
@@ -246,7 +255,7 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
         /**
          * Configure service to run an EMG decoder if DFM is available
          */
-        public void enableDecoder() {
+        public void enableDecoder(OnEmgDecodedListener listener) {
             Log.d(TAG, "Enabling EMG decoder");
             try {
                 Class emgDecoderProviderClass = Class.forName("org.sralab.emgimu.controller.EmgDecoderProvider");
@@ -254,11 +263,17 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
                 emgDecoder = emgDecoderProvider.get(getApplicationContext());
             } catch (ClassNotFoundException e) {
                 e.printStackTrace();
+                return;
             } catch (IllegalAccessException e) {
                 e.printStackTrace();
+                return;
             } catch (InstantiationException e) {
                 e.printStackTrace();
+                return;
             }
+
+            // If successful, install listener
+            emgDecodedCallback = listener;
 
             // Enable buffered streaming for managed devices
             for (final BluetoothDevice dev : getManagedDevices()) {
@@ -1110,8 +1125,8 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 
                 boolean res = emgDecoder.decode(input_data, coordinates);
                 if (res) {
-                    Log.d(TAG, "Decoder output: " + coordinates[0] + " " + coordinates[1]);
-                    // TODO: create callback for this
+                    if (emgDecodedCallback != null)
+                        emgDecodedCallback.onEmgDecoded(coordinates);
                 }
             }
         }

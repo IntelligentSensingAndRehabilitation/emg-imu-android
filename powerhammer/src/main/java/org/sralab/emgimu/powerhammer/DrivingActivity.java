@@ -146,8 +146,22 @@ public class DrivingActivity extends UnityPlayerActivity
         @Override
         public void onDeviceReady(BluetoothDevice device) {
             if (mService != null) {
-                mService.enableDecoder();
+                mService.enableDecoder(emgDecodedListener);
             }
+        }
+    };
+
+    EmgImuService.OnEmgDecodedListener emgDecodedListener = new EmgImuService.OnEmgDecodedListener() {
+        @Override
+        public void onEmgDecoded(float[] decoded) {
+
+            // Note here we map (0,1) -> (-1,1)
+            String decoded_s = String.join(",",
+                    Float.toString(2 * (decoded[0] - 0.5f)),
+                    Float.toString(2 * (decoded[1] - 0.5f)));
+            mUnityPlayer.UnitySendMessage("EventSystem", "OnJavaEmgDecodedReceived", decoded_s);
+
+            Log.v(TAG, "Told EventSystem.OnJavaEmgDecodedReceived: " + decoded_s);
         }
     };
 
