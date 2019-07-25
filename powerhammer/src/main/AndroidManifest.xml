@@ -93,6 +93,24 @@
       <meta-data android:name="unityplayer.UnityActivity" android:value="true" />
     </activity>
 
+
+    <activity android:label="Driving"
+        android:theme="@style/UnityThemeSelector"
+        android:icon="@mipmap/ic_attitudetrack_launcher"
+        android:isGame="true"
+        android:screenOrientation="fullSensor"
+        android:launchMode="singleTask"
+        android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale|layoutDirection|density"
+        android:hardwareAccelerated="false"
+        android:name=".DrivingActivity">
+
+      <intent-filter>
+        <action android:name="android.intent.action.MAIN" />
+        <category android:name="org.sralab.emgimu.LAUNCHER" />
+      </intent-filter>
+
+      <meta-data android:name="unityplayer.UnityActivity" android:value="true" />
+    </activity>
     <meta-data android:name="unity.build-id" android:value="70e4ba54-2ea3-4615-b30c-6d0db2eeb7cf" />
     <meta-data android:name="unity.splash-mode" android:value="0" />
     <meta-data android:name="unity.splash-enable" android:value="False" />
