@@ -155,10 +155,11 @@ public class DrivingActivity extends UnityPlayerActivity
         @Override
         public void onEmgDecoded(float[] decoded) {
 
-            // Note here we map (0,1) -> (-1,1)
+            // Note here we map (0,1) -> (-1,1). Also in screen space 1 is the bottom
+            // but for driving we want top to be forward.
             String decoded_s = String.join(",",
                     Float.toString(2 * (decoded[0] - 0.5f)),
-                    Float.toString(2 * (decoded[1] - 0.5f)));
+                    Float.toString(-2 * (decoded[1] - 0.5f)));
             mUnityPlayer.UnitySendMessage("EventSystem", "OnJavaEmgDecodedReceived", decoded_s);
 
             Log.v(TAG, "Told EventSystem.OnJavaEmgDecodedReceived: " + decoded_s);
