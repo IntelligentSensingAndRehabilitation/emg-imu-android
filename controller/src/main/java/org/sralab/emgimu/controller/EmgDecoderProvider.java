@@ -1,4 +1,4 @@
-package org.sralab.emgimu.controller.telepresence;
+package org.sralab.emgimu.controller;
 
 import android.content.Context;
 
