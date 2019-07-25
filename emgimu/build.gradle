@@ -33,9 +33,15 @@ android {
     dynamicFeatures = [':powerhammer', ":controller"]
 
 
-    defaultConfig {
-        ndk {
-            abiFilters 'armeabi-v7a', 'arm64-v8a'
+    bundle {
+        language {
+            enableSplit = false
+        }
+        density {
+            enableSplit = false
+        }
+        abi {
+            enableSplit = true
         }
     }
 

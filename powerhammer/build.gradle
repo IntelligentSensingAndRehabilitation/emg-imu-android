@@ -30,13 +30,7 @@ android {
         doNotStrip '*/arm64-v8a/*.so'
     }
 
-    defaultConfig {
-        ndk {
-            abiFilters 'armeabi-v7a', 'arm64-v8a'
-        }
-    }
 
-    /*
     splits {
         // Configures multiple APKs based on ABI.
         abi {
@@ -47,10 +41,10 @@ android {
             reset()
 
             // Specifies a list of ABIs that Gradle should create APKs for.
-            include "armeabi-v7a"
+            include "armeabi-v7a", 'arm64-v8a'
         }
     }
-    */
+
 }
 
 dependencies {
