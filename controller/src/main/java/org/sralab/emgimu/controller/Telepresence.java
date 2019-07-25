@@ -51,10 +51,7 @@ public class Telepresence extends EmgImuBaseActivity {
         setContentView(R.layout.activity_telepresence);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
-        emgDecoder = new EmgDecoder();
-        if (!emgDecoder.initialize(this)) {
-            throw new RuntimeException("Unable to initialize TF Lite decoder");
-        }
+        emgDecoder = new EmgDecoder(this);
 
         gameView = findViewById(R.id.game_view);
         gameView.setShowGoal(false);

@@ -64,10 +64,7 @@ public class LearningGameActivity extends EmgImuBaseActivity {
         setContentView(R.layout.activity_learning_game);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
-        emgDecoder = new EmgDecoder();
-        if (!emgDecoder.initialize(this)) {
-            throw new RuntimeException("Unable to initialize TF Lite decoder");
-        }
+        emgDecoder = new EmgDecoder(this);
 
         ViewGroup decoder_inputs = findViewById(R.id.decoder_inputs);
         inputGraph = new VectorGraphView(decoder_inputs.getContext(), decoder_inputs, EmgDecoder.CHANNELS);

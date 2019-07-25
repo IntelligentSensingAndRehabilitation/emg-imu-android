@@ -28,10 +28,7 @@ public class EmgDecoder implements IEmgDecoder {
     private Context context;
     private final String modelSaveFile = "emgDecoder.tflite";
 
-    // Constructor is in this initialize method as we need context and
-    // cannot pass a parameter to constructor with an interface if we
-    // want to create with reflection.
-    public boolean initialize(Context context) {
+    public EmgDecoder(Context context) {
         this.context = context;
         try {
             // See if there is a save model to default to start with
@@ -40,7 +37,7 @@ public class EmgDecoder implements IEmgDecoder {
             try {
                 model = loadAssetModel("model.tflite");
             } catch (IOException e1) {
-                return false;
+                throw new RuntimeException("Unable to initialize EMG Decoder TF-Lite model");
             }
         }
 
@@ -48,7 +45,7 @@ public class EmgDecoder implements IEmgDecoder {
         try {
             rmsModel = loadAssetModel("rms.tflite");
         } catch (IOException e) {
-            return false;
+            throw new RuntimeException("Unable to initialize the EMG Decoder TF-Lite RMS model");
         }
         options = new Interpreter.Options();
         Interpreter.Options rmsOptions = new Interpreter.Options();
@@ -69,14 +66,12 @@ public class EmgDecoder implements IEmgDecoder {
 
         if (BuildConfig.DEBUG) {
             if (!test()) {
-                return false;
+                throw new RuntimeException("EMG Decoder tests failed");
             }
         }
 
         interpreter = new Interpreter(model, options);
         rmsInterpreter = new Interpreter(rmsModel, rmsOptions);
-
-        return true;
     }
 
     /** Memory-map the model file in Assets. */

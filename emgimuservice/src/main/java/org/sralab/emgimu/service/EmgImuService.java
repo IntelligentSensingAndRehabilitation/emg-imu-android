@@ -82,6 +82,8 @@ import no.nordicsemi.android.nrftoolbox.profile.multiconnect.BleMulticonnectProf
 
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.sralab.emgimu.controller.IEmgDecoder;
+import org.sralab.emgimu.controller.IEmgDecoderProvider;
 import org.sralab.emgimu.logging.EmgLogFetchJobService;
 import org.sralab.emgimu.streaming.NetworkStreaming;
 
@@ -153,6 +155,7 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
     private ServiceLogger mServiceLogger = new ServiceLogger(TAG, this, mLogSession);
 
     private NetworkStreaming networkStreaming;
+    private IEmgDecoder emgDecoder;
 
 	/**
 	 * This local binder is an interface for the bonded activity to operate with the proximity sensor
@@ -238,6 +241,31 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
         public void streamBuffered(final BluetoothDevice device) {
             final EmgImuManager manager = (EmgImuManager) getBleManager(device);
             manager.enableBufferedStreamingMode();
+        }
+
+        /**
+         * Configure service to run an EMG decoder if DFM is available
+         */
+        public void enableDecoder() {
+            Log.d(TAG, "Enabling EMG decoder");
+            try {
+                Class emgDecoderProviderClass = Class.forName("org.sralab.emgimu.controller.EmgDecoderProvider");
+                IEmgDecoderProvider emgDecoderProvider = (IEmgDecoderProvider) emgDecoderProviderClass.newInstance();
+                emgDecoder = emgDecoderProvider.get(getApplicationContext());
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            } catch (InstantiationException e) {
+                e.printStackTrace();
+            }
+
+            // Enable buffered streaming for managed devices
+            for (final BluetoothDevice dev : getManagedDevices()) {
+                final EmgImuManager manager = (EmgImuManager) getBleManager(dev);
+                manager.enableBufferedStreamingMode();
+            }
+
         }
 
         public EmgImuManager.STREAMING_MODE getStreamingMode(final BluetoothDevice device) {
@@ -1065,6 +1093,28 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
         broadcast.putExtra(EXTRA_EMG_BUFF, linearizedData);
         LocalBroadcastManager.getInstance(this).sendBroadcast(broadcast);
 
+        // If EMG decoder exists, push data through this
+        if (emgDecoder != null) {
+
+            if (CHANNELS != emgDecoder.getChannels()) {
+                throw new RuntimeException("Incompatible channel sizes between Emg Decoder and received data");
+            }
+            float input_data[] = new float[CHANNELS];
+            float coordinates[] = new float[2];
+
+            for (int i = 0; i < SAMPLES; i++) {
+
+                for (int j = 0; j < CHANNELS; j++) {
+                    input_data[j] = (float) data[j][i];
+                }
+
+                boolean res = emgDecoder.decode(input_data, coordinates);
+                if (res) {
+                    Log.d(TAG, "Decoder output: " + coordinates[0] + " " + coordinates[1]);
+                    // TODO: create callback for this
+                }
+            }
+        }
         if (networkStreaming != null && networkStreaming.isConnected()) {
             networkStreaming.streamEmgBuffer(device, ts_ms, SAMPLES, CHANNELS, data);
         }
