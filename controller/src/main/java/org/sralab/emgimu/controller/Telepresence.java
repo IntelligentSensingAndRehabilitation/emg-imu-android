@@ -39,6 +39,8 @@ public class Telepresence extends EmgImuBaseActivity {
     private GameView gameView;
     private TextView responseText;
     private Retrofit teleprescenceService = RetrofitClient.getClient(ip_address);
+    private boolean enabled = false;
+    private boolean commandPending = false;
 
     private APIService getAPIService() {
         return teleprescenceService.create(APIService.class);
@@ -62,13 +64,14 @@ public class Telepresence extends EmgImuBaseActivity {
         gameView.setShowGoal(false);
 
         ToggleButton enableDisable = findViewById(R.id.button_enable_robot);
+        enabled = enableDisable.isChecked();
         enableDisable.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (isChecked) {
-                sendControlCommand(0.8f, 0);
+                enabled = true;
             } else {
+                enabled = false;
                 sendControlCommand(0, 0);
             }
-
         });
 
         responseText = findViewById(R.id.testViewResponse);
@@ -76,13 +79,26 @@ public class Telepresence extends EmgImuBaseActivity {
         sendControlCommand(0f, 0f);
     }
 
+    @Override
+    protected void onPause() {
+        Log.d(TAG, "Pausing and stopping");
+        enabled = false;
+        sendControlCommand(0,0);
+        super.onPause();
+    }
+
     private void sendControlCommand(float speed, float turn) {
 
         Log.d(TAG, "Sending control message: " + speed + " " + turn);
 
+        commandPending = true;
+
         getAPIService().control(new Post(speed, turn)).enqueue(new Callback<Status>() {
             @Override
             public void onResponse(Call<Status> call, Response<Status> response) {
+
+                commandPending = false;
+                Log.d(TAG, "Sending");
 
                 Log.i(TAG, "onResponse: for " + call.request()); // + " " + response.body().toString());
                 if (response.isSuccessful()) {
@@ -98,6 +114,9 @@ public class Telepresence extends EmgImuBaseActivity {
 
             @Override
             public void onFailure(Call<Status> call, Throwable t) {
+
+                commandPending = false;
+
                 Log.e(TAG, "Unable to submit post to API.", t);
             }
         });
@@ -132,10 +151,12 @@ public class Telepresence extends EmgImuBaseActivity {
 
             if (res) {
 
-                float speed = 2 * (coordinates[1] - 0.5f);
-                float turn = 2 * (coordinates[0] - 0.5f);
+                if (enabled && !commandPending) {
+                    float speed = 2 * (coordinates[1] - 0.5f);
+                    float turn = 2 * (coordinates[0] - 0.5f);
+                    sendControlCommand(speed, turn);
+                }
 
-                sendControlCommand(speed, turn);
                 runOnUiThread(() -> gameView.setOutputCoordinate(coordinates[0], coordinates[1]));
             }
         }
@@ -161,7 +182,6 @@ public class Telepresence extends EmgImuBaseActivity {
     public void onBatteryReceived(BluetoothDevice device, float battery) {
 
     }
-
 
     @Override
     public void onImuAccelReceived(BluetoothDevice device, float[][] accel) {
