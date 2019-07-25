@@ -10,7 +10,9 @@
         <dist:fusing dist:include="true" />
     </dist:module>
 
-    <application>
+    <application
+        android:usesCleartextTraffic="true">
+
         <activity
             android:name=".Telepresence"
             android:label="Teleprescence"
