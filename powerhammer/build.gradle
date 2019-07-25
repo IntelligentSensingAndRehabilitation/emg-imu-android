@@ -23,6 +23,7 @@ android {
 
     aaptOptions {
         noCompress = ['.unity3d', '.ress', '.resource', '.obb']
+        ignoreAssetsPattern = "!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~"
     }
 
     packagingOptions {
@@ -56,6 +57,8 @@ dependencies {
     implementation(name: 'UnityARCore', ext:'aar')
     implementation(name: 'arcore_client', ext:'aar')
     implementation(name: 'unityandroidpermissions', ext:'aar')
+    implementation(name: 'gvr', ext:'aar')
+    implementation(name: 'unitygvr', ext:'aar')
 
     implementation 'androidx.appcompat:appcompat:1.0.2'
     implementation 'com.google.android.material:material:1.0.0'
