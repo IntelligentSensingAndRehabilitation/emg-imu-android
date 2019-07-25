@@ -10,10 +10,6 @@ android {
         targetSdkVersion rootProject.compileSdk
         versionCode rootProject.versionCode
         versionName rootProject.versionName
-
-        ndk {
-            abiFilters 'armeabi-v7a'
-        }
     }
 
     compileOptions {
@@ -32,6 +28,28 @@ android {
     packagingOptions {
         doNotStrip '*/armeabi-v7a/*.so'
     }
+
+    defaultConfig {
+        ndk {
+            abiFilters 'armeabi-v7a'
+        }
+    }
+
+    /*
+    splits {
+        // Configures multiple APKs based on ABI.
+        abi {
+            // Enables building multiple APKs per ABI.
+            enable true
+
+            // Resets the list of ABIs that Gradle should create APKs for to none.
+            reset()
+
+            // Specifies a list of ABIs that Gradle should create APKs for.
+            include "armeabi-v7a"
+        }
+    }
+    */
 }
 
 dependencies {

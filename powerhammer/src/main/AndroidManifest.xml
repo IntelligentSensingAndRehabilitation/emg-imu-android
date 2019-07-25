@@ -2,8 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:dist="http://schemas.android.com/apk/distribution"
     android:sharedUserId="org.sralab.emgimu"
-    package="org.sralab.emgimu.powerhammer"
-    split="powerhammer">
+    package="org.sralab.emgimu.powerhammer">
 
   <supports-screens android:smallScreens="true" android:normalScreens="true" android:largeScreens="true" android:xlargeScreens="true" android:anyDensity="true" />
 
@@ -11,15 +10,14 @@
   <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
   <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
+  <dist:module
+      dist:instant="false"
+      dist:onDemand="true"
+      dist:title="@string/title_unity">
+    <dist:fusing dist:include="true" />
+  </dist:module>
 
   <application>
-
-    <dist:module
-        dist:instant="false"
-        dist:onDemand="true"
-        dist:title="Unity">
-      <dist:fusing dist:include="true" />
-    </dist:module>
 
     <!--Based on discussion here https://stackoverflow.com/questions/23467994/errors-managing-the-unityplayer-lifecycle-in-a-native-android-application
         it would be good to include the flag
