@@ -16,6 +16,11 @@
 
         <include layout="@layout/toolbar" />
 
+        <WebView
+            android:id="@+id/video_view"
+            android:layout_width="match_parent"
+            android:layout_height="250dp" />
+
         <org.sralab.emgimu.controller.GameView
             android:id="@+id/game_view"
             android:layout_width="match_parent"
