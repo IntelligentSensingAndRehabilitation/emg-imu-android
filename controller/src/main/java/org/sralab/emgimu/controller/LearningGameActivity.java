@@ -55,7 +55,7 @@ public class LearningGameActivity extends EmgImuBaseActivity {
 
     private NetworkStreaming networkStreaming;
 
-    private String ip_address = "10.30.155.96";
+    private String ip_address = "10.42.0.1";
     private int port = 5000;
     private final float RMS_SPACING = 10;
 

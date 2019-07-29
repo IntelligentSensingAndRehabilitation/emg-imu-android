@@ -2,6 +2,7 @@ package org.sralab.emgimu.controller;
 
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Display;
@@ -10,6 +11,7 @@ import android.webkit.WebView;
 import android.widget.CompoundButton;
 import android.widget.TextView;
 import android.widget.ToggleButton;
+import android.widget.VideoView;
 
 import androidx.annotation.NonNull;
 
@@ -39,10 +41,10 @@ public class Telepresence extends EmgImuBaseActivity {
     private final static String TAG = Telepresence.class.getSimpleName();
     private float coordinates[] = new float[EmgDecoder.EMBEDDINGS_SIZE];
     private String ip_address = "http://192.168.1.124:8000";  // Default robot IP address
-    private String video_address = ip_address + "/video_feed";  // Default robot IP address
+    private String video_address = "tcp://192.168.1.124:2222/";  // Default robot IP address
     private GameView gameView;
     private TextView responseText;
-    private WebView videoView;
+    private VideoView videoView;
     private Retrofit teleprescenceService = RetrofitClient.getClient(ip_address);
     private boolean enabled = false;
     private boolean commandPending = false;
@@ -61,10 +63,14 @@ public class Telepresence extends EmgImuBaseActivity {
         gameView = findViewById(R.id.game_view);
         gameView.setShowGoal(false);
 
+        // Note this works with RPi streaming via
+        // raspivid -o - -t 0 -hf -w 640 -h 360 -fps 25|cvlc -vvv stream:///dev/stdin --sout '#standard{access=http,mux=ts,dst=:2222}' :demux=h264
+        // but latency is quite bad
         videoView = findViewById(R.id.video_view);
-        videoView.loadUrl(video_address);
-        videoView.getSettings().setLoadWithOverviewMode(true);
-        videoView.getSettings().setUseWideViewPort(true);
+        Uri vidUri = Uri.parse(video_address);
+        Log.d(TAG, vidUri.toString());
+        videoView.setVideoURI(vidUri);
+        videoView.start();
 
         ToggleButton enableDisable = findViewById(R.id.button_enable_robot);
         enabled = enableDisable.isChecked();
