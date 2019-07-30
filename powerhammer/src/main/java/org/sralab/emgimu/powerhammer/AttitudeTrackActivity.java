@@ -53,7 +53,7 @@ public class AttitudeTrackActivity extends UnityPlayerActivity
         mServiceHolder.setCallbacks(mEmgImuCallbacks);
 
         super.onCreate(savedInstanceState);
-        mUnityPlayer.UnitySendMessage("SceneLoader", "loadScene", "2");
+        mUnityPlayer.UnitySendMessage("SceneLoader", "loadScene", "3");
     }
 
     @Override
