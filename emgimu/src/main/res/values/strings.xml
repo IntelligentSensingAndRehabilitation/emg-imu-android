@@ -6,4 +6,7 @@
     <string name="soccer_name">AR Soccer</string>
     <string name="title_controller">Controller</string>
     <string name="title_activity_controller">Controller</string>
+
+    <!-- needed for unity -->
+    <string name="game_view_content_description">Game view</string>
 </resources>
