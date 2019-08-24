@@ -11,7 +11,7 @@ buildscript {
 
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.4.2'
+        classpath 'com.android.tools.build:gradle:3.5.0'
         classpath 'com.google.gms:google-services:4.3.0'
         classpath 'io.fabric.tools:gradle:1.29.0'
 
@@ -61,11 +61,11 @@ ext {
     minSdkInstant = 24
 
     supportLib = '28.0.0'
-    firebaseCoreVer = '17.0.1'
-    firebaseAuthVer = '18.1.0'
-    firebaseStorageVer = '18.1.1'
-    firebaseFirestoreVer = '20.2.0'
-    firebaseMessagingVer = '19.0.1'
+    firebaseCoreVer = '17.1.0'
+    firebaseAuthVer = '19.0.0'
+    firebaseStorageVer = '19.0.0'
+    firebaseFirestoreVer = '21.0.0'
+    firebaseMessagingVer = '20.0.0'
     crashlyticsVer = '2.10.1'
     instantAppsVer = '1.1.0'
 
