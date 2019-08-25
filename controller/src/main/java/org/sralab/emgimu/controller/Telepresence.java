@@ -1,16 +1,10 @@
 package org.sralab.emgimu.controller;
 
 import android.bluetooth.BluetoothDevice;
-import android.content.Context;
-import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.Display;
 import android.view.WindowManager;
-import android.webkit.WebView;
-import android.widget.CompoundButton;
-import android.widget.MediaController;
 import android.widget.TextView;
 import android.widget.ToggleButton;
 import android.widget.VideoView;
@@ -24,12 +18,11 @@ import org.sralab.emgimu.controller.telepresence.RetrofitClient;
 import org.sralab.emgimu.controller.telepresence.Status;
 import org.sralab.emgimu.service.EmgImuService;
 
-import java.io.IOException;
-
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 import retrofit2.Retrofit;
+import yjkim.mjpegviewer.MjpegView;
 
 // Note for using retrofit from this
 // https://android.jlelse.eu/consuming-rest-api-using-retrofit-library-in-android-ed47aef01ecb
@@ -49,7 +42,7 @@ public class Telepresence extends EmgImuBaseActivity {
 
     private GameView gameView;
     private TextView responseText;
-    private WebView videoView;
+    private MjpegView videoView;
     private Retrofit teleprescenceService = RetrofitClient.getClient(control);
     private boolean enabled = false;
     private boolean commandPending = false;
@@ -69,8 +62,10 @@ public class Telepresence extends EmgImuBaseActivity {
         gameView.setShowGoal(false);
 
         videoView = findViewById(R.id.video_view);
-        videoView.clearCache(true);
-        videoView.loadUrl(video_address);
+        //videoView.clearCache(true);
+        //videoView.loadUrl(video_address);
+        //videoView.setVideoURI(Uri.parse(video_address));
+        videoView.Start(video_address);
 
         ToggleButton enableDisable = findViewById(R.id.button_enable_robot);
         enabled = enableDisable.isChecked();

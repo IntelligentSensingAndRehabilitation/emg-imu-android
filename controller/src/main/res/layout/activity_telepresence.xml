@@ -16,7 +16,7 @@
 
         <include layout="@layout/toolbar" />
 
-        <VideoView
+        <yjkim.mjpegviewer.MjpegView
             android:id="@+id/video_view"
             android:layout_width="match_parent"
             android:layout_height="250dp" />
