@@ -42,12 +42,15 @@ public class Telepresence extends EmgImuBaseActivity {
     private EmgDecoder emgDecoder = null;
     private final static String TAG = Telepresence.class.getSimpleName();
     private float coordinates[] = new float[EmgDecoder.EMBEDDINGS_SIZE];
-    private String ip_address = "http://192.168.1.124:8000";  // Default robot IP address
-    private String video_address = "http://192.168.1.124:2222/";  // Default robot IP address
+    private String hostname = "http://192.168.1.124";  // Default robot IP address
+    private String control= hostname + ":8000";
+    //private String video_address = hostname + ":8000/streaming";
+    private String video_address = hostname + ":8080/stream/video.mjpeg";
+
     private GameView gameView;
     private TextView responseText;
-    private VideoView videoView;
-    private Retrofit teleprescenceService = RetrofitClient.getClient(ip_address);
+    private WebView videoView;
+    private Retrofit teleprescenceService = RetrofitClient.getClient(control);
     private boolean enabled = false;
     private boolean commandPending = false;
 
@@ -65,32 +68,9 @@ public class Telepresence extends EmgImuBaseActivity {
         gameView = findViewById(R.id.game_view);
         gameView.setShowGoal(false);
 
-        // Note this works with RPi streaming via
-        // raspivid -o - -t 0 -hf -w 640 -h 360 -fps 20 | cvlc -vvv stream:///dev/stdin --sout '#standard{access=http,mux=ts,dst=:2222}' :demux=h264
-        // but latency is quite bad
         videoView = findViewById(R.id.video_view);
-        videoView.setOnPreparedListener(mp -> {
-            Log.d(TAG, "OnPrepared");
-            mp.start();
-        });
-
-        videoView.setOnInfoListener((mp, what, extra) -> {
-            Log.d(TAG, "onInfo: " + what + " " + extra);
-            return false;
-        });
-
-        videoView.setOnErrorListener((mp, what, extra) -> {
-            Log.d(TAG, "onError: " + what + " " + extra);
-            return false;
-        });
-
-        videoView.setOnCompletionListener(mp -> Log.d(TAG, "onCompletion"));
-
-        videoView.setMediaController(new MediaController(this));
-        Uri vidUri = Uri.parse(video_address);
-        Log.d(TAG, vidUri.toString());
-        videoView.setVideoURI(vidUri);
-        videoView.start();
+        videoView.clearCache(true);
+        videoView.loadUrl(video_address);
 
         ToggleButton enableDisable = findViewById(R.id.button_enable_robot);
         enabled = enableDisable.isChecked();
