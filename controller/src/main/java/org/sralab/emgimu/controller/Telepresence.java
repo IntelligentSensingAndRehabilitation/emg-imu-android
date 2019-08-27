@@ -1,13 +1,11 @@
 package org.sralab.emgimu.controller;
 
 import android.bluetooth.BluetoothDevice;
-import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.WindowManager;
 import android.widget.TextView;
 import android.widget.ToggleButton;
-import android.widget.VideoView;
 
 import androidx.annotation.NonNull;
 
@@ -35,7 +33,7 @@ public class Telepresence extends EmgImuBaseActivity {
     private EmgDecoder emgDecoder = null;
     private final static String TAG = Telepresence.class.getSimpleName();
     private float coordinates[] = new float[EmgDecoder.EMBEDDINGS_SIZE];
-    private String hostname = "http://192.168.1.124";  // Default robot IP address
+    private String hostname = "http://10.42.0.253";  // Default robot IP address
     private String control= hostname + ":8000";
     //private String video_address = hostname + ":8000/streaming";
     private String video_address = hostname + ":8080/stream/video.mjpeg";
