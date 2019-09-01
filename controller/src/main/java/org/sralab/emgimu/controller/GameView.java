@@ -20,7 +20,8 @@ public class GameView extends View {
     protected float goal_x = 0.25f;
     protected float goal_y = 0.25f;
 
-    public boolean showGoal = true;
+    protected boolean showGoal = true;
+    protected boolean showOutput = true;
 
     public GameView(Context context)
     {
@@ -52,11 +53,13 @@ public class GameView extends View {
         paint.setColor(Color.WHITE);
         canvas.drawPaint(paint);
 
-        // TODO: for some reason resources aren't found
         if (showGoal) {
             drawCircle(canvas, "#F26B21", this.goal_x, this.goal_y);
         }
-        drawCircle(canvas, "#AC9C9E", this.output_x, this.output_y);
+
+        if (showOutput) {
+            drawCircle(canvas, "#AC9C9E", this.output_x, this.output_y);
+        }
     }
 
     private int measureDimension(int desiredSize, int measureSpec) {
@@ -105,5 +108,11 @@ public class GameView extends View {
 
     public void setShowGoal(boolean showGoal) {
         this.showGoal = showGoal;
+    }
+    public void setShowOutput(boolean showOutput) {
+        this.showOutput = showOutput;
+    }
+    public void toggleShowOutput() {
+        this.showOutput = !showOutput;
     }
 }
