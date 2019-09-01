@@ -25,7 +25,7 @@
         to possibly help with the troubles with the back button. But right now
         to grab the shared service that won't work. -->
 
-    <activity android:label="@string/powerhammer_name"
+    <activity android:label="@string/title_activity_powerhammer"
         android:theme="@style/UnityThemeSelector"
         android:icon="@mipmap/ic_powerhammer_launcher"
         android:isGame="true"
@@ -50,7 +50,7 @@
       <meta-data android:name="unityplayer.UnityActivity" android:value="true" />
     </activity>
 
-    <activity android:label="@string/soccer_name"
+    <activity android:label="@string/title_activity_soccer"
         android:theme="@style/UnityThemeSelector"
         android:icon="@mipmap/ic_soccer_launcher"
         android:isGame="true"
@@ -75,7 +75,7 @@
       <meta-data android:name="unityplayer.UnityActivity" android:value="true" />
     </activity>
 
-    <activity android:label="@string/attitudetrack_name"
+    <activity android:label="@string/title_activity_attitudetrack"
         android:theme="@style/UnityThemeSelector"
         android:icon="@mipmap/ic_attitudetrack_launcher"
         android:isGame="true"
@@ -94,7 +94,7 @@
     </activity>
 
 
-    <activity android:label="Driving"
+    <activity android:label="@string/title_activity_driving"
         android:theme="@style/UnityThemeSelector"
         android:icon="@mipmap/ic_attitudetrack_launcher"
         android:isGame="true"

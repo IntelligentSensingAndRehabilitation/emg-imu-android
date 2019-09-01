@@ -1,9 +1,5 @@
 package org.sralab.emgimu.powerhammer;
 
-import com.crashlytics.android.Crashlytics;
-import com.crashlytics.android.core.CrashlyticsCore;
-import com.google.gson.Gson;
-
 import android.bluetooth.BluetoothDevice;
 import android.content.Intent;
 import android.content.ServiceConnection;
@@ -11,6 +7,11 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.KeyEvent;
 
+import com.crashlytics.android.Crashlytics;
+import com.crashlytics.android.core.CrashlyticsCore;
+import com.google.gson.Gson;
+
+import org.sralab.emgimu.R;
 import org.sralab.emgimu.logging.FirebaseGameLogger;
 import org.sralab.emgimu.service.EmgImuService;
 import org.sralab.emgimu.service.EmgImuServiceHolder;
@@ -19,7 +20,6 @@ import java.util.ArrayList;
 import java.util.Date;
 
 import io.fabric.sdk.android.Fabric;
-import org.sralab.emgimu.R;
 
 public class PowerHammerActivity extends UnityPlayerActivity
 {
@@ -147,7 +147,7 @@ public class PowerHammerActivity extends UnityPlayerActivity
         public void onServiceBinded(EmgImuService.EmgImuBinder binder) {
             Log.d(TAG, "Service bound");
             long startTime = new Date().getTime();
-            mGameLogger = new FirebaseGameLogger(binder, getString(R.string.powerhammer_name), startTime);
+            mGameLogger = new FirebaseGameLogger(binder, getString(R.string.title_activity_powerhammer), startTime);
             mService = binder;
         }
 

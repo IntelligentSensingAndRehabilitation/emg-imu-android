@@ -208,7 +208,7 @@ public class AttitudeTrackActivity extends UnityPlayerActivity
         public void onServiceBinded(EmgImuService.EmgImuBinder binder) {
             Log.d(TAG, "Service bound");
             long startTime = new Date().getTime();
-            mGameLogger = new FirebaseGameLogger(binder, getString(R.string.attitudetrack_name), startTime);
+            mGameLogger = new FirebaseGameLogger(binder, getString(R.string.title_activity_attitudetrack), startTime);
             mService = binder;
         }
 

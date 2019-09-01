@@ -11,11 +11,13 @@ import androidx.annotation.NonNull;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import org.sralab.emgimu.EmgImuBaseActivity;
+import org.sralab.emgimu.logging.FirebaseGameLogger;
 import org.sralab.emgimu.service.EmgImuService;
 import org.sralab.emgimu.streaming.NetworkStreaming;
 import org.sralab.emgimu.visualization.VectorGraphView;
 
 import java.util.Arrays;
+import java.util.Date;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -47,6 +49,9 @@ public class LearningGameActivity extends EmgImuBaseActivity {
 
     private GameView gameView;
     private GameController gameController = new GameController();
+
+    private FirebaseGameLogger mGameLogger;
+
     //! Track the most recent coordinates
     private float coordinates[] = new float[EmgDecoder.EMBEDDINGS_SIZE];
 
@@ -54,7 +59,7 @@ public class LearningGameActivity extends EmgImuBaseActivity {
 
     private NetworkStreaming networkStreaming;
 
-    private String ip_address = "10.42.0.1";
+    private String ip_address = "10.30.155.96";
     private int port = 5000;
     private final float RMS_SPACING = 10;
 
@@ -92,13 +97,19 @@ public class LearningGameActivity extends EmgImuBaseActivity {
             @Override
             public void run() {
                 runOnUiThread(() -> {
-                    gameController.update(0.0f, 0.0f, dt_ms);
+                    gameController.update(coordinates[0], coordinates[1], dt_ms);
+                    gameView.setOutputCoordinate(gameController.getCurrentX(), gameController.getCurrentY());
                     gameView.setGoalCoordinate(gameController.getGoalX(), gameController.getGoalY());
                 });
 
                 if (networkStreaming != null && networkStreaming.isConnected()) {
-                    networkStreaming.streamTrackingXY(gameController.getGoalX(), gameController.getGoalY(),
-                            coordinates[0], coordinates[1]);
+                    switch(gameController.getMode()) {
+                        case DRIFT:
+                        case CENTER_OUT:
+                            networkStreaming.streamTrackingXY(gameController.getGoalX(),
+                                    gameController.getGoalY(),
+                                    coordinates[0], coordinates[1]);
+                    }
                 }
             }
         }, 0, dt_ms);
@@ -123,12 +134,14 @@ public class LearningGameActivity extends EmgImuBaseActivity {
 
     @Override
     protected void onServiceBinded(EmgImuService.EmgImuBinder binder) {
-
+        long startTime = new Date().getTime();
+        mGameLogger = new FirebaseGameLogger(binder, getString(org.sralab.emgimu.R.string.title_activity_controller), startTime);
+        gameController.setGameLogger(mGameLogger);
     }
 
     @Override
     protected void onServiceUnbinded() {
-
+        mGameLogger = null;
     }
 
     @Override
@@ -176,7 +189,6 @@ public class LearningGameActivity extends EmgImuBaseActivity {
                     inputGraph.repaint();
 
                     Log.d(TAG, "Output: " + Arrays.toString(coordinates));
-                    gameView.setOutputCoordinate(coordinates[0], coordinates[1]);
                     outputGraph.addValue(coordinates);
                     outputGraph.repaint();
                 });

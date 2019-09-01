@@ -1,9 +1,5 @@
 package org.sralab.emgimu.powerhammer;
 
-import com.crashlytics.android.Crashlytics;
-import com.crashlytics.android.core.CrashlyticsCore;
-import com.google.gson.Gson;
-
 import android.bluetooth.BluetoothDevice;
 import android.content.Intent;
 import android.content.ServiceConnection;
@@ -11,15 +7,17 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.KeyEvent;
 
+import com.crashlytics.android.Crashlytics;
+import com.crashlytics.android.core.CrashlyticsCore;
+
+import org.sralab.emgimu.R;
 import org.sralab.emgimu.logging.FirebaseGameLogger;
 import org.sralab.emgimu.service.EmgImuService;
 import org.sralab.emgimu.service.EmgImuServiceHolder;
 
-import java.util.ArrayList;
 import java.util.Date;
 
 import io.fabric.sdk.android.Fabric;
-import org.sralab.emgimu.R;
 
 public class DrivingActivity extends UnityPlayerActivity
 {
@@ -70,6 +68,11 @@ public class DrivingActivity extends UnityPlayerActivity
     // Pause Unity
     @Override protected void onPause()
     {
+        if (mGameLogger != null) {
+            Log.d(TAG, "writing log");
+            mGameLogger.finalize(0.0, "");
+        }
+
         if (exiting)
             safePause();
         else
@@ -93,6 +96,7 @@ public class DrivingActivity extends UnityPlayerActivity
 
     @Override
     public void onBackPressed() {
+
         Log.d(TAG, "onBackPressed");
         exiting = true;
         super.onBackPressed();
@@ -132,7 +136,7 @@ public class DrivingActivity extends UnityPlayerActivity
         public void onServiceBinded(EmgImuService.EmgImuBinder binder) {
             Log.d(TAG, "Service bound");
             long startTime = new Date().getTime();
-            mGameLogger = new FirebaseGameLogger(binder, getString(R.string.soccer_name), startTime);
+            mGameLogger = new FirebaseGameLogger(binder, getString(R.string.title_activity_driving), startTime);
             mService = binder;
         }
 
@@ -151,23 +155,16 @@ public class DrivingActivity extends UnityPlayerActivity
         }
     };
 
-    EmgImuService.OnEmgDecodedListener emgDecodedListener = new EmgImuService.OnEmgDecodedListener() {
-        @Override
-        public void onEmgDecoded(float[] decoded) {
+    EmgImuService.OnEmgDecodedListener emgDecodedListener = decoded -> {
+        if (exiting)
+            return;
 
-            // Note here we map (0,1) -> (-1,1). Also in screen space 1 is the bottom
-            // but for driving we want top to be forward.
-            String decoded_s = String.join(",",
-                    Float.toString(2 * (decoded[0] - 0.5f)),
-                    Float.toString(-2 * (decoded[1] - 0.5f)));
-            mUnityPlayer.UnitySendMessage("EventSystem", "OnJavaEmgDecodedReceived", decoded_s);
-
-            Log.v(TAG, "Told EventSystem.OnJavaEmgDecodedReceived: " + decoded_s);
-        }
+        // Note here we map (0,1) -> (-1,1). Also in screen space 1 is the bottom
+        // but for driving we want top to be forward.
+        String decoded_s = String.join(",",
+                Float.toString(2 * (decoded[0] - 0.5f)),
+                Float.toString(-2 * (decoded[1] - 0.5f)));
+        mUnityPlayer.UnitySendMessage("EventSystem", "OnJavaEmgDecodedReceived", decoded_s);
     };
-
-    //! Called from Unity when a round ends to store the power
-    public void LogRound(String data) {
-    }
 
 }
