@@ -103,12 +103,11 @@ public class LearningGameActivity extends EmgImuBaseActivity {
                 });
 
                 if (networkStreaming != null && networkStreaming.isConnected()) {
-                    String mode = gameController.getMode().name()
+                    String mode = gameController.getMode().name();
                     networkStreaming.streamTrackingXY(gameController.getGoalX(),
                                     gameController.getGoalY(),
                                     gameController.getCurrentX(), gameController.getCurrentY(),
                                     mode);
-                    }
                 }
             }
         }, 0, dt_ms);
