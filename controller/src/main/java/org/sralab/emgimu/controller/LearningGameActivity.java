@@ -103,12 +103,11 @@ public class LearningGameActivity extends EmgImuBaseActivity {
                 });
 
                 if (networkStreaming != null && networkStreaming.isConnected()) {
-                    switch(gameController.getMode()) {
-                        case DRIFT:
-                        case CENTER_OUT:
-                            networkStreaming.streamTrackingXY(gameController.getGoalX(),
+                    String mode = gameController.getMode().name()
+                    networkStreaming.streamTrackingXY(gameController.getGoalX(),
                                     gameController.getGoalY(),
-                                    coordinates[0], coordinates[1]);
+                                    gameController.getCurrentX(), gameController.getCurrentY(),
+                                    mode);
                     }
                 }
             }
