@@ -31,7 +31,7 @@ public class GameController {
 
     // state variables for targets task
     private float target_track_vel = 1.0f;
-    private float target_accept_radius = 0.1f;
+    private float target_accept_radius = 0.03f;
     private long target_timeout = 10000;
 
     GameController() {
