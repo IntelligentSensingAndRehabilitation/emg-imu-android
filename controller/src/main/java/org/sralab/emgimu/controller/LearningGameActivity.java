@@ -173,6 +173,11 @@ public class LearningGameActivity extends EmgImuBaseActivity {
             }
 
             boolean res = emgDecoder.decode(input_data, coordinates);
+            boolean valid = ! (Float.isNaN(coordinates[0]) || Float.isNaN(coordinates[1]));
+            if (!valid) {
+                coordinates[0] = 0.0f;
+                coordinates[1] = 0.0f;
+            }
             if (res) {
 
                 emgDecoder.get_rms(rms);
