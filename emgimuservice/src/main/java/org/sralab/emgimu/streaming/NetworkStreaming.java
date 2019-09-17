@@ -171,9 +171,9 @@ public class NetworkStreaming {
         write(json.getBytes());
     }
 
-    public void streamTrackingXY(float goal_x, float goal_y, float decoded_x, float decoded_y, String mode) {
+    public void streamTrackingXY(float goal_x, float goal_y, float decoded_x, float decoded_y, float position_x, float position_y, String mode) {
         Gson gson = new Gson();
-        TrackingXYCoordinate xy = new TrackingXYCoordinate(goal_x, goal_y, decoded_x, decoded_y, mode);
+        TrackingXYCoordinate xy = new TrackingXYCoordinate(goal_x, goal_y, decoded_x, decoded_y, position_x, position_y, mode);
         String json = gson.toJson(xy);
         write(json.getBytes());
     }

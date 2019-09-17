@@ -106,6 +106,7 @@ public class LearningGameActivity extends EmgImuBaseActivity {
                     String mode = gameController.getMode().name();
                     networkStreaming.streamTrackingXY(gameController.getGoalX(),
                                     gameController.getGoalY(),
+                                    coordinates[0], coordinates[1],
                                     gameController.getCurrentX(), gameController.getCurrentY(),
                                     mode);
                 }
