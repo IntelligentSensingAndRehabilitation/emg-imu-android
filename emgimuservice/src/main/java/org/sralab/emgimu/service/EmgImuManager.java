@@ -613,10 +613,10 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 
                 final double ads1298_gain = 8;
                 final double vref = 2.42e6;
-                double full_scale_range = vref / ads1298_gain;
-                microvolts_per_lsb = full_scale_range / (1<<24);
+                double full_scale_range = 2 * vref / ads1298_gain;
+                microvolts_per_lsb = full_scale_range / ((1<<24) - 1);
 
-                buf_ts_ms = resolveBufCounter(timestamp, counter, 500.0 / samples);
+                buf_ts_ms = resolveBufCounter(timestamp, counter, 2000.0 / samples);
                 //log(Log.DEBUG, " Counter: " + counter + " timestamp: " + timestamp + " ms: " + buf_ts_ms + " scale: " + microvolts_per_lsb);
 
                 // representation of the data is 3 bytes per sample, 8 channels, and then N samples
@@ -626,7 +626,8 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                         int idx = HDR_LEN + 3 * (ch + channels * sample);
                         byte sign = ((buffer[idx] & 0x80) == 0x80) ? (byte) 0xff : (byte) 0x00;
                         byte [] t_array = {sign, buffer[idx], buffer[idx+1], buffer[idx]};
-                        data[ch][sample] = microvolts_per_lsb * ByteBuffer.wrap(t_array).order(ByteOrder.BIG_ENDIAN).getInt();
+                        data[ch][sample] = ByteBuffer.wrap(t_array).order(ByteOrder.BIG_ENDIAN).getInt();
+                        data[ch][sample] = microvolts_per_lsb * data[ch][sample];
                     }
                     // Log.d(TAG, "Data[" + ch + "] = " + Arrays.toString(data[ch]));
                 }
