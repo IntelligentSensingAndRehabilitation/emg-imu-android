@@ -625,7 +625,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
                     for (int sample = 0; sample < samples; sample++) {
                         int idx = HDR_LEN + 3 * (ch + channels * sample);
                         byte sign = ((buffer[idx] & 0x80) == 0x80) ? (byte) 0xff : (byte) 0x00;
-                        byte [] t_array = {sign, buffer[idx], buffer[idx+1], buffer[idx]};
+                        byte [] t_array = {sign, buffer[idx], buffer[idx+1], buffer[idx+2]};
                         data[ch][sample] = ByteBuffer.wrap(t_array).order(ByteOrder.BIG_ENDIAN).getInt();
                         data[ch][sample] = microvolts_per_lsb * data[ch][sample];
                     }
