@@ -43,7 +43,7 @@ dependencies {
     implementation "com.google.firebase:firebase-messaging:$firebaseMessagingVer"
     implementation "com.crashlytics.sdk.android:crashlytics:$crashlyticsVer"
 
-    implementation 'com.google.code.gson:gson:2.8.5'
+    implementation 'com.google.code.gson:gson:2.8.6'
 }
 
 apply plugin: 'com.google.gms.google-services'
