@@ -61,11 +61,11 @@ ext {
     minSdkInstant = 24
 
     supportLib = '28.0.0'
-    firebaseCoreVer = '17.3.0'
-    firebaseAuthVer = '19.3.0'
+    firebaseCoreVer = '17.4.3'
+    firebaseAuthVer = '19.3.1'
     firebaseStorageVer = '19.1.1'
-    firebaseFirestoreVer = '21.4.2'
-    firebaseMessagingVer = '20.1.5'
+    firebaseFirestoreVer = '21.4.3'
+    firebaseMessagingVer = '20.2.0'
     crashlyticsVer = '2.10.1'
     instantAppsVer = '1.1.0'
 
