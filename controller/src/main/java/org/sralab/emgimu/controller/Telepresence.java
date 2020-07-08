@@ -123,13 +123,12 @@ public class Telepresence extends EmgImuBaseActivity {
             }
         });
     }
-    @Override
+
     public void onDeviceReady(BluetoothDevice device) {
         Log.d(TAG, "Device ready: " + device);
         getService().streamBuffered(device);
     }
 
-    @Override
     public void onEmgBuffReceived(BluetoothDevice device, long ts_ms, double[][] data) {
 
         int CHANNELS = data.length;
@@ -167,12 +166,10 @@ public class Telepresence extends EmgImuBaseActivity {
 
     @Override
     protected void onServiceBinded(EmgImuService.EmgImuBinder binder) {
-
     }
 
     @Override
     protected void onServiceUnbinded() {
-
     }
 
     @Override
@@ -180,48 +177,25 @@ public class Telepresence extends EmgImuBaseActivity {
         return 0;
     }
 
-    @Override
     public void onBatteryReceived(BluetoothDevice device, float battery) {
-
     }
 
-    @Override
     public void onImuAccelReceived(BluetoothDevice device, float[][] accel) {
-
     }
 
-    @Override
     public void onImuGyroReceived(BluetoothDevice device, float[][] gyro) {
-
     }
 
-    @Override
     public void onImuMagReceived(BluetoothDevice device, float[][] mag) {
-
     }
 
-    @Override
     public void onImuAttitudeReceived(BluetoothDevice device, float[] quaternion) {
-
     }
 
-    @Override
     public void onDeviceConnected(@NonNull BluetoothDevice device) {
-
     }
 
-    @Override
-    public void onDeviceDisconnected(@NonNull BluetoothDevice device) {
-
+    public void onDeviceDisconnected(@NonNull BluetoothDevice device, int reason) {
     }
 
-    @Override
-    public void onLinkLossOccurred(@NonNull BluetoothDevice device) {
-
-    }
-
-    @Override
-    public void onBondingFailed(@NonNull BluetoothDevice device) {
-
-    }
 }

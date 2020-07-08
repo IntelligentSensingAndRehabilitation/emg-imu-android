@@ -1,12 +1,12 @@
 package org.sralab.emgimu;
 
 import android.bluetooth.BluetoothDevice;
-import androidx.annotation.NonNull;
+import android.util.Log;
+import android.view.View;
+
 import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import android.util.Log;
-import android.view.View;
 
 import com.crashlytics.android.Crashlytics;
 import com.crashlytics.android.core.CrashlyticsCore;
@@ -76,65 +76,45 @@ public abstract class EmgImuAdapterActivity extends EmgImuBaseActivity {
         }
     }
 
-    @Override
     public void onDeviceReady(final BluetoothDevice device) {
         super.onDeviceReady(device);
         mAdapter.onDeviceReady(device);
     }
 
-    @Override
-    public void onBondingFailed(@NonNull BluetoothDevice device) {
-
-    }
-
-    @Override
     public void onDeviceDisconnecting(final BluetoothDevice device) {
         super.onDeviceDisconnecting(device);
         mAdapter.onDeviceStateChanged(device);
     }
 
-    @Override
-    public void onDeviceDisconnected(final BluetoothDevice device) {
+    public void onDeviceDisconnected(final BluetoothDevice device, int reason) {
         mAdapter.onDeviceRemoved(device);
     }
 
-    @Override
-    public void onLinkLossOccurred(@NonNull BluetoothDevice device) {
-        mAdapter.onDeviceRemoved(device);
-    }
-
-    @Override
     public void onDeviceNotSupported(final BluetoothDevice device) {
         super.onDeviceNotSupported(device);
         mAdapter.onDeviceRemoved(device);
     }
 
-    @Override
     public void onBatteryReceived(BluetoothDevice device, float battery) {
         mAdapter.onBatteryReceived(device, battery);
     }
 
-    @Override
     public void onEmgBuffReceived(BluetoothDevice device, long ts_ms, double[][] data) {
         mAdapter.onEmgBuffReceived(device, ts_ms, data);
     }
 
-    @Override
     public void onImuAccelReceived(BluetoothDevice device, float[][] accel) {
         mAdapter.onImuAccelReceived(device, accel);
     }
 
-    @Override
     public void onImuGyroReceived(BluetoothDevice device, float[][] gyro) {
         mAdapter.onImuGyroReceived(device, gyro);
     }
 
-    @Override
     public void onImuMagReceived(BluetoothDevice device, float[][] gyro) {
         mAdapter.onImuMagReceived(device, gyro);
     }
 
-    @Override
     public void onImuAttitudeReceived(BluetoothDevice device, float[] quaternion) {
         mAdapter.onImuAttitudeReceived(device, quaternion);
     }

@@ -69,7 +69,7 @@ ext {
     crashlyticsVer = '2.10.1'
     instantAppsVer = '1.1.0'
 
-    nordicBleLVer = '2.1.1'
+    nordicBleLVer = '2.2.3'
 
     espressoVersion = "3.0.1"
     androidTestVersion = "1.0.1"

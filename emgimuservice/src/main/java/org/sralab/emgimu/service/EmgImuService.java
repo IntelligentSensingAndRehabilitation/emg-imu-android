@@ -36,17 +36,17 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
-import androidx.annotation.NonNull;
-import androidx.annotation.StringRes;
-import androidx.core.app.NotificationManagerCompat;
-import androidx.core.content.ContextCompat;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
-import androidx.core.app.NotificationCompat;
-
-import androidx.collection.SimpleArrayMap;
 import android.text.TextUtils;
 import android.util.Log;
 import android.util.Pair;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.StringRes;
+import androidx.collection.SimpleArrayMap;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
+import androidx.core.content.ContextCompat;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.crashlytics.android.Crashlytics;
 import com.crashlytics.android.core.CrashlyticsCore;
@@ -65,6 +65,13 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.iid.FirebaseInstanceId;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.sralab.emgimu.controller.IEmgDecoder;
+import org.sralab.emgimu.controller.IEmgDecoderProvider;
+import org.sralab.emgimu.logging.EmgLogFetchJobService;
+import org.sralab.emgimu.streaming.NetworkStreaming;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -73,21 +80,15 @@ import java.util.List;
 import java.util.Map;
 
 import io.fabric.sdk.android.Fabric;
+import no.nordicsemi.android.ble.BleManager;
 import no.nordicsemi.android.ble.error.GattError;
+import no.nordicsemi.android.ble.observer.ConnectionObserver;
 import no.nordicsemi.android.log.ILogSession;
 import no.nordicsemi.android.log.LogContract;
 import no.nordicsemi.android.log.Logger;
-import no.nordicsemi.android.ble.BleManager;
 import no.nordicsemi.android.nrftoolbox.profile.multiconnect.BleMulticonnectProfileService;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.sralab.emgimu.controller.IEmgDecoder;
-import org.sralab.emgimu.controller.IEmgDecoderProvider;
-import org.sralab.emgimu.logging.EmgLogFetchJobService;
-import org.sralab.emgimu.streaming.NetworkStreaming;
-
-public class EmgImuService extends BleMulticonnectProfileService implements EmgImuManagerCallbacks {
+public class EmgImuService extends BleMulticonnectProfileService implements ConnectionObserver, EmgImuObserver {
 	@SuppressWarnings("unused")
 	private static final String TAG = "EmgImuService";
 
@@ -425,8 +426,10 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
 	}
 
 	@Override
-	protected BleManager<EmgImuManagerCallbacks> initializeManager() {
-		return new EmgImuManager(this);
+	protected BleManager initializeManager() {
+        EmgImuManager manager = new EmgImuManager(this);
+	    manager.setEmgImuObserver(this);
+		return manager;
 	}
 
 	/**
@@ -760,7 +763,12 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
         mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.SELECT_CONTENT, bundle);
     }
 
-	@Override
+    @Override
+    public void onDeviceFailedToConnect(@NonNull BluetoothDevice device, int reason) {
+
+    }
+
+    @Override
 	public void onDeviceDisconnected(final BluetoothDevice device) {
 		super.onDeviceDisconnected(device);
 
@@ -791,7 +799,7 @@ public class EmgImuService extends BleMulticonnectProfileService implements EmgI
     }
 
     @Override
-    public void onBondingFailed(@NonNull BluetoothDevice device) {
+    public void onDeviceDisconnected(@NonNull BluetoothDevice device, int reason) {
 
     }
 

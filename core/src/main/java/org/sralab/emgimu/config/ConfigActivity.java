@@ -28,11 +28,11 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.PowerManager;
 import android.provider.Settings;
-import androidx.annotation.NonNull;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 import android.util.Log;
 import android.widget.TextView;
+
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import org.sralab.emgimu.EmgImuBaseActivity;
 import org.sralab.emgimu.service.EmgImuService;
@@ -89,18 +89,11 @@ public class ConfigActivity extends EmgImuBaseActivity {
 		return R.string.emgimu_about_text;
 	}
 
-	@Override
-	public void onBondingFailed(@NonNull BluetoothDevice device) {
-
-	}
-
-	@Override
 	public void onDeviceConnecting(final BluetoothDevice device) {
 		if (mAdapter != null)
 			mAdapter.onDeviceAdded(device);
 	}
 
-	@Override
 	public void onDeviceConnected(final BluetoothDevice device) {
 		if (mAdapter != null)
 			mAdapter.onDeviceStateChanged(device);
@@ -113,78 +106,58 @@ public class ConfigActivity extends EmgImuBaseActivity {
 		}
 	}
 
-	@Override
 	public void onDeviceReady(final BluetoothDevice device) {
 		if (mAdapter != null)
 			mAdapter.onDeviceReady(device);
 	}
 
-	@Override
 	public void onDeviceDisconnecting(final BluetoothDevice device) {
 		if (mAdapter != null)
 			mAdapter.onDeviceStateChanged(device);
 	}
 
-	@Override
-	public void onDeviceDisconnected(final BluetoothDevice device) {
+	public void onDeviceDisconnected(final BluetoothDevice device, int reason) {
 		Log.d(TAG, "Disconnected");
 		if (mAdapter != null)
 			mAdapter.onDeviceRemoved(device);
 	}
 
-	@Override
-	public void onLinkLossOccurred(@NonNull BluetoothDevice device) {
-		Log.d(TAG, "Link loss");
-		if (mAdapter != null)
-			mAdapter.onDeviceStateChanged(device);
-	}
-
-	@Override
 	public void onDeviceNotSupported(final BluetoothDevice device) {
 		super.onDeviceNotSupported(device);
 		if (mAdapter != null)
 			mAdapter.onDeviceRemoved(device);
 	}
 
-    @Override
     public void onEmgPwrReceived(final BluetoothDevice device, int value) {
         if (mAdapter != null)
             mAdapter.onPwrValueReceived(device); // Adapter will access value directly from service
     }
 
-	@Override
 	public void onImuAccelReceived(BluetoothDevice device, float[][] accel) {
 
 	}
 
-	@Override
 	public void onImuGyroReceived(BluetoothDevice device, float[][] gyro) {
 
 	}
 
-	@Override
 	public void onImuMagReceived(BluetoothDevice device, float[][] mag) {
 
 	}
 
-	@Override
 	public void onImuAttitudeReceived(BluetoothDevice device, float[] quaternion) {
 
 	}
 
-	@Override
 	public void onBatteryReceived(BluetoothDevice device, float battery) {
 		if (mAdapter != null)
 			mAdapter.onBatteryValueReceived(device);
 	}
 
-	@Override
 	public void onEmgBuffReceived(BluetoothDevice device, long ts_ms, double[][] data) {
 	}
 
-
-    @Override
-    public void onDeviceSelected(final BluetoothDevice device, final String name) {
+	public void onDeviceSelected(final BluetoothDevice device, final String name) {
 	    super.onDeviceSelected(device, name);
 	    getService().updateSavedDevices();
     }

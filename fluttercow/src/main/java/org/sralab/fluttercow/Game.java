@@ -174,28 +174,15 @@ public class Game extends EmgImuBaseActivity {
         mService.streamPwr(device);
     }
 
-    @Override
-    public void onBondingFailed(@NonNull BluetoothDevice device) {
-
-    }
-
-    @Override
     public void onDeviceDisconnecting(final BluetoothDevice device) {
         Log.d(TAG, "onDeviceDisconnecting");
         view.pause();
     }
 
-    @Override
-    public void onDeviceDisconnected(final BluetoothDevice device) {
+    public void onDeviceDisconnected(final BluetoothDevice device, int reason) {
         Log.d(TAG, "onDeviceDisconnected");
     }
 
-    @Override
-    public void onLinkLossOccurred(@NonNull BluetoothDevice device) {
-
-    }
-
-    @Override
     public void onDeviceNotSupported(final BluetoothDevice device) {
         Log.d(TAG, "onDeviceNotSupported");
         super.onDeviceNotSupported(device);
@@ -212,16 +199,13 @@ public class Game extends EmgImuBaseActivity {
         return rescaled;
     }
 
-    @Override
     public void onBatteryReceived(BluetoothDevice device, float battery) {
 
     }
 
-    @Override
     public void onEmgBuffReceived(BluetoothDevice device, long ts_ms, double[][] data) {
     }
 
-    @Override
     public void onEmgPwrReceived(final BluetoothDevice device, int value)
     {
         if (mDevices == null || device == null) // should not happen
@@ -269,7 +253,6 @@ public class Game extends EmgImuBaseActivity {
     }
 
 
-    @Override
     public void onEmgClick(final BluetoothDevice device) {
         if (mDevices == null || device == null) // should not happen
             return;
@@ -286,22 +269,18 @@ public class Game extends EmgImuBaseActivity {
         }
     }
 
-    @Override
     public void onImuAccelReceived(BluetoothDevice device, float[][] accel) {
 
     }
 
-    @Override
     public void onImuGyroReceived(BluetoothDevice device, float[][] gyro) {
 
     }
 
-    @Override
     public void onImuMagReceived(BluetoothDevice device, float[][] mag) {
 
     }
 
-    @Override
     public void onImuAttitudeReceived(BluetoothDevice device, float[] quaternion) {
 
     }

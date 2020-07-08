@@ -22,9 +22,8 @@
 package org.sralab.emgimu.service;
 
 import android.bluetooth.BluetoothDevice;
-import no.nordicsemi.android.ble.BleManagerCallbacks;
 
-public interface EmgImuManagerCallbacks extends BleManagerCallbacks {
+public interface EmgImuObserver {
 
     // Callback for battery updates
     void onBatteryReceived(final BluetoothDevice device, float battery);

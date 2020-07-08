@@ -35,20 +35,23 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Toast;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+
+import org.sralab.emgimu.common.R;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
-import no.nordicsemi.android.ble.BleManagerCallbacks;
+import no.nordicsemi.android.ble.observer.ConnectionObserver;
 import no.nordicsemi.android.log.ILogSession;
 import no.nordicsemi.android.log.LocalLogSession;
 import no.nordicsemi.android.log.LogContract;
@@ -56,8 +59,6 @@ import no.nordicsemi.android.log.Logger;
 import no.nordicsemi.android.nrftoolbox.AppHelpFragment;
 import no.nordicsemi.android.nrftoolbox.scanner.ScannerFragment;
 import no.nordicsemi.android.nrftoolbox.utility.DebugLogger;
-
-import org.sralab.emgimu.common.R;
 
 /**
  * <p>
@@ -73,7 +74,7 @@ import org.sralab.emgimu.common.R;
  * </p>
  */
 public abstract class BleMulticonnectProfileServiceReadyActivity<E extends BleMulticonnectProfileService.LocalBinder> extends AppCompatActivity implements
-		ScannerFragment.OnDeviceSelectedListener, BleManagerCallbacks {
+		ScannerFragment.OnDeviceSelectedListener, ConnectionObserver {
 	private static final String TAG = "BleMulticonnectProfileServiceReadyActivity";
 
 	protected static final int REQUEST_ENABLE_BT = 2;
@@ -91,16 +92,12 @@ public abstract class BleMulticonnectProfileServiceReadyActivity<E extends BleMu
 					final int state = intent.getIntExtra(BleMulticonnectProfileService.EXTRA_CONNECTION_STATE, BleMulticonnectProfileService.STATE_DISCONNECTED);
 
 					switch (state) {
-						case BleMulticonnectProfileService.STATE_LINK_LOSS: {
-							onLinkLossOccurred(bluetoothDevice);
-							break;
-						}
 						case BleMulticonnectProfileService.STATE_CONNECTED: {
 							onDeviceConnected(bluetoothDevice);
 							break;
 						}
 						case BleMulticonnectProfileService.STATE_DISCONNECTED: {
-							onDeviceDisconnected(bluetoothDevice);
+							onDeviceDisconnected(bluetoothDevice, ConnectionObserver.REASON_UNKNOWN);
 							break;
 						}
 						case BleMulticonnectProfileService.STATE_CONNECTING: {
@@ -391,42 +388,38 @@ public abstract class BleMulticonnectProfileServiceReadyActivity<E extends BleMu
 		// do nothing
 	}
 
-	@Override
 	public void onDeviceConnecting(final BluetoothDevice device) {
 		// empty default implementation
 	}
 
-	@Override
 	public void onDeviceDisconnecting(final BluetoothDevice device) {
 		// empty default implementation
 	}
 
-	@Override
+	public void onDeviceFailedToConnect(final BluetoothDevice device, int reason) {
+
+	}
+
 	public void onServicesDiscovered(final BluetoothDevice device, final boolean optionalServicesFound) {
 		// empty default implementation
 	}
 
-	@Override
 	public void onDeviceReady(final BluetoothDevice device) {
 		// empty default implementation
 	}
 
-	@Override
 	public void onBondingRequired(final BluetoothDevice device) {
 		// empty default implementation
 	}
 
-	@Override
 	public void onBonded(final BluetoothDevice device) {
 		// empty default implementation
 	}
 
-	@Override
 	public void onDeviceNotSupported(final BluetoothDevice device) {
 		showToast(R.string.not_supported);
 	}
 
-	@Override
 	public void onError(final BluetoothDevice device, final String message, final int errorCode) {
 		DebugLogger.e(TAG, "Error occurred: " + message + ",  error code: " + errorCode);
 		showToast(message + " (" + errorCode + ")");

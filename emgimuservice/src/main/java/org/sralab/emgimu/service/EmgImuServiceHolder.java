@@ -12,7 +12,7 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.os.IBinder;
-import androidx.annotation.NonNull;
+
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import java.util.ArrayList;
@@ -24,7 +24,7 @@ import no.nordicsemi.android.nrftoolbox.profile.multiconnect.BleMulticonnectProf
 import no.nordicsemi.android.nrftoolbox.scanner.ScannerFragment;
 import no.nordicsemi.android.nrftoolbox.utility.DebugLogger;
 
-public class EmgImuServiceHolder<E extends EmgImuService.EmgImuBinder> implements EmgImuManagerCallbacks {
+public class EmgImuServiceHolder<E extends EmgImuService.EmgImuBinder> implements EmgImuObserver {
 
     private static final String TAG = "EmgImuServiceHolder";
 
@@ -92,7 +92,7 @@ public class EmgImuServiceHolder<E extends EmgImuService.EmgImuBinder> implement
                     if (primaryService) {
                         onServicesDiscovered(bluetoothDevice, secondaryService);
                     } else {
-                        onDeviceNotSupported(bluetoothDevice);
+                        onDeviceDisconnected(bluetoothDevice);
                     }
                     break;
                 }
@@ -306,12 +306,10 @@ public class EmgImuServiceHolder<E extends EmgImuService.EmgImuBinder> implement
         return intentFilter;
     }
 
-    @Override
     public void onDeviceConnecting(final BluetoothDevice device) {
         // empty default implementation
     }
 
-    @Override
     public void onDeviceConnected(BluetoothDevice device) {
         if (mService.isReady(device)) {
             // For when we are already connected
@@ -319,53 +317,33 @@ public class EmgImuServiceHolder<E extends EmgImuService.EmgImuBinder> implement
         }
     }
 
-    @Override
     public void onDeviceDisconnecting(final BluetoothDevice device) {
         // empty default implementation
     }
 
-    @Override
     public void onDeviceDisconnected(BluetoothDevice device) {
 
     }
 
-    @Override
-    public void onLinkLossOccurred(@NonNull BluetoothDevice device) {
-
-    }
-
-    @Override
     public void onServicesDiscovered(final BluetoothDevice device, final boolean optionalServicesFound) {
         // empty default implementation
     }
 
-    @Override
     public void onDeviceReady(final BluetoothDevice device) {
         if (mCallbacks != null) {
             mCallbacks.onDeviceReady(device);
         }
     }
 
-    @Override
     public void onBondingRequired(final BluetoothDevice device) {
         // empty default implementation
     }
 
-    @Override
     public void onBonded(final BluetoothDevice device) {
         // empty default implementation
     }
 
-    @Override
-    public void onBondingFailed(@NonNull BluetoothDevice device) {
 
-    }
-
-    @Override
-    public void onDeviceNotSupported(final BluetoothDevice device) {
-    }
-
-    @Override
     public void onError(final BluetoothDevice device, final String message, final int errorCode) {
         DebugLogger.e(TAG, "Error occurred: " + message + ",  error code: " + errorCode);
         showToast(message + " (" + errorCode + ")");

@@ -62,14 +62,13 @@ import java.util.Map;
 import java.util.TimeZone;
 import java.util.UUID;
 
-import no.nordicsemi.android.ble.PhyRequest;
 import no.nordicsemi.android.ble.data.Data;
 import no.nordicsemi.android.ble.data.MutableData;
 import no.nordicsemi.android.ble.BleManager;
 
 import static java.lang.Math.abs;
 
-public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
+public class EmgImuManager extends BleManager {
 	private final String TAG = "EmgImuManager";
 
 	/** Device Information UUID **/
@@ -158,6 +157,11 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
     private FirebaseStreamLogger streamLogger;
     private List<EmgLogRecord> mRecords = new ArrayList<>();
 
+    private EmgImuObserver mCallbacks;
+    public void setEmgImuObserver(EmgImuObserver cb) {
+        mCallbacks = cb;
+    }
+
     private boolean mReady = false;
 
     private BluetoothGattCharacteristic mRecordAccessControlPointCharacteristic, mEmgLogCharacteristic;
@@ -178,35 +182,12 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
         log(Log.INFO, "EmgImuManager created");
 	}
 
+    @NonNull
 	@Override
-	protected BleManagerGattCallback getGattCallback() {
-		return mGattCallback;
+	protected BleManagerGattCallback getGattCallback()
+    {
+		return new EmgImuManagerGattCallback();
 	}
-
-	// TODO: check this when we get a device name?
-    /*
-	@Override
-    public void connect(final BluetoothDevice device) {
-
-        Log.d(TAG, "EmgImuManager connect called: " + device.getAddress());
-
-        if (device.getName() == null) {
-            Log.e(TAG, "Attempting to connect to device but name is unknown");
-            // Assume that channels are 1 in this case
-            // TODO: probably should make this a proper characteristic or fall back better.
-            mChannels = 1;
-        } else if (device.getName().startsWith("EMG")) {
-            mChannels = 1;
-        } else if (device.getName().startsWith("8ch")) {
-            mChannels = 8;
-        } else {
-            throw new RuntimeException("Cannot parse device name");
-        }
-
-        super.connect(device);
-
-    }
-    */
 
     public void close() {
 	    super.close();
@@ -223,10 +204,12 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
 	/**
 	 * BluetoothGatt callbacks for connection/disconnection, service discovery, receiving indication, etc
 	 */
-	private final BleManagerGattCallback mGattCallback = new BleManagerGattCallback() {
+	private class EmgImuManagerGattCallback extends BleManagerGattCallback {
 
         @Override
         protected void initialize() {
+            super.initialize();
+            
             log(Log.INFO, "Initializing connection");
             requestMtu(517)
                     .with((device, mtu) -> log(Log.INFO, "MTU Changed"))

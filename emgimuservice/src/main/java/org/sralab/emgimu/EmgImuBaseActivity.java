@@ -6,11 +6,12 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import android.util.Log;
 
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+
 import org.sralab.emgimu.service.EmgImuManager;
-import org.sralab.emgimu.service.EmgImuManagerCallbacks;
+import org.sralab.emgimu.service.EmgImuObserver;
 import org.sralab.emgimu.service.EmgImuService;
 
 import java.util.UUID;
@@ -18,7 +19,7 @@ import java.util.UUID;
 import no.nordicsemi.android.nrftoolbox.profile.multiconnect.BleMulticonnectProfileService;
 import no.nordicsemi.android.nrftoolbox.profile.multiconnect.BleMulticonnectProfileServiceReadyActivity;
 
-public abstract class EmgImuBaseActivity extends BleMulticonnectProfileServiceReadyActivity<EmgImuService.EmgImuBinder> implements EmgImuManagerCallbacks {
+public abstract class EmgImuBaseActivity extends BleMulticonnectProfileServiceReadyActivity<EmgImuService.EmgImuBinder> implements EmgImuObserver {
 
 
     private final BroadcastReceiver mCommonBroadcastReceiver = new BroadcastReceiver() {
