@@ -2,7 +2,6 @@ package org.sralab.emgimu.imu_calibration;
 
 import android.bluetooth.BluetoothDevice;
 import android.graphics.Bitmap;
-import androidx.annotation.NonNull;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -10,6 +9,8 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import androidx.annotation.NonNull;
 
 import org.sralab.emgimu.EmgImuAdapterActivity;
 import org.sralab.emgimu.service.EmgImuManager;
@@ -132,7 +133,7 @@ public class CalibrationAdapter extends EmgImuAdapterActivity.DeviceAdapter {
                     @Override
                     public void onUploading() {
                         status.setText("Uploading...");
-                        getService().disableImu(dev); // Can stop updates
+                        getService().disableImu(getDevice()); // Can stop updates
                     }
 
                     @Override

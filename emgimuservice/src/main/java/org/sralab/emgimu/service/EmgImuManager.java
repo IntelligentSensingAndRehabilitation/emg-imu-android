@@ -1230,7 +1230,7 @@ public class EmgImuManager extends BleManager<EmgImuManagerCallbacks> {
     }
 
     private void disableImuNotifications() {
-        disableNotifications(mImuGyroCharacteristic).enqueue();
+        disableNotifications(mImuAccelCharacteristic).enqueue();
         disableNotifications(mImuGyroCharacteristic).enqueue();
         disableNotifications(mImuMagCharacteristic).enqueue();
     }
