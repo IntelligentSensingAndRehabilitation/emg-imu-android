@@ -167,8 +167,6 @@ public class AttitudeTrackActivity extends UnityPlayerActivity
             if ((System.nanoTime() - startAttitudeTime) < 5e9)
                 return;
 
-            Log.d(TAG, "Update");
-
             // When exiting a few broadcasts can come through at the end
             if (mService != null) {
                 int idx = mService.getManagedDevices().indexOf(device);
@@ -189,8 +187,6 @@ public class AttitudeTrackActivity extends UnityPlayerActivity
                 // Hack -- set the two sensors to stagger their updates
                 if (lastUpdateTimes.size() > (1-idx))
                     lastUpdateTimes.set(1-idx, time - minPeriodNs / 2);
-
-                Log.d(TAG, "IMU: " + idx);
 
                 String quat_s = String.join(",",
                         Float.toString(q[0]),
