@@ -32,9 +32,10 @@ import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import androidx.annotation.NonNull;
 import android.util.Base64;
 import android.util.Log;
+
+import androidx.annotation.NonNull;
 
 import com.google.firebase.analytics.FirebaseAnalytics;
 import com.google.firebase.auth.FirebaseAuth;
@@ -62,9 +63,10 @@ import java.util.Map;
 import java.util.TimeZone;
 import java.util.UUID;
 
+import no.nordicsemi.android.ble.BleManager;
+import no.nordicsemi.android.ble.PhyRequest;
 import no.nordicsemi.android.ble.data.Data;
 import no.nordicsemi.android.ble.data.MutableData;
-import no.nordicsemi.android.ble.BleManager;
 
 import static java.lang.Math.abs;
 
@@ -209,16 +211,16 @@ public class EmgImuManager extends BleManager {
         @Override
         protected void initialize() {
             super.initialize();
-            
+
             log(Log.INFO, "Initializing connection");
             requestMtu(517)
                     .with((device, mtu) -> log(Log.INFO, "MTU Changed"))
                     .fail((device, status) -> log(Log.WARN, "Could not set MTU"))
                     .enqueue();
 
-            /*setPreferredPhy(PhyRequest.PHY_LE_2M_MASK, PhyRequest.PHY_LE_2M_MASK, PhyRequest.PHY_OPTION_NO_PREFERRED)
+            setPreferredPhy(PhyRequest.PHY_LE_2M_MASK, PhyRequest.PHY_LE_2M_MASK, PhyRequest.PHY_OPTION_NO_PREFERRED)
                     .fail((device, status) -> log(Log.WARN, "Could not set phy"))
-                    .enqueue();*/
+                    .enqueue();
 
             /**** Get information about device *****/
             // TODO: if we aren't really doing anything with this data do not fetch on connection
