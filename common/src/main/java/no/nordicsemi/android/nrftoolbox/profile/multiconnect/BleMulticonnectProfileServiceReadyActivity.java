@@ -114,31 +114,8 @@ public abstract class BleMulticonnectProfileServiceReadyActivity<E extends BleMu
 					}
 					break;
 				}
-				case BleMulticonnectProfileService.BROADCAST_SERVICES_DISCOVERED: {
-					final boolean primaryService = intent.getBooleanExtra(BleMulticonnectProfileService.EXTRA_SERVICE_PRIMARY, false);
-					final boolean secondaryService = intent.getBooleanExtra(BleMulticonnectProfileService.EXTRA_SERVICE_SECONDARY, false);
-
-					if (primaryService) {
-						onServicesDiscovered(bluetoothDevice, secondaryService);
-					} else {
-						onDeviceNotSupported(bluetoothDevice);
-					}
-					break;
-				}
 				case BleMulticonnectProfileService.BROADCAST_DEVICE_READY: {
 					onDeviceReady(bluetoothDevice);
-					break;
-				}
-				case BleMulticonnectProfileService.BROADCAST_BOND_STATE: {
-					final int state = intent.getIntExtra(BleMulticonnectProfileService.EXTRA_BOND_STATE, BluetoothDevice.BOND_NONE);
-					switch (state) {
-						case BluetoothDevice.BOND_BONDING:
-							onBondingRequired(bluetoothDevice);
-							break;
-						case BluetoothDevice.BOND_BONDED:
-							onBonded(bluetoothDevice);
-							break;
-					}
 					break;
 				}
 				case BleMulticonnectProfileService.BROADCAST_ERROR: {
@@ -242,9 +219,7 @@ public abstract class BleMulticonnectProfileServiceReadyActivity<E extends BleMu
 	private static IntentFilter makeIntentFilter() {
 		final IntentFilter intentFilter = new IntentFilter();
 		intentFilter.addAction(BleMulticonnectProfileService.BROADCAST_CONNECTION_STATE);
-		intentFilter.addAction(BleMulticonnectProfileService.BROADCAST_SERVICES_DISCOVERED);
 		intentFilter.addAction(BleMulticonnectProfileService.BROADCAST_DEVICE_READY);
-		intentFilter.addAction(BleMulticonnectProfileService.BROADCAST_BOND_STATE);
 		intentFilter.addAction(BleMulticonnectProfileService.BROADCAST_ERROR);
 		return intentFilter;
 	}

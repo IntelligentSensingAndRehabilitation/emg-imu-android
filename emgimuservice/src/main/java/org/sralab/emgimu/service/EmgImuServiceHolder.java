@@ -13,6 +13,7 @@ import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.os.IBinder;
 
+import androidx.annotation.NonNull;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import java.util.ArrayList;
@@ -85,31 +86,8 @@ public class EmgImuServiceHolder<E extends EmgImuService.EmgImuBinder> implement
                     }
                     break;
                 }
-                case BleMulticonnectProfileService.BROADCAST_SERVICES_DISCOVERED: {
-                    final boolean primaryService = intent.getBooleanExtra(BleMulticonnectProfileService.EXTRA_SERVICE_PRIMARY, false);
-                    final boolean secondaryService = intent.getBooleanExtra(BleMulticonnectProfileService.EXTRA_SERVICE_SECONDARY, false);
-
-                    if (primaryService) {
-                        onServicesDiscovered(bluetoothDevice, secondaryService);
-                    } else {
-                        onDeviceDisconnected(bluetoothDevice);
-                    }
-                    break;
-                }
                 case BleMulticonnectProfileService.BROADCAST_DEVICE_READY: {
                     onDeviceReady(bluetoothDevice);
-                    break;
-                }
-                case BleMulticonnectProfileService.BROADCAST_BOND_STATE: {
-                    final int state = intent.getIntExtra(BleMulticonnectProfileService.EXTRA_BOND_STATE, BluetoothDevice.BOND_NONE);
-                    switch (state) {
-                        case BluetoothDevice.BOND_BONDING:
-                            onBondingRequired(bluetoothDevice);
-                            break;
-                        case BluetoothDevice.BOND_BONDED:
-                            onBonded(bluetoothDevice);
-                            break;
-                    }
                     break;
                 }
                 case EmgImuService.BROADCAST_BATTERY_LEVEL: {
@@ -290,9 +268,7 @@ public class EmgImuServiceHolder<E extends EmgImuService.EmgImuBinder> implement
     private static IntentFilter makeIntentFilter() {
         final IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(BleMulticonnectProfileService.BROADCAST_CONNECTION_STATE);
-        intentFilter.addAction(BleMulticonnectProfileService.BROADCAST_SERVICES_DISCOVERED);
         intentFilter.addAction(BleMulticonnectProfileService.BROADCAST_DEVICE_READY);
-        intentFilter.addAction(BleMulticonnectProfileService.BROADCAST_BOND_STATE);
         intentFilter.addAction(BleMulticonnectProfileService.BROADCAST_ERROR);
         intentFilter.addAction(EmgImuService.BROADCAST_BATTERY_LEVEL);
         intentFilter.addAction(EmgImuService.BROADCAST_EMG_RAW);
@@ -306,45 +282,32 @@ public class EmgImuServiceHolder<E extends EmgImuService.EmgImuBinder> implement
         return intentFilter;
     }
 
-    public void onDeviceConnecting(final BluetoothDevice device) {
+    public void onDeviceConnecting(@NonNull final BluetoothDevice device) {
         // empty default implementation
     }
 
-    public void onDeviceConnected(BluetoothDevice device) {
+    public void onDeviceConnected(@NonNull final BluetoothDevice device) {
         if (mService.isReady(device)) {
             // For when we are already connected
             onDeviceReady(device);
         }
     }
 
-    public void onDeviceDisconnecting(final BluetoothDevice device) {
+    public void onDeviceDisconnecting(@NonNull final BluetoothDevice device) {
         // empty default implementation
     }
 
-    public void onDeviceDisconnected(BluetoothDevice device) {
+    public void onDeviceDisconnected(@NonNull final BluetoothDevice device) {
 
     }
 
-    public void onServicesDiscovered(final BluetoothDevice device, final boolean optionalServicesFound) {
-        // empty default implementation
-    }
-
-    public void onDeviceReady(final BluetoothDevice device) {
+    public void onDeviceReady(@NonNull final BluetoothDevice device) {
         if (mCallbacks != null) {
             mCallbacks.onDeviceReady(device);
         }
     }
 
-    public void onBondingRequired(final BluetoothDevice device) {
-        // empty default implementation
-    }
-
-    public void onBonded(final BluetoothDevice device) {
-        // empty default implementation
-    }
-
-
-    public void onError(final BluetoothDevice device, final String message, final int errorCode) {
+    public void onError(@NonNull final BluetoothDevice device, @NonNull final String message, final int errorCode) {
         DebugLogger.e(TAG, "Error occurred: " + message + ",  error code: " + errorCode);
         showToast(message + " (" + errorCode + ")");
     }
