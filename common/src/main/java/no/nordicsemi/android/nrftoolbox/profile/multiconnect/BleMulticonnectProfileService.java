@@ -35,10 +35,9 @@ import android.os.IBinder;
 import android.util.Log;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.StringRes;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
-
-import org.sralab.emgimu.common.R;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -56,16 +55,11 @@ public abstract class BleMulticonnectProfileService extends Service implements C
 	private static final String TAG = "BleMultiProfileService";
 
 	public static final String BROADCAST_CONNECTION_STATE = "no.nordicsemi.android.nrftoolbox.BROADCAST_CONNECTION_STATE";
-	public static final String BROADCAST_SERVICES_DISCOVERED = "no.nordicsemi.android.nrftoolbox.BROADCAST_SERVICES_DISCOVERED";
 	public static final String BROADCAST_DEVICE_READY = "no.nordicsemi.android.nrftoolbox.DEVICE_READY";
-	public static final String BROADCAST_BOND_STATE = "no.nordicsemi.android.nrftoolbox.BROADCAST_BOND_STATE";
 	public static final String BROADCAST_ERROR = "no.nordicsemi.android.nrftoolbox.BROADCAST_ERROR";
 
 	public static final String EXTRA_DEVICE = "no.nordicsemi.android.nrftoolbox.EXTRA_DEVICE";
 	public static final String EXTRA_CONNECTION_STATE = "no.nordicsemi.android.nrftoolbox.EXTRA_CONNECTION_STATE";
-	public static final String EXTRA_BOND_STATE = "no.nordicsemi.android.nrftoolbox.EXTRA_BOND_STATE";
-	public static final String EXTRA_SERVICE_PRIMARY = "no.nordicsemi.android.nrftoolbox.EXTRA_SERVICE_PRIMARY";
-	public static final String EXTRA_SERVICE_SECONDARY = "no.nordicsemi.android.nrftoolbox.EXTRA_SERVICE_SECONDARY";
 	public static final String EXTRA_ERROR_MESSAGE = "no.nordicsemi.android.nrftoolbox.EXTRA_ERROR_MESSAGE";
 	public static final String EXTRA_ERROR_CODE = "no.nordicsemi.android.nrftoolbox.EXTRA_ERROR_CODE";
 
@@ -412,28 +406,28 @@ public abstract class BleMulticonnectProfileService extends Service implements C
 		}
 	}
 
-	public void onDeviceConnecting(final BluetoothDevice device) {
+	public void onDeviceConnecting(@NonNull final BluetoothDevice device) {
 		final Intent broadcast = new Intent(BROADCAST_CONNECTION_STATE);
 		broadcast.putExtra(EXTRA_DEVICE, device);
 		broadcast.putExtra(EXTRA_CONNECTION_STATE, STATE_CONNECTING);
 		LocalBroadcastManager.getInstance(BleMulticonnectProfileService.this).sendBroadcast(broadcast);
 	}
 
-	public void onDeviceConnected(final BluetoothDevice device) {
+	public void onDeviceConnected(@NonNull final BluetoothDevice device) {
 		final Intent broadcast = new Intent(BROADCAST_CONNECTION_STATE);
 		broadcast.putExtra(EXTRA_DEVICE, device);
 		broadcast.putExtra(EXTRA_CONNECTION_STATE, STATE_CONNECTED);
 		LocalBroadcastManager.getInstance(this).sendBroadcast(broadcast);
 	}
 
-	public void onDeviceDisconnecting(final BluetoothDevice device) {
+	public void onDeviceDisconnecting(@NonNull final BluetoothDevice device) {
 		final Intent broadcast = new Intent(BROADCAST_CONNECTION_STATE);
 		broadcast.putExtra(EXTRA_DEVICE, device);
 		broadcast.putExtra(EXTRA_CONNECTION_STATE, STATE_DISCONNECTING);
 		LocalBroadcastManager.getInstance(this).sendBroadcast(broadcast);
 	}
 
-	public void onDeviceDisconnected(final BluetoothDevice device) {
+	public void onDeviceDisconnected(@NonNull final BluetoothDevice device) {
 		// Note: if BleManager#shouldAutoConnect() for this device returned true, this callback will be
 		// invoked ONLY when user requested disconnection (using Disconnect button). If the device
 		// disconnects due to a link loss, the onLinklossOccur(BluetoothDevice) method will be called instead.
@@ -455,60 +449,20 @@ public abstract class BleMulticonnectProfileService extends Service implements C
 		}
 	}
 
-	public void onLinkLossOccurred(final BluetoothDevice device) {
+	public void onLinkLossOccurred(@NonNull final BluetoothDevice device) {
 		final Intent broadcast = new Intent(BROADCAST_CONNECTION_STATE);
 		broadcast.putExtra(EXTRA_DEVICE, device);
 		broadcast.putExtra(EXTRA_CONNECTION_STATE, STATE_LINK_LOSS);
 		LocalBroadcastManager.getInstance(this).sendBroadcast(broadcast);
 	}
 
-	public void onServicesDiscovered(final BluetoothDevice device, final boolean optionalServicesFound) {
-		final Intent broadcast = new Intent(BROADCAST_SERVICES_DISCOVERED);
-		broadcast.putExtra(EXTRA_DEVICE, device);
-		broadcast.putExtra(EXTRA_SERVICE_PRIMARY, true);
-		broadcast.putExtra(EXTRA_SERVICE_SECONDARY, optionalServicesFound);
-		LocalBroadcastManager.getInstance(this).sendBroadcast(broadcast);
-	}
-
-	public void onDeviceReady(final BluetoothDevice device) {
+	public void onDeviceReady(@NonNull final BluetoothDevice device) {
 		final Intent broadcast = new Intent(BROADCAST_DEVICE_READY);
 		broadcast.putExtra(EXTRA_DEVICE, device);
 		LocalBroadcastManager.getInstance(this).sendBroadcast(broadcast);
 	}
 
-	public void onDeviceNotSupported(final BluetoothDevice device) {
-		// We don't like this device, remove it from both collections
-		mManagedDevices.remove(device);
-		mBleManagers.remove(device);
-
-		final Intent broadcast = new Intent(BROADCAST_SERVICES_DISCOVERED);
-		broadcast.putExtra(EXTRA_DEVICE, device);
-		broadcast.putExtra(EXTRA_SERVICE_PRIMARY, false);
-		broadcast.putExtra(EXTRA_SERVICE_SECONDARY, false);
-		LocalBroadcastManager.getInstance(this).sendBroadcast(broadcast);
-
-		// no need for disconnecting, it will be disconnected by the manager automatically
-	}
-
-	public void onBondingRequired(final BluetoothDevice device) {
-		showToast(R.string.bonding);
-
-		final Intent broadcast = new Intent(BROADCAST_BOND_STATE);
-		broadcast.putExtra(EXTRA_DEVICE, device);
-		broadcast.putExtra(EXTRA_BOND_STATE, BluetoothDevice.BOND_BONDING);
-		LocalBroadcastManager.getInstance(this).sendBroadcast(broadcast);
-	}
-
-	public void onBonded(final BluetoothDevice device) {
-		showToast(R.string.bonded);
-
-		final Intent broadcast = new Intent(BROADCAST_BOND_STATE);
-		broadcast.putExtra(EXTRA_DEVICE, device);
-		broadcast.putExtra(EXTRA_BOND_STATE, BluetoothDevice.BOND_BONDED);
-		LocalBroadcastManager.getInstance(this).sendBroadcast(broadcast);
-	}
-
-	public void onError(final BluetoothDevice device, final String message, final int errorCode) {
+	public void onError(@NonNull final BluetoothDevice device, @NonNull final String message, final int errorCode) {
 		final Intent broadcast = new Intent(BROADCAST_ERROR);
 		broadcast.putExtra(EXTRA_DEVICE, device);
 		broadcast.putExtra(EXTRA_ERROR_MESSAGE, message);
