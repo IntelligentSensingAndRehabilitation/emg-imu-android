@@ -1,3 +1,4 @@
+include ':spasticitymonitor'
 include ':core', ':common',  ':emgimuservice', ':emgimu' //, ':imu_calibration', ':controller'
 //include ':fluttercow', ':streaming'
 //include ':powerhammer'
