@@ -2,6 +2,7 @@ package org.sralab.emgimu.mve;
 
 import android.bluetooth.BluetoothDevice;
 import android.os.Bundle;
+import android.os.RemoteException;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
@@ -10,12 +11,12 @@ import android.widget.EditText;
 
 import org.sralab.emgimu.EmgImuBaseActivity;
 import org.sralab.emgimu.config.R;
-import org.sralab.emgimu.service.EmgImuService;
+import org.sralab.emgimu.service.IEmgImuServiceBinder;
 
 public class MaxEMGActivity extends EmgImuBaseActivity implements EmgPowerView.OnMaxChangedEventListener {
 
     private final static String TAG = MaxEMGActivity.class.getSimpleName();
-    private EmgImuService.EmgImuBinder mService;
+    private IEmgImuServiceBinder mService;
 
     private EmgPowerView mPwrView;
     private EditText maxScaleInput;
@@ -53,13 +54,21 @@ public class MaxEMGActivity extends EmgImuBaseActivity implements EmgPowerView.O
             float max = mPwrView.getMax();
 
             Log.d(TAG, "Saving range: " + min + " " + max);
-            mService.setPwrRange(mDevice, min, max);
+            try {
+                mService.setPwrRange(mDevice, min, max);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
 
             float threshold_high = mPwrView.getThreshold();
             float threshold_low = min + (threshold_high - min) * 0.5f;
 
             Log.d(TAG, "Saving thresholds " + threshold_low + " threshold " + threshold_high);
-            mService.setClickThreshold(mDevice, threshold_low, threshold_high);
+            try {
+                mService.setClickThreshold(mDevice, threshold_low, threshold_high);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
         });
 
         maxScaleInput = findViewById(R.id.emg_max_scale);
@@ -112,7 +121,7 @@ public class MaxEMGActivity extends EmgImuBaseActivity implements EmgPowerView.O
     }
 
     @Override
-    protected void onServiceBinded(EmgImuService.EmgImuBinder binder) {
+    protected void onServiceBinded(IEmgImuServiceBinder binder) {
         mService = binder;
     }
 
@@ -140,11 +149,15 @@ public class MaxEMGActivity extends EmgImuBaseActivity implements EmgPowerView.O
         Log.d(TAG, "Device connected: " + device);
 
         // Is previously connected device might be ready and this event won't fire
-        if (mService != null && mService.isReady(device)) {
-            Log.d(TAG, "Device is already ready. Must have previously connected.");
-            onDeviceReady(device);
-        } else if (mService == null) {
-            Log.w(TAG, "Probable race condition");
+        try {
+            if (mService != null && mService.isReady(device)) {
+                Log.d(TAG, "Device is already ready. Must have previously connected.");
+                onDeviceReady(device);
+            } else if (mService == null) {
+                Log.w(TAG, "Probable race condition");
+            }
+        } catch (RemoteException e) {
+            e.printStackTrace();
         }
     }
 
@@ -155,13 +168,17 @@ public class MaxEMGActivity extends EmgImuBaseActivity implements EmgPowerView.O
     public void onDeviceReady(BluetoothDevice device) {
         // TODO: add dropdown to allow selecting device
         Log.d("DeviceAdapter", "Device added. Requested streaming: " + device);
-        mService.streamPwr(device);
+        try {
+            mService.streamPwr(device);
 
-        mDevice = device;
+            mDevice = device;
 
-        mPwrView.setThreshold(mService.getClickThreshold(device));
-        mPwrView.setMinPower(mService.getMinPwr(device));
-        mPwrView.setMaxPower(mService.getMaxPwr(device));
+            mPwrView.setThreshold(mService.getClickThreshold(device));
+            mPwrView.setMinPower(mService.getMinPwr(device));
+            mPwrView.setMaxPower(mService.getMaxPwr(device));
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
     }
 
     float mLpfValue = Float.NaN;

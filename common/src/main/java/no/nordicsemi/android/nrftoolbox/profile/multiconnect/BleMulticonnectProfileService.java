@@ -29,7 +29,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
@@ -39,6 +38,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.StringRes;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -46,8 +47,6 @@ import java.util.List;
 
 import no.nordicsemi.android.ble.BleManager;
 import no.nordicsemi.android.ble.observer.ConnectionObserver;
-import no.nordicsemi.android.ble.utils.ILogger;
-import no.nordicsemi.android.log.ILogSession;
 import no.nordicsemi.android.log.LogContract;
 
 public abstract class BleMulticonnectProfileService extends Service implements ConnectionObserver {
@@ -98,134 +97,103 @@ public abstract class BleMulticonnectProfileService extends Service implements C
 		}
 	};
 
-	public class LocalBinder extends Binder implements ILogger, IDeviceLogger {
-		/**
-		 * Returns an unmodifiable list of devices managed by the service.
-		 * The returned devices do not need to be connected at tha moment. Each of them was however created
-		 * using {@link #connect(BluetoothDevice)} method so they might have been connected before and disconnected.
-		 * @return unmodifiable list of devices managed by the service
-		 */
-		public final List<BluetoothDevice> getManagedDevices() {
-			return Collections.unmodifiableList(mManagedDevices);
-		}
 
-		/**
-		 * Connects to the given device. If the device is already connected this method does nothing.
-		 * @param device target Bluetooth device
-		 */
-		public void connect(final BluetoothDevice device) {
-			connect(device, null);
-		}
+	//public class LocalBinder extends Binder implements ILogger, IDeviceLogger {
 
-		/**
-		 * Adds the given device to managed and stars connecting to it. If the device is already connected this method does nothing.
-		 * @param device target Bluetooth device
-		 * @param session log session that has to be used by the device
-		 */
-		@SuppressWarnings("unchecked")
-		public void connect(final BluetoothDevice device, final ILogSession session) {
-			// If a device is in managed devices it means that it's already connected, or was connected
-			// using autoConnect and the link was lost but Android is already trying to connect to it.
-			if (mManagedDevices.contains(device))
-				return;
-			mManagedDevices.add(device);
+	/**
+	 * Adds the given device to managed and stars connecting to it. If the device is already connected this method does nothing.
+	 * @param device target Bluetooth device
+	 * @param session log session that has to be used by the device
+	 */
+	@SuppressWarnings("unchecked")
+	public void connect(@NotNull final BluetoothDevice device) {
+		// If a device is in managed devices it means that it's already connected, or was connected
+		// using autoConnect and the link was lost but Android is already trying to connect to it.
+		if (mManagedDevices.contains(device))
+			return;
+		mManagedDevices.add(device);
 
-			Log.d(TAG, "Service connect called");
-			BleManager manager = mBleManagers.get(device);
-			if (manager != null) {
-				manager.connect(device).enqueue();
-			} else {
-				mBleManagers.put(device, manager = initializeManager());
-				manager.setConnectionObserver(BleMulticonnectProfileService.this);
-				manager.connect(device)
-						.fail((device1, status) ->
-							{
-								mManagedDevices.remove(device1);
-								mBleManagers.remove(device1);
-							})
-						.enqueue();
-			}
+		Log.d(TAG, "Service connect called");
+		BleManager manager = mBleManagers.get(device);
+		if (manager != null) {
+			manager.connect(device).enqueue();
+		} else {
+			mBleManagers.put(device, manager = initializeManager());
+			manager.setConnectionObserver(BleMulticonnectProfileService.this);
+			manager.connect(device)
+					.fail((device1, status) ->
+						{
+							mManagedDevices.remove(device1);
+							mBleManagers.remove(device1);
+						})
+					.enqueue();
 		}
+	}
 
-		/**
-		 * Disconnects the given device and removes the associated BleManager object.
-		 * If the list of BleManagers is empty while the last activity unbinds from the service,
-		 * the service will stop itself.
-		 * @param device target device to disconnect and forget
-		 */
-		public void disconnect(final BluetoothDevice device) {
-			final BleManager manager = mBleManagers.get(device);
-			if (manager != null && manager.isConnected()) {
-				manager.disconnect().enqueue();
-			}
-			mManagedDevices.remove(device);
+	/**
+	 * Disconnects the given device and removes the associated BleManager object.
+	 * If the list of BleManagers is empty while the last activity unbinds from the service,
+	 * the service will stop itself.
+	 * @param device target device to disconnect and forget
+	 */
+	public void disconnect(@NotNull final BluetoothDevice device) {
+		final BleManager manager = mBleManagers.get(device);
+		if (manager != null && manager.isConnected()) {
+			manager.disconnect().enqueue();
 		}
+		mManagedDevices.remove(device);
+	}
 
-		/**
-		 * Returns <code>true</code> if the device is connected to the sensor.
-		 * @param device the target device
-		 * @return <code>true</code> if device is connected to the sensor, <code>false</code> otherwise
-		 */
-		public final boolean isConnected(final BluetoothDevice device) {
-			final BleManager manager = mBleManagers.get(device);
-			return manager != null && manager.isConnected();
-		}
+	/**
+	 * Returns <code>true</code> if the device has finished initializing.
+	 * @param device the target device
+	 * @return <code>true</code> if device is connected to the sensor and has finished
+	 * initializing. False otherwise.
+	 */
+	public final boolean isReady(@NotNull final BluetoothDevice device) {
+		final BleManager manager = mBleManagers.get(device);
+		return manager != null && manager.isReady();
+	}
 
-		/**
-		 * Returns <code>true</code> if the device has finished initializing.
-		 * @param device the target device
-		 * @return <code>true</code> if device is connected to the sensor and has finished
-		 * initializing. False otherwise.
-		 */
-		public final boolean isReady(final BluetoothDevice device) {
-			final BleManager manager = mBleManagers.get(device);
-			return manager != null && manager.isReady();
-		}
+	/**
+	 * Returns the connection state of given device.
+	 * @param device the target device
+	 * @return the connection state, as in {@link BleManager#getConnectionState()}.
+	 */
+	public final int getConnectionState(@NotNull final BluetoothDevice device) {
+		final BleManager manager = mBleManagers.get(device);
+		return manager != null ? manager.getConnectionState() : BluetoothGatt.STATE_DISCONNECTED;
+	}
 
-		/**
-		 * Returns the connection state of given device.
-		 * @param device the target device
-		 * @return the connection state, as in {@link BleManager#getConnectionState()}.
-		 */
-		public final int getConnectionState(final BluetoothDevice device) {
-			final BleManager manager = mBleManagers.get(device);
-			return manager != null ? manager.getConnectionState() : BluetoothGatt.STATE_DISCONNECTED;
-		}
+	/**
+	 * Sets whether the bound activity if changing configuration or not.
+	 * If <code>false</code>, we will turn off battery level notifications in onUnbind(..) method below.
+	 * @param changing true if the bound activity is finishing
+	 */
+	public final void setActivityIsChangingConfiguration(final boolean changing) {
+		mActivityIsChangingConfiguration = changing;
+	}
 
-		/**
-		 * Sets whether the bound activity if changing configuration or not.
-		 * If <code>false</code>, we will turn off battery level notifications in onUnbind(..) method below.
-		 * @param changing true if the bound activity is finishing
-		 */
-		public final void setActivityIsChangingConfiguration(final boolean changing) {
-			mActivityIsChangingConfiguration = changing;
-		}
+	public void log(@NotNull final BluetoothDevice device, final int level, final String message) {
+		final BleManager manager = mBleManagers.get(device);
+		if (manager != null)
+			manager.log(level, message);
+	}
 
-		@Override
-		public void log(final BluetoothDevice device, final int level, final String message) {
-			final BleManager manager = mBleManagers.get(device);
-			if (manager != null)
-				manager.log(level, message);
-		}
+	public void log(@NotNull final BluetoothDevice device, final int level, @StringRes final int messageRes, final Object... params) {
+		final BleManager manager = mBleManagers.get(device);
+		if (manager != null)
+			manager.log(level, messageRes, params);
+	}
 
-		@Override
-		public void log(final BluetoothDevice device, final int level, @StringRes final int messageRes, final Object... params) {
-			final BleManager manager = mBleManagers.get(device);
-			if (manager != null)
-				manager.log(level, messageRes, params);
-		}
+	public void log(final int level, final String message) {
+		for (final BleManager manager : mBleManagers.values())
+			manager.log(level, message);
+	}
 
-		@Override
-		public void log(final int level, final String message) {
-			for (final BleManager manager : mBleManagers.values())
-				manager.log(level, message);
-		}
-
-		@Override
-		public void log(final int level, @StringRes final int messageRes, final Object... params) {
-			for (final BleManager manager : mBleManagers.values())
-				manager.log(level, messageRes, params);
-		}
+	public void log(final int level, @StringRes final int messageRes, final Object... params) {
+		for (final BleManager manager : mBleManagers.values())
+			manager.log(level, messageRes, params);
 	}
 
 	/**
@@ -241,10 +209,7 @@ public abstract class BleMulticonnectProfileService extends Service implements C
 	 *
 	 * @return the service binder
 	 */
-	protected LocalBinder getBinder() {
-		// default implementation returns the basic binder. You can overwrite the LocalBinder with your own, wider implementation
-		return new LocalBinder();
-	}
+	protected abstract IBinder getBinder();
 
 	@Override
 	public IBinder onBind(final Intent intent) {

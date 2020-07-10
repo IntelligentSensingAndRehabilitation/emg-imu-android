@@ -12,6 +12,7 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.os.IBinder;
+import android.os.RemoteException;
 
 import androidx.annotation.NonNull;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
@@ -25,19 +26,19 @@ import no.nordicsemi.android.nrftoolbox.profile.multiconnect.BleMulticonnectProf
 import no.nordicsemi.android.nrftoolbox.scanner.ScannerFragment;
 import no.nordicsemi.android.nrftoolbox.utility.DebugLogger;
 
-public class EmgImuServiceHolder<E extends EmgImuService.EmgImuBinder> implements EmgImuObserver {
+public class EmgImuServiceHolder implements EmgImuObserver {
 
     private static final String TAG = "EmgImuServiceHolder";
 
     private Context mContext;
-    private E mService;
+    private IEmgImuServiceBinder mService;
     private List<BluetoothDevice> mManagedDevices;
 
     public EmgImuServiceHolder(Context context) {
         mContext = context;
     }
 
-    private void onServiceBinded(final E binder) {
+    private void onServiceBinded(final IEmgImuServiceBinder binder) {
 
         mService = binder;
         if (mCallbacks != null)
@@ -198,15 +199,23 @@ public class EmgImuServiceHolder<E extends EmgImuService.EmgImuBinder> implement
         @SuppressWarnings("unchecked")
         @Override
         public void onServiceConnected(final ComponentName name, final IBinder service) {
-            final E bleService = mService = (E) service;
+            final IEmgImuServiceBinder bleService = mService = (IEmgImuServiceBinder) service;
             //bleService.log(LogContract.Log.Level.DEBUG, "Activity bound to the service");
-            mManagedDevices.addAll(bleService.getManagedDevices());
+            try {
+                mManagedDevices.addAll(bleService.getManagedDevices());
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
             onServiceBinded(bleService);
 
             // and notify user if device is connected
             for (final BluetoothDevice device : mManagedDevices) {
-                if (bleService.isConnected(device))
-                    onDeviceConnected(device);
+                try {
+                    if (bleService.isConnected(device))
+                        onDeviceConnected(device);
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
             }
         }
 
@@ -287,9 +296,13 @@ public class EmgImuServiceHolder<E extends EmgImuService.EmgImuBinder> implement
     }
 
     public void onDeviceConnected(@NonNull final BluetoothDevice device) {
-        if (mService.isReady(device)) {
-            // For when we are already connected
-            onDeviceReady(device);
+        try {
+            if (mService.isReady(device)) {
+                // For when we are already connected
+                onDeviceReady(device);
+            }
+        } catch (RemoteException e) {
+            e.printStackTrace();
         }
     }
 
@@ -357,14 +370,6 @@ public class EmgImuServiceHolder<E extends EmgImuService.EmgImuBinder> implement
      */
     protected List<BluetoothDevice> getManagedDevices() {
         return Collections.unmodifiableList(mManagedDevices);
-    }
-
-    /**
-     * Returns <code>true</code> if the device is connected. Services may not have been discovered yet.
-     * @param device the device to check if it's connected
-     */
-    protected boolean isDeviceConnected(final BluetoothDevice device) {
-        return mService != null && mService.isConnected(device);
     }
 
     /**
@@ -464,7 +469,7 @@ public class EmgImuServiceHolder<E extends EmgImuService.EmgImuBinder> implement
         void onImuAttitudeReceived(BluetoothDevice device, float[] quaternion);
 
         // Service connection events
-        void onServiceBinded(final EmgImuService.EmgImuBinder binder);
+        void onServiceBinded(final IEmgImuServiceBinder binder);
         void onServiceUnbinded();
         void onDeviceReady(final BluetoothDevice device);
     }

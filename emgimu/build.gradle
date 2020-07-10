@@ -30,7 +30,7 @@ android {
         exclude 'META-INF/proguard/androidx-annotations.pro'
     }
 
-    dynamicFeatures = [':powerhammer', ":controller"]
+    //dynamicFeatures = [':powerhammer', ":controller"]
 
 
     bundle {
@@ -53,9 +53,9 @@ dependencies {
 
     implementation project(':emgimuservice')
     implementation project(':core')
-    implementation project(':fluttercow')
-    implementation project(':streaming')
-    implementation project(':imu_calibration')
+    //implementation project(':fluttercow')
+    //implementation project(':streaming')
+    //implementation project(':imu_calibration')
 
     // Because too many methods
     api 'androidx.multidex:multidex:2.0.1'

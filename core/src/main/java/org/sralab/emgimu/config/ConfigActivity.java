@@ -27,6 +27,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.PowerManager;
+import android.os.RemoteException;
 import android.provider.Settings;
 import android.util.Log;
 import android.widget.TextView;
@@ -35,7 +36,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import org.sralab.emgimu.EmgImuBaseActivity;
-import org.sralab.emgimu.service.EmgImuService;
+import org.sralab.emgimu.service.IEmgImuServiceBinder;
 
 import no.nordicsemi.android.nrftoolbox.widget.DividerItemDecoration;
 
@@ -44,7 +45,7 @@ public class ConfigActivity extends EmgImuBaseActivity {
 
 	private RecyclerView mDevicesView;
 	private DeviceAdapter mAdapter;
-	private EmgImuService.EmgImuBinder mService;
+	private IEmgImuServiceBinder mService;
 
 	@Override
 	protected void onCreateView(final Bundle savedInstanceState) {
@@ -71,12 +72,17 @@ public class ConfigActivity extends EmgImuBaseActivity {
 	}
 
 	@Override
-	protected void onServiceBinded(final EmgImuService.EmgImuBinder binder) {
+	protected void onServiceBinded(final IEmgImuServiceBinder binder) {
 		mDevicesView.setAdapter(mAdapter = new DeviceAdapter(binder));
         mService = binder;
-        String user = mService.getUser();
-        TextView userView = findViewById(R.id.user_id);
-        userView.setText("User: " + user);
+		String user = null;
+		try {
+			user = mService.getUser();
+			TextView userView = findViewById(R.id.user_id);
+			userView.setText("User: " + user);
+		} catch (RemoteException e) {
+			e.printStackTrace();
+		}
 	}
 
 	@Override
@@ -99,10 +105,14 @@ public class ConfigActivity extends EmgImuBaseActivity {
 			mAdapter.onDeviceStateChanged(device);
 
 		// Is previously connected device might be ready and this event won't fire
-		if (mService != null && mService.isReady(device)) {
-			onDeviceReady(device);
-		} else if (mService == null) {
-			Log.w(TAG, "Probable race condition");
+		try {
+			if (mService != null && mService.isReady(device)) {
+				onDeviceReady(device);
+			} else if (mService == null) {
+				Log.w(TAG, "Probable race condition");
+			}
+		} catch (RemoteException e) {
+			e.printStackTrace();
 		}
 	}
 
@@ -159,7 +169,11 @@ public class ConfigActivity extends EmgImuBaseActivity {
 
 	public void onDeviceSelected(final BluetoothDevice device, final String name) {
 	    super.onDeviceSelected(device, name);
-	    getService().updateSavedDevices();
-    }
+		try {
+			getService().updateSavedDevices();
+		} catch (RemoteException e) {
+			e.printStackTrace();
+		}
+	}
 
 }

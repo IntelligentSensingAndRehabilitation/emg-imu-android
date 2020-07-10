@@ -21,20 +21,16 @@
  */
 package no.nordicsemi.android.nrftoolbox.profile.multiconnect;
 
-import android.app.Service;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
 import android.content.BroadcastReceiver;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.IBinder;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -44,6 +40,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
+import org.jetbrains.annotations.NotNull;
 import org.sralab.emgimu.common.R;
 
 import java.util.ArrayList;
@@ -52,10 +49,6 @@ import java.util.List;
 import java.util.UUID;
 
 import no.nordicsemi.android.ble.observer.ConnectionObserver;
-import no.nordicsemi.android.log.ILogSession;
-import no.nordicsemi.android.log.LocalLogSession;
-import no.nordicsemi.android.log.LogContract;
-import no.nordicsemi.android.log.Logger;
 import no.nordicsemi.android.nrftoolbox.AppHelpFragment;
 import no.nordicsemi.android.nrftoolbox.scanner.ScannerFragment;
 import no.nordicsemi.android.nrftoolbox.utility.DebugLogger;
@@ -73,13 +66,12 @@ import no.nordicsemi.android.nrftoolbox.utility.DebugLogger;
  * listens for updates from them. When entering back to the activity, activity will to bind to the service and refresh UI.
  * </p>
  */
-public abstract class BleMulticonnectProfileServiceReadyActivity<E extends BleMulticonnectProfileService.LocalBinder> extends AppCompatActivity implements
+public abstract class BleMulticonnectProfileServiceReadyActivity extends AppCompatActivity implements
 		ScannerFragment.OnDeviceSelectedListener, ConnectionObserver {
 	private static final String TAG = "BleMulticonnectProfileServiceReadyActivity";
 
 	protected static final int REQUEST_ENABLE_BT = 2;
 
-	private E mService;
 	private List<BluetoothDevice> mManagedDevices;
 
 	private final BroadcastReceiver mCommonBroadcastReceiver = new BroadcastReceiver() {
@@ -128,29 +120,6 @@ public abstract class BleMulticonnectProfileServiceReadyActivity<E extends BleMu
 		}
 	};
 
-	private ServiceConnection mServiceConnection = new ServiceConnection() {
-		@SuppressWarnings("unchecked")
-		@Override
-		public void onServiceConnected(final ComponentName name, final IBinder service) {
-			final E bleService = mService = (E) service;
-			bleService.log(LogContract.Log.Level.DEBUG, "Activity bound to the service");
-			mManagedDevices.addAll(bleService.getManagedDevices());
-			onServiceBinded(bleService);
-
-			// and notify user if device is connected
-			for (final BluetoothDevice device : mManagedDevices) {
-				if (bleService.isConnected(device))
-					onDeviceConnected(device);
-			}
-		}
-
-		@Override
-		public void onServiceDisconnected(final ComponentName name) {
-			mService = null;
-			onServiceUnbinded();
-		}
-	};
-
 	@Override
 	protected final void onCreate(final Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -178,38 +147,6 @@ public abstract class BleMulticonnectProfileServiceReadyActivity<E extends BleMu
 	}
 
 	@Override
-	protected void onResume() {
-		super.onResume();
-
-		/*
-		 * In comparison to BleProfileServiceReadyActivity this activity always starts the service when started.
-		 * Connecting to a device is done by calling mService.connect(BluetoothDevice) method, not startService(...) like there.
-		 * The service will stop itself when all devices it manages were disconnected and unmanaged and the last activity unbinds from it.
-		 */
-		final Intent service = new Intent(this, getServiceClass());
-		bindService(service, mServiceConnection, Context.BIND_AUTO_CREATE);
-	}
-
-	@Override
-	protected void onPause() {
-		super.onPause();
-
-		if (mService != null) {
-			// We don't want to perform some operations (e.g. disable Battery Level notifications) in the service if we are just rotating the screen.
-			// However, when the activity will disappear, we may want to disable some device features to reduce the battery consumption.
-			mService.setActivityIsChangingConfiguration(isChangingConfigurations());
-			// Log it here as there is no callback when the service gets unbound
-			// and the mService will not be available later (the activity doesn't keep log sessions)
-			mService.log(LogContract.Log.Level.DEBUG, "Activity unbound from the service");
-		}
-
-		unbindService(mServiceConnection);
-		mService = null;
-
-		onServiceUnbinded();
-	}
-
-	@Override
 	protected void onDestroy() {
 		super.onDestroy();
 
@@ -225,12 +162,6 @@ public abstract class BleMulticonnectProfileServiceReadyActivity<E extends BleMu
 	}
 
 	/**
-	 * Called when activity binds to the service. The parameter is the object returned in {@link Service#onBind(Intent)} method in your service.
-	 * It is safe to obtain managed devices now.
-	 */
-	protected abstract void onServiceBinded(E binder);
-
-	/**
 	 * Called when activity unbinds from the service. You may no longer use this binder methods.
 	 */
 	protected abstract void onServiceUnbinded();
@@ -241,16 +172,6 @@ public abstract class BleMulticonnectProfileServiceReadyActivity<E extends BleMu
 	 * @return the service class
 	 */
 	protected abstract Class<? extends BleMulticonnectProfileService> getServiceClass();
-
-	/**
-	 * Returns the service interface that may be used to communicate with the sensor. This will return <code>null</code> if the device is disconnected from the
-	 * sensor.
-	 *
-	 * @return the service binder or <code>null</code>
-	 */
-	protected E getService() {
-		return mService;
-	}
 
 	/**
 	 * You may do some initialization here. This method is called from {@link #onCreate(Bundle)} before the view was created.
@@ -344,19 +265,7 @@ public abstract class BleMulticonnectProfileServiceReadyActivity<E extends BleMu
 	}
 
 	@Override
-	public void onDeviceSelected(final BluetoothDevice device, final String name) {
-		final int titleId = getLoggerProfileTitle();
-		ILogSession logSession = null;
-		if (titleId > 0) {
-			logSession = Logger.newSession(getApplicationContext(), getString(titleId), device.getAddress(), name);
-			// If nRF Logger is not installed we may want to use local logger
-			if (logSession == null && getLocalAuthorityLogger() != null) {
-				logSession = LocalLogSession.newSession(getApplicationContext(), getLocalAuthorityLogger(), device.getAddress(), name);
-			}
-		}
-
-		mService.connect(device, logSession);
-	}
+	abstract public void onDeviceSelected(@NotNull final BluetoothDevice device, @NotNull final String name);
 
 	@Override
 	public void onDialogCanceled() {
@@ -430,12 +339,8 @@ public abstract class BleMulticonnectProfileServiceReadyActivity<E extends BleMu
 		return Collections.unmodifiableList(mManagedDevices);
 	}
 
-	/**
-	 * Returns <code>true</code> if the device is connected. Services may not have been discovered yet.
-	 * @param device the device to check if it's connected
-	 */
-	protected boolean isDeviceConnected(final BluetoothDevice device) {
-		return mService != null && mService.isConnected(device);
+	protected void addManagedDevices(List<BluetoothDevice> devices) {
+		mManagedDevices.addAll(devices);
 	}
 
 	/**

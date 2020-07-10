@@ -25,36 +25,44 @@ package org.sralab.emgimu.config;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.content.res.ColorStateList;
-
-import androidx.core.content.ContextCompat;
-import androidx.recyclerview.widget.DefaultItemAnimator;
-import androidx.recyclerview.widget.RecyclerView;
+import android.os.RemoteException;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.TextView;
 import android.widget.ImageButton;
+import android.widget.TextView;
 
-import java.util.Map;
+import androidx.core.content.ContextCompat;
+import androidx.recyclerview.widget.DefaultItemAnimator;
+import androidx.recyclerview.widget.RecyclerView;
+
+import org.sralab.emgimu.service.IEmgImuServiceBinder;
+import org.sralab.emgimu.visualization.LineGraphView;
+
 import java.util.HashMap;
 import java.util.List;
-
-import org.sralab.emgimu.service.EmgImuService;
-import org.sralab.emgimu.visualization.LineGraphView;
+import java.util.Map;
 
 public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder> {
 
     private static final String TAG = DeviceAdapter.class.getSimpleName();
 
-	private final EmgImuService.EmgImuBinder mService;
+	private final IEmgImuServiceBinder mService;
 	private final List<BluetoothDevice> mDevices;
     private final Map<BluetoothDevice, LineGraphView> mDeviceLineGraphMap = new HashMap<BluetoothDevice, LineGraphView>();
 
-	public DeviceAdapter(final EmgImuService.EmgImuBinder binder) {
-		mService = binder;
-		mDevices = mService.getManagedDevices();
-	}
+	public DeviceAdapter(final IEmgImuServiceBinder binder) {
+        List<BluetoothDevice> mDevices1;
+        mService = binder;
+        try {
+            mDevices1 = mService.getManagedDevices();
+        } catch (RemoteException e) {
+            mDevices1 = null;
+            e.printStackTrace();
+        }
+        mDevices = mDevices1;
+    }
 
 	@Override
 	public ViewHolder onCreateViewHolder(final ViewGroup parent, final int viewType) {
@@ -136,7 +144,11 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
 
     public void onDeviceReady(final BluetoothDevice device) {
         Log.d("DeviceAdapter", "Device added. Requested streaming: " + device);
-        mService.streamPwr(device);
+        try {
+            mService.streamPwr(device);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
     }
 
 	public void onPwrValueReceived(final BluetoothDevice device) {
@@ -144,8 +156,13 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
         // If graph exists for this device, update it with new data
         LineGraphView mLineGraph = mDeviceLineGraphMap.get(device);
         if (mLineGraph != null) {
-            final int pwrValue = mService.getEmgPwrValue(device);
-            mLineGraph.addValue(pwrValue);
+            final int pwrValue;
+            try {
+                pwrValue = mService.getEmgPwrValue(device);
+                mLineGraph.addValue(pwrValue);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
         } else {
             Log.w(TAG, "Graph missing");
         }
@@ -183,7 +200,11 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
             actionDisconnect.setOnClickListener(v -> {
                 final int position = getAdapterPosition();
                 final BluetoothDevice device = mDevices.get(position);
-                mService.disconnect(device);
+                try {
+                    mService.disconnect(device);
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
                 // The device might have not been connected, so there will be no callback
                 onDeviceRemoved(device);
             });
@@ -208,21 +229,28 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
         }
 
 		private void bind(final BluetoothDevice device) {
-			final int state = mService.getConnectionState(device);
+            final int state;
+            try {
+                state = mService.getConnectionState(device);
 
-			addressView.setText(device.getAddress());
+                addressView.setText(device.getAddress());
 
-			final double voltage = mService.getBattery(device);
-			if (voltage > 0) {
-                batteryView.setText(String.format("%.2fV", voltage));
+                final double voltage = mService.getBattery(device);
+                if (voltage > 0) {
+                    batteryView.setText(String.format("%.2fV", voltage));
+                }
+
+                // Color of disconnect button should indicate connection status
+                final ColorStateList color = state == BluetoothGatt.STATE_CONNECTED ? connectedColor : disconnectedColor;
+                actionDisconnect.setBackgroundTintList(color);
+
+                // Update the graph
+                getGraph(device).repaint();
+
+            } catch (RemoteException e) {
+                e.printStackTrace();
             }
 
-            // Color of disconnect button should indicate connection status
-            final ColorStateList color = state == BluetoothGatt.STATE_CONNECTED ? connectedColor : disconnectedColor;
-            actionDisconnect.setBackgroundTintList(color);
-
-            // Update the graph
-            getGraph(device).repaint();
 		}
 	}
 }

@@ -42,7 +42,6 @@ import android.util.Log;
 import android.util.Pair;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.StringRes;
 import androidx.collection.SimpleArrayMap;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
@@ -66,6 +65,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.iid.FirebaseInstanceId;
 
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.sralab.emgimu.controller.IEmgDecoder;
@@ -85,7 +85,6 @@ import no.nordicsemi.android.ble.BleManager;
 import no.nordicsemi.android.ble.error.GattError;
 import no.nordicsemi.android.ble.observer.ConnectionObserver;
 import no.nordicsemi.android.log.ILogSession;
-import no.nordicsemi.android.log.LogContract;
 import no.nordicsemi.android.log.Logger;
 import no.nordicsemi.android.nrftoolbox.profile.multiconnect.BleMulticonnectProfileService;
 
@@ -164,20 +163,52 @@ public class EmgImuService extends BleMulticonnectProfileService implements Conn
         void onEmgDecoded(float [] decoded);
     }
 
+
+
+
     /**
 	 * This local binder is an interface for the bonded activity to operate with the proximity sensor
 	 */
-	public class EmgImuBinder extends LocalBinder {
+	public class EmgImuBinder extends IEmgImuServiceBinder.Stub {
 
-        @Override
+        /**
+         * Returns an unmodifiable list of devices managed by the service.
+         * The returned devices do not need to be connected at tha moment. Each of them was however created
+         * using {@link #connect(BluetoothDevice)} method so they might have been connected before and disconnected.
+         * @return unmodifiable list of devices managed by the service
+         */
+        public final List<BluetoothDevice> getManagedDevices() {
+            return EmgImuService.this.getManagedDevices();
+        }
+
+        public void connect(@NotNull final BluetoothDevice device) throws RemoteException {
+            EmgImuService.this.connect(device);
+        }
+
         /**
          * Override the parent method to ensure that the device list is updated, even
          * if we are not connected to the device. The onDeviceDisconnected callback only
          * occurs if we are initially connected.
          */
-        public void disconnect(final BluetoothDevice device) {
-            super.disconnect(device);
+        public void disconnect(@NotNull final BluetoothDevice device) throws RemoteException {
+            EmgImuService.this.disconnect(device);
             updateSavedDevices();
+        }
+
+        public boolean isConnected(@NotNull final BluetoothDevice device) throws RemoteException {
+            return EmgImuService.this.isConnected(device);
+        }
+
+        public boolean isReady(@NotNull final BluetoothDevice device) throws RemoteException {
+            return EmgImuService.this.isReady(device);
+        }
+
+        public int getConnectionState(@NotNull final BluetoothDevice device) throws RemoteException {
+            return EmgImuService.this.getConnectionState(device);
+        }
+
+        public void setActivityIsChangingConfiguration(boolean changing) throws RemoteException {
+            EmgImuService.this.setActivityIsChangingConfiguration(changing);
         }
 
         /***
@@ -187,22 +218,10 @@ public class EmgImuService extends BleMulticonnectProfileService implements Conn
         public boolean isConnected() {
             List<BluetoothDevice> devices = getSavedDevices();
             for (BluetoothDevice device : devices) {
-                if (!mBinder.isConnected(device))
+                if (!EmgImuService.this.isConnected(device))
                     return false;
-                //final EmgImuManager manager = getBleManager(device);
             }
             return true;
-        }
-
-        /**
-         * Returns the last received EMG raw value.
-         *
-         * @param device the device of which battery level should be returned
-         * @return emg value or -1 if no value was received or characteristic was not found
-         */
-        public int getEmgRawValue(final BluetoothDevice device) {
-            final EmgImuManager manager = (EmgImuManager) getBleManager(device);
-            return manager.getEmgRaw();
         }
 
         /**
@@ -380,6 +399,7 @@ public class EmgImuService extends BleMulticonnectProfileService implements Conn
         }
 
         /*** hook these methods so we can forward the message to the Service nRF log and logcat ***/
+        /*
         @Override
         public void log(final BluetoothDevice device, final int level, final String message) {
             super.log(device, level, message);
@@ -403,6 +423,7 @@ public class EmgImuService extends BleMulticonnectProfileService implements Conn
             super.log(level, messageRes, params);
             mServiceLogger.log(level, messageRes, params);
         }
+        */
 
         public List<String> getLoggingReferences() {
             List<String> references = new ArrayList<>();
@@ -422,7 +443,7 @@ public class EmgImuService extends BleMulticonnectProfileService implements Conn
 	}
 
 	@Override
-	protected LocalBinder getBinder() {
+	protected IBinder getBinder() {
 		return mBinder;
 	}
 
@@ -440,9 +461,13 @@ public class EmgImuService extends BleMulticonnectProfileService implements Conn
 		@Override
 		public void onReceive(final Context context, final Intent intent) {
 			final BluetoothDevice device = intent.getParcelableExtra(EXTRA_DEVICE);
-			mBinder.log(device, LogContract.Log.Level.INFO, "[Notification] DISCONNECT action pressed");
-			mBinder.disconnect(device);
-		}
+			//mBinder.log(device, LogContract.Log.Level.INFO, "[Notification] DISCONNECT action pressed");
+            try {
+                mBinder.disconnect(device);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
 	};
 
 
@@ -595,7 +620,11 @@ public class EmgImuService extends BleMulticonnectProfileService implements Conn
                 logFetchStartId.put(device_mac, new Pair<>(connectionTimeout, startId));
             }
 
-            mBinder.connect(device,  getLogger(device));
+            try {
+                mBinder.connect(device); //,  getLogger(device));
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
         }
 
         return START_STICKY;
@@ -620,9 +649,9 @@ public class EmgImuService extends BleMulticonnectProfileService implements Conn
                 logFetchStartId.remove(device.getAddress());
 
                 if (mBinded) {
-                    mBinder.log(device, LogContract.Log.Level.DEBUG, "Last log retrieval thread completed. Not stopped service as service also bound");
+                    //mBinder.log(device, LogContract.Log.Level.DEBUG, "Last log retrieval thread completed. Not stopped service as service also bound");
                 } else {
-                    mBinder.log(device, LogContract.Log.Level.DEBUG, "One thread found so stopping service: " + logFetchStartId);
+                    //mBinder.log(device, LogContract.Log.Level.DEBUG, "One thread found so stopping service: " + logFetchStartId);
                     stopSelf(startThreadId);
                 }
                 return;
@@ -637,8 +666,8 @@ public class EmgImuService extends BleMulticonnectProfileService implements Conn
             }
 
             if (startThreadId >= maxThreadId) {
-                mBinder.log(device, LogContract.Log.Level.DEBUG, "Multiple threads and this is the greatest. Just removing element " + startThreadId +
-                        " " + logFetchStartId);
+                //mBinder.log(device, LogContract.Log.Level.DEBUG, "Multiple threads and this is the greatest. Just removing element " + startThreadId +
+                //        " " + logFetchStartId);
 
                 // If there are multiple threads and this one is the highest number we should
                 // only remove its ID
@@ -648,8 +677,8 @@ public class EmgImuService extends BleMulticonnectProfileService implements Conn
                 // assign to the first device..
                 logFetchStartId.setValueAt(0, new Pair<>(logFetchStartId.valueAt(0).first, maxThreadId));
             } else {
-                mBinder.log(device, LogContract.Log.Level.DEBUG, "This is not the lowest thread. Service should not stop after " + startThreadId + " "
-                        + logFetchStartId);
+                //mBinder.log(device, LogContract.Log.Level.DEBUG, "This is not the lowest thread. Service should not stop after " + startThreadId + " "
+                //        + logFetchStartId);
 
                 // This call to stopSelf should make no functional difference
                 stopSelf(startThreadId);
@@ -666,8 +695,8 @@ public class EmgImuService extends BleMulticonnectProfileService implements Conn
             Log.e(TAG, "Received invalid PDU. Will continue", new Exception("backtrack"));
             return;
         }
-        mBinder.log(device, LogContract.Log.Level.WARNING, "onError: " + message +
-                " errorCode: " + errorCode + "(" + GattError.parseConnectionError(errorCode) + ")");
+        //mBinder.log(device, LogContract.Log.Level.WARNING, "onError: " + message +
+        //        " errorCode: " + errorCode + "(" + GattError.parseConnectionError(errorCode) + ")");
         Log.e(TAG, "onError", new Exception("backtrack"));
 
         // See if a log fetch has been requested
@@ -694,7 +723,7 @@ public class EmgImuService extends BleMulticonnectProfileService implements Conn
 
     @Override
 	public void onServiceStopped() {
-        mBinder.log(LogContract.Log.Level.INFO, "onServicesStopped");
+        //mBinder.log(LogContract.Log.Level.INFO, "onServicesStopped");
 
 		cancelNotifications();
 
@@ -727,7 +756,7 @@ public class EmgImuService extends BleMulticonnectProfileService implements Conn
 
 	@Override
 	public void onUnbind() {
-        mBinder.log(LogContract.Log.Level.INFO, "onUnbind");
+        //mBinder.log(LogContract.Log.Level.INFO, "onUnbind");
 
         getHandler().postDelayed(new Runnable() {
             @Override
@@ -743,7 +772,7 @@ public class EmgImuService extends BleMulticonnectProfileService implements Conn
 
 	@Override
 	public void onDeviceConnected(final BluetoothDevice device) {
-        mBinder.log(device, LogContract.Log.Level.INFO, "onDeviceConnected");
+        //mBinder.log(device, LogContract.Log.Level.INFO, "onDeviceConnected");
 
 		super.onDeviceConnected(device);
 
@@ -791,11 +820,11 @@ public class EmgImuService extends BleMulticonnectProfileService implements Conn
 
         // See if a log fetch has been requested
         if(logFetchStartId.get(device.getAddress()) != null) {
-            mBinder.log(device, LogContract.Log.Level.INFO, "onDeviceReady. requesting log download");
+            //mBinder.log(device, LogContract.Log.Level.INFO, "onDeviceReady. requesting log download");
             final EmgImuManager manager = (EmgImuManager) getBleManager(device);
             manager.fetchLogRecords(device1 -> onEmgLogFetchCompleted(device1), (device12, reason) -> onEmgLogFetchFailed(device12, reason));
         } else {
-            mBinder.log(device, LogContract.Log.Level.WARNING, "onDeviceReady. no log request active.");
+            //mBinder.log(device, LogContract.Log.Level.WARNING, "onDeviceReady. no log request active.");
         }
     }
 
@@ -923,8 +952,13 @@ public class EmgImuService extends BleMulticonnectProfileService implements Conn
 
         List <BluetoothDevice> devices = getSavedDevices();
 
-        for (final BluetoothDevice device : devices)
-            mBinder.connect(device, getLogger(device));
+        for (final BluetoothDevice device : devices) {
+            try {
+                mBinder.connect(device); //, getLogger(device));
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
 	private void createBackgroundNotification() {
@@ -1224,24 +1258,24 @@ public class EmgImuService extends BleMulticonnectProfileService implements Conn
     /******** These callbacks are for managing the EMG logging via RACP ********/
 
     public void onEmgLogFetchCompleted(BluetoothDevice device) {
-        mBinder.log(device, LogContract.Log.Level.DEBUG, "onEmgLogFetchCompleted: " + logFetchStartId);
+        //mBinder.log(device, LogContract.Log.Level.DEBUG, "onEmgLogFetchCompleted: " + logFetchStartId);
 
         if (logFetchStartId.get(device.getAddress()) != null) {
-            mBinder.log(device, LogContract.Log.Level.INFO, "Log retrieval complete");
+            //mBinder.log(device, LogContract.Log.Level.INFO, "Log retrieval complete");
             smartStop(device);
         } else {
-            mBinder.log(device, LogContract.Log.Level.WARNING, "onEmgLogFetchCompleted without log fetch intent");
+            //mBinder.log(device, LogContract.Log.Level.WARNING, "onEmgLogFetchCompleted without log fetch intent");
         }
     }
 
     public void onEmgLogFetchFailed(final BluetoothDevice device, String reason) {
-        mBinder.log(device, LogContract.Log.Level.DEBUG, "onEmgLogFetchFailed: " + logFetchStartId);
+        //mBinder.log(device, LogContract.Log.Level.DEBUG, "onEmgLogFetchFailed: " + logFetchStartId);
 
         if (logFetchStartId.get(device.getAddress()) != null) {
-            mBinder.log(device, LogContract.Log.Level.INFO, "Log fetch failed");
+            //mBinder.log(device, LogContract.Log.Level.INFO, "Log fetch failed");
             smartStop(device);
         } else {
-            mBinder.log(device, LogContract.Log.Level.WARNING, "onEmgLogFetchFailed without log fetch intent");
+            //mBinder.log(device, LogContract.Log.Level.WARNING, "onEmgLogFetchFailed without log fetch intent");
         }
     }
 
