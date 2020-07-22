@@ -159,6 +159,9 @@ public class EmgImuService extends BleMulticonnectProfileService implements Conn
     private IEmgDecoder emgDecoder;
     private OnEmgDecodedListener emgDecodedCallback;
 
+    private List <IEmgImuDataCallback> emgStreamCbs = new ArrayList<>();
+    private List <IEmgImuDataCallback> emgPwrCbs = new ArrayList<>();
+
     public interface OnEmgDecodedListener {
         void onEmgDecoded(float [] decoded);
     }
@@ -391,6 +394,49 @@ public class EmgImuService extends BleMulticonnectProfileService implements Conn
             serviceUpdateSavedDevices();
             configureLoggingSavedDevices();
         }
+
+        public void registerEmgStreamObserver(IEmgImuDataCallback callback) throws RemoteException {
+            Log.d(TAG, "Stream callback received");
+            emgStreamCbs.add(callback);
+            for (final BluetoothDevice device : getManagedDevices()) {
+                final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+                manager.enableEmgBuffNotifications();
+            }
+        }
+
+        public void unregisterEmgStreamObserver(IEmgImuDataCallback callback) throws RemoteException {
+            Log.d(TAG, "Stream callback removed");
+            emgStreamCbs.remove(callback);
+            if (emgStreamCbs.size() == 0) {
+                Log.d(TAG, "No callbacks remain. Stopping stream.");
+                for (final BluetoothDevice device : getManagedDevices()) {
+                    final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+                    manager.disableEmgBuffNotifications();
+                }
+            }
+        }
+
+        public void registerEmgPwrObserver(IEmgImuDataCallback callback) {
+            Log.d(TAG, "Power callback received");
+            emgPwrCbs.add(callback);
+            for (final BluetoothDevice device : getManagedDevices()) {
+                final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+                manager.enableEmgPwrNotifications();
+            }
+        }
+
+        public void unregisterEmgPwrObserver(IEmgImuDataCallback callback) {
+            Log.d(TAG, "Power callback removed");
+            emgPwrCbs.remove(callback);
+            if (emgStreamCbs.size() == 0) {
+                Log.d(TAG, "No callbacks remain. Stopping stream.");
+                for (final BluetoothDevice device : getManagedDevices()) {
+                    final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+                    manager.disableEmgPwrNotifications();
+                }
+            }
+        }
+
 
         public String getUser() {
             if (mCurrentUser != null)
@@ -1132,6 +1178,15 @@ public class EmgImuService extends BleMulticonnectProfileService implements Conn
             double [] data = {(double) value};
             networkStreaming.streamEmgPwr(device, new Date().getTime(), data);
         }
+
+        for (IEmgImuDataCallback cb : emgPwrCbs) {
+            try {
+                cb.handleData(device, 0, null);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+
     }
 
     @Override
@@ -1176,6 +1231,15 @@ public class EmgImuService extends BleMulticonnectProfileService implements Conn
         if (networkStreaming != null && networkStreaming.isConnected()) {
             networkStreaming.streamEmgBuffer(device, ts_ms, SAMPLES, CHANNELS, data);
         }
+
+        for (IEmgImuDataCallback cb : emgStreamCbs) {
+            try {
+                cb.handleData(device, ts_ms, null);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+
     }
 
     public void onEmgClick(final BluetoothDevice device) {

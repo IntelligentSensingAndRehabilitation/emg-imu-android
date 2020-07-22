@@ -36,6 +36,8 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import org.sralab.emgimu.EmgImuBaseActivity;
+import org.sralab.emgimu.service.DataParcel;
+import org.sralab.emgimu.service.IEmgImuDataCallback;
 import org.sralab.emgimu.service.IEmgImuServiceBinder;
 
 import no.nordicsemi.android.nrftoolbox.widget.DividerItemDecoration;
@@ -119,6 +121,19 @@ public class ConfigActivity extends EmgImuBaseActivity {
 	public void onDeviceReady(final BluetoothDevice device) {
 		if (mAdapter != null)
 			mAdapter.onDeviceReady(device);
+
+		Log.d(TAG, "Registering callback");
+		try {
+			mService.registerEmgStreamObserver(new IEmgImuDataCallback.Stub() {
+				@Override
+				public void handleData(BluetoothDevice device, long ts, DataParcel data) {
+					Log.d(TAG, "Data callback");
+				}
+			});
+		} catch (RemoteException e) {
+			e.printStackTrace();
+		}
+
 	}
 
 	public void onDeviceDisconnecting(final BluetoothDevice device) {

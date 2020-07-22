@@ -1158,7 +1158,7 @@ public class EmgImuManager extends BleManager {
     /****** helper methods to enable and disable notifications *******/
 
     // Controls to enable what data we are receiving from the sensor
-    private void enableEmgPwrNotifications() {
+    public void enableEmgPwrNotifications() {
         setNotificationCallback(mEmgPwrCharacteristic)
                 .with((device, data) -> parseEmgPwr(device ,data));
         enableNotifications(mEmgPwrCharacteristic)
@@ -1166,11 +1166,11 @@ public class EmgImuManager extends BleManager {
                 .enqueue();
     }
 
-    private void disableEmgPwrNotifications() {
+    public void disableEmgPwrNotifications() {
         disableNotifications(mEmgPwrCharacteristic).enqueue();
     }
 
-    private void enableEmgBuffNotifications() {
+    public void enableEmgBuffNotifications() {
         setNotificationCallback(mEmgBuffCharacteristic)
                 .with((device, data) -> parseEmgBuff(device ,data));
         enableNotifications(mEmgBuffCharacteristic)
@@ -1178,11 +1178,11 @@ public class EmgImuManager extends BleManager {
                 .enqueue();
     }
 
-    private void disableEmgBuffNotifications() {
+    public void disableEmgBuffNotifications() {
         disableNotifications(mEmgBuffCharacteristic).enqueue();
     }
 
-    private void enableAttitudeNotifications() {
+    public void enableAttitudeNotifications() {
         setNotificationCallback(mImuAttitudeCharacteristic)
                 .with((device, data) -> parseImuAttitude(device ,data));
         enableNotifications(mImuAttitudeCharacteristic)
@@ -1190,11 +1190,11 @@ public class EmgImuManager extends BleManager {
                 .enqueue();
     }
 
-    private void disableAttitudeNotifications() {
+    public void disableAttitudeNotifications() {
         disableNotifications(mImuAttitudeCharacteristic).enqueue();
     }
 
-    private void enableImuNotifications() {
+    public void enableImuNotifications() {
         setNotificationCallback(mImuAccelCharacteristic)
                 .with((device, data) -> parseImuAccel(device ,data));
         enableNotifications(mImuAccelCharacteristic)
@@ -1214,7 +1214,7 @@ public class EmgImuManager extends BleManager {
                 .enqueue();
     }
 
-    private void disableImuNotifications() {
+    public void disableImuNotifications() {
         disableNotifications(mImuAccelCharacteristic).enqueue();
         disableNotifications(mImuGyroCharacteristic).enqueue();
         disableNotifications(mImuMagCharacteristic).enqueue();

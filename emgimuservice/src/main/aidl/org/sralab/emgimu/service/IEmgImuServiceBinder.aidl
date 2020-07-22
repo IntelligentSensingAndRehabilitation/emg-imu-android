@@ -3,6 +3,14 @@ package org.sralab.emgimu.service;
 
 // Declare any non-default types here with import statements
 
+//import IEmgImuDataCallback;
+
+parcelable DataParcel;
+
+oneway interface IEmgImuDataCallback {
+    void handleData(in BluetoothDevice device, long ts, in DataParcel data);
+}
+
 interface IEmgImuServiceBinder  {
 
     List<BluetoothDevice> getManagedDevices();
@@ -26,5 +34,10 @@ interface IEmgImuServiceBinder  {
     String getUser();
 
     void updateSavedDevices();
+
+    void registerEmgStreamObserver(IEmgImuDataCallback callback);
+    void unregisterEmgStreamObserver(IEmgImuDataCallback callback);
+    void registerEmgPwrObserver(IEmgImuDataCallback callback);
+    void unregisterEmgPwrObserver(IEmgImuDataCallback callback);
 
 }
