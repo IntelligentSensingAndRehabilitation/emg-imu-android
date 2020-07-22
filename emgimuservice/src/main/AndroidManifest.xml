@@ -20,7 +20,9 @@
     <application>
         <service
             android:name=".EmgImuService"
+            android:exported="true"
             android:label="@string/emgimu_feature_title"/>
+        <!--android:process=":remote"-->
         <service
             android:name="org.sralab.emgimu.logging.EmgLogFetchJobService"
             android:exported="false">
