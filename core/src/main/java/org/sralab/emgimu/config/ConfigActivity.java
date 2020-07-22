@@ -118,18 +118,23 @@ public class ConfigActivity extends EmgImuBaseActivity {
 		}
 	}
 
+	private final IEmgImuDataCallback.Stub pwrObserver = new IEmgImuDataCallback.Stub() {
+		@Override
+		public void handleData(BluetoothDevice device, long ts, DataParcel data) {
+			//Log.d(TAG, "Data callback: " + data.readVal());
+			if (mAdapter != null)
+				mAdapter.onPwrValueReceived(device, data.readVal()); // Adapter will access value directly from service
+
+		}
+	};
+
 	public void onDeviceReady(final BluetoothDevice device) {
 		if (mAdapter != null)
 			mAdapter.onDeviceReady(device);
 
 		Log.d(TAG, "Registering callback");
 		try {
-			mService.registerEmgStreamObserver(new IEmgImuDataCallback.Stub() {
-				@Override
-				public void handleData(BluetoothDevice device, long ts, DataParcel data) {
-					Log.d(TAG, "Data callback");
-				}
-			});
+			mService.registerEmgPwrObserver(pwrObserver);
 		} catch (RemoteException e) {
 			e.printStackTrace();
 		}
@@ -139,6 +144,11 @@ public class ConfigActivity extends EmgImuBaseActivity {
 	public void onDeviceDisconnecting(final BluetoothDevice device) {
 		if (mAdapter != null)
 			mAdapter.onDeviceStateChanged(device);
+		try {
+			mService.unregisterEmgPwrObserver(pwrObserver);
+		} catch (RemoteException e) {
+			e.printStackTrace();
+		}
 	}
 
 	public void onDeviceDisconnected(final BluetoothDevice device, int reason) {
@@ -154,8 +164,7 @@ public class ConfigActivity extends EmgImuBaseActivity {
 	}
 
     public void onEmgPwrReceived(final BluetoothDevice device, int value) {
-        if (mAdapter != null)
-            mAdapter.onPwrValueReceived(device); // Adapter will access value directly from service
+
     }
 
 	public void onImuAccelReceived(BluetoothDevice device, float[][] accel) {

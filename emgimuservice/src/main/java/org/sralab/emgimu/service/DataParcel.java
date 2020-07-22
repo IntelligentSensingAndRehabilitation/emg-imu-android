@@ -5,7 +5,23 @@ import android.os.Parcelable;
 
 public class DataParcel implements Parcelable {
 
+    int val;
+
+    public DataParcel() {
+
+    }
+
+    public void writeVal(int val) {
+        this.val = val;
+    }
+
+    public int readVal() {
+        return val;
+    }
+
+
     protected DataParcel(Parcel in) {
+        val = in.readInt();
     }
 
     public int describeContents() {
@@ -14,6 +30,7 @@ public class DataParcel implements Parcelable {
 
     @Override
     public void writeToParcel(Parcel dest, int flags) {
+        dest.writeInt(val);
     }
 
     public static final Creator<DataParcel> CREATOR = new Creator<DataParcel>() {

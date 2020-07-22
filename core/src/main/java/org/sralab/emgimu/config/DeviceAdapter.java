@@ -151,18 +151,12 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
         }
     }
 
-	public void onPwrValueReceived(final BluetoothDevice device) {
+	public void onPwrValueReceived(final BluetoothDevice device, int pwrValue) {
 
         // If graph exists for this device, update it with new data
         LineGraphView mLineGraph = mDeviceLineGraphMap.get(device);
         if (mLineGraph != null) {
-            final int pwrValue;
-            try {
-                pwrValue = mService.getEmgPwrValue(device);
-                mLineGraph.addValue(pwrValue);
-            } catch (RemoteException e) {
-                e.printStackTrace();
-            }
+            mLineGraph.addValue(pwrValue);
         } else {
             Log.w(TAG, "Graph missing");
         }

@@ -404,7 +404,7 @@ public class EmgImuService extends BleMulticonnectProfileService implements Conn
             }
         }
 
-        public void unregisterEmgStreamObserver(IEmgImuDataCallback callback) throws RemoteException {
+        public void unregisterEmgStreamObserver(IEmgImuDataCallback callback) {
             Log.d(TAG, "Stream callback removed");
             emgStreamCbs.remove(callback);
             if (emgStreamCbs.size() == 0) {
@@ -1181,7 +1181,9 @@ public class EmgImuService extends BleMulticonnectProfileService implements Conn
 
         for (IEmgImuDataCallback cb : emgPwrCbs) {
             try {
-                cb.handleData(device, 0, null);
+                DataParcel p = new DataParcel();
+                p.writeVal(value);
+                cb.handleData(device, 0, p);
             } catch (RemoteException e) {
                 e.printStackTrace();
             }
