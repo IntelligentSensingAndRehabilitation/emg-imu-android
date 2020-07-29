@@ -35,7 +35,7 @@ public class MainActivity extends AppCompatActivity {
                 R.id.navigation_home, R.id.navigation_dashboard, R.id.navigation_notifications)
                 .build();
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment);
-        NavigationUI.setupActionBarWithNavController(this, navController, appBarConfiguration);
+        //NavigationUI.setupActionBarWithNavController(this, navController, appBarConfiguration);
         NavigationUI.setupWithNavController(navView, navController);
     }
 
@@ -48,8 +48,10 @@ public class MainActivity extends AppCompatActivity {
 
             Log.d(TAG, "connected");
             try {
-                for (final BluetoothDevice d : mService.getManagedDevices())
+                for (final BluetoothDevice d : mService.getManagedDevices()) {
                     Log.d(TAG, d.getAddress());
+                    //mService.registerEmgStreamObserver(pwrObserver);
+                }
             } catch (RemoteException e) {
                 e.printStackTrace();
             }
