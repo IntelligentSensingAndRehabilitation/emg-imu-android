@@ -23,10 +23,10 @@
 
 <resources xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <style name="HeaderBar">
+    <!--style name="HeaderBar">
         <item name="android:background">?colorPrimary</item>
         <item name="android:elevation">@dimen/headerbar_elevation</item>
-    </style>
+    </style-->
 
     <style name="HeaderShadow">
     </style>
@@ -46,11 +46,11 @@
 
     <style name="Widget.Connect" parent="@android:style/Widget.Material.Light.Button">
         <item name="android:background">@drawable/button</item>
+        <item name="android:stateListAnimator">@animator/click_animator</item>
         <item name="android:textColor">#FFFFFF</item>
         <item name="android:paddingLeft">40dp</item>
         <item name="android:paddingRight">40dp</item>
         <item name="android:elevation">2dp</item>
-        <item name="android:stateListAnimator">@animator/click_animator</item>
     </style>
 
     <style name="AppTheme" parent="@style/AppThemeBase">        

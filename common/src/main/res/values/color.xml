@@ -25,6 +25,7 @@
     <color name="sral_red">#ED1B2C</color>
     <color name="sral_gray">#AC9C9E</color>
 
+    <color name="menu_text">#AC9C9E</color>
 
     <color name="featureTitleColor">@color/sral_orange</color>
     <color name="actionBarColor">@color/sral_orange</color>

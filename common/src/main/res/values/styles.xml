@@ -26,10 +26,10 @@
 		<item name="android:background">?colorPrimary</item>
 	</style>
 
-	<style name="HeaderShadow">
+	<!--style name="HeaderShadow">
 		<item name="android:foreground">@drawable/action_bar_shadow</item>
 		<item name="foreground">@drawable/action_bar_shadow</item>
-	</style>
+	</style-->
 
 	<!-- Style used by the Toolbar -->
 	<style name="ActionBarThemeOverlay" parent="@style/ThemeOverlay.AppCompat.ActionBar">
@@ -94,6 +94,7 @@
 
 	<style name="Widget.Connect" parent="@android:style/Widget.Holo.Light.Button">
 		<item name="android:background">@drawable/button</item>
+		<item name="android:stateListAnimator">@animator/click_animator</item>>
 		<item name="android:textColor">#FFFFFF</item>
 		<item name="android:paddingLeft">40dp</item>
 		<item name="android:paddingRight">40dp</item>
