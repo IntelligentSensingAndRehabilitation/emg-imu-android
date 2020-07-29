@@ -30,7 +30,7 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation 'androidx.appcompat:appcompat:1.1.0'
     implementation 'com.google.android.material:material:1.1.0'
-    implementation 'no.nordicsemi.android:log:2.2.0'
+    implementation 'no.nordicsemi.android:log:2.3.0'
     implementation "no.nordicsemi.android:ble:$nordicBleLVer"
 
 
@@ -44,7 +44,7 @@ dependencies {
     implementation "com.crashlytics.sdk.android:crashlytics:$crashlyticsVer"
 
     implementation 'com.google.code.gson:gson:2.8.6'
-    implementation 'org.jetbrains:annotations:15.0'
+    implementation 'org.jetbrains:annotations:19.0.0'
 }
 
 apply plugin: 'com.google.gms.google-services'
