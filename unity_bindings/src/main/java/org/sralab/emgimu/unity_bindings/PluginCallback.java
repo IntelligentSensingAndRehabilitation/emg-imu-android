@@ -1,0 +1,6 @@
+package org.sralab.emgimu.unity_bindings;
+
+public interface PluginCallback {
+    public void onSuccess(String msg);
+    public void onError(String msg);
+}

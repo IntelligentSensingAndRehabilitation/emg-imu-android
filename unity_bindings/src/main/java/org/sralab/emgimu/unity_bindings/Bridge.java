@@ -20,4 +20,8 @@ public class Bridge extends Application
             }
         });
     }
+
+    public void RegisterCallback( final Context ctx, PluginCallback callback) {
+        callback.onSuccess("received");
+    }
 }
