@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.util.Log;
@@ -18,6 +19,8 @@ import androidx.navigation.ui.NavigationUI;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
+import org.sralab.emgimu.service.DataParcel;
+import org.sralab.emgimu.service.IEmgImuDataCallback;
 import org.sralab.emgimu.service.IEmgImuServiceBinder;
 
 public class MainActivity extends AppCompatActivity {
@@ -39,23 +42,44 @@ public class MainActivity extends AppCompatActivity {
         NavigationUI.setupWithNavController(navView, navController);
     }
 
+
+    private final IEmgImuDataCallback.Stub pwrObserver = new IEmgImuDataCallback.Stub() {
+        @Override
+        public void handleData(BluetoothDevice device, long ts, DataParcel data) {
+            Log.d(TAG, "Power callback: " + data.readVal());
+        }
+    };
+
     private IEmgImuServiceBinder mService;
     private ServiceConnection mServiceConnection = new ServiceConnection() {
         @SuppressWarnings("unchecked")
         @Override
         public void onServiceConnected(final ComponentName name, final IBinder service) {
             mService = IEmgImuServiceBinder.Stub.asInterface(service);
-
             Log.d(TAG, "connected");
-            try {
-                for (final BluetoothDevice d : mService.getManagedDevices()) {
-                    Log.d(TAG, d.getAddress());
-                    //mService.registerEmgStreamObserver(pwrObserver);
+
+            final Handler handler = new Handler();
+            handler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Log.d(TAG, "Delayed handler found: " + mService.getManagedDevices().toString() + " devices");
+                    } catch (RemoteException e) {
+                        e.printStackTrace();
+                    }
+                    try {
+                        for (final BluetoothDevice d : mService.getManagedDevices()) {
+                            Log.d(TAG, d.getAddress());
+                            mService.registerEmgPwrObserver(pwrObserver);
+                        }
+                    } catch (RemoteException e) {
+                        e.printStackTrace();
+                    }
                 }
-            } catch (RemoteException e) {
-                e.printStackTrace();
-            }
+            }, 2000);
         }
+
+
 
         @Override
         public void onServiceDisconnected(final ComponentName name) {
