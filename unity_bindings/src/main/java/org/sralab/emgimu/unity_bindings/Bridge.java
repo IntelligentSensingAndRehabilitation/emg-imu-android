@@ -51,7 +51,7 @@ public class Bridge extends Application
             Log.d(TAG, "Power callback");
 
             if (getCallback() != null) {
-                getCallback().onSuccess("Received data: " + data.readVal());
+                getCallback().onSuccess(Integer.toString(data.readVal()));
             }
         }
     };
@@ -80,7 +80,7 @@ public class Bridge extends Application
                         e.printStackTrace();
                     }
                 }
-            }, 2000);
+            }, 4000);
 
         }
 
