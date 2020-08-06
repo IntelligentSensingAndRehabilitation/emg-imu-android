@@ -213,47 +213,35 @@ public class EmgImuManager extends BleManager {
             super.initialize();
 
             log(Log.INFO, "Initializing connection");
-            requestMtu(517)
-                    .with((device, mtu) -> log(Log.INFO, "MTU Changed"))
-                    .fail((device, status) -> log(Log.WARN, "Could not set MTU"))
-                    .enqueue();
 
-            setPreferredPhy(PhyRequest.PHY_LE_2M_MASK, PhyRequest.PHY_LE_2M_MASK, PhyRequest.PHY_OPTION_NO_PREFERRED)
-                    .fail((device, status) -> log(Log.WARN, "Could not set phy"))
-                    .enqueue();
-
-            /**** Get information about device *****/
-            // TODO: if we aren't really doing anything with this data do not fetch on connection
-            // Especially if we can use a bonded device and have this cached?
-            readCharacteristic(mManufacturerCharacteristic)
-                    .with((device, data) -> mManufacturer = data.getStringValue(0))
-                    .fail((device, status) -> Log.d(TAG, "Could not read manufacturer (" + status + ")"))
-                    .enqueue();
-
-            readCharacteristic(mHardwareCharacteristic)
-                    .with((device, data) -> {
-                        mHardwareRevision = data.getStringValue(0);
-                        Log.d(TAG, "Hardware revision: " + mHardwareRevision);
-                        if (mHardwareRevision.equals("v0.3")) {
-                            mChannels = 8;
-                            Log.d(TAG, "Setting channels to 8");
-                        } else if (mHardwareRevision.equals("v0.7")) {
-                            mChannels = 2;
-                            Log.d(TAG, "Setting channels to 2");
-                        } else
-                            mChannels = 1;
-                    })
-                    .enqueue();
-
-            readCharacteristic(mFirmwareCharacteristic)
-                    .with((device, data) -> {
-                        mFirmwareRevision = data.getStringValue(0);
-                        Log.d(TAG, "Firmware revision: " + mFirmwareRevision);
-                    })
-                    .enqueue();
-
-            readCharacteristic(mSerialNumberCharacteristic)
-                    .with((device, data) -> Log.d(TAG, "Serial number; " + data.getStringValue(0)))
+            beginAtomicRequestQueue()
+                    .add(requestMtu(517)
+                        .with((device, mtu) -> log(Log.INFO, "MTU set to " + mtu))
+                        .fail((device, status) -> log(Log.WARN, "Requested MTU not supported: " + status)))
+                    .add(setPreferredPhy(PhyRequest.PHY_LE_2M_MASK, PhyRequest.PHY_LE_2M_MASK, PhyRequest.PHY_OPTION_NO_PREFERRED)
+                        .fail((device, status) -> log(Log.WARN, "Requested PHY not supported: " + status)))
+                    .add(readCharacteristic(mHardwareCharacteristic)
+                        .with((device, data) -> {
+                            mHardwareRevision = data.getStringValue(0);
+                            log(Log.INFO, "Hardware revision: " + mHardwareRevision);
+                            if (mHardwareRevision.equals("v0.3")) {
+                                mChannels = 8;
+                                log(Log.INFO, "Setting channels to 8");
+                            } else if (mHardwareRevision.equals("v0.7")) {
+                                mChannels = 2;
+                                log(Log.INFO, "Setting channels to 2");
+                            } else
+                                mChannels = 1;
+                        }))
+                    .add(readCharacteristic(mManufacturerCharacteristic)
+                        .with((device, data) -> mManufacturer = data.getStringValue(0))
+                        .fail((device, status) -> Log.d(TAG, "Could not read manufacturer (" + status + ")")))
+                    .add(readCharacteristic(mFirmwareCharacteristic)
+                        .with((device, data) -> mFirmwareRevision = data.getStringValue(0))
+                        .fail((device, status) -> log(Log.WARN, "Unable to read firmware version: " + status)))
+                    /*.add(readCharacteristic(mSerialNumberCharacteristic)
+                        .with((device, data) -> log(Log.INFO, "Serial number; " + data.getStringValue(0)))) */
+                    .done(device -> log(Log.INFO, "Target initialized. Hardware: " + mHardwareRevision + " Firmware: " + mFirmwareRevision))
                     .enqueue();
 
             setNotificationCallback(mBatteryCharacteristic).with((device ,data) -> parseBattery(device, data));
