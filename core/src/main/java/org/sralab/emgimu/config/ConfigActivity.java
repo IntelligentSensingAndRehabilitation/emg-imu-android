@@ -54,8 +54,8 @@ public class ConfigActivity extends EmgImuBaseActivity implements ScannerFragmen
 	private IEmgImuServiceBinder mService;
 	private DeviceViewModel dvm;
 
-	@Override
-	protected void onCreateView(final Bundle savedInstanceState) {
+	protected void onCreate(final Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_feature_emgimu);
 		setGUI();
 
@@ -103,39 +103,6 @@ public class ConfigActivity extends EmgImuBaseActivity implements ScannerFragmen
 
 	protected UUID getFilterUUID() {
 		return EmgImuManager.EMG_SERVICE_UUID;
-	}
-
-	@Override
-	protected int getAboutTextId() {
-		return R.string.emgimu_about_text;
-	}
-
-	@Override
-	public void onBatteryReceived(BluetoothDevice device, float battery) {
-
-	}
-
-	public void onEmgBuffReceived(BluetoothDevice device, long ts_ms, double[][] data) {
-	}
-
-	@Override
-	public void onImuAccelReceived(BluetoothDevice device, float[][] accel) {
-
-	}
-
-	@Override
-	public void onImuGyroReceived(BluetoothDevice device, float[][] gyro) {
-
-	}
-
-	@Override
-	public void onImuMagReceived(BluetoothDevice device, float[][] mag) {
-
-	}
-
-	@Override
-	public void onImuAttitudeReceived(BluetoothDevice device, float[] quaternion) {
-
 	}
 
 	/**

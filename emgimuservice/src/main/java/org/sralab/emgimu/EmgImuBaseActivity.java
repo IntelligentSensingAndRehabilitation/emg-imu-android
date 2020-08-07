@@ -1,26 +1,21 @@
 package org.sralab.emgimu;
 
 import android.app.Service;
-import android.bluetooth.BluetoothDevice;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.IBinder;
-import android.os.RemoteException;
 import android.util.Log;
 
-import org.sralab.emgimu.service.EmgImuManager;
-import org.sralab.emgimu.service.EmgImuObserver;
+import androidx.appcompat.app.AppCompatActivity;
+
 import org.sralab.emgimu.service.EmgImuService;
 import org.sralab.emgimu.service.IEmgImuServiceBinder;
 
-import java.util.UUID;
-
 import no.nordicsemi.android.nrftoolbox.profile.multiconnect.BleMulticonnectProfileService;
-import no.nordicsemi.android.nrftoolbox.profile.multiconnect.BleMulticonnectProfileServiceReadyActivity;
 
-public abstract class EmgImuBaseActivity extends BleMulticonnectProfileServiceReadyActivity implements EmgImuObserver {
+public abstract class EmgImuBaseActivity extends AppCompatActivity {
 
     /**
      * Called when activity binds to the service. The parameter is the object returned in {@link Service#onBind(Intent)} method in your service.
@@ -80,26 +75,6 @@ public abstract class EmgImuBaseActivity extends BleMulticonnectProfileServiceRe
     */
     protected abstract void onServiceUnbinded();
 
-    /**
-     * Note that this is called via the LocalBroadcastManager intents from the service
-     */
-    @Override
-    public void onEmgRawReceived(final BluetoothDevice device, int value) {
-        // Do nothing
-    }
-
-    @Override
-    public void onEmgPwrReceived(final BluetoothDevice device, int value) {
-        // Do nothing
-    }
-
-
-    @Override
-    public void onEmgClick(final BluetoothDevice device) {
-        // Do nothing
-    }
-
-    @Override
     protected Class<? extends BleMulticonnectProfileService> getServiceClass() {
         return EmgImuService.class;
     }

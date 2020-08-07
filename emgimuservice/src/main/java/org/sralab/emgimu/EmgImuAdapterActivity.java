@@ -57,49 +57,6 @@ public abstract class EmgImuAdapterActivity extends EmgImuBaseActivity {
         mDevicesView.setAdapter(null);
     }
 
-
-    public void onDeviceReady(final BluetoothDevice device) {
-        mAdapter.onDeviceReady(device);
-    }
-
-    public void onDeviceDisconnecting(final BluetoothDevice device) {
-        mAdapter.onDeviceStateChanged(device);
-    }
-
-    public void onDeviceDisconnected(final BluetoothDevice device, int reason) {
-        mAdapter.onDeviceRemoved(device);
-    }
-
-    public void onBatteryReceived(BluetoothDevice device, float battery) {
-        mAdapter.onBatteryReceived(device, battery);
-    }
-
-    public void onEmgBuffReceived(BluetoothDevice device, long ts_ms, double[][] data) {
-        mAdapter.onEmgBuffReceived(device, ts_ms, data);
-    }
-
-    public void onImuAccelReceived(BluetoothDevice device, float[][] accel) {
-        mAdapter.onImuAccelReceived(device, accel);
-    }
-
-    public void onImuGyroReceived(BluetoothDevice device, float[][] gyro) {
-        mAdapter.onImuGyroReceived(device, gyro);
-    }
-
-    public void onImuMagReceived(BluetoothDevice device, float[][] gyro) {
-        mAdapter.onImuMagReceived(device, gyro);
-    }
-
-    public void onImuAttitudeReceived(BluetoothDevice device, float[] quaternion) {
-        mAdapter.onImuAttitudeReceived(device, quaternion);
-    }
-
-    @Override
-    protected int getAboutTextId() {
-        return 0;
-    }
-
-
     public static abstract class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder> {
 
         IEmgImuServiceBinder mService;

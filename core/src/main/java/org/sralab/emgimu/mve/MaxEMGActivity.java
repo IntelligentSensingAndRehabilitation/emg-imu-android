@@ -28,7 +28,9 @@ public class MaxEMGActivity extends EmgImuBaseActivity implements EmgPowerView.O
     private BluetoothDevice mDevice;
     
     @Override
-    protected void onCreateView(final Bundle savedInstanceState) {
+    protected void onCreate(final Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_max_emg);
 
         mPwrView = findViewById(R.id.emg_power_view);
@@ -130,41 +132,6 @@ public class MaxEMGActivity extends EmgImuBaseActivity implements EmgPowerView.O
         mService = null;
     }
 
-    @Override
-    protected int getAboutTextId() {
-        return 0;
-    }
-
-    @Override
-    public void onBatteryReceived(BluetoothDevice device, float battery) {
-
-    }
-
-    @Override
-    public void onEmgBuffReceived(BluetoothDevice device, long ts_ms, double[][] data) {
-
-    }
-
-    public void onDeviceConnected(BluetoothDevice device) {
-        Log.d(TAG, "Device connected: " + device);
-
-        // Is previously connected device might be ready and this event won't fire
-        try {
-            if (mService != null && mService.isReady(device)) {
-                Log.d(TAG, "Device is already ready. Must have previously connected.");
-                onDeviceReady(device);
-            } else if (mService == null) {
-                Log.w(TAG, "Probable race condition");
-            }
-        } catch (RemoteException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void onDeviceDisconnected(BluetoothDevice device, int reason) {
-
-    }
-
     public void onDeviceReady(BluetoothDevice device) {
         // TODO: add dropdown to allow selecting device
         Log.d("DeviceAdapter", "Device added. Requested streaming: " + device);
@@ -184,7 +151,6 @@ public class MaxEMGActivity extends EmgImuBaseActivity implements EmgPowerView.O
     float mLpfValue = Float.NaN;
     final float LPF_ALPHA = 0.1f;
 
-    @Override
     public void onEmgPwrReceived(final BluetoothDevice device, int value) {
 
         // Initialize with first sample
@@ -208,26 +174,6 @@ public class MaxEMGActivity extends EmgImuBaseActivity implements EmgPowerView.O
         if (mLpfValue < mMin || Double.isNaN(mMin)) {
             updateMin(mLpfValue);
         }
-    }
-
-    @Override
-    public void onImuAccelReceived(BluetoothDevice device, float[][] accel) {
-
-    }
-
-    @Override
-    public void onImuGyroReceived(BluetoothDevice device, float[][] gyro) {
-
-    }
-
-    @Override
-    public void onImuMagReceived(BluetoothDevice device, float[][] mag) {
-
-    }
-
-    @Override
-    public void onImuAttitudeReceived(BluetoothDevice device, float[] quaternion) {
-
     }
 
     @Override
