@@ -157,28 +157,12 @@ public abstract class EmgImuBaseActivity extends BleMulticonnectProfileServiceRe
         @Override
         public void onServiceConnected(final ComponentName name, final IBinder service) {
             mService = IEmgImuServiceBinder.Stub.asInterface(service);
-            try {
-                addManagedDevices(mService.getManagedDevices());
-            } catch (RemoteException e) {
-                e.printStackTrace();
-            }
             onServiceBinded(mService);
-
-            // and notify user if device is connected
-            for (final BluetoothDevice device : getManagedDevices()) {
-                try {
-                    if (mService.isConnected(device))
-                        onDeviceConnected(device);
-                } catch (RemoteException e) {
-                    e.printStackTrace();
-                }
-            }
         }
 
         @Override
         public void onServiceDisconnected(final ComponentName name) {
             mService = null;
-            onServiceUnbinded();
         }
     };
 
@@ -227,6 +211,10 @@ public abstract class EmgImuBaseActivity extends BleMulticonnectProfileServiceRe
         return mService;
     }
 
+    /**
+    * Called when activity unbinds from the service. You may no longer use this binder methods.
+    */
+    protected abstract void onServiceUnbinded();
 
     private static IntentFilter makeIntentFilter() {
         final IntentFilter intentFilter = new IntentFilter();
@@ -290,11 +278,4 @@ public abstract class EmgImuBaseActivity extends BleMulticonnectProfileServiceRe
         return EmgImuService.class;
     }
 
-    @Override
-    protected int getLoggerProfileTitle() {
-        /*if (getService() != null)
-            return getService().getLoggerProfileTitle();
-        else*/
-            return 0;
-    }
 }

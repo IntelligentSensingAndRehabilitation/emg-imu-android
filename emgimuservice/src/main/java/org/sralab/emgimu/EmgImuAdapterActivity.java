@@ -57,45 +57,16 @@ public abstract class EmgImuAdapterActivity extends EmgImuBaseActivity {
         mDevicesView.setAdapter(null);
     }
 
-    @Override
-    public void onDeviceConnecting(final BluetoothDevice device) {
-        Log.d(TAG, "onDeviceConnecting");
-        super.onDeviceConnecting(device);
-        //mAdapter.onDeviceAdded(device);
-    }
-
-    @Override
-    public void onDeviceConnected(final BluetoothDevice device) {
-        mAdapter.onDeviceStateChanged(device);
-
-        // Is previously connected device might be ready and this event won't fire
-        try {
-            if (mService != null && mService.isReady(device)) {
-                onDeviceReady(device);
-            } else if (mService == null) {
-                Log.w(TAG, "Probable race condition");
-            }
-        } catch (RemoteException e) {
-            e.printStackTrace();
-        }
-    }
 
     public void onDeviceReady(final BluetoothDevice device) {
-        super.onDeviceReady(device);
         mAdapter.onDeviceReady(device);
     }
 
     public void onDeviceDisconnecting(final BluetoothDevice device) {
-        super.onDeviceDisconnecting(device);
         mAdapter.onDeviceStateChanged(device);
     }
 
     public void onDeviceDisconnected(final BluetoothDevice device, int reason) {
-        mAdapter.onDeviceRemoved(device);
-    }
-
-    public void onDeviceNotSupported(final BluetoothDevice device) {
-        super.onDeviceNotSupported(device);
         mAdapter.onDeviceRemoved(device);
     }
 

@@ -27,6 +27,7 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -40,6 +41,7 @@ import android.os.RemoteException;
 import android.text.TextUtils;
 import android.util.Log;
 import android.util.Pair;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.collection.SimpleArrayMap;
@@ -608,6 +610,11 @@ public class EmgImuService extends BleMulticonnectProfileService implements Conn
     @Override
     public int onStartCommand(final Intent intent, final int flags, final int startId) {
 
+        ensureBLESupported();
+        if (!isBLEEnabled()) {
+            showBLEDialog();
+        }
+
         if (intent == null) {
             mServiceLogger.d("onStartCommand called without intent. flags: " + flags + " startId " + startId);
         } else if (intent.getExtras() != null) {
@@ -731,6 +738,24 @@ public class EmgImuService extends BleMulticonnectProfileService implements Conn
                 logFetchStartId.remove(device.getAddress());
             }
         }
+    }
+
+
+    private void ensureBLESupported() {
+        if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
+            Toast.makeText(this, org.sralab.emgimu.common.R.string.no_ble, Toast.LENGTH_LONG).show();
+        }
+    }
+
+    protected boolean isBLEEnabled() {
+        final BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
+        final BluetoothAdapter adapter = bluetoothManager.getAdapter();
+        return adapter != null && adapter.isEnabled();
+    }
+
+    protected void showBLEDialog() {
+        final Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+        startActivity(enableIntent);
     }
 
     @Override

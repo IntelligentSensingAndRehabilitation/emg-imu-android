@@ -26,10 +26,12 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.PowerManager;
 import android.os.RemoteException;
 import android.provider.Settings;
 import android.util.Log;
+import android.view.View;
 import android.widget.TextView;
 
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -40,9 +42,13 @@ import org.sralab.emgimu.service.DataParcel;
 import org.sralab.emgimu.service.IEmgImuDataCallback;
 import org.sralab.emgimu.service.IEmgImuServiceBinder;
 
+import java.util.UUID;
+
+import no.nordicsemi.android.nrftoolbox.scanner.ScannerFragment;
 import no.nordicsemi.android.nrftoolbox.widget.DividerItemDecoration;
 
-public class ConfigActivity extends EmgImuBaseActivity {
+public class ConfigActivity extends EmgImuBaseActivity implements ScannerFragment.OnDeviceSelectedListener {
+
 	private static final String TAG = "ConfigActivity";
 
 	private RecyclerView mDevicesView;
@@ -85,6 +91,23 @@ public class ConfigActivity extends EmgImuBaseActivity {
 		} catch (RemoteException e) {
 			e.printStackTrace();
 		}
+
+
+		final Handler handler = new Handler();
+		handler.postDelayed(() -> {
+			try {
+				Log.d(TAG, "Delayed handler found: " + mService.getManagedDevices().toString() + " devices");
+			} catch (RemoteException e) {
+				e.printStackTrace();
+			}
+			try {
+				for (final BluetoothDevice d : mService.getManagedDevices()) {
+					mService.registerEmgPwrObserver(pwrObserver);
+				}
+			} catch (RemoteException e) {
+				e.printStackTrace();
+			}
+		}, 2000);
 	}
 
 	@Override
@@ -97,27 +120,6 @@ public class ConfigActivity extends EmgImuBaseActivity {
 		return R.string.emgimu_about_text;
 	}
 
-	public void onDeviceConnecting(final BluetoothDevice device) {
-		if (mAdapter != null)
-			mAdapter.onDeviceAdded(device);
-	}
-
-	public void onDeviceConnected(final BluetoothDevice device) {
-		if (mAdapter != null)
-			mAdapter.onDeviceStateChanged(device);
-
-		// Is previously connected device might be ready and this event won't fire
-		try {
-			if (mService != null && mService.isReady(device)) {
-				onDeviceReady(device);
-			} else if (mService == null) {
-				Log.w(TAG, "Probable race condition");
-			}
-		} catch (RemoteException e) {
-			e.printStackTrace();
-		}
-	}
-
 	private final IEmgImuDataCallback.Stub pwrObserver = new IEmgImuDataCallback.Stub() {
 		@Override
 		public void handleData(BluetoothDevice device, long ts, DataParcel data) {
@@ -128,40 +130,6 @@ public class ConfigActivity extends EmgImuBaseActivity {
 		}
 	};
 
-	public void onDeviceReady(final BluetoothDevice device) {
-		if (mAdapter != null)
-			mAdapter.onDeviceReady(device);
-
-		Log.d(TAG, "Registering callback");
-		try {
-			mService.registerEmgPwrObserver(pwrObserver);
-		} catch (RemoteException e) {
-			e.printStackTrace();
-		}
-
-	}
-
-	public void onDeviceDisconnecting(final BluetoothDevice device) {
-		if (mAdapter != null)
-			mAdapter.onDeviceStateChanged(device);
-		try {
-			mService.unregisterEmgPwrObserver(pwrObserver);
-		} catch (RemoteException e) {
-			e.printStackTrace();
-		}
-	}
-
-	public void onDeviceDisconnected(final BluetoothDevice device, int reason) {
-		Log.d(TAG, "Disconnected");
-		if (mAdapter != null)
-			mAdapter.onDeviceRemoved(device);
-	}
-
-	public void onDeviceNotSupported(final BluetoothDevice device) {
-		super.onDeviceNotSupported(device);
-		if (mAdapter != null)
-			mAdapter.onDeviceRemoved(device);
-	}
 
     public void onEmgPwrReceived(final BluetoothDevice device, int value) {
 
@@ -191,6 +159,14 @@ public class ConfigActivity extends EmgImuBaseActivity {
 	public void onEmgBuffReceived(BluetoothDevice device, long ts_ms, double[][] data) {
 	}
 
+
+	/**
+	 * Called when user press ADD DEVICE button. See layout files -> onClick attribute.
+	 */
+	public void onAddDeviceClicked(final View view) {
+		showDeviceScanningDialog(getFilterUUID());
+	}
+
 	public void onDeviceSelected(final BluetoothDevice device, final String name) {
 	    super.onDeviceSelected(device, name);
 		try {
@@ -198,6 +174,23 @@ public class ConfigActivity extends EmgImuBaseActivity {
 		} catch (RemoteException e) {
 			e.printStackTrace();
 		}
+	}
+
+	@Override
+	public void onDialogCanceled() {
+
+	}
+
+	/**
+	 * Shows the scanner fragment.
+	 *
+	 * @param filter               the UUID filter used to filter out available devices. The fragment will always show all bonded devices as there is no information about their
+	 *                             services
+	 * @see #getFilterUUID()
+	 */
+	private void showDeviceScanningDialog(final UUID filter) {
+		final ScannerFragment dialog = ScannerFragment.getInstance(filter);
+		dialog.show(getSupportFragmentManager(), "scan_fragment");
 	}
 
 }

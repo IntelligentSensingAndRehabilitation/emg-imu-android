@@ -21,37 +21,19 @@
  */
 package no.nordicsemi.android.nrftoolbox.profile.multiconnect;
 
-import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothManager;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.content.pm.PackageManager;
-import android.net.Uri;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
-import org.jetbrains.annotations.NotNull;
 import org.sralab.emgimu.common.R;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.UUID;
 
-import no.nordicsemi.android.ble.observer.ConnectionObserver;
 import no.nordicsemi.android.nrftoolbox.AppHelpFragment;
-import no.nordicsemi.android.nrftoolbox.scanner.ScannerFragment;
-import no.nordicsemi.android.nrftoolbox.utility.DebugLogger;
 
 /**
  * <p>
@@ -66,69 +48,12 @@ import no.nordicsemi.android.nrftoolbox.utility.DebugLogger;
  * listens for updates from them. When entering back to the activity, activity will to bind to the service and refresh UI.
  * </p>
  */
-public abstract class BleMulticonnectProfileServiceReadyActivity extends AppCompatActivity implements
-		ScannerFragment.OnDeviceSelectedListener, ConnectionObserver {
+public abstract class BleMulticonnectProfileServiceReadyActivity extends AppCompatActivity {
 	private static final String TAG = "BleMulticonnectProfileServiceReadyActivity";
-
-	protected static final int REQUEST_ENABLE_BT = 2;
-
-	private List<BluetoothDevice> mManagedDevices;
-
-	private final BroadcastReceiver mCommonBroadcastReceiver = new BroadcastReceiver() {
-		@Override
-		public void onReceive(final Context context, final Intent intent) {
-			final BluetoothDevice bluetoothDevice = intent.getParcelableExtra(BleMulticonnectProfileService.EXTRA_DEVICE);
-			final String action = intent.getAction();
-			switch (action) {
-				case BleMulticonnectProfileService.BROADCAST_CONNECTION_STATE: {
-					final int state = intent.getIntExtra(BleMulticonnectProfileService.EXTRA_CONNECTION_STATE, BleMulticonnectProfileService.STATE_DISCONNECTED);
-
-					switch (state) {
-						case BleMulticonnectProfileService.STATE_CONNECTED: {
-							onDeviceConnected(bluetoothDevice);
-							break;
-						}
-						case BleMulticonnectProfileService.STATE_DISCONNECTED: {
-							onDeviceDisconnected(bluetoothDevice, ConnectionObserver.REASON_UNKNOWN);
-							break;
-						}
-						case BleMulticonnectProfileService.STATE_CONNECTING: {
-							onDeviceConnecting(bluetoothDevice);
-							break;
-						}
-						case BleMulticonnectProfileService.STATE_DISCONNECTING: {
-							onDeviceDisconnecting(bluetoothDevice);
-							break;
-						}
-						default:
-							// there should be no other actions
-							break;
-					}
-					break;
-				}
-				case BleMulticonnectProfileService.BROADCAST_DEVICE_READY: {
-					onDeviceReady(bluetoothDevice);
-					break;
-				}
-				case BleMulticonnectProfileService.BROADCAST_ERROR: {
-					final String message = intent.getStringExtra(BleMulticonnectProfileService.EXTRA_ERROR_MESSAGE);
-					final int errorCode = intent.getIntExtra(BleMulticonnectProfileService.EXTRA_ERROR_CODE, 0);
-					onError(bluetoothDevice, message, errorCode);
-					break;
-				}
-			}
-		}
-	};
 
 	@Override
 	protected final void onCreate(final Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		mManagedDevices = new ArrayList<>();
-
-		ensureBLESupported();
-		if (!isBLEEnabled()) {
-			showBLEDialog();
-		}
 
 		// In onInitialize method a final class may register local broadcast receivers that will listen for events from the service
 		onInitialize(savedInstanceState);
@@ -142,29 +67,7 @@ public abstract class BleMulticonnectProfileServiceReadyActivity extends AppComp
 		setUpView();
 		// View is ready to be used
 		onViewCreated(savedInstanceState);
-
-		LocalBroadcastManager.getInstance(this).registerReceiver(mCommonBroadcastReceiver, makeIntentFilter());
 	}
-
-	@Override
-	protected void onDestroy() {
-		super.onDestroy();
-
-		LocalBroadcastManager.getInstance(this).unregisterReceiver(mCommonBroadcastReceiver);
-	}
-
-	private static IntentFilter makeIntentFilter() {
-		final IntentFilter intentFilter = new IntentFilter();
-		intentFilter.addAction(BleMulticonnectProfileService.BROADCAST_CONNECTION_STATE);
-		intentFilter.addAction(BleMulticonnectProfileService.BROADCAST_DEVICE_READY);
-		intentFilter.addAction(BleMulticonnectProfileService.BROADCAST_ERROR);
-		return intentFilter;
-	}
-
-	/**
-	 * Called when activity unbinds from the service. You may no longer use this binder methods.
-	 */
-	protected abstract void onServiceUnbinded();
 
 	/**
 	 * Returns the service class for sensor communication. The service class must derive from {@link BleMulticonnectProfileService} in order to operate with this class.
@@ -236,86 +139,6 @@ public abstract class BleMulticonnectProfileServiceReadyActivity extends AppComp
 	}
 
 	/**
-	 * Called when user press ADD DEVICE button. See layout files -> onClick attribute.
-	 */
-	public void onAddDeviceClicked(final View view) {
-		if (isBLEEnabled()) {
-			showDeviceScanningDialog(getFilterUUID());
-		} else {
-			showBLEDialog();
-		}
-	}
-
-	/**
-	 * Returns the title resource id that will be used to create logger session. If 0 is returned (default) logger will not be used.
-	 *
-	 * @return the title resource id
-	 */
-	protected int getLoggerProfileTitle() {
-		return 0;
-	}
-
-	/**
-	 * This method may return the local log content provider authority if local log sessions are supported.
-	 *
-	 * @return local log session content provider URI
-	 */
-	protected Uri getLocalAuthorityLogger() {
-		return null;
-	}
-
-	@Override
-	abstract public void onDeviceSelected(@NotNull final BluetoothDevice device, @NotNull final String name);
-
-	@Override
-	public void onDialogCanceled() {
-		// do nothing
-	}
-
-	public void onDeviceConnecting(final BluetoothDevice device) {
-		// empty default implementation
-	}
-
-	public void onDeviceDisconnecting(final BluetoothDevice device) {
-		// empty default implementation
-	}
-
-	public void onDeviceFailedToConnect(final BluetoothDevice device, int reason) {
-
-	}
-
-	public void onDeviceReady(final BluetoothDevice device) {
-		// empty default implementation
-	}
-
-	public void onDeviceNotSupported(final BluetoothDevice device) {
-		showToast(R.string.not_supported);
-	}
-
-	public void onError(final BluetoothDevice device, final String message, final int errorCode) {
-		DebugLogger.e(TAG, "Error occurred: " + message + ",  error code: " + errorCode);
-		showToast(message + " (" + errorCode + ")");
-	}
-
-	/**
-	 * Shows a message as a Toast notification. This method is thread safe, you can call it from any thread
-	 *
-	 * @param message a message to be shown
-	 */
-	protected void showToast(final String message) {
-		runOnUiThread(() -> Toast.makeText(BleMulticonnectProfileServiceReadyActivity.this, message, Toast.LENGTH_LONG).show());
-	}
-
-	/**
-	 * Shows a message as a Toast notification. This method is thread safe, you can call it from any thread
-	 *
-	 * @param messageResId an resource id of the message to be shown
-	 */
-	protected void showToast(final int messageResId) {
-		runOnUiThread(() -> Toast.makeText(BleMulticonnectProfileServiceReadyActivity.this, messageResId, Toast.LENGTH_SHORT).show());
-	}
-
-	/**
 	 * Returns the string resource id that will be shown in About box
 	 *
 	 * @return the about resource id
@@ -330,46 +153,4 @@ public abstract class BleMulticonnectProfileServiceReadyActivity extends AppComp
 	 */
 	protected abstract UUID getFilterUUID();
 
-	/**
-	 * Returns unmodifiable list of managed devices. Managed device is a device the was selected on ScannerFragment until it's removed from the managed list.
-	 * It does not have to be connected at that moment.
-	 * @return unmodifiable list of managed devices
-	 */
-	protected List<BluetoothDevice> getManagedDevices() {
-		return Collections.unmodifiableList(mManagedDevices);
-	}
-
-	protected void addManagedDevices(List<BluetoothDevice> devices) {
-		mManagedDevices.addAll(devices);
-	}
-
-	/**
-	 * Shows the scanner fragment.
-	 *
-	 * @param filter               the UUID filter used to filter out available devices. The fragment will always show all bonded devices as there is no information about their
-	 *                             services
-	 * @see #getFilterUUID()
-	 */
-	private void showDeviceScanningDialog(final UUID filter) {
-		final ScannerFragment dialog = ScannerFragment.getInstance(filter);
-		dialog.show(getSupportFragmentManager(), "scan_fragment");
-	}
-
-	private void ensureBLESupported() {
-		if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
-			Toast.makeText(this, R.string.no_ble, Toast.LENGTH_LONG).show();
-			finish();
-		}
-	}
-
-	protected boolean isBLEEnabled() {
-		final BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
-		final BluetoothAdapter adapter = bluetoothManager.getAdapter();
-		return adapter != null && adapter.isEnabled();
-	}
-
-	protected void showBLEDialog() {
-		final Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-		startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
-	}
 }

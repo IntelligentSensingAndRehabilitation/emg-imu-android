@@ -106,17 +106,6 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
         notifyItemChanged(position);
     }
 
-	public void onDeviceAdded(final BluetoothDevice device) {
-        final int position = mDevices.indexOf(device);
-		if (position == -1) {
-			notifyItemInserted(mDevices.size() - 1);
-		} else {
-			// This may happen when Bluetooth adapter was switched off and on again
-			// while there were devices on the list.
-			notifyItemChanged(position);
-		}
-	}
-
 	public void onDeviceRemoved(final BluetoothDevice device) {
         notifyDataSetChanged(); // we don't have position of the removed device here
 
@@ -128,28 +117,6 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
         // graphs forces this to happen.
         mDeviceLineGraphMap.clear();
 	}
-
-	public void onDeviceStateChanged(final BluetoothDevice device) {
-		final int position = mDevices.indexOf(device);
-
-		Log.d(TAG, "Device updated: " + position);
-        if (position >= 0)
-            notifyItemChanged(position);
-        else
-            // In principle we should know which device was updated. However
-            // if the service removes a device from the list when it goes to
-            // disconnected, then the device might be dropped.
-            notifyDataSetChanged(); // we don't have position of the removed device here
-	}
-
-    public void onDeviceReady(final BluetoothDevice device) {
-        Log.d("DeviceAdapter", "Device added. Requested streaming: " + device);
-        try {
-            mService.streamPwr(device);
-        } catch (RemoteException e) {
-            e.printStackTrace();
-        }
-    }
 
 	public void onPwrValueReceived(final BluetoothDevice device, int pwrValue) {
 
@@ -167,7 +134,6 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
         }else
             Log.e(TAG, "Device missing");
 
-        //notifyDataSetChanged();
     }
 
 	public class ViewHolder extends RecyclerView.ViewHolder {
