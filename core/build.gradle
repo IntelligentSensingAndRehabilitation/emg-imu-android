@@ -39,6 +39,8 @@ dependencies {
         exclude group: 'xpp3', module: 'xpp3'
     }
 
+    implementation files('../common/libs/achartengine-1.2.0.jar')
+
     implementation "com.google.firebase:firebase-core:$firebaseCoreVer"
     implementation "com.crashlytics.sdk.android:crashlytics:$crashlyticsVer"
     implementation 'androidx.constraintlayout:constraintlayout:1.1.3'

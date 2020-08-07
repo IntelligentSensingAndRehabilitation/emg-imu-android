@@ -26,21 +26,18 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
 import android.os.PowerManager;
 import android.os.RemoteException;
 import android.provider.Settings;
-import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import org.sralab.emgimu.EmgImuBaseActivity;
-import org.sralab.emgimu.service.DataParcel;
 import org.sralab.emgimu.service.EmgImuManager;
-import org.sralab.emgimu.service.IEmgImuDataCallback;
 import org.sralab.emgimu.service.IEmgImuServiceBinder;
 
 import java.util.UUID;
@@ -55,6 +52,7 @@ public class ConfigActivity extends EmgImuBaseActivity implements ScannerFragmen
 	private RecyclerView mDevicesView;
 	private DeviceAdapter mAdapter;
 	private IEmgImuServiceBinder mService;
+	private DeviceViewModel dvm;
 
 	@Override
 	protected void onCreateView(final Bundle savedInstanceState) {
@@ -72,6 +70,11 @@ public class ConfigActivity extends EmgImuBaseActivity implements ScannerFragmen
 				startActivity(intent);
 			}
 		}
+
+		dvm = new ViewModelProvider.AndroidViewModelFactory(getApplication()).create(DeviceViewModel.class);
+		dvm.getDevicesLiveData().observe(this, devices -> mAdapter.notifyDataSetChanged());
+
+		mDevicesView.setAdapter(mAdapter = new DeviceAdapter(dvm));
 	}
 
 	private void setGUI() {
@@ -82,7 +85,6 @@ public class ConfigActivity extends EmgImuBaseActivity implements ScannerFragmen
 
 	@Override
 	protected void onServiceBinded(final IEmgImuServiceBinder binder) {
-		mDevicesView.setAdapter(mAdapter = new DeviceAdapter(binder));
         mService = binder;
 		String user = null;
 		try {
@@ -92,28 +94,11 @@ public class ConfigActivity extends EmgImuBaseActivity implements ScannerFragmen
 		} catch (RemoteException e) {
 			e.printStackTrace();
 		}
-
-
-		final Handler handler = new Handler();
-		handler.postDelayed(() -> {
-			try {
-				Log.d(TAG, "Delayed handler found: " + mService.getManagedDevices().toString() + " devices");
-			} catch (RemoteException e) {
-				e.printStackTrace();
-			}
-			try {
-				for (final BluetoothDevice d : mService.getManagedDevices()) {
-					mService.registerEmgPwrObserver(pwrObserver);
-				}
-			} catch (RemoteException e) {
-				e.printStackTrace();
-			}
-		}, 2000);
 	}
 
 	@Override
 	protected void onServiceUnbinded() {
-		mDevicesView.setAdapter(mAdapter = null);
+
 	}
 
 	protected UUID getFilterUUID() {
@@ -125,45 +110,34 @@ public class ConfigActivity extends EmgImuBaseActivity implements ScannerFragmen
 		return R.string.emgimu_about_text;
 	}
 
-	private final IEmgImuDataCallback.Stub pwrObserver = new IEmgImuDataCallback.Stub() {
-		@Override
-		public void handleData(BluetoothDevice device, long ts, DataParcel data) {
-			//Log.d(TAG, "Data callback: " + data.readVal());
-			if (mAdapter != null)
-				mAdapter.onPwrValueReceived(device, data.readVal()); // Adapter will access value directly from service
-
-		}
-	};
-
-
-    public void onEmgPwrReceived(final BluetoothDevice device, int value) {
-
-    }
-
-	public void onImuAccelReceived(BluetoothDevice device, float[][] accel) {
-
-	}
-
-	public void onImuGyroReceived(BluetoothDevice device, float[][] gyro) {
-
-	}
-
-	public void onImuMagReceived(BluetoothDevice device, float[][] mag) {
-
-	}
-
-	public void onImuAttitudeReceived(BluetoothDevice device, float[] quaternion) {
-
-	}
-
+	@Override
 	public void onBatteryReceived(BluetoothDevice device, float battery) {
-		if (mAdapter != null)
-			mAdapter.onBatteryValueReceived(device);
+
 	}
 
 	public void onEmgBuffReceived(BluetoothDevice device, long ts_ms, double[][] data) {
 	}
-	
+
+	@Override
+	public void onImuAccelReceived(BluetoothDevice device, float[][] accel) {
+
+	}
+
+	@Override
+	public void onImuGyroReceived(BluetoothDevice device, float[][] gyro) {
+
+	}
+
+	@Override
+	public void onImuMagReceived(BluetoothDevice device, float[][] mag) {
+
+	}
+
+	@Override
+	public void onImuAttitudeReceived(BluetoothDevice device, float[] quaternion) {
+
+	}
+
 	/**
 	 * Called when user press ADD DEVICE button. See layout files -> onClick attribute.
 	 */
