@@ -31,8 +31,6 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import org.sralab.emgimu.common.R;
 
-import java.util.UUID;
-
 import no.nordicsemi.android.nrftoolbox.AppHelpFragment;
 
 /**
@@ -144,13 +142,5 @@ public abstract class BleMulticonnectProfileServiceReadyActivity extends AppComp
 	 * @return the about resource id
 	 */
 	protected abstract int getAboutTextId();
-
-	/**
-	 * The UUID filter is used to filter out available devices that does not have such UUID in their advertisement packet. See also:
-	 * {@link #isChangingConfigurations()}.
-	 *
-	 * @return the required UUID or <code>null</code>
-	 */
-	protected abstract UUID getFilterUUID();
 
 }

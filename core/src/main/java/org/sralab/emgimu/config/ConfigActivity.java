@@ -39,6 +39,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import org.sralab.emgimu.EmgImuBaseActivity;
 import org.sralab.emgimu.service.DataParcel;
+import org.sralab.emgimu.service.EmgImuManager;
 import org.sralab.emgimu.service.IEmgImuDataCallback;
 import org.sralab.emgimu.service.IEmgImuServiceBinder;
 
@@ -115,6 +116,10 @@ public class ConfigActivity extends EmgImuBaseActivity implements ScannerFragmen
 		mDevicesView.setAdapter(mAdapter = null);
 	}
 
+	protected UUID getFilterUUID() {
+		return EmgImuManager.EMG_SERVICE_UUID;
+	}
+
 	@Override
 	protected int getAboutTextId() {
 		return R.string.emgimu_about_text;
@@ -158,8 +163,7 @@ public class ConfigActivity extends EmgImuBaseActivity implements ScannerFragmen
 
 	public void onEmgBuffReceived(BluetoothDevice device, long ts_ms, double[][] data) {
 	}
-
-
+	
 	/**
 	 * Called when user press ADD DEVICE button. See layout files -> onClick attribute.
 	 */
@@ -168,8 +172,8 @@ public class ConfigActivity extends EmgImuBaseActivity implements ScannerFragmen
 	}
 
 	public void onDeviceSelected(final BluetoothDevice device, final String name) {
-	    super.onDeviceSelected(device, name);
 		try {
+			mService.connect(device);
 			getService().updateSavedDevices();
 		} catch (RemoteException e) {
 			e.printStackTrace();
