@@ -13,28 +13,18 @@ oneway interface IEmgImuDataCallback {
 
 interface IEmgImuServiceBinder  {
 
-    List<BluetoothDevice> getManagedDevices();
-    void connect(in BluetoothDevice device);
-    void disconnect(in BluetoothDevice device);
-    boolean isConnected(in BluetoothDevice device);
-    boolean isReady(in BluetoothDevice device);
-    int getConnectionState(in BluetoothDevice device);
-    void setActivityIsChangingConfiguration(boolean changing);
-
-    int getLoggerProfileTitle();
-
-    void setPwrRange(in BluetoothDevice device, float min, float max);
-    void setClickThreshold(in BluetoothDevice device, float min, float max);
-    float getClickThreshold(in BluetoothDevice device);
-    float getMinPwr(in BluetoothDevice device);
-    float getMaxPwr(in BluetoothDevice device);
-    int getEmgPwrValue(in BluetoothDevice device);
-    double getBattery(in BluetoothDevice device);
-    void streamPwr(in BluetoothDevice device);
+    // User management
     String getUser();
 
-    void updateSavedDevices();
+    // Device management
+    List<BluetoothDevice> getManagedDevices();
+    void connectDevice(in BluetoothDevice device);
+    void disconnectDevice(in BluetoothDevice device);
+    int getConnectionState(in BluetoothDevice device);
+    // boolean isConnected(in BluetoothDevice device);
+    // boolean isReady(in BluetoothDevice device);
 
+    // For receiving data
     void registerEmgStreamObserver(IEmgImuDataCallback callback);
     void unregisterEmgStreamObserver(IEmgImuDataCallback callback);
     void registerEmgPwrObserver(IEmgImuDataCallback callback);

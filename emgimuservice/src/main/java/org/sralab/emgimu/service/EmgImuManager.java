@@ -1309,7 +1309,7 @@ public class EmgImuManager extends BleManager {
         if (value > threshold_high && overThreshold == false && refractory) {
             mThresholdTime = eventTime; // Store this time
             overThreshold = true;
-            mCallbacks.onEmgClick(device);
+            //mCallbacks.onEmgClick(device);
         } else if (value < threshold_low && overThreshold == true) {
             overThreshold = false;
         }

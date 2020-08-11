@@ -105,30 +105,8 @@ public class EmgImuService extends BleMulticonnectProfileService implements Conn
     public static final String EXTRA_BATTERY_LEVEL = "org.sralab.emgimu.EXTRA_BATTERY";
 
     // Broadcast messages for EMG activity
-    public static final String BROADCAST_EMG_RAW = "org.sralab.emgimu.BROADCAST_EMG_RAW";
-    public static final String BROADCAST_EMG_PWR = "org.sralab.emgimu.BROADCAST_EMG_PWR";
-    public static final String BROADCAST_EMG_BUFF = "org.sralab.emgimu.BROADCAST_EMG_BUFF";
-    public static final String BROADCAST_EMG_CLICK = "org.sralab.emgimu.BROADCAST_EMG_CLICK";
-
-    public static final String EXTRA_EMG_RAW = "org.sralab.emgimu.EXTRA_EMG_RAW";
-    public static final String EXTRA_EMG_PWR = "org.sralab.emgimu.EXTRA_EMG_PWR";
-    public static final String EXTRA_EMG_BUFF = "org.sralab.emgimu.EXTRA_EMG_BUFF";
-    public static final String EXTRA_EMG_CHANNELS = "org.sralab.emgimu.EXTRA_EMG_CHANNELS";
-    public static final String EXTRA_EMG_TS_MS = "org.sralab.emgimu.EXTRA_EMG_TS_MS";
-
     public static final String INTENT_FETCH_LOG = "org.sralab.INTENT_FETCH_LOG";
     public static final String INTENT_DEVICE_MAC = "org.sralab.INTENT_DEVICE_MAC";
-
-    // Broadcast messages for IMU activity
-    public static final String BROADCAST_IMU_ACCEL = "org.sralab.emgimu.BROADCAST_IMU_ACCEL";
-    public static final String BROADCAST_IMU_GYRO = "org.sralab.emgimu.BROADCAST_IMU_GYRO";
-    public static final String BROADCAST_IMU_MAG = "org.sralab.emgimu.BROADCAST_IMU_MAG";
-    public static final String BROADCAST_IMU_ATTITUDE = "org.sralab.emgimu.BROADCAST_IMU_ATTITUDE";
-
-    public static final String EXTRA_IMU_ACCEL = "org.sralab.emgimu.EXTRA_IMU_ACCEL";
-    public static final String EXTRA_IMU_GYRO = "org.sralab.emgimu.EXTRA_IMU_GYRO";
-    public static final String EXTRA_IMU_MAG = "org.sralab.emgimu.EXTRA_IMU_MAG";
-    public static final String EXTRA_IMU_ATTITUDE = "org.sralab.emgimu.EXTRA_IMU_ATTITUDE";
 
     public static final String SERVICE_PREFERENCES = "org.sralab.emgimu.PREFERENCES";
     public static final String DEVICE_PREFERENCE = "org.sralab.emgimu.DEVICE_LIST";
@@ -186,7 +164,7 @@ public class EmgImuService extends BleMulticonnectProfileService implements Conn
             return EmgImuService.this.getManagedDevices();
         }
 
-        public void connect(@NotNull final BluetoothDevice device) throws RemoteException {
+        public void connectDevice(@NotNull final BluetoothDevice device) throws RemoteException {
             EmgImuService.this.connect(device);
         }
 
@@ -195,7 +173,7 @@ public class EmgImuService extends BleMulticonnectProfileService implements Conn
          * if we are not connected to the device. The onDeviceDisconnected callback only
          * occurs if we are initially connected.
          */
-        public void disconnect(@NotNull final BluetoothDevice device) throws RemoteException {
+        public void disconnectDevice(@NotNull final BluetoothDevice device) throws RemoteException {
             EmgImuService.this.disconnect(device);
             updateSavedDevices();
         }
@@ -210,72 +188,6 @@ public class EmgImuService extends BleMulticonnectProfileService implements Conn
 
         public int getConnectionState(@NotNull final BluetoothDevice device) throws RemoteException {
             return EmgImuService.this.getConnectionState(device);
-        }
-
-        public void setActivityIsChangingConfiguration(boolean changing) throws RemoteException {
-            EmgImuService.this.setActivityIsChangingConfiguration(changing);
-        }
-
-        /***
-         * Check is all devices are connected
-         * @return true if all the devices are saved are connected
-         */
-        public boolean isConnected() {
-            List<BluetoothDevice> devices = getSavedDevices();
-            for (BluetoothDevice device : devices) {
-                if (!EmgImuService.this.isConnected(device))
-                    return false;
-            }
-            return true;
-        }
-
-        /**
-         * Returns the last received EMG PWR value.
-         *
-         * @param device the device of which battery level should be returned
-         * @return emg value or -1 if no value was received or characteristic was not found
-         */
-        public int getEmgPwrValue(final BluetoothDevice device) {
-            final EmgImuManager manager = (EmgImuManager) getBleManager(device);
-            return manager.getEmgPwr();
-        }
-
-        /**
-         * Returns the last received EMG PWR rescaled.
-         *
-         * @param device the device of which battery level should be returned
-         * @return emg value or -1 if no value was received or characteristic was not found
-         */
-        public double getEmgPwrRescaled(final BluetoothDevice device) {
-            final EmgImuManager manager = (EmgImuManager) getBleManager(device);
-            return manager.getEmgPwrScaled();
-        }
-
-        /**
-         * Returns the last received EMG buffered value.
-         *
-         * @param device the device of which battery level should be returned
-         * @return emg value or -1 if no value was received or characteristic was not found
-         */
-        public double[][] getEmgBuffValue(final BluetoothDevice device) {
-            final EmgImuManager manager = (EmgImuManager) getBleManager(device);
-            return manager.getEmgBuff();
-        }
-
-        /**
-         * Configure a device to stream the EMG processed power (default)
-         */
-        public void streamPwr(final BluetoothDevice device) {
-            final EmgImuManager manager = (EmgImuManager) getBleManager(device);
-            manager.enablePowerStreamingMode();
-        }
-
-        /**
-         * Configure a device to stream the buffered data stream
-         */
-        public void streamBuffered(final BluetoothDevice device) {
-            final EmgImuManager manager = (EmgImuManager) getBleManager(device);
-            manager.enableBufferedStreamingMode();
         }
 
         /**
@@ -502,23 +414,6 @@ public class EmgImuService extends BleMulticonnectProfileService implements Conn
 		return manager;
 	}
 
-	/**
-	 * This broadcast receiver listens for {@link #ACTION_DISCONNECT} that may be fired by pressing Disconnect action button on the notification.
-	 */
-	private final BroadcastReceiver mDisconnectActionBroadcastReceiver = new BroadcastReceiver() {
-		@Override
-		public void onReceive(final Context context, final Intent intent) {
-			final BluetoothDevice device = intent.getParcelableExtra(EXTRA_DEVICE);
-			//mBinder.log(device, LogContract.Log.Level.INFO, "[Notification] DISCONNECT action pressed");
-            try {
-                mBinder.disconnect(device);
-            } catch (RemoteException e) {
-                e.printStackTrace();
-            }
-        }
-	};
-
-
 	@Override
     /**
      * Always called when service started, either by binding or startService. call from
@@ -538,8 +433,6 @@ public class EmgImuService extends BleMulticonnectProfileService implements Conn
         }
 
         mServiceLogger.d("onServiceCreated");
-
-	    registerReceiver(mDisconnectActionBroadcastReceiver, new IntentFilter(ACTION_DISCONNECT));
 
         mAuth = FirebaseAuth.getInstance();
         mToken = null;
@@ -674,7 +567,7 @@ public class EmgImuService extends BleMulticonnectProfileService implements Conn
             }
 
             try {
-                mBinder.connect(device); //,  getLogger(device));
+                mBinder.connectDevice(device); //,  getLogger(device));
             } catch (RemoteException e) {
                 e.printStackTrace();
             }
@@ -797,8 +690,6 @@ public class EmgImuService extends BleMulticonnectProfileService implements Conn
         //mBinder.log(LogContract.Log.Level.INFO, "onServicesStopped");
 
 		cancelNotifications();
-
-		unregisterReceiver(mDisconnectActionBroadcastReceiver);
 
 		super.onServiceStopped();
 
@@ -1025,7 +916,7 @@ public class EmgImuService extends BleMulticonnectProfileService implements Conn
 
         for (final BluetoothDevice device : devices) {
             try {
-                mBinder.connect(device); //, getLogger(device));
+                mBinder.connectDevice(device); //, getLogger(device));
             } catch (RemoteException e) {
                 e.printStackTrace();
             }
@@ -1177,28 +1068,15 @@ public class EmgImuService extends BleMulticonnectProfileService implements Conn
 
     @Override
     public void onBatteryReceived(BluetoothDevice device, float battery) {
-        final Intent broadcast = new Intent(BROADCAST_BATTERY_LEVEL);
-        broadcast.putExtra(EXTRA_DEVICE, device);
-        broadcast.putExtra(EXTRA_BATTERY_LEVEL, battery);
-        LocalBroadcastManager.getInstance(this).sendBroadcast(broadcast);
     }
 
     @Override
     public void onEmgRawReceived(final BluetoothDevice device, int value)
     {
-        final Intent broadcast = new Intent(BROADCAST_EMG_RAW);
-        broadcast.putExtra(EXTRA_DEVICE, device);
-        broadcast.putExtra(EXTRA_EMG_RAW, value);
-        LocalBroadcastManager.getInstance(this).sendBroadcast(broadcast);
     }
 
     public void onEmgPwrReceived(final BluetoothDevice device, int value)
     {
-        final Intent broadcast = new Intent(BROADCAST_EMG_PWR);
-        broadcast.putExtra(EXTRA_DEVICE, device);
-        broadcast.putExtra(EXTRA_EMG_PWR, value);
-        LocalBroadcastManager.getInstance(this).sendBroadcast(broadcast);
-
         if (networkStreaming != null && networkStreaming.isConnected()) {
             double [] data = {(double) value};
             networkStreaming.streamEmgPwr(device, new Date().getTime(), data);
@@ -1213,7 +1091,6 @@ public class EmgImuService extends BleMulticonnectProfileService implements Conn
                 e.printStackTrace();
             }
         }
-
     }
 
     @Override
@@ -1225,13 +1102,6 @@ public class EmgImuService extends BleMulticonnectProfileService implements Conn
 	    for (int i = 0; i < CHANNELS; i++)
 	        for (int j = 0; j < SAMPLES; j++)
 	            linearizedData[i + j * CHANNELS] = data[i][j];
-
-        final Intent broadcast = new Intent(BROADCAST_EMG_BUFF);
-        broadcast.putExtra(EXTRA_DEVICE, device);
-        broadcast.putExtra(EXTRA_EMG_CHANNELS, CHANNELS);
-        broadcast.putExtra(EXTRA_EMG_TS_MS, ts_ms);
-        broadcast.putExtra(EXTRA_EMG_BUFF, linearizedData);
-        LocalBroadcastManager.getInstance(this).sendBroadcast(broadcast);
 
         // If EMG decoder exists, push data through this
         if (emgDecoder != null) {
@@ -1269,12 +1139,6 @@ public class EmgImuService extends BleMulticonnectProfileService implements Conn
 
     }
 
-    public void onEmgClick(final BluetoothDevice device) {
-        final Intent broadcast = new Intent(BROADCAST_EMG_CLICK);
-        broadcast.putExtra(EXTRA_DEVICE, device);
-        LocalBroadcastManager.getInstance(this).sendBroadcast(broadcast);
-    }
-
     @Override
     public void onImuAccelReceived(BluetoothDevice device, float[][] accel) {
         float [] linearizedData = new float[3 * 3];
@@ -1282,11 +1146,6 @@ public class EmgImuService extends BleMulticonnectProfileService implements Conn
         for (int i = 0; i < 3; i++)
             for (int j = 0; j < 3; j++)
                 linearizedData[i + j * 3] = accel[i][j];
-
-        final Intent broadcast = new Intent(BROADCAST_IMU_ACCEL);
-        broadcast.putExtra(EXTRA_DEVICE, device);
-        broadcast.putExtra(EXTRA_IMU_ACCEL, linearizedData);
-        LocalBroadcastManager.getInstance(this).sendBroadcast(broadcast);
 
         /*
         if (networkStreaming != null && networkStreaming.isConnected()) {
@@ -1304,11 +1163,6 @@ public class EmgImuService extends BleMulticonnectProfileService implements Conn
             for (int j = 0; j < 3; j++)
                 linearizedData[i + j * 3] = gyro[i][j];
 
-        final Intent broadcast = new Intent(BROADCAST_IMU_GYRO);
-        broadcast.putExtra(EXTRA_DEVICE, device);
-        broadcast.putExtra(EXTRA_IMU_GYRO, linearizedData);
-        LocalBroadcastManager.getInstance(this).sendBroadcast(broadcast);
-
         /*
         if (networkStreaming != null && networkStreaming.isConnected()) {
             double [] data = {(double) value};
@@ -1324,20 +1178,10 @@ public class EmgImuService extends BleMulticonnectProfileService implements Conn
         for (int i = 0; i < 3; i++)
             for (int j = 0; j < 3; j++)
                 linearizedData[i + j * 3] = mag[i][j];
-
-        final Intent broadcast = new Intent(BROADCAST_IMU_MAG);
-        broadcast.putExtra(EXTRA_DEVICE, device);
-        broadcast.putExtra(EXTRA_IMU_MAG, linearizedData);
-        LocalBroadcastManager.getInstance(this).sendBroadcast(broadcast);
     }
 
     @Override
     public void onImuAttitudeReceived(BluetoothDevice device, float[] quaternion) {
-        final Intent broadcast = new Intent(BROADCAST_IMU_ATTITUDE);
-        broadcast.putExtra(EXTRA_DEVICE, device);
-        broadcast.putExtra(EXTRA_IMU_ATTITUDE, quaternion);
-        LocalBroadcastManager.getInstance(this).sendBroadcast(broadcast);
-
         /*
         if (networkStreaming != null && networkStreaming.isConnected()) {
             double [] data = {(double) value};

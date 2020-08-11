@@ -115,7 +115,7 @@ public class DeviceViewModel extends AndroidViewModel {
             if (device.getAddress().matches(d.getAddress())) {
                 try {
                     Log.d(TAG, "Found and telling service");
-                    mService.disconnect(d);
+                    mService.disconnectDevice(d);
                 } catch (RemoteException e) {
                     e.printStackTrace();
                 }

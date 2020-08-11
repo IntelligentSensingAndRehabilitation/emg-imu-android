@@ -114,8 +114,7 @@ public class ConfigActivity extends EmgImuBaseActivity implements ScannerFragmen
 
 	public void onDeviceSelected(final BluetoothDevice device, final String name) {
 		try {
-			mService.connect(device);
-			getService().updateSavedDevices();
+			mService.connectDevice(device);
 		} catch (RemoteException e) {
 			e.printStackTrace();
 		}
