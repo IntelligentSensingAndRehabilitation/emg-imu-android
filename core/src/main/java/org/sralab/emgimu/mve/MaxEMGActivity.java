@@ -2,7 +2,6 @@ package org.sralab.emgimu.mve;
 
 import android.bluetooth.BluetoothDevice;
 import android.os.Bundle;
-import android.os.RemoteException;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
@@ -56,21 +55,21 @@ public class MaxEMGActivity extends EmgImuBaseActivity implements EmgPowerView.O
             float max = mPwrView.getMax();
 
             Log.d(TAG, "Saving range: " + min + " " + max);
-            try {
-                mService.setPwrRange(mDevice, min, max);
+            /*try {
+                // TODO: mService.setPwrRange(mDevice, min, max);
             } catch (RemoteException e) {
                 e.printStackTrace();
-            }
+            }*/
 
             float threshold_high = mPwrView.getThreshold();
             float threshold_low = min + (threshold_high - min) * 0.5f;
 
             Log.d(TAG, "Saving thresholds " + threshold_low + " threshold " + threshold_high);
-            try {
-                mService.setClickThreshold(mDevice, threshold_low, threshold_high);
+            /*try {
+                // TODO: mService.setClickThreshold(mDevice, threshold_low, threshold_high);
             } catch (RemoteException e) {
                 e.printStackTrace();
-            }
+            }*/
         });
 
         maxScaleInput = findViewById(R.id.emg_max_scale);
@@ -135,17 +134,16 @@ public class MaxEMGActivity extends EmgImuBaseActivity implements EmgPowerView.O
     public void onDeviceReady(BluetoothDevice device) {
         // TODO: add dropdown to allow selecting device
         Log.d("DeviceAdapter", "Device added. Requested streaming: " + device);
-        try {
-            mService.streamPwr(device);
+        mDevice = device;
 
-            mDevice = device;
-
-            mPwrView.setThreshold(mService.getClickThreshold(device));
-            mPwrView.setMinPower(mService.getMinPwr(device));
-            mPwrView.setMaxPower(mService.getMaxPwr(device));
+        /*try {
+            // TODO: mService.streamPwr(device);
+            // TODO: mPwrView.setThreshold(mService.getClickThreshold(device));
+            // TODO: mPwrView.setMinPower(mService.getMinPwr(device));
+            // TODO: mPwrView.setMaxPower(mService.getMaxPwr(device));
         } catch (RemoteException e) {
             e.printStackTrace();
-        }
+        }*/
     }
 
     float mLpfValue = Float.NaN;
