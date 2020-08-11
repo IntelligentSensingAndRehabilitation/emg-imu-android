@@ -31,6 +31,7 @@ import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.lifecycle.MutableLiveData;
 import androidx.recyclerview.widget.DefaultItemAnimator;
@@ -52,9 +53,10 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
         deviceViewModel = dvm;
     }
 
-	@Override
+	@NonNull
+    @Override
 	public ViewHolder onCreateViewHolder(final ViewGroup parent, final int viewType) {
-		final View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.activity_feature_emgimu_item, parent, false);
+		final View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.activity_config_emgimu_item, parent, false);
         return new ViewHolder(view);
 	}
 

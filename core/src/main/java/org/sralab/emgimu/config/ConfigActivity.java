@@ -56,7 +56,7 @@ public class ConfigActivity extends EmgImuBaseActivity implements ScannerFragmen
 
 	protected void onCreate(final Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setContentView(R.layout.activity_feature_emgimu);
+		setContentView(R.layout.activity_config_emgimu);
 		setGUI();
 
 		// TODO: this may need to be reverted but testing for now.
