@@ -50,6 +50,7 @@ import androidx.collection.SimpleArrayMap;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
+import androidx.lifecycle.LiveData;
 
 import com.crashlytics.android.Crashlytics;
 import com.crashlytics.android.core.CrashlyticsCore;
@@ -262,7 +263,7 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
         }
 
         //! Get battery
-        public double getBattery(final BluetoothDevice device) {
+        public LiveData<Double> getBattery(final BluetoothDevice device) {
             final EmgImuManager manager = (EmgImuManager) getBleManager(device);
             return manager.getBatteryVoltage();
         }

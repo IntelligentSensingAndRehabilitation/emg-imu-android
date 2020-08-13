@@ -36,6 +36,8 @@ import android.util.Base64;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
+import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MutableLiveData;
 
 import com.google.firebase.analytics.FirebaseAnalytics;
 import com.google.firebase.auth.FirebaseAuth;
@@ -1387,17 +1389,17 @@ public class EmgImuManager extends BleManager {
         return max_pwr;
     }
 
-    private int batteryLevel = -1;
-    public double getBatteryVoltage() {
-        if (batteryLevel == -1)
-            return -1;
-        // Hardcoded conversion based on the firmware
-        double voltage = 3.0 + 1.35 * (batteryLevel / 100.0);
-        return voltage;
+    private MutableLiveData<Double> batteryVoltage = new MutableLiveData<>();
+    public LiveData<Double> getBatteryVoltage() {
+        return batteryVoltage;
     }
 
     private void parseBattery(@NonNull final BluetoothDevice device, @NonNull final Data data) {
-        batteryLevel = data.getIntValue(Data.FORMAT_UINT8, 0);
+        int batteryLevel = data.getIntValue(Data.FORMAT_UINT8, 0);
+
+        double voltage = 3.0 + 1.35 * (batteryLevel / 100.0);
+        batteryVoltage.setValue(voltage);
+
         log(Log.DEBUG, "Received battery level: " + batteryLevel);
     }
 

@@ -23,6 +23,7 @@
 package org.sralab.emgimu.config;
 
 import android.bluetooth.BluetoothGatt;
+import android.content.Context;
 import android.content.res.ColorStateList;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -33,10 +34,14 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
+import androidx.lifecycle.LifecycleOwner;
+import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
+import androidx.lifecycle.Observer;
 import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.RecyclerView;
 
+import org.achartengine.model.TimeSeries;
 import org.sralab.emgimu.visualization.LineGraphView;
 
 import java.util.List;
@@ -45,12 +50,14 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
 
     private static final String TAG = DeviceAdapter.class.getSimpleName();
 
-	private final MutableLiveData<List<Device>> devices;
+    private LifecycleOwner context;
+	private final LiveData<List<Device>> devices;
 	private final DeviceViewModel deviceViewModel;
 
-	public DeviceAdapter(DeviceViewModel dvm) {
+	public DeviceAdapter(LifecycleOwner context, DeviceViewModel dvm) {
         devices = dvm.getDevicesLiveData();
         deviceViewModel = dvm;
+        this.context = context;
     }
 
 	@NonNull
@@ -121,13 +128,14 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
 
             addressView.setText(device.getAddress());
 
-            batteryView.setText(String.format("%.2fV", device.getBattery()));
-
             // Color of disconnect button should indicate connection status
             final ColorStateList color = state == BluetoothGatt.STATE_CONNECTED ? connectedColor : disconnectedColor;
             actionDisconnect.setBackgroundTintList(color);
 
-            graphView.updateSeries(device.getSeries());
+            device.getSeries().observe(context, timeSeries -> graphView.updateSeries(timeSeries));
+
+            batteryView.setText(String.format("%.2fV", device.getBattery().getValue()));
+            device.getBattery().observe(context, value -> batteryView.setText(String.format("%.2fV", value)));
 
 		}
 	}

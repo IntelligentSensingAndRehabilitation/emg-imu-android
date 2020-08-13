@@ -109,9 +109,6 @@ public class LineGraphView extends LinearLayout {
 	public void updateSeries(TimeSeries series) {
 		dataset.clear();
 		dataset.addSeries(series);
-	}
-
-	public void repaint() {
 		graphicalView.repaint();
 	}
 

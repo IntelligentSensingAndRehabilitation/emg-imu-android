@@ -12,9 +12,13 @@ import android.os.RemoteException;
 import android.util.Log;
 
 import androidx.lifecycle.AndroidViewModel;
+import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MediatorLiveData;
 import androidx.lifecycle.MutableLiveData;
+import androidx.lifecycle.Observer;
 
 import org.sralab.emgimu.service.DataParcel;
+import org.sralab.emgimu.service.EmgImuService;
 import org.sralab.emgimu.service.IEmgImuDataCallback;
 import org.sralab.emgimu.service.IEmgImuServiceBinder;
 
@@ -31,9 +35,9 @@ public class DeviceViewModel extends AndroidViewModel {
 
     MutableLiveData<List<Device>> devicesLiveData;
     Map<BluetoothDevice, Device> deviceMap;
+    MediatorLiveData<Double> batteryMediator = new MediatorLiveData<>();
 
-
-    public MutableLiveData<List<Device>> getDevicesLiveData() {
+    public LiveData<List<Device>> getDevicesLiveData() {
         return devicesLiveData;
     }
 
@@ -48,7 +52,7 @@ public class DeviceViewModel extends AndroidViewModel {
 
         final Intent service = new Intent();
         service.setComponent(new ComponentName("org.sralab.emgimu", "org.sralab.emgimu.service.EmgImuService"));
-        app.getApplicationContext().bindService(service, mServiceConnection, Context.BIND_AUTO_CREATE);
+        app.getApplicationContext().bindService(service, serviceConnection, Context.BIND_AUTO_CREATE);
         this.app = app;
     }
 
@@ -57,11 +61,11 @@ public class DeviceViewModel extends AndroidViewModel {
         Log.d(TAG, "onCleared");
         super.onCleared();
         try {
-            mService.unregisterEmgPwrObserver(pwrObserver);
+            service.unregisterEmgPwrObserver(pwrObserver);
         } catch (RemoteException e) {
             Log.e(TAG, "Unable to unregister.", e);
         }
-        this.app.getApplicationContext().unbindService(mServiceConnection);
+        this.app.getApplicationContext().unbindService(serviceConnection);
     }
 
     private void addDevice(final BluetoothDevice d) {
@@ -76,16 +80,18 @@ public class DeviceViewModel extends AndroidViewModel {
         @Override
         public void handleData(BluetoothDevice device, long ts, DataParcel data) {
             deviceMap.get(device).addPower(data.readVal());
-            devicesLiveData.postValue(new ArrayList<>(deviceMap.values()));
         }
     };
 
-    private IEmgImuServiceBinder mService;
-    private ServiceConnection mServiceConnection = new ServiceConnection() {
+    private IEmgImuServiceBinder service;
+    private ServiceConnection serviceConnection = new ServiceConnection() {
 
         @Override
-        public void onServiceConnected(final ComponentName name, final IBinder service) {
-            mService = IEmgImuServiceBinder.Stub.asInterface(service);
+        public void onServiceConnected(final ComponentName name, final IBinder binder) {
+            service = IEmgImuServiceBinder.Stub.asInterface(binder);
+
+            EmgImuService.EmgImuBinder fullBinding = (EmgImuService.EmgImuBinder) binder;
+
             Log.d(TAG, "connected");
 
             deviceMap.clear();
@@ -94,22 +100,25 @@ public class DeviceViewModel extends AndroidViewModel {
             handler.post(() -> {
 
                 try {
-                    mService.registerEmgPwrObserver(pwrObserver);
+                    service.registerEmgPwrObserver(pwrObserver);
 
-                    List<BluetoothDevice> devs = mService.getManagedDevices();
+                    List<BluetoothDevice> devs = service.getManagedDevices();
                     Log.d(TAG, "Delayed handler found: " +  devs.toString() + " devices");
                     for (final BluetoothDevice d : devs) {
                         addDevice(d);
+
+                        deviceMap.get(d).setBattery(fullBinding.getBattery(d));
                     }
                 } catch (RemoteException e) {
                     e.printStackTrace();
                 }
             });
+
         }
 
         @Override
         public void onServiceDisconnected(final ComponentName name) {
-            mService = null;
+            service = null;
         }
     };
 
@@ -119,7 +128,7 @@ public class DeviceViewModel extends AndroidViewModel {
             if (device.getAddress().matches(d.getAddress())) {
                 try {
                     Log.d(TAG, "Found and telling service");
-                    mService.disconnectDevice(d);
+                    service.disconnectDevice(d);
                 } catch (RemoteException e) {
                     e.printStackTrace();
                 }

@@ -1,5 +1,10 @@
 package org.sralab.emgimu.config;
 
+import android.util.Log;
+
+import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MutableLiveData;
+
 import org.achartengine.model.TimeSeries;
 
 public class Device {
@@ -7,30 +12,24 @@ public class Device {
     private final static String TAG = Device.class.getSimpleName();
 
     private String address;
-    private Float battery;
-
-    private TimeSeries series = new TimeSeries("EMG Power");
-
     public String getAddress() {
         return address;
     }
-
     public void setAddress(String address) {
         this.address = address;
     }
 
-    public Float getBattery() {
+    private LiveData<Double> battery = new MutableLiveData<>();
+    public LiveData<Double> getBattery() {
         return battery;
     }
+    public void setBattery(LiveData<Double> battery) { this.battery = battery; }
 
-    public void setBattery(Float battery) {
-        this.battery = battery;
+    private TimeSeries series = new TimeSeries("EMG Power");
+    private MutableLiveData<TimeSeries> liveSeries = new MutableLiveData<>();
+    public LiveData<TimeSeries> getSeries() {
+        return liveSeries;
     }
-
-    public TimeSeries getSeries() {
-        return series;
-    }
-
     public void addPower(Integer power) {
         final int N = 100;
 
@@ -41,6 +40,12 @@ public class Device {
 
         if (series.getItemCount() > N)
             series.remove(0);
+
+        liveSeries.postValue(series);
+    }
+
+    public Device() {
+        liveSeries.postValue(series);
     }
 
 }

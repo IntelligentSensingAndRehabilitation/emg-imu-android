@@ -76,8 +76,7 @@ public class ConfigActivity extends EmgImuBaseActivity implements ScannerFragmen
 		dvm = new ViewModelProvider(this, ViewModelProvider.AndroidViewModelFactory.getInstance(getApplication())).get(DeviceViewModel.class);
 		dvm.getDevicesLiveData().observe(this, devices -> mAdapter.notifyDataSetChanged());
 
-		Log.d(TAG, "OnCreate");
-		mDevicesView.setAdapter(mAdapter = new DeviceAdapter(dvm));
+		mDevicesView.setAdapter(mAdapter = new DeviceAdapter(this, dvm));
 	}
 
 	private void setGUI() {
