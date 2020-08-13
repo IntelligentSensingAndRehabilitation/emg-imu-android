@@ -51,6 +51,7 @@ import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
 import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MutableLiveData;
 
 import com.crashlytics.android.Crashlytics;
 import com.crashlytics.android.core.CrashlyticsCore;
@@ -179,6 +180,10 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
 
         public LiveData<Integer> getConnectionLiveState(@NotNull final BluetoothDevice device) {
             return getBleManager(device).getConnectionLiveState();
+        }
+
+        public LiveData<List<BluetoothDevice>> getLiveDevices() {
+            return liveDevices;
         }
 
         /**
@@ -641,6 +646,8 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
 
         // We have been starting by a service. Restore list of devices and attempt to connect.
         managedDevices = new ArrayList<>(getSavedDevices());
+        liveDevices.postValue(managedDevices);
+
         Log.d(TAG, "About to connect to devices: " + managedDevices);
         for (final BluetoothDevice d : managedDevices) {
             EmgImuManager manager = initializeManager();
@@ -783,6 +790,7 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
 
     /** Connections and device management **/
     private List<BluetoothDevice> managedDevices = new ArrayList<>();
+    private MutableLiveData<List<BluetoothDevice>> liveDevices = new MutableLiveData<>(managedDevices);
     private Map<BluetoothDevice, EmgImuManager> bleManagers = new HashMap<>();
 
     public void connect(@NotNull final BluetoothDevice device) {
@@ -804,6 +812,7 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
                    .enqueue();
         }
 
+        liveDevices.postValue(managedDevices);
         serviceUpdateSavedDevices();
     }
 
@@ -814,6 +823,7 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
             manager.disconnect().enqueue();
         }
         managedDevices.remove(device);
+        liveDevices.postValue(managedDevices);
         serviceUpdateSavedDevices();
     }
 
