@@ -751,10 +751,21 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
 
         // See if a log fetch has been requested
         if(logFetchStartId.get(device.getAddress()) != null) {
-            //mBinder.log(device, LogContract.Log.Level.INFO, "onDeviceReady. requesting log download");
             getBleManager(device).fetchLogRecords(device1 -> onEmgLogFetchCompleted(device1), (device12, reason) -> onEmgLogFetchFailed(device12, reason));
         } else {
-            //mBinder.log(device, LogContract.Log.Level.WARNING, "onDeviceReady. no log request active.");
+
+            // If there is a subscriber for information then enable those services. At some
+            // point this API might need expanding if we want to enable different sensing
+            // from different devices
+
+            if (!emgPwrCbs.isEmpty()) {
+                getBleManager(device).enableEmgPwrNotifications();
+            }
+
+            if (!emgStreamCbs.isEmpty()) {
+                getBleManager(device).enableEmgBuffNotifications();
+            }
+
         }
     }
 

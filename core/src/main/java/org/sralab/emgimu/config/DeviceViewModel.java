@@ -66,6 +66,7 @@ public class DeviceViewModel extends AndroidViewModel {
         dev.setAddress(d.getAddress());
 
         deviceMap.put(d, dev);
+        devicesLiveData.postValue(new ArrayList<>(deviceMap.values()));
     }
 
     private final IEmgImuDataCallback.Stub pwrObserver = new IEmgImuDataCallback.Stub() {
