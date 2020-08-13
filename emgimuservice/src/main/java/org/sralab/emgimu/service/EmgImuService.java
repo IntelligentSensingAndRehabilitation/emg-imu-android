@@ -679,28 +679,29 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
     }
 
 
-    /*
-    // TODO: make sure this handles rebinding and things like screen rotation
     @Override
-	protected void onRebind() {
-
+    public final void onRebind(final Intent intent) {
+        super.onRebind(intent);
 		// When the activity rebinds to the service, remove the notification
 		//cancelNotifications();
 	}
 
 	@Override
-	public void onUnbind() {
-        //mBinder.log(LogContract.Log.Level.INFO, "onUnbind");
+    public final boolean onUnbind(final Intent intent) {
+        super.onUnbind(intent);
+        Log.i(TAG, "onUnbind");
 
         getHandler().postDelayed(() -> {
-            if (mBinded == false) {
+            if (true) { // TODO: mBinded == false) {
                 Log.i(TAG, "Timeout occurred and service still not bound. Shutting down.");
                 stopSelf();
 
             }
         }, 5000);
+
+        // We want the onRebind method be called if anything else binds to it again
+        return true;
     }
-    */
 
     @Override
     public void onDeviceConnecting(@NonNull BluetoothDevice device) {
