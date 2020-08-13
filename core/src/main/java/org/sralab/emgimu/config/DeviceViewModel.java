@@ -87,7 +87,7 @@ public class DeviceViewModel extends AndroidViewModel {
             deviceMap.clear();
 
             final Handler handler = new Handler();
-            handler.postDelayed(() -> {
+            handler.post(() -> {
 
                 try {
                     mService.registerEmgPwrObserver(pwrObserver);
@@ -100,7 +100,7 @@ public class DeviceViewModel extends AndroidViewModel {
                 } catch (RemoteException e) {
                     e.printStackTrace();
                 }
-            }, 2000);
+            });
         }
 
         @Override

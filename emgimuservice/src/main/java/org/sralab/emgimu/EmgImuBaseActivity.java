@@ -13,8 +13,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import org.sralab.emgimu.service.EmgImuService;
 import org.sralab.emgimu.service.IEmgImuServiceBinder;
 
-import no.nordicsemi.android.nrftoolbox.profile.multiconnect.BleMulticonnectProfileService;
-
 public abstract class EmgImuBaseActivity extends AppCompatActivity {
 
     /**
@@ -75,7 +73,7 @@ public abstract class EmgImuBaseActivity extends AppCompatActivity {
     */
     protected abstract void onServiceUnbinded();
 
-    protected Class<? extends BleMulticonnectProfileService> getServiceClass() {
+    protected Class<? extends EmgImuService> getServiceClass() {
         return EmgImuService.class;
     }
 
