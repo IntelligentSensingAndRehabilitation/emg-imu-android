@@ -122,21 +122,22 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
 
         }
 
-		private void bind(final Device device) {
-
-            final int state = 0; //mService.getConnectionState(device);
-
-            addressView.setText(device.getAddress());
-
-            // Color of disconnect button should indicate connection status
+        private void updateConnection(int state) {
             final ColorStateList color = state == BluetoothGatt.STATE_CONNECTED ? connectedColor : disconnectedColor;
             actionDisconnect.setBackgroundTintList(color);
+        }
+
+		private void bind(final Device device) {
+
+            addressView.setText(device.getAddress());
 
             device.getSeries().observe(context, timeSeries -> graphView.updateSeries(timeSeries));
 
             batteryView.setText(String.format("%.2fV", device.getBattery().getValue()));
             device.getBattery().observe(context, value -> batteryView.setText(String.format("%.2fV", value)));
 
-		}
+            updateConnection(device.getConnectionState().getValue());
+            device.getConnectionState().observe(context, value -> updateConnection(value));
+        }
 	}
 }

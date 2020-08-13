@@ -166,8 +166,6 @@ public class EmgImuManager extends BleManager {
         mCallbacks = cb;
     }
 
-    private boolean mReady = false;
-
     private BluetoothGattCharacteristic mRecordAccessControlPointCharacteristic, mEmgLogCharacteristic;
 
     //! Data relating to logging to FireBase
@@ -361,13 +359,16 @@ public class EmgImuManager extends BleManager {
             loadThreshold();
             loadPwrRange();
 
+            connectionState.postValue(getConnectionState());
+
             super.onDeviceReady();
-            mReady = true;
         }
 
         @Override
 		protected void onDeviceDisconnected() {
             log(Log.INFO, "onDeviceDisconnected");
+
+            connectionState.postValue(getConnectionState());
 
 		    // Clear the Device Information characteristics
             mManufacturerCharacteristic = null;
@@ -388,8 +389,6 @@ public class EmgImuManager extends BleManager {
             mEmgLogCharacteristic = null;
             mRecordAccessControlPointCharacteristic = null;
 
-            mReady = false;
-
             mChannels = 0;
 
             synchronized (this) {
@@ -401,6 +400,9 @@ public class EmgImuManager extends BleManager {
             }
 		}
     };
+
+	public MutableLiveData<Integer> connectionState = new MutableLiveData<>(BluetoothGatt.STATE_DISCONNECTED);
+	public LiveData<Integer> getConnectionLiveState() { return connectionState; }
 
     private long mPwrT0;
     private long mLastPwrCount;

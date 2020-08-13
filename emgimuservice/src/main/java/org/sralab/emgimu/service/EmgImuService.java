@@ -177,6 +177,10 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
             return getBleManager(device).getConnectionState();
         }
 
+        public LiveData<Integer> getConnectionLiveState(@NotNull final BluetoothDevice device) {
+            return getBleManager(device).getConnectionLiveState();
+        }
+
         /**
          * Configure service to run an EMG decoder if DFM is available
          */

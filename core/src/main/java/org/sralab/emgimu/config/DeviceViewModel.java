@@ -108,6 +108,7 @@ public class DeviceViewModel extends AndroidViewModel {
                         addDevice(d);
 
                         deviceMap.get(d).setBattery(fullBinding.getBattery(d));
+                        deviceMap.get(d).setConnectionState(fullBinding.getConnectionLiveState(d));
                     }
                 } catch (RemoteException e) {
                     e.printStackTrace();

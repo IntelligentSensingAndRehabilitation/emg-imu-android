@@ -19,11 +19,15 @@ public class Device {
         this.address = address;
     }
 
-    private LiveData<Double> battery = new MutableLiveData<>();
+    private LiveData<Double> battery = new MutableLiveData<>(0.0);
     public LiveData<Double> getBattery() {
         return battery;
     }
     public void setBattery(LiveData<Double> battery) { this.battery = battery; }
+
+    private LiveData<Integer> connectionState = new MutableLiveData<>(new Integer(0));
+    public LiveData<Integer> getConnectionState() { return connectionState; }
+    public void setConnectionState(LiveData<Integer> connectionState) { this.connectionState = connectionState; }
 
     private TimeSeries series = new TimeSeries("EMG Power");
     private MutableLiveData<TimeSeries> liveSeries = new MutableLiveData<>();
