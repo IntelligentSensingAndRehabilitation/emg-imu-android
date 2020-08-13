@@ -40,6 +40,8 @@ public class DeviceViewModel extends AndroidViewModel {
     public DeviceViewModel(Application app) {
         super(app);
 
+        Log.d(TAG, "Created");
+
         devicesLiveData = new MutableLiveData<>();
         deviceMap = new HashMap<>();
         devicesLiveData.setValue(new ArrayList<>(deviceMap.values()));
@@ -52,6 +54,7 @@ public class DeviceViewModel extends AndroidViewModel {
 
     @Override
     protected void onCleared() {
+        Log.d(TAG, "onCleared");
         super.onCleared();
         try {
             mService.unregisterEmgPwrObserver(pwrObserver);

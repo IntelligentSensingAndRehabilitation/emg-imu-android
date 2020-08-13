@@ -29,6 +29,7 @@ import android.os.Bundle;
 import android.os.PowerManager;
 import android.os.RemoteException;
 import android.provider.Settings;
+import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 
@@ -71,9 +72,11 @@ public class ConfigActivity extends EmgImuBaseActivity implements ScannerFragmen
 			}
 		}
 
-		dvm = new ViewModelProvider.AndroidViewModelFactory(getApplication()).create(DeviceViewModel.class);
+
+		dvm = new ViewModelProvider(this, ViewModelProvider.AndroidViewModelFactory.getInstance(getApplication())).get(DeviceViewModel.class);
 		dvm.getDevicesLiveData().observe(this, devices -> mAdapter.notifyDataSetChanged());
 
+		Log.d(TAG, "OnCreate");
 		mDevicesView.setAdapter(mAdapter = new DeviceAdapter(dvm));
 	}
 
