@@ -50,7 +50,6 @@ import androidx.collection.SimpleArrayMap;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.crashlytics.android.Crashlytics;
 import com.crashlytics.android.core.CrashlyticsCore;
@@ -89,20 +88,10 @@ import no.nordicsemi.android.ble.BleManager;
 import no.nordicsemi.android.ble.annotation.DisconnectionReason;
 import no.nordicsemi.android.ble.error.GattError;
 import no.nordicsemi.android.ble.observer.ConnectionObserver;
-import no.nordicsemi.android.log.ILogSession;
-import no.nordicsemi.android.log.Logger;
 
 public class EmgImuService extends Service implements ConnectionObserver, EmgImuObserver {
 	@SuppressWarnings("unused")
 	private static final String TAG = "EmgImuService";
-
-	private final static String ACTION_DISCONNECT = "no.nordicsemi.android.nrftoolbox.proximity.ACTION_DISCONNECT";
-	private final static String ACTION_FIND = "no.nordicsemi.android.nrftoolbox.proximity.ACTION_FIND";
-	private final static String ACTION_SILENT = "no.nordicsemi.android.nrftoolbox.proximity.ACTION_SILENT";
-
-    // Broadcast messsages for battery updates
-    public static final String BROADCAST_BATTERY_LEVEL = "org.sralab.emgimu.BROADCAST_BATTERY_LEVEL";
-    public static final String EXTRA_BATTERY_LEVEL = "org.sralab.emgimu.EXTRA_BATTERY";
 
     // Broadcast messages for EMG activity
     public static final String INTENT_FETCH_LOG = "org.sralab.INTENT_FETCH_LOG";
@@ -118,7 +107,6 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
 	private final static String EMGIMU_GROUP_ID = "emgimu_connected_sensors";
 	private final static int NOTIFICATION_ID = 1000;
 	private final static int OPEN_ACTIVITY_REQ = 0;
-	private final static int DISCONNECT_REQ = 1;
 
 	// TODO: optimize for device battery life, handle condition
     // when sensor is not detected (does not influence battery)
@@ -133,9 +121,6 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
     private String mToken;
 
     private Handler handler;
-
-    private ILogSession mLogSession;
-    private ServiceLogger mServiceLogger = new ServiceLogger(TAG, this, mLogSession);
 
     private NetworkStreaming networkStreaming;
     private IEmgDecoder emgDecoder;
@@ -299,11 +284,6 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
             manager.finishCalibration(listener);
         }
 
-        public int getLoggerProfileTitle() {
-            return R.string.emgimu_feature_title;
-            //return 0; // Use the line above to enable logging, but this slows down application
-        }
-
         public void updateSavedDevices() {
             Log.d(TAG, "updateSavedDevices called on binder");
             serviceUpdateSavedDevices();
@@ -359,33 +339,6 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
             return "";
         }
 
-        /*** hook these methods so we can forward the message to the Service nRF log and logcat ***/
-        /*
-        @Override
-        public void log(final BluetoothDevice device, final int level, final String message) {
-            super.log(device, level, message);
-            mServiceLogger.log(level, device.getAddress() + " : " + message);
-        }
-
-        @Override
-        public void log(final BluetoothDevice device, final int level, @StringRes final int messageRes, final Object... params) {
-            super.log(device, level, messageRes, params);
-            mServiceLogger.log(level, messageRes, params);
-        }
-
-        @Override
-        public void log(final int level, final String message) {
-            super.log(level, message);
-            mServiceLogger.log(level, message);
-        }
-
-        @Override
-        public void log(final int level, @StringRes final int messageRes, final Object... params) {
-            super.log(level, messageRes, params);
-            mServiceLogger.log(level, messageRes, params);
-        }
-        */
-
         public List<String> getLoggingReferences() {
             List<String> references = new ArrayList<>();
             for (final BluetoothDevice device : getManagedDevices()) {
@@ -437,13 +390,7 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
                 .build();
         Fabric.with(this, new Crashlytics.Builder().core(crashlyticsCore).build());
 
-        final int titleId = mBinder.getLoggerProfileTitle();
-        if (titleId > 0) {
-            mLogSession = Logger.newSession(getApplicationContext(), "Service", "Service", "Service");
-            mServiceLogger = new ServiceLogger(TAG, this, mLogSession);
-        }
-
-        mServiceLogger.d("onServiceCreated");
+        Log.d(TAG, "onServiceCreated");
 
         mAuth = FirebaseAuth.getInstance();
         mToken = null;
@@ -459,19 +406,17 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
                             mCurrentUser = mAuth.getCurrentUser();
 
                             Log.d(TAG, "signInAnonymously:success. UID:" + mCurrentUser.getUid());
-                            mServiceLogger.d("signInAnonymously:success. UID:" + mCurrentUser.getUid());
 
                             // It can happen that either one is set first
                             if (mToken != null && mCurrentUser != null)
                                 storeToken();
                         } else {
                             // If sign in fails, display a message to the user.
-                            mServiceLogger.w("signInAnonymously:failure" + task.getException());
                             Log.d(TAG, "signInAnonymously:failure" + task.getException());
                         }
                     });
         } else {
-            mServiceLogger.d("User ID: " + mCurrentUser.getUid());
+            Log.d(TAG, "User ID: " + mCurrentUser.getUid());
         }
 
 
@@ -520,11 +465,11 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
         }
 
         if (intent == null) {
-            mServiceLogger.d("onStartCommand called without intent. flags: " + flags + " startId " + startId);
+            Log.d(TAG, "onStartCommand called without intent. flags: " + flags + " startId " + startId);
         } else if (intent.getExtras() != null) {
-            mServiceLogger.d("onStartCommand: " + intent.toString() + " extras: " + intent.getExtras().toString() + " flags: " + flags + " startId" + startId);
+            Log.d(TAG, "onStartCommand: " + intent.toString() + " extras: " + intent.getExtras().toString() + " flags: " + flags + " startId" + startId);
         } else {
-            mServiceLogger.d("onStartCommand: "  + intent.toString() + " flags: " + flags + " startId" + startId);
+            Log.d(TAG, "onStartCommand: "  + intent.toString() + " flags: " + flags + " startId" + startId);
         }
 
         // See if there is an intent indicating the service was started unbound to
@@ -535,12 +480,12 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
 
             String device_mac = intent.getStringExtra(INTENT_DEVICE_MAC);
 
-            mServiceLogger.d("onStartCommand due to requesting logs from " + device_mac);
+            Log.d(TAG, "onStartCommand due to requesting logs from " + device_mac);
 
             // Detect if bluetooth is enabled and if not don't attempt to get log
             final BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
             if (!bluetoothAdapter.isEnabled()) {
-                mServiceLogger.e("Unable to download log as bluetooth is disabled");
+                Log.e(TAG, "Unable to download log as bluetooth is disabled");
                 stopSelf(startId);
                 return START_NOT_STICKY;
             }
@@ -550,7 +495,7 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
             List<BluetoothDevice> devices = getManagedDevices();
             for (BluetoothDevice d : devices) {
                 if (d.getAddress().equals(device.getAddress())) {
-                    mServiceLogger.d("Already managing " + device_mac + " so will skip fetching log");
+                    Log.d(TAG, "Already managing " + device_mac + " so will skip fetching log");
                     return START_NOT_STICKY;
                 }
             }
@@ -558,13 +503,13 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
             synchronized (logFetchStartId) {
                 if (logFetchStartId.containsKey(device_mac)) {
                     // This really shouldn't happen as prior fetches should complete or clear up
-                    mServiceLogger.e("Log fetching running for " + device_mac);
+                    Log.e(TAG, "Log fetching running for " + device_mac);
                     return START_NOT_STICKY;
                 }
 
 
                 Runnable connectionTimeout = () -> {
-                    mServiceLogger.i("Unable to connect to " + device_mac + " in one second");
+                    Log.i(TAG, "Unable to connect to " + device_mac + " in one second");
                     smartStop(device);
                 };
                 // Note if we were showing the notification based on connecting, then
@@ -596,7 +541,7 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
             Integer startThreadId = logFetchStartId.get(device.getAddress()).second;
 
             // To avoid this being double called remove the timer
-            mServiceLogger.i("Removing connection timeout runnable from " + device.getAddress());
+            Log.i(TAG, "Removing connection timeout runnable from " + device.getAddress());
             getHandler().removeCallbacks(logFetchStartId.get(device.getAddress()).first);
 
             // If there is only one thread remaining, then appropriate to stop it
@@ -676,7 +621,7 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
         // See if a log fetch has been requested
         Pair<Runnable, Integer> p = logFetchStartId.get(device.getAddress());
         if (p != null) {
-            mServiceLogger.d("Unable to download log from " + device.getAddress() + " list of threads " + logFetchStartId);
+            Log.d(TAG, "Unable to download log from " + device.getAddress() + " list of threads " + logFetchStartId);
             smartStop(device);
         }
     }
@@ -749,7 +694,7 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
 
         getHandler().postDelayed(() -> {
             if (mBinded == false) {
-                mServiceLogger.i("Timeout occurred and service still not bound. Shutting down.");
+                Log.i(TAG, "Timeout occurred and service still not bound. Shutting down.");
                 stopSelf();
 
             }
@@ -767,7 +712,7 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
         // See if a log fetch has been requested
         Pair<Runnable, Integer> p = logFetchStartId.get(device.getAddress());
         if (p != null) {
-            mServiceLogger.i("Removing connection timeout runnable from " + device.getAddress());
+            Log.i(TAG, "Removing connection timeout runnable from " + device.getAddress());
             getHandler().removeCallbacks(p.first);
         }
 
@@ -940,7 +885,7 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
                 Bundle jobInfo = new Bundle();
                 jobInfo.putString("device_mac", names.getString(i));
 
-                mServiceLogger.d("Scheduling log fetching jobs for " + names.getString(i));
+                Log.d(TAG, "Scheduling log fetching jobs for " + names.getString(i));
 
                 Job myJob = dispatcher.newJobBuilder()
                         .setService(EmgLogFetchJobService.class)             // the JobService that will be called
@@ -954,12 +899,12 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
                         .build();
                 int result = dispatcher.schedule(myJob);
                 if (result != FirebaseJobDispatcher.SCHEDULE_RESULT_SUCCESS) {
-                    mServiceLogger.e("Scheduling log fetch failed");
+                    Log.e(TAG, "Scheduling log fetch failed");
                     showToast("Unable to schedule log fetching.");
                     if (BuildConfig.DEBUG)
                         throw new RuntimeException("Unable to schedule job fetching");
                 } else {
-                    mServiceLogger.d("Job scheduled successfully");
+                    Log.d(TAG, "Job scheduled successfully");
                 }
             }
         } catch (JSONException e) {
