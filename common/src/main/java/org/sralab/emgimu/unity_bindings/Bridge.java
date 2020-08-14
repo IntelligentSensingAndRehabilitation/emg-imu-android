@@ -62,26 +62,11 @@ public class Bridge extends Application
         @Override
         public void onServiceConnected(final ComponentName name, final IBinder service) {
             mService = IEmgImuServiceBinder.Stub.asInterface(service);
-
-            new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        Log.d(TAG, "Delayed handler found: " + mService.getManagedDevices().toString() + " devices");
-                    } catch (RemoteException e) {
-                        e.printStackTrace();
-                    }
-                    try {
-                        for (final BluetoothDevice d : mService.getManagedDevices()) {
-                            Log.d(TAG, d.getAddress());
-                            mService.registerEmgPwrObserver(pwrObserver);
-                        }
-                    } catch (RemoteException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }, 4000);
-
+            try {
+                mService.registerEmgPwrObserver(pwrObserver);
+            } catch (RemoteException e) {
+                throw new RuntimeException(e);
+            }
         }
 
         @Override
