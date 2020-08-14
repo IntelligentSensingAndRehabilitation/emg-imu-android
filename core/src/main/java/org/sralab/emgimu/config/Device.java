@@ -1,7 +1,5 @@
 package org.sralab.emgimu.config;
 
-import android.util.Log;
-
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
@@ -34,13 +32,13 @@ public class Device {
     public LiveData<TimeSeries> getSeries() {
         return liveSeries;
     }
-    public void addPower(Integer power) {
+    public void addPower(long ts, Integer power) {
         final int N = 100;
 
         if (series.getItemCount() == 0)
-            series.add(0, power);
+            series.add(ts, power);
         else
-            series.add(series.getMaxX() + 1, power);
+            series.add(ts, power);
 
         if (series.getItemCount() > N)
             series.remove(0);

@@ -1135,7 +1135,7 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
     {
     }
 
-    public void onEmgPwrReceived(final BluetoothDevice device, int value)
+    public void onEmgPwrReceived(final BluetoothDevice device, long ts_ms, int value)
     {
         if (networkStreaming != null && networkStreaming.isConnected()) {
             double [] data = {(double) value};
@@ -1146,7 +1146,7 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
             try {
                 DataParcel p = new DataParcel();
                 p.writeVal(value);
-                cb.handleData(device, 0, p);
+                cb.handleData(device, ts_ms, p);
             } catch (RemoteException e) {
                 e.printStackTrace();
             }

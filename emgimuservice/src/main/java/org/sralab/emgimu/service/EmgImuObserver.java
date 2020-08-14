@@ -31,7 +31,7 @@ public interface EmgImuObserver {
     // Callbacks for EMG updates
     void onEmgRawReceived(final BluetoothDevice device, int value);
     void onEmgBuffReceived(BluetoothDevice device, long ts_ms, double[][] data);
-    void onEmgPwrReceived(final BluetoothDevice device, int value);
+    void onEmgPwrReceived(final BluetoothDevice device, long ts_ms, int value);
     //void onEmgClick(final BluetoothDevice device);
 
     // Callbacks for IMU updates

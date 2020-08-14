@@ -473,7 +473,7 @@ public class EmgImuManager extends BleManager {
         long ts_ms = resolvePwrCounter(timestamp, counter);
 
         mEmgPwr = pwr_val;
-        mCallbacks.onEmgPwrReceived(device, mEmgPwr);
+        mCallbacks.onEmgPwrReceived(device, ts_ms, mEmgPwr);
         checkEmgClick(device, pwr_val);
 
         if (mLogging && streamLogger != null) {

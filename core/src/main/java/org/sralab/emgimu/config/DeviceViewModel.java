@@ -70,7 +70,7 @@ public class DeviceViewModel extends AndroidViewModel {
         @Override
         public void handleData(BluetoothDevice device, long ts, DataParcel data) {
             Device dev = deviceMap.get(device);
-            dev.addPower(data.readVal());
+            dev.addPower(ts, data.readVal());
         }
     };
 
