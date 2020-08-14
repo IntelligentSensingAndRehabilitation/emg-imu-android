@@ -68,27 +68,12 @@ public class SpasticityViewModel extends AndroidViewModel {
             mService = IEmgImuServiceBinder.Stub.asInterface(service);
             Log.d(TAG, "connected");
 
-            final Handler handler = new Handler();
-            handler.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        Log.d(TAG, "Delayed handler found: " + mService.getManagedDevices().toString() + " devices");
-                    } catch (RemoteException e) {
-                        e.printStackTrace();
-                    }
-                    try {
-                        for (final BluetoothDevice d : mService.getManagedDevices()) {
-                            mService.registerEmgPwrObserver(pwrObserver);
-                        }
-                    } catch (RemoteException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }, 2000);
+            try {
+                mService.registerEmgPwrObserver(pwrObserver);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
         }
-
-
 
         @Override
         public void onServiceDisconnected(final ComponentName name) {
