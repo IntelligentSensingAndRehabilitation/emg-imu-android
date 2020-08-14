@@ -23,7 +23,6 @@
 package org.sralab.emgimu.config;
 
 import android.bluetooth.BluetoothGatt;
-import android.content.Context;
 import android.content.res.ColorStateList;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -36,12 +35,9 @@ import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.LiveData;
-import androidx.lifecycle.MutableLiveData;
-import androidx.lifecycle.Observer;
 import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.RecyclerView;
 
-import org.achartengine.model.TimeSeries;
 import org.sralab.emgimu.visualization.LineGraphView;
 
 import java.util.List;

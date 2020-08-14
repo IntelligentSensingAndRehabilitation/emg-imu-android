@@ -26,10 +26,10 @@
 		<item name="android:background">?colorPrimary</item>
 	</style>
 
-	<!--style name="HeaderShadow">
+	<style name="HeaderShadow">
 		<item name="android:foreground">@drawable/action_bar_shadow</item>
 		<item name="foreground">@drawable/action_bar_shadow</item>
-	</style-->
+	</style>
 
 	<!-- Style used by the Toolbar -->
 	<style name="ActionBarThemeOverlay" parent="@style/ThemeOverlay.AppCompat.ActionBar">

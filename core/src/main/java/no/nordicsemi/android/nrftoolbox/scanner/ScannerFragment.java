@@ -49,7 +49,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.DialogFragment;
 
-import org.sralab.emgimu.common.R;
+import org.sralab.emgimu.config.R;
 
 import java.util.ArrayList;
 import java.util.List;
