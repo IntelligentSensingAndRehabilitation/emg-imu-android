@@ -80,7 +80,7 @@ public class LauncherActivity extends AppCompatActivity {
 		setContentView(R.layout.activity_launcher);
 
         final Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar_actionbar);
-        //setSupportActionBar(toolbar);
+        setSupportActionBar(toolbar);
 
 		// ensure that Bluetooth exists
 		if (!ensureBLEExists())
