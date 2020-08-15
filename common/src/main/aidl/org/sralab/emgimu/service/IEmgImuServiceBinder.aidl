@@ -25,6 +25,30 @@ oneway interface IEmgImuPwrDataCallback {
     void handleData(in BluetoothDevice device, in EmgPwrData data);
 }
 
+parcelable ImuData {
+    long ts;
+    float [] x;
+    float [] y;
+    float [] z;
+    int samples;
+}
+
+oneway interface IEmgImuSenseCallback {
+    void handleData(in BluetoothDevice device, in ImuData data);
+}
+
+parcelable ImuQuatData {
+    long ts;
+    double q0;
+    double q1;
+    double q2;
+    double q3;
+}
+
+oneway interface IEmgImuQuatCallback {
+    void handleData(in BluetoothDevice device, in ImuQuatData data);
+}
+
 interface IEmgImuServiceBinder  {
 
     // User management
@@ -38,10 +62,19 @@ interface IEmgImuServiceBinder  {
     // boolean isConnected(in BluetoothDevice device);
     // boolean isReady(in BluetoothDevice device);
 
-    // For receiving data
+    // For receiving EMG data
     void registerEmgStreamObserver(IEmgImuStreamDataCallback callback);
     void unregisterEmgStreamObserver(IEmgImuStreamDataCallback callback);
     void registerEmgPwrObserver(IEmgImuPwrDataCallback callback);
     void unregisterEmgPwrObserver(IEmgImuPwrDataCallback callback);
 
+    // For receiving IMU data
+    void registerImuAccelObserver(IEmgImuSenseCallback callback);
+    void unregisterImuAccelObserver(IEmgImuSenseCallback callback);
+    void registerImuGyroObserver(IEmgImuSenseCallback callback);
+    void unregisterImuGyroObserver(IEmgImuSenseCallback callback);
+    void registerImuMagObserver(IEmgImuSenseCallback callback);
+    void unregisterImuMagObserver(IEmgImuSenseCallback callback);
+    void registerImuQuatObserver(IEmgImuQuatCallback callback);
+    void unregisterImuQuatObserver(IEmgImuQuatCallback callback);
 }

@@ -134,6 +134,11 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
 
     private List <IEmgImuStreamDataCallback> emgStreamCbs = new ArrayList<>();
     private List <IEmgImuPwrDataCallback> emgPwrCbs = new ArrayList<>();
+    private List <IEmgImuSenseCallback> imuAccelCbs = new ArrayList<>();
+    private List <IEmgImuSenseCallback> imuGyroCbs = new ArrayList<>();
+    private List <IEmgImuSenseCallback> imuMagCbs = new ArrayList<>();
+    private List <IEmgImuQuatCallback> imuQuatCbs = new ArrayList<>();
+
 
     public interface OnEmgDecodedListener {
         void onEmgDecoded(float [] decoded);
@@ -219,21 +224,6 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
                 manager.enableBufferedStreamingMode();
             }
 
-        }
-
-        public EmgImuManager.STREAMING_MODE getStreamingMode(final BluetoothDevice device) {
-            final EmgImuManager manager = (EmgImuManager) getBleManager(device);
-            return manager.getStreamingMode();
-        }
-
-       public void enableAttitude(final BluetoothDevice device) {
-            final EmgImuManager manager = (EmgImuManager) getBleManager(device);
-            manager.enableAttitude();
-        }
-
-        public void disableAttitude(final BluetoothDevice device) {
-            final EmgImuManager manager = (EmgImuManager) getBleManager(device);
-            manager.disableAttitude();
         }
 
         public void enableImu(final BluetoothDevice device) {
@@ -346,6 +336,85 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
             }
         }
 
+        @Override
+        public void registerImuAccelObserver(IEmgImuSenseCallback callback) throws RemoteException {
+            imuAccelCbs.add(callback);
+            for (final BluetoothDevice device : getManagedDevices()) {
+                final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+                manager.enableImu();
+            }
+        }
+
+        @Override
+        public void unregisterImuAccelObserver(IEmgImuSenseCallback callback) throws RemoteException {
+            imuAccelCbs.remove(callback);
+            if (imuAccelCbs.size() == 0 && imuGyroCbs.size() == 0 && imuMagCbs.size() == 0) {
+                for (final BluetoothDevice device : getManagedDevices()) {
+                    final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+                    manager.disableImu();
+                }
+            }
+        }
+
+        @Override
+        public void registerImuGyroObserver(IEmgImuSenseCallback callback) throws RemoteException {
+            imuGyroCbs.add(callback);
+            for (final BluetoothDevice device : getManagedDevices()) {
+                final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+                manager.enableImu();
+            }
+        }
+
+        @Override
+        public void unregisterImuGyroObserver(IEmgImuSenseCallback callback) throws RemoteException {
+            imuGyroCbs.remove(callback);
+            if (imuAccelCbs.size() == 0 && imuGyroCbs.size() == 0 && imuMagCbs.size() == 0) {
+                for (final BluetoothDevice device : getManagedDevices()) {
+                    final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+                    manager.disableImu();
+                }
+            }
+        }
+
+        @Override
+        public void registerImuMagObserver(IEmgImuSenseCallback callback) throws RemoteException {
+            imuMagCbs.add(callback);
+            for (final BluetoothDevice device : getManagedDevices()) {
+                final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+                manager.enableImu();
+            }
+        }
+
+        @Override
+        public void unregisterImuMagObserver(IEmgImuSenseCallback callback) throws RemoteException {
+            imuMagCbs.remove(callback);
+            if (imuAccelCbs.size() == 0 && imuGyroCbs.size() == 0 && imuMagCbs.size() == 0) {
+                for (final BluetoothDevice device : getManagedDevices()) {
+                    final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+                    manager.disableImu();
+                }
+            }
+        }
+
+        @Override
+        public void registerImuQuatObserver(IEmgImuQuatCallback callback) throws RemoteException {
+            imuQuatCbs.add(callback);
+            for (final BluetoothDevice device : getManagedDevices()) {
+                final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+                manager.enableAttitude();
+            }
+        }
+
+        @Override
+        public void unregisterImuQuatObserver(IEmgImuQuatCallback callback) throws RemoteException {
+            imuQuatCbs.remove(callback);
+            if (imuQuatCbs.size() == 0) {
+                for (final BluetoothDevice device : getManagedDevices()) {
+                    final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+                    manager.disableAttitude();
+                }
+            }
+        }
 
         public String getUser() {
             if (mCurrentUser != null)
@@ -783,6 +852,14 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
                 getBleManager(device).enableEmgBuffNotifications();
             }
 
+            if (!imuAccelCbs.isEmpty() || !imuGyroCbs.isEmpty() || !imuMagCbs.isEmpty()) {
+                getBleManager(device).enableImu();
+            }
+
+            if (!imuQuatCbs.isEmpty()) {
+                getBleManager(device).enableAttitude();
+            }
+
         }
     }
 
@@ -1134,11 +1211,6 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
     public void onBatteryReceived(BluetoothDevice device, float battery) {
     }
 
-    @Override
-    public void onEmgRawReceived(final BluetoothDevice device, int value)
-    {
-    }
-
     public void onEmgPwrReceived(final BluetoothDevice device, long ts_ms, int value)
     {
         if (networkStreaming != null && networkStreaming.isConnected()) {
@@ -1231,6 +1303,19 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
             for (int j = 0; j < 3; j++)
                 linearizedData[i + j * 3] = accel[i][j];
 
+        ImuData dataMsg = new ImuData();
+        dataMsg.samples = accel[0].length;
+        dataMsg.x = accel[0];
+        dataMsg.y = accel[1];
+        dataMsg.z = accel[2];
+        for (IEmgImuSenseCallback cb : imuAccelCbs) {
+            try {
+                cb.handleData(device, dataMsg);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+
         /*
         if (networkStreaming != null && networkStreaming.isConnected()) {
             double [] data = {(double) value};
@@ -1247,6 +1332,20 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
             for (int j = 0; j < 3; j++)
                 linearizedData[i + j * 3] = gyro[i][j];
 
+        ImuData dataMsg = new ImuData();
+        dataMsg.samples = gyro[0].length;
+        dataMsg.x = gyro[0];
+        dataMsg.y = gyro[1];
+        dataMsg.z = gyro[2];
+
+        for (IEmgImuSenseCallback cb : imuGyroCbs) {
+            try {
+                cb.handleData(device, dataMsg);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+
         /*
         if (networkStreaming != null && networkStreaming.isConnected()) {
             double [] data = {(double) value};
@@ -1262,6 +1361,21 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
         for (int i = 0; i < 3; i++)
             for (int j = 0; j < 3; j++)
                 linearizedData[i + j * 3] = mag[i][j];
+
+        ImuData dataMsg = new ImuData();
+        dataMsg.samples = mag[0].length;
+        //dataMsg.ts = ts_ms;
+        dataMsg.x = mag[0];
+        dataMsg.y = mag[1];
+        dataMsg.z = mag[2];
+
+        for (IEmgImuSenseCallback cb : imuMagCbs) {
+            try {
+                cb.handleData(device, dataMsg);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     @Override

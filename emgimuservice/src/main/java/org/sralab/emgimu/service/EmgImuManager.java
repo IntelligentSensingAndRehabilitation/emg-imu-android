@@ -629,20 +629,12 @@ public class EmgImuManager extends BleManager {
         }
     }
 
-    private void parseEmgRaw(final BluetoothDevice device, final Data characteristic) {
-        // Have to manually combine to get the endian right
-        int raw_val = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0) +
-                characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1) * 256;
-        mEmgRaw = raw_val;
-        mCallbacks.onEmgRawReceived(device, mEmgRaw);
-    }
-
     private void parseImuAccel(final BluetoothDevice device, final Data characteristic) {
         final float ACCEL_SCALE = 9.8f / 2048.0f; // for 16G to m/s
         float accel[][] = new float[3][3];
         for (int idx = 0; idx < 3; idx++) // 3 comes from "BUNDLE" param in firmware
             for (int chan = 0; chan < 3; chan++)
-                accel[idx][chan] = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT16, (chan + idx * 3) * 2) * ACCEL_SCALE;
+                accel[chan][idx] = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT16, (chan + idx * 3) * 2) * ACCEL_SCALE;
 
         mCallbacks.onImuAccelReceived(device, accel);
 
@@ -656,7 +648,7 @@ public class EmgImuManager extends BleManager {
         float gyro[][] = new float[3][3];
         for (int idx = 0; idx < 3; idx++) // 3 comes from "BUNDLE" param in firmware
             for (int chan = 0; chan < 3; chan++)
-                gyro[idx][chan] = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT16, (chan + idx * 3) * 2) * GYRO_SCALE;
+                gyro[chan][idx] = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT16, (chan + idx * 3) * 2) * GYRO_SCALE;
 
         mCallbacks.onImuGyroReceived(device, gyro);
 
@@ -669,7 +661,7 @@ public class EmgImuManager extends BleManager {
         float mag[][] = new float[3][3];
         for (int idx = 0; idx < 3; idx++) // 3 comes from "BUNDLE" param in firmware
             for (int chan = 0; chan < 3; chan++)
-                mag[idx][chan] = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT16, (chan + idx * 3) * 2);
+                mag[chan][idx] = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT16, (chan + idx * 3) * 2);
 
         mCallbacks.onImuMagReceived(device, mag);
 
