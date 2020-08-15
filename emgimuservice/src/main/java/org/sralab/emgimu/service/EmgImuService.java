@@ -79,11 +79,15 @@ import org.sralab.emgimu.logging.EmgLogFetchJobService;
 import org.sralab.emgimu.streaming.NetworkStreaming;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.DoubleStream;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import io.fabric.sdk.android.Fabric;
 import no.nordicsemi.android.ble.BleManager;
@@ -128,8 +132,8 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
     private IEmgDecoder emgDecoder;
     private OnEmgDecodedListener emgDecodedCallback;
 
-    private List <IEmgImuDataCallback> emgStreamCbs = new ArrayList<>();
-    private List <IEmgImuDataCallback> emgPwrCbs = new ArrayList<>();
+    private List <IEmgImuStreamDataCallback> emgStreamCbs = new ArrayList<>();
+    private List <IEmgImuPwrDataCallback> emgPwrCbs = new ArrayList<>();
 
     public interface OnEmgDecodedListener {
         void onEmgDecoded(float [] decoded);
@@ -300,7 +304,7 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
             configureLoggingSavedDevices();
         }
 
-        public void registerEmgStreamObserver(IEmgImuDataCallback callback) throws RemoteException {
+        public void registerEmgStreamObserver(IEmgImuStreamDataCallback callback) throws RemoteException {
             Log.d(TAG, "Stream callback received");
             emgStreamCbs.add(callback);
             for (final BluetoothDevice device : getManagedDevices()) {
@@ -309,7 +313,7 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
             }
         }
 
-        public void unregisterEmgStreamObserver(IEmgImuDataCallback callback) {
+        public void unregisterEmgStreamObserver(IEmgImuStreamDataCallback callback) {
             Log.d(TAG, "Stream callback removed");
             emgStreamCbs.remove(callback);
             if (emgStreamCbs.size() == 0) {
@@ -321,7 +325,7 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
             }
         }
 
-        public void registerEmgPwrObserver(IEmgImuDataCallback callback) {
+        public void registerEmgPwrObserver(IEmgImuPwrDataCallback callback) {
             Log.d(TAG, "Power callback received");
             emgPwrCbs.add(callback);
             for (final BluetoothDevice device : getManagedDevices()) {
@@ -330,7 +334,7 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
             }
         }
 
-        public void unregisterEmgPwrObserver(IEmgImuDataCallback callback) {
+        public void unregisterEmgPwrObserver(IEmgImuPwrDataCallback callback) {
             Log.d(TAG, "Power callback removed");
             emgPwrCbs.remove(callback);
             if (emgStreamCbs.size() == 0) {
@@ -1142,11 +1146,14 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
             networkStreaming.streamEmgPwr(device, new Date().getTime(), data);
         }
 
-        for (IEmgImuDataCallback cb : emgPwrCbs) {
+        EmgPwrData dataMsg = new EmgPwrData();
+        dataMsg.channels = 1;
+        dataMsg.power = new int[]{value};
+        dataMsg.ts = ts_ms;
+
+        for (IEmgImuPwrDataCallback cb : emgPwrCbs) {
             try {
-                DataParcel p = new DataParcel();
-                p.writeVal(value);
-                cb.handleData(device, ts_ms, p);
+                cb.handleData(device, dataMsg);
             } catch (RemoteException e) {
                 e.printStackTrace();
             }
@@ -1155,6 +1162,7 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
 
     @Override
     public void onEmgBuffReceived(BluetoothDevice device, long ts_ms, double[][] data) {
+
         final int CHANNELS = data.length;
         final int SAMPLES = data[0].length;
 	    double [] linearizedData = new double[CHANNELS * SAMPLES];
@@ -1189,9 +1197,15 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
             networkStreaming.streamEmgBuffer(device, ts_ms, SAMPLES, CHANNELS, data);
         }
 
-        for (IEmgImuDataCallback cb : emgStreamCbs) {
+        EmgStreamData dataMsg = new EmgStreamData();
+        dataMsg.channels = CHANNELS;
+        dataMsg.samples = SAMPLES;
+        dataMsg.voltage = linearizedData;
+        dataMsg.ts = ts_ms;
+
+        for (IEmgImuStreamDataCallback cb : emgStreamCbs) {
             try {
-                cb.handleData(device, ts_ms, null);
+                cb.handleData(device, dataMsg);
             } catch (RemoteException e) {
                 e.printStackTrace();
             }

@@ -3,12 +3,25 @@ package org.sralab.emgimu.service;
 
 // Declare any non-default types here with import statements
 
-//import IEmgImuDataCallback;
+parcelable EmgStreamData {
+    long ts;
+    int channels;
+    int samples;
+    double [] voltage;
+}
 
-parcelable DataParcel;
+oneway interface IEmgImuStreamDataCallback {
+    void handleData(in BluetoothDevice device, in EmgStreamData data);
+}
 
-oneway interface IEmgImuDataCallback {
-    void handleData(in BluetoothDevice device, long ts, in DataParcel data);
+parcelable EmgPwrData {
+    long ts;
+    int channels;
+    int [] power;
+}
+
+oneway interface IEmgImuPwrDataCallback {
+    void handleData(in BluetoothDevice device, in EmgPwrData data);
 }
 
 interface IEmgImuServiceBinder  {
@@ -25,9 +38,9 @@ interface IEmgImuServiceBinder  {
     // boolean isReady(in BluetoothDevice device);
 
     // For receiving data
-    void registerEmgStreamObserver(IEmgImuDataCallback callback);
-    void unregisterEmgStreamObserver(IEmgImuDataCallback callback);
-    void registerEmgPwrObserver(IEmgImuDataCallback callback);
-    void unregisterEmgPwrObserver(IEmgImuDataCallback callback);
+    void registerEmgStreamObserver(IEmgImuStreamDataCallback callback);
+    void unregisterEmgStreamObserver(IEmgImuStreamDataCallback callback);
+    void registerEmgPwrObserver(IEmgImuPwrDataCallback callback);
+    void unregisterEmgPwrObserver(IEmgImuPwrDataCallback callback);
 
 }

@@ -14,8 +14,8 @@ import android.os.RemoteException;
 import android.util.Log;
 import android.widget.Toast;
 
-import org.sralab.emgimu.service.DataParcel;
-import org.sralab.emgimu.service.IEmgImuDataCallback;
+import org.sralab.emgimu.service.EmgPwrData;
+import org.sralab.emgimu.service.IEmgImuPwrDataCallback;
 import org.sralab.emgimu.service.IEmgImuServiceBinder;
 
 public class Bridge extends Application
@@ -45,13 +45,11 @@ public class Bridge extends Application
         this.callback = callback;
     }
 
-    private final IEmgImuDataCallback.Stub pwrObserver = new IEmgImuDataCallback.Stub() {
+    private final IEmgImuPwrDataCallback.Stub pwrObserver = new IEmgImuPwrDataCallback.Stub() {
         @Override
-        public void handleData(BluetoothDevice device, long ts, DataParcel data) {
-            Log.d(TAG, "Power callback");
-
+        public void handleData(BluetoothDevice device, EmgPwrData data) throws RemoteException {
             if (getCallback() != null) {
-                getCallback().onSuccess(Integer.toString(data.readVal()));
+                getCallback().onSuccess(Integer.toString(data.power[0]));
             }
         }
     };

@@ -15,9 +15,9 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MediatorLiveData;
 import androidx.lifecycle.Transformations;
 
-import org.sralab.emgimu.service.DataParcel;
 import org.sralab.emgimu.service.EmgImuService;
-import org.sralab.emgimu.service.IEmgImuDataCallback;
+import org.sralab.emgimu.service.EmgPwrData;
+import org.sralab.emgimu.service.IEmgImuPwrDataCallback;
 import org.sralab.emgimu.service.IEmgImuServiceBinder;
 
 import java.util.ArrayList;
@@ -66,11 +66,11 @@ public class DeviceViewModel extends AndroidViewModel {
         this.app.getApplicationContext().unbindService(serviceConnection);
     }
 
-    private final IEmgImuDataCallback.Stub pwrObserver = new IEmgImuDataCallback.Stub() {
+    private final IEmgImuPwrDataCallback.Stub pwrObserver = new IEmgImuPwrDataCallback.Stub() {
         @Override
-        public void handleData(BluetoothDevice device, long ts, DataParcel data) {
+        public void handleData(BluetoothDevice device, EmgPwrData data) {
             Device dev = deviceMap.get(device);
-            dev.addPower(ts, data.readVal());
+            dev.addPower(data.ts, data.power[0]);
         }
     };
 
