@@ -15,6 +15,10 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.crashlytics.android.Crashlytics;
+import com.crashlytics.android.core.CrashlyticsCore;
+
+import io.fabric.sdk.android.Fabric;
 import no.nordicsemi.android.nrftoolbox.widget.DividerItemDecoration;
 
 public class StreamingActivity extends AppCompatActivity {
@@ -43,12 +47,12 @@ public class StreamingActivity extends AppCompatActivity {
         setContentView(R.layout.activity_streaming);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
-        /*
         CrashlyticsCore crashlyticsCore = new CrashlyticsCore.Builder()
                 .disabled(BuildConfig.DEBUG)
                 .build();
         Fabric.with(this, new Crashlytics.Builder().core(crashlyticsCore).build());
 
+        /*
         mRangeText = findViewById(R.id.rangeText);
         mRangeText.addTextChangedListener(new TextWatcher() {
             @Override
@@ -77,10 +81,6 @@ public class StreamingActivity extends AppCompatActivity {
             }
         });
 
-        enableFilter = findViewById(R.id.filteringCb);
-        enableFilter.setOnCheckedChangeListener((compoundButton, b) -> {
-            Log.d(TAG, "Toggle streaming filter");
-        });
         */
 
         final RecyclerView recyclerView = findViewById(R.id.emg_list);
@@ -90,6 +90,10 @@ public class StreamingActivity extends AppCompatActivity {
         dvm = new ViewModelProvider(this, ViewModelProvider.AndroidViewModelFactory.getInstance(getApplication())).get(DeviceViewModel.class);
         dvm.getDevicesLiveData().observe(this, devices -> streamingAdapter.notifyDataSetChanged());
         recyclerView.setAdapter(streamingAdapter = new StreamingAdapter(this, dvm));
+
+        enableFilter = findViewById(R.id.filteringCb);
+        dvm.setFiltering(enableFilter.isChecked());
+        enableFilter.setOnCheckedChangeListener((compoundButton, b) -> dvm.setFiltering(b) );
     }
 
 }

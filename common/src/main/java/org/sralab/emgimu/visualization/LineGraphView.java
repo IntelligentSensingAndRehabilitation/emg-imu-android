@@ -35,14 +35,18 @@ import org.achartengine.model.XYMultipleSeriesDataset;
 import org.achartengine.renderer.XYMultipleSeriesRenderer;
 import org.achartengine.renderer.XYSeriesRenderer;
 
+import java.util.Collections;
+import java.util.List;
+
 /**
  * This class uses external library AChartEngine to show dynamic real time line graph for HR values
  */
 public class LineGraphView extends LinearLayout {
 
-	private TimeSeries series = new TimeSeries("EMG Power");
+	private TimeSeries series = new TimeSeries("");
 	private XYMultipleSeriesDataset dataset = new XYMultipleSeriesDataset();
 	private XYMultipleSeriesRenderer renderer = new XYMultipleSeriesRenderer();
+	private XYSeriesRenderer seriesRenderer = new XYSeriesRenderer();
 	private GraphicalView graphicalView;
 
 	public LineGraphView(Context context) {
@@ -65,11 +69,7 @@ public class LineGraphView extends LinearLayout {
 
 		dataset.addSeries(series);
 
-		//XYSeriesRenderer is used to set the properties like chart color, style of each point, etc. of single chart
-		final XYSeriesRenderer seriesRenderer = new XYSeriesRenderer();
-		//set line chart color to Black
 		seriesRenderer.setColor(Color.BLACK);
-		//set line chart style to square points
 		seriesRenderer.setPointStyle(PointStyle.CIRCLE);
 		seriesRenderer.setFillPoints(true);
 		seriesRenderer.setShowLegendItem(false);
@@ -112,4 +112,16 @@ public class LineGraphView extends LinearLayout {
 		graphicalView.repaint();
 	}
 
+	public void updateSeries(List<TimeSeries> series) {
+		dataset.clear();
+		dataset.addAllSeries(Collections.unmodifiableList(series));
+
+		if (renderer.getSeriesRendererCount() != series.size()) {
+			renderer.removeAllRenderers();
+			for (TimeSeries s : series)
+				renderer.addSeriesRenderer(seriesRenderer);
+		}
+
+		graphicalView.repaint();
+	}
 }

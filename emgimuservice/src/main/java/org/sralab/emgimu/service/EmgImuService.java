@@ -1161,16 +1161,38 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
     }
 
     @Override
-    public void onEmgBuffReceived(BluetoothDevice device, long ts_ms, double[][] data) {
+    public void onEmgStreamReceived(BluetoothDevice device, long ts_ms, double[][] data) {
 
+	    // TODO: fair bit of semi-redundant data serialization. Should consolidate.
+
+	    // First: send data to subscribed callbacks
         final int CHANNELS = data.length;
         final int SAMPLES = data[0].length;
-	    double [] linearizedData = new double[CHANNELS * SAMPLES];
+	    double [] linearizedData = Stream.of(data).flatMapToDouble(DoubleStream::of).toArray();
 
-	    for (int i = 0; i < CHANNELS; i++)
-	        for (int j = 0; j < SAMPLES; j++)
-	            linearizedData[i + j * CHANNELS] = data[i][j];
+	    // For reference. Might ultimately make sense to wrapper this in a utility class
+        // double [][] reconstructed = IntStream.range(0, CHANNELS)
+        //        .mapToObj(i -> Arrays.copyOfRange(linearizedData2, i * SAMPLES, (i + 1) * SAMPLES))
+        //        .toArray(double[][]::new);
 
+        EmgStreamData dataMsg = new EmgStreamData();
+        dataMsg.channels = CHANNELS;
+        dataMsg.samples = SAMPLES;
+        dataMsg.voltage = linearizedData;
+        dataMsg.ts = ts_ms;
+        dataMsg.Fs = 2000; // TODO: access real data
+
+        for (IEmgImuStreamDataCallback cb : emgStreamCbs) {
+            try {
+                cb.handleData(device, dataMsg);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+
+        // Second: pass through EMG decoder (Tensorflow Lite) if registered
+        // TODO: improve design pattern, if possible. Likely good for this
+        // to live in service so other objects can subscribe to it, though.
         // If EMG decoder exists, push data through this
         if (emgDecoder != null) {
 
@@ -1193,22 +1215,10 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
                 }
             }
         }
+
+        // Third: mirror data over stream
         if (networkStreaming != null && networkStreaming.isConnected()) {
             networkStreaming.streamEmgBuffer(device, ts_ms, SAMPLES, CHANNELS, data);
-        }
-
-        EmgStreamData dataMsg = new EmgStreamData();
-        dataMsg.channels = CHANNELS;
-        dataMsg.samples = SAMPLES;
-        dataMsg.voltage = linearizedData;
-        dataMsg.ts = ts_ms;
-
-        for (IEmgImuStreamDataCallback cb : emgStreamCbs) {
-            try {
-                cb.handleData(device, dataMsg);
-            } catch (RemoteException e) {
-                e.printStackTrace();
-            }
         }
 
     }
