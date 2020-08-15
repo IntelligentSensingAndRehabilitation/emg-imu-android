@@ -11,7 +11,7 @@
 
 
         <activity
-            android:name="org.sralab.emgimu.streaming.Streaming"
+            android:name="org.sralab.emgimu.streaming.StreamingActivity"
             android:icon="@drawable/ic_streaming"
             android:label="@string/streaming_title"
             android:launchMode="singleTask" >

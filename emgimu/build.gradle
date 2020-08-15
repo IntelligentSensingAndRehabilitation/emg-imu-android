@@ -54,7 +54,7 @@ dependencies {
     implementation project(':emgimuservice')
     implementation project(':core')
     //implementation project(':fluttercow')
-    //implementation project(':streaming')
+    implementation project(':streaming')
     //implementation project(':imu_calibration')
 
     // Because too many methods

@@ -22,56 +22,69 @@
 
 package org.sralab.emgimu.streaming;
 
-import android.bluetooth.BluetoothDevice;
-import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import org.sralab.emgimu.EmgImuAdapterActivity;
+import androidx.annotation.NonNull;
+import androidx.lifecycle.LifecycleOwner;
+import androidx.lifecycle.LiveData;
+import androidx.recyclerview.widget.DefaultItemAnimator;
+import androidx.recyclerview.widget.RecyclerView;
+
 import org.sralab.emgimu.visualization.LineGraphView;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 
-public class StreamingAdapter extends EmgImuAdapterActivity.DeviceAdapter {
+public class StreamingAdapter extends RecyclerView.Adapter<StreamingAdapter.ViewHolder> {
 
     private final String TAG = StreamingAdapter.class.getSimpleName();
 
-    private final Map<Pair<BluetoothDevice, Integer>, LineGraphView> mDeviceLineGraphMap = new HashMap<>();
-    private final Integer DISPLAY_CHANNELS = 4; // TODO: this should be adjustable
+    private final Integer DISPLAY_CHANNELS = 4; // TODO: this should be adjustable and per device
 
+    private LifecycleOwner context;
+    private final LiveData<List<Device>> devices;
+
+    public StreamingAdapter(LifecycleOwner context, DeviceViewModel dvm) {
+        devices = dvm.getDevicesLiveData();
+        this.context = context;
+    }
+
+    @NonNull
     @Override
     public ViewHolder onCreateViewHolder(final ViewGroup parent, final int viewType) {
 
-        final View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.emg_activity, parent, false);
+        final View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.streaming_item, parent, false);
         int height = parent.getMeasuredHeight() / DISPLAY_CHANNELS;
 
         ViewGroup.LayoutParams params = view.getLayoutParams();
         params.height = height;
         view.setLayoutParams(params);
 
-        return new StreamingViewHolder(view);
+        return new ViewHolder(view);
+    }
+
+    public class DefaultItemAnimatorNoChange extends DefaultItemAnimator {
+        public DefaultItemAnimatorNoChange() { setSupportsChangeAnimations(false); }
+    }
+
+    @Override
+    public void onAttachedToRecyclerView(RecyclerView recyclerView) {
+        // This is important to make sure there are not two overlapping views for the
+        // same element that the RecycleView tries to use for smoother updates. It
+        // breaks the animation coming from the graph element
+        recyclerView.setItemAnimator(new DefaultItemAnimatorNoChange());
     }
 
     @Override
     public void onBindViewHolder(final ViewHolder holder, final int position) {
-        // Find the device and channel index that corresponds to a row
-        int deviceIndex = 0;
-        for (deviceIndex = 0; deviceIndex < getDevices().size(); deviceIndex++) {
-            final BluetoothDevice dev = getDevices().get(deviceIndex);
-            int devLastPos = getPosition(dev) +  getService().getChannelCount(dev);
-            if (devLastPos >= position) {
-                break;
-            }
-        }
+        holder.bind(devices.getValue().get(position));
+    }
 
-        final BluetoothDevice d = getDevices().get(deviceIndex);
-        int channel = position - getPosition(d);
-        ((StreamingViewHolder) holder).bind(d, channel);
-	}
+    @Override
+    public int getItemCount() { return devices.getValue().size(); }
 
-	@Override
+	/*@Override
     public void onViewRecycled(final ViewHolder holder) {
         // When a view is recycled, we must dettach the graph from it's
         // view so it can be used again later
@@ -79,25 +92,18 @@ public class StreamingAdapter extends EmgImuAdapterActivity.DeviceAdapter {
         final StreamingViewHolder streamingHolder = (StreamingViewHolder) holder;
         streamingHolder.mLayoutView.removeAllViews();
         streamingHolder.mLineGraph = null;
-    }
+    }*/
 
-    private boolean mFiltering = true;
-
+	/*
     public void toggleFiltering(boolean filter) {
         mFiltering = filter;
         for (LineGraphView l : mDeviceLineGraphMap.values()) {
             l.enableFiltering(mFiltering);
         }
     }
+    */
 
-    @Override
-	public int getItemCount() {
-	    int items = 0;
-	    for (final BluetoothDevice device : getDevices())
-	        items += getService().getChannelCount(device);
-	    return items;
-	}
-
+	/*
     //! Get the row in the adapters for the first channel of this device
 	private int getPosition(final BluetoothDevice device) {
         int items = 0;
@@ -155,47 +161,19 @@ public class StreamingAdapter extends EmgImuAdapterActivity.DeviceAdapter {
             }
         }
     }
+    */
 
-	class StreamingViewHolder extends EmgImuAdapterActivity.DeviceAdapter.ViewHolder {
-        private ViewGroup mLayoutView;
+	class ViewHolder extends RecyclerView.ViewHolder {
 
-        private LineGraphView mLineGraph;
+        private LineGraphView graphView;
 
-        StreamingViewHolder(final View itemView) {
+        ViewHolder(final View itemView) {
 			super(itemView);
-
-            mLayoutView = itemView.findViewById(R.id.emg_activity);
-
-            if (mLayoutView == null) {
-                throw new RuntimeException("Cannot find view for list of emgs");
-            }
-
-            // Graphing elements will be assigned once we have a position
-            mLineGraph = null;
+            graphView = itemView.findViewById(R.id.graph_pwr);
         }
 
-        // We want one line graph and graph view per device. The ViewHolder constructor
-        // can be created multiple times in the line cycle of the view so cannot create there
-        private void createGraphIfMissing(final BluetoothDevice device, int channel) {
-
-            if (mLineGraph == null) {
-                mLineGraph = mDeviceLineGraphMap.get(device);
-
-                // See if graph has been cached and if so use this
-                if (mLineGraph == null) {
-                    mLineGraph = new LineGraphView(mLayoutView.getContext(), mLayoutView);
-                    mLineGraph.setWindowSize(250);
-                    mLineGraph.setRange(mRange);
-                    mLineGraph.enableFiltering(mFiltering);
-                    mDeviceLineGraphMap.put(new Pair<>(device, channel), mLineGraph);
-                }
-            }
-        }
-
-		private void bind(final BluetoothDevice device, int channel) {
-            // Update the graph
-            createGraphIfMissing(device, channel);
-            mLineGraph.repaint();
+		private void bind(final Device device) {
+            device.getSeries().observe(context, timeSeries -> graphView.updateSeries(timeSeries) );
 		}
 	}
 }
