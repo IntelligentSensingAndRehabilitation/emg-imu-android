@@ -55,7 +55,7 @@ dependencies {
     implementation project(':core')
     //implementation project(':fluttercow')
     implementation project(':streaming')
-    //implementation project(':imu_calibration')
+    implementation project(':imu_calibration')
 
     // Because too many methods
     api 'androidx.multidex:multidex:2.0.1'

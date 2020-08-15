@@ -1,5 +1,5 @@
 include ':spasticitymonitor'
-include ':core', ':common',  ':emgimuservice', ':emgimu' //, ':imu_calibration', ':controller'
+include ':core', ':common',  ':emgimuservice', ':emgimu' , ':imu_calibration' //, ':controller'
 include ':streaming'
 //include ':fluttercow', ':streaming'
 //include ':powerhammer'

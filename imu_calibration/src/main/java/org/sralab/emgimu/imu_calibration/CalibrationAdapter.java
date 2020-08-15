@@ -1,6 +1,7 @@
 package org.sralab.emgimu.imu_calibration;
 
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothGatt;
 import android.graphics.Bitmap;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -11,33 +12,47 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.lifecycle.LifecycleOwner;
+import androidx.lifecycle.LiveData;
+import androidx.recyclerview.widget.RecyclerView;
 
 import org.sralab.emgimu.EmgImuAdapterActivity;
 import org.sralab.emgimu.service.EmgImuManager;
 
 import java.util.List;
 
-public class CalibrationAdapter extends EmgImuAdapterActivity.DeviceAdapter {
+public class CalibrationAdapter extends RecyclerView.Adapter<CalibrationAdapter.ViewHolder> {
 
     private final String TAG = CalibrationAdapter.class.getSimpleName();
 
+    private LifecycleOwner context;
+    private final LiveData<List<Device>> devices;
+    private DeviceViewModel dvm;
+
+    public CalibrationAdapter(LifecycleOwner context, DeviceViewModel dvm) {
+        this.dvm = dvm;
+        devices = dvm.getDevicesLiveData();
+        this.context = context;
+    }
+
     @NonNull
     @Override
-    public ViewHolder onCreateViewHolder(
-            final ViewGroup parent, final int viewType) {
-
+    public ViewHolder onCreateViewHolder(final ViewGroup parent, final int viewType) {
         final View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.view_calibration, parent, false);
-        return new MyViewHolder(view);
+        return new ViewHolder(view);
     }
 
     @Override
-    public void onDeviceReady(BluetoothDevice device) {
-        Log.d(TAG, "onDeviceReady");
-        super.onDeviceReady(device);
-        notifyDataSetChanged();
+    public void onBindViewHolder(final ViewHolder holder, final int position) {
+        holder.bind(devices.getValue().get(position));
     }
 
-    class MyViewHolder extends EmgImuAdapterActivity.DeviceAdapter.ViewHolder {
+    @Override
+    public int getItemCount() {
+        return devices.getValue().size();
+    }
+
+    class ViewHolder extends RecyclerView.ViewHolder {
 
         private TextView status;
         private ImageView calibrationIm;
@@ -45,25 +60,38 @@ public class CalibrationAdapter extends EmgImuAdapterActivity.DeviceAdapter {
         private Button finishButton;
         private TextView sensorId;
 
-        @Override
-        public void bind(BluetoothDevice device) {
-            super.bind(device);
-            Log.d(TAG, "Binding: " + device);
-            if (device != null) {
-                boolean connected = getService().isReady(device);
-                startButton.setEnabled(connected);
-                sensorId.setText("Sensor: " + getDevice().getAddress());
-            } else {
-                finishButton.setEnabled(false);
+        private void updateConnection(Device.CalibrationStatus connection) {
+            if (connection == Device.CalibrationStatus.DISCONNECTED) {
                 startButton.setEnabled(false);
-                status.setText("");
-                sensorId.setText("Sensor: Connecting...");
+                finishButton.setEnabled(false);
             }
+            else if (connection == Device.CalibrationStatus.IDLE) {
+                startButton.setEnabled(true);
+                finishButton.setEnabled(false);
+            }
+            else if (connection == Device.CalibrationStatus.STARTED) {
+                startButton.setEnabled(false);
+                finishButton.setEnabled(true);
+            }
+            else if (connection == Device.CalibrationStatus.FINISHED) {
+                startButton.setEnabled(false);
+                finishButton.setEnabled(false);
+            };
         }
 
+        public void bind(Device device) {
+            sensorId.setText("Sensor: " + device.getAddress());
 
+            device.getImage().observe(context, im -> calibrationIm.setImageBitmap(im));
+            device.getStatus().observe(context, s -> status.setText(s));
 
-        MyViewHolder(final View itemView) {
+            startButton.setOnClickListener(v -> device.startCalibration());
+            finishButton.setOnClickListener(v -> device.finishCalibration());
+
+            device.getCalibrationStatus().observe(context, value -> updateConnection(value));
+        }
+
+        ViewHolder(final View itemView) {
             super(itemView);
 
             status = itemView.findViewById(R.id.calibration_status);
@@ -72,7 +100,8 @@ public class CalibrationAdapter extends EmgImuAdapterActivity.DeviceAdapter {
             sensorId = itemView.findViewById(R.id.sensor_id);
 
             startButton = itemView.findViewById(R.id.start_calibration_button);
-            startButton.setOnClickListener(v -> {
+
+            /*startButton.setOnClickListener(v -> {
 
                 // TODO: could add state awareness to toggle between enabled or not
                 // but really the view holder should not have any state information
@@ -119,10 +148,10 @@ public class CalibrationAdapter extends EmgImuAdapterActivity.DeviceAdapter {
                     }
                 });
 
-            });
+            });*/
 
             finishButton = itemView.findViewById(R.id.finish_calibration_button);
-            finishButton.setOnClickListener(v -> {
+            /*finishButton.setOnClickListener(v -> {
 
                 finishButton.setEnabled(false);
 
@@ -170,7 +199,7 @@ public class CalibrationAdapter extends EmgImuAdapterActivity.DeviceAdapter {
                 };
 
                 getService().finishCalibration(dev, listener);
-            });
+            });*/
 
         }
 
