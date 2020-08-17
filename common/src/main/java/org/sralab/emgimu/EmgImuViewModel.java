@@ -1,0 +1,171 @@
+package org.sralab.emgimu;
+
+import android.app.Application;
+import android.bluetooth.BluetoothDevice;
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.ServiceConnection;
+import android.os.IBinder;
+import android.os.RemoteException;
+
+import androidx.lifecycle.AndroidViewModel;
+import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MediatorLiveData;
+import androidx.lifecycle.MutableLiveData;
+import androidx.lifecycle.Transformations;
+
+import org.sralab.emgimu.service.EmgPwrData;
+import org.sralab.emgimu.service.EmgStreamData;
+import org.sralab.emgimu.service.IEmgImuPwrDataCallback;
+import org.sralab.emgimu.service.IEmgImuQuatCallback;
+import org.sralab.emgimu.service.IEmgImuSenseCallback;
+import org.sralab.emgimu.service.IEmgImuServiceBinder;
+import org.sralab.emgimu.service.IEmgImuStreamDataCallback;
+import org.sralab.emgimu.service.ImuData;
+import org.sralab.emgimu.service.ImuQuatData;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+public class EmgImuViewModel <T> extends AndroidViewModel {
+
+    private final static String TAG = EmgImuViewModel.class.getSimpleName();
+
+    Application app;
+    IEmgImuServiceBinder service;
+
+    boolean observe_pwr = false;
+    boolean observe_stream = false;
+    boolean observe_accel = false;
+    boolean observe_gyro = false;
+    boolean observe_mag = false;
+    boolean observe_quat = false;
+
+    Map<BluetoothDevice, T> deviceMap;
+    MediatorLiveData<List<T>> devicesLiveData = new MediatorLiveData<>();
+    public LiveData<List<T>> getDevicesLiveData() { return devicesLiveData; }
+
+    public EmgImuViewModel(Application app) {
+        super(app);
+
+        deviceMap = new HashMap<>();
+        devicesLiveData.setValue((List<T>) deviceMap.values());
+
+        final Intent service = new Intent();
+        service.setComponent(new ComponentName("org.sralab.emgimu", "org.sralab.emgimu.service.EmgImuService"));
+        app.getApplicationContext().bindService(service, serviceConnection, Context.BIND_AUTO_CREATE);
+        this.app = app;
+    }
+
+    @Override
+    protected void onCleared() {
+        super.onCleared();
+
+        try {
+            if (observe_pwr) service.unregisterEmgPwrObserver(pwrObserver);
+            if (observe_stream) service.unregisterEmgStreamObserver(streamObserver);
+            if (observe_accel) service.unregisterImuAccelObserver(accelObserver);
+            if (observe_gyro) service.unregisterImuGyroObserver(gyroObserver);
+            if (observe_mag) service.unregisterImuMagObserver(magObserver);
+            if (observe_quat) service.unregisterImuQuatObserver(quatObserver);
+        } catch (RemoteException e) {
+            throw new RuntimeException(e);
+        }
+
+        this.app.getApplicationContext().unbindService(serviceConnection);
+    }
+
+    List<T> apply(List<BluetoothDevice> bluetoothDevices) {
+        ArrayList<T> output = new ArrayList<>();
+        return output;
+    }
+
+    private ServiceConnection serviceConnection = new ServiceConnection() {
+
+
+        @Override
+        public void onServiceConnected(final ComponentName name, final IBinder binder) {
+            service = IEmgImuServiceBinder.Stub.asInterface(binder);
+
+            try {
+                if (observe_pwr) service.registerEmgPwrObserver(pwrObserver);
+                if (observe_stream) service.registerEmgStreamObserver(streamObserver);
+                if (observe_accel) service.registerImuAccelObserver(accelObserver);
+                if (observe_gyro) service.registerImuGyroObserver(gyroObserver);
+                if (observe_mag) service.registerImuMagObserver(magObserver);
+                if (observe_quat) service.registerImuQuatObserver(quatObserver);
+            } catch (RemoteException e) {
+                throw new RuntimeException(e);
+            }
+
+            try {
+                MutableLiveData<List<BluetoothDevice>> liveDevices = new MutableLiveData<>();
+                liveDevices.setValue(service.getManagedDevices());
+                LiveData<List<T>> transformed = Transformations.map(liveDevices, EmgImuViewModel.this::apply);
+                devicesLiveData.addSource(transformed, value -> devicesLiveData.setValue(value));
+            } catch (RemoteException e) {
+                throw new RuntimeException(e);
+            }
+
+        }
+
+        @Override
+        public void onServiceDisconnected(final ComponentName name) {
+            service = null;
+        }
+    };
+
+    // Set of callbacks that can easily be used
+    public void emgPwrUpdated(T dev, EmgPwrData data) { }
+    private final IEmgImuPwrDataCallback.Stub pwrObserver = new IEmgImuPwrDataCallback.Stub() {
+        @Override
+        public void handleData(BluetoothDevice device, EmgPwrData data) {
+            T dev = deviceMap.get(device);
+            emgPwrUpdated(dev, data);
+        }
+    };
+
+    public void emgStreamUpdated(T dev, EmgStreamData data) { }
+    private final IEmgImuStreamDataCallback.Stub streamObserver = new IEmgImuStreamDataCallback.Stub() {
+        @Override
+        public void handleData(BluetoothDevice device, EmgStreamData data) {
+            T dev = deviceMap.get(device);
+            emgStreamUpdated(dev, data);
+        }
+    };
+
+    public void imuAccelUpdated(T dev, ImuData accel) { }
+    private final IEmgImuSenseCallback.Stub accelObserver = new IEmgImuSenseCallback.Stub() {
+        @Override
+        public void handleData(BluetoothDevice device, ImuData data) throws RemoteException {
+            imuAccelUpdated(deviceMap.get(device), data);
+        }
+    };
+
+    public void imuGyroUpdated(T dev, ImuData gyro) { }
+    private final IEmgImuSenseCallback.Stub gyroObserver = new IEmgImuSenseCallback.Stub() {
+        @Override
+        public void handleData(BluetoothDevice device, ImuData data) throws RemoteException {
+            imuGyroUpdated(deviceMap.get(device), data);
+        }
+    };
+
+    public void imuMagUpdated(T dev, ImuData mag) { }
+    private final IEmgImuSenseCallback.Stub magObserver = new IEmgImuSenseCallback.Stub() {
+        @Override
+        public void handleData(BluetoothDevice device, ImuData data) throws RemoteException {
+            imuMagUpdated(deviceMap.get(device), data);
+        }
+    };
+
+    public void imuQuatUpdated(T dev, ImuQuatData quat) { }
+    private final IEmgImuQuatCallback.Stub quatObserver = new IEmgImuQuatCallback.Stub() {
+        @Override
+        public void handleData(BluetoothDevice device, ImuQuatData data) throws RemoteException {
+            imuQuatUpdated(deviceMap.get(device), data);
+        }
+    };
+}
