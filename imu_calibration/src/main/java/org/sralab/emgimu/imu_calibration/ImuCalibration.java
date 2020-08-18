@@ -27,10 +27,6 @@ public class ImuCalibration extends AppCompatActivity {
 
     static final private String TAG = ImuCalibration.class.getSimpleName();
 
-    private static final int REQUEST_VIDEO_CAPTURE = 1;
-    boolean recording = false;
-    long recordingStartTime;
-
     CalibrationAdapter calibrationAdapater;
 
     @Override
@@ -45,12 +41,16 @@ public class ImuCalibration extends AppCompatActivity {
         DeviceViewModel dvm = new ViewModelProvider(this, ViewModelProvider.AndroidViewModelFactory.getInstance(getApplication())).get(DeviceViewModel.class);
         dvm.getDevicesLiveData().observe(this, devices -> calibrationAdapater.notifyDataSetChanged());
 
-        recyclerView.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
+        recyclerView.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false));
         recyclerView.addItemDecoration(new DividerItemDecoration(this, DividerItemDecoration.VERTICAL_LIST));
 
         recyclerView.setAdapter(calibrationAdapater = new CalibrationAdapter(this, dvm));
-
+    }
         /*
+        private static final int REQUEST_VIDEO_CAPTURE = 1;
+        boolean recording = false;
+        long recordingStartTime;
+
         Button startStreaming = findViewById(R.id.start_streaming_button);
         startStreaming.setOnClickListener(v -> {
             EmgImuService.EmgImuBinder mService = getService();
@@ -84,10 +84,8 @@ public class ImuCalibration extends AppCompatActivity {
                 startActivityForResult(takeVideoIntent, REQUEST_VIDEO_CAPTURE);
             }
         });
-        */
     }
-
-    /*
+    
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
         if (requestCode == REQUEST_VIDEO_CAPTURE && resultCode == RESULT_OK) {
