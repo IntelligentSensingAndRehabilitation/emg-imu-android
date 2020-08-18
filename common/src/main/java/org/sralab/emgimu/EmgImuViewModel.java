@@ -39,12 +39,12 @@ public abstract class EmgImuViewModel <T> extends AndroidViewModel {
 
     IEmgImuServiceBinder service;
 
-    public boolean observe_pwr = false;
-    public boolean observe_stream = false;
-    public boolean observe_accel = false;
-    public boolean observe_gyro = false;
-    public boolean observe_mag = false;
-    public boolean observe_quat = false;
+    public boolean getObservePwr() { return false; }
+    public boolean getObserveStream() { return false; }
+    public boolean getObserveAccel() { return false; }
+    public boolean getObserveGyro() { return false; }
+    public boolean getObserveMag() { return false; }
+    public boolean getObserveQuat() { return false; }
 
     Map<BluetoothDevice, T> deviceMap;
     MutableLiveData<List<T>> devicesLiveData = new MutableLiveData<>();
@@ -67,12 +67,12 @@ public abstract class EmgImuViewModel <T> extends AndroidViewModel {
         super.onCleared();
         try {
             service.unregisterDevicesObserver(deviceListObserver);
-            if (observe_pwr) service.unregisterEmgPwrObserver(pwrObserver);
-            if (observe_stream) service.unregisterEmgStreamObserver(streamObserver);
-            if (observe_accel) service.unregisterImuAccelObserver(accelObserver);
-            if (observe_gyro) service.unregisterImuGyroObserver(gyroObserver);
-            if (observe_mag) service.unregisterImuMagObserver(magObserver);
-            if (observe_quat) service.unregisterImuQuatObserver(quatObserver);
+            if (getObservePwr()) service.unregisterEmgPwrObserver(pwrObserver);
+            if (getObserveStream()) service.unregisterEmgStreamObserver(streamObserver);
+            if (getObserveAccel()) service.unregisterImuAccelObserver(accelObserver);
+            if (getObserveGyro()) service.unregisterImuGyroObserver(gyroObserver);
+            if (getObserveMag()) service.unregisterImuMagObserver(magObserver);
+            if (getObserveQuat()) service.unregisterImuQuatObserver(quatObserver);
         } catch (RemoteException e) {
             throw new RuntimeException(e);
         }
@@ -110,12 +110,12 @@ public abstract class EmgImuViewModel <T> extends AndroidViewModel {
             try {
                 service.registerDevicesObserver(deviceListObserver);
 
-                if (observe_pwr) service.registerEmgPwrObserver(pwrObserver);
-                if (observe_stream) service.registerEmgStreamObserver(streamObserver);
-                if (observe_accel) service.registerImuAccelObserver(accelObserver);
-                if (observe_gyro) service.registerImuGyroObserver(gyroObserver);
-                if (observe_mag) service.registerImuMagObserver(magObserver);
-                if (observe_quat) service.registerImuQuatObserver(quatObserver);
+                if (getObservePwr()) service.registerEmgPwrObserver(pwrObserver);
+                if (getObserveStream()) service.registerEmgStreamObserver(streamObserver);
+                if (getObserveAccel()) service.registerImuAccelObserver(accelObserver);
+                if (getObserveGyro()) service.registerImuGyroObserver(gyroObserver);
+                if (getObserveMag()) service.registerImuMagObserver(magObserver);
+                if (getObserveQuat()) service.registerImuQuatObserver(quatObserver);
             } catch (RemoteException e) {
                 throw new RuntimeException(e);
             }

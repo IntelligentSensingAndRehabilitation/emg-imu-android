@@ -32,8 +32,9 @@ public class DeviceViewModel extends EmgImuViewModel<Device> {
 
     public DeviceViewModel(Application app) {
         super(app);
-        observe_pwr = true;
     }
+
+    public boolean getObservePwr() { return true; }
 
     @Override
     public Device getDev(BluetoothDevice d) {
