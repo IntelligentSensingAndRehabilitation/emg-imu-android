@@ -8,15 +8,15 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.IBinder;
 import android.os.RemoteException;
+import android.util.Log;
 
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
-import androidx.lifecycle.MediatorLiveData;
 import androidx.lifecycle.MutableLiveData;
-import androidx.lifecycle.Transformations;
 
 import org.sralab.emgimu.service.EmgPwrData;
 import org.sralab.emgimu.service.EmgStreamData;
+import org.sralab.emgimu.service.IEmgImuDevicesUpdatedCallback;
 import org.sralab.emgimu.service.IEmgImuPwrDataCallback;
 import org.sralab.emgimu.service.IEmgImuQuatCallback;
 import org.sralab.emgimu.service.IEmgImuSenseCallback;
@@ -47,14 +47,14 @@ public abstract class EmgImuViewModel <T> extends AndroidViewModel {
     public boolean observe_quat = false;
 
     Map<BluetoothDevice, T> deviceMap;
-    MediatorLiveData<List<T>> devicesLiveData = new MediatorLiveData<>();
+    MutableLiveData<List<T>> devicesLiveData = new MutableLiveData<>();
     public LiveData<List<T>> getDevicesLiveData() { return devicesLiveData; }
 
     public EmgImuViewModel(Application app) {
         super(app);
 
         deviceMap = new HashMap<>();
-        devicesLiveData.setValue(new ArrayList< >());
+        devicesLiveData.setValue(new ArrayList<>());
 
         final Intent service = new Intent();
         service.setComponent(new ComponentName("org.sralab.emgimu", "org.sralab.emgimu.service.EmgImuService"));
@@ -65,8 +65,8 @@ public abstract class EmgImuViewModel <T> extends AndroidViewModel {
     @Override
     protected void onCleared() {
         super.onCleared();
-
         try {
+            service.unregisterDevicesObserver(deviceListObserver);
             if (observe_pwr) service.unregisterEmgPwrObserver(pwrObserver);
             if (observe_stream) service.unregisterEmgStreamObserver(streamObserver);
             if (observe_accel) service.unregisterImuAccelObserver(accelObserver);
@@ -82,13 +82,23 @@ public abstract class EmgImuViewModel <T> extends AndroidViewModel {
 
     public abstract T getDev(BluetoothDevice d);
 
-    List<T> apply(List<BluetoothDevice> bluetoothDevices) {
+    List<T> mapDev(List<BluetoothDevice> bluetoothDevices) {
         LinkedHashMap map = new LinkedHashMap<>();
         for (final BluetoothDevice d : bluetoothDevices) {
             map.put(d, getDev(d));
         }
         deviceMap = map;
         return new ArrayList<>(deviceMap.values());
+    }
+
+    public void onDeviceListUpdated() {
+        Log.d(TAG, "onDeviceListUpdated fired");
+        try {
+            List<BluetoothDevice> devices = service.getManagedDevices();
+            devicesLiveData.setValue(mapDev(devices));
+         } catch (RemoteException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private ServiceConnection serviceConnection = new ServiceConnection() {
@@ -98,6 +108,8 @@ public abstract class EmgImuViewModel <T> extends AndroidViewModel {
             service = IEmgImuServiceBinder.Stub.asInterface(binder);
 
             try {
+                service.registerDevicesObserver(deviceListObserver);
+
                 if (observe_pwr) service.registerEmgPwrObserver(pwrObserver);
                 if (observe_stream) service.registerEmgStreamObserver(streamObserver);
                 if (observe_accel) service.registerImuAccelObserver(accelObserver);
@@ -108,15 +120,7 @@ public abstract class EmgImuViewModel <T> extends AndroidViewModel {
                 throw new RuntimeException(e);
             }
 
-            try {
-                MutableLiveData<List<BluetoothDevice>> liveDevices = new MutableLiveData<>();
-                liveDevices.setValue(service.getManagedDevices());
-                LiveData<List<T>> transformed = Transformations.map(liveDevices, EmgImuViewModel.this::apply);
-                devicesLiveData.addSource(transformed, value -> devicesLiveData.setValue(value));
-            } catch (RemoteException e) {
-                throw new RuntimeException(e);
-            }
-
+            onDeviceListUpdated();
         }
 
         @Override
@@ -132,6 +136,10 @@ public abstract class EmgImuViewModel <T> extends AndroidViewModel {
     public Map<BluetoothDevice, T> getDeviceMap() {
         return deviceMap;
     }
+
+    private IEmgImuDevicesUpdatedCallback.Stub deviceListObserver = new IEmgImuDevicesUpdatedCallback.Stub() {
+        public void onDeviceListUpdated() { EmgImuViewModel.this.onDeviceListUpdated(); }
+    };
 
     // Set of callbacks that can easily be used
     public void emgPwrUpdated(T dev, EmgPwrData data) { }

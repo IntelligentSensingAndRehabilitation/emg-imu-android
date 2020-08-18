@@ -3,6 +3,10 @@ package org.sralab.emgimu.service;
 
 // Declare any non-default types here with import statements
 
+oneway interface IEmgImuDevicesUpdatedCallback {
+    void onDeviceListUpdated();
+}
+
 parcelable EmgStreamData {
     long ts;
     int channels;
@@ -59,6 +63,8 @@ interface IEmgImuServiceBinder  {
     void connectDevice(in BluetoothDevice device);
     void disconnectDevice(in BluetoothDevice device);
     int getConnectionState(in BluetoothDevice device);
+    void registerDevicesObserver(IEmgImuDevicesUpdatedCallback callback);
+    void unregisterDevicesObserver(IEmgImuDevicesUpdatedCallback callback);
     // boolean isConnected(in BluetoothDevice device);
     // boolean isReady(in BluetoothDevice device);
 

@@ -79,14 +79,12 @@ import org.sralab.emgimu.logging.EmgLogFetchJobService;
 import org.sralab.emgimu.streaming.NetworkStreaming;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.DoubleStream;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import io.fabric.sdk.android.Fabric;
@@ -132,6 +130,9 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
     private IEmgDecoder emgDecoder;
     private OnEmgDecodedListener emgDecodedCallback;
 
+    //    void registerDevicesObserver(IEmgImuDevicesUpdatedCallback callback);
+    //    void unregisterDevicesObserver(IEmgImuDevicesUpdatedCallback callback);)
+    private List <IEmgImuDevicesUpdatedCallback> deviceUpdateCbs = new ArrayList<>();
     private List <IEmgImuStreamDataCallback> emgStreamCbs = new ArrayList<>();
     private List <IEmgImuPwrDataCallback> emgPwrCbs = new ArrayList<>();
     private List <IEmgImuSenseCallback> imuAccelCbs = new ArrayList<>();
@@ -185,6 +186,16 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
 
         public int getConnectionState(@NotNull final BluetoothDevice device) throws RemoteException {
             return getBleManager(device).getConnectionState();
+        }
+
+        @Override
+        public void registerDevicesObserver(IEmgImuDevicesUpdatedCallback callback) throws RemoteException {
+            deviceUpdateCbs.add(callback);
+        }
+
+        @Override
+        public void unregisterDevicesObserver(IEmgImuDevicesUpdatedCallback callback) throws RemoteException {
+            deviceUpdateCbs.remove(callback);
         }
 
         public LiveData<Integer> getConnectionLiveState(@NotNull final BluetoothDevice device) {
@@ -719,7 +730,7 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
 
         // We have been starting by a service. Restore list of devices and attempt to connect.
         managedDevices = new ArrayList<>(getSavedDevices());
-        liveDevices.postValue(managedDevices);
+        onDeviceListUpdated();
 
         Log.d(TAG, "About to connect to devices: " + managedDevices);
         for (final BluetoothDevice d : managedDevices) {
@@ -893,8 +904,8 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
                    .enqueue();
         }
 
-        liveDevices.postValue(managedDevices);
         serviceUpdateSavedDevices();
+        onDeviceListUpdated();
     }
 
     //! Remove device from list to use (and disconnect)
@@ -904,8 +915,19 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
             manager.disconnect().enqueue();
         }
         managedDevices.remove(device);
-        liveDevices.postValue(managedDevices);
         serviceUpdateSavedDevices();
+        onDeviceListUpdated();
+    }
+
+    void onDeviceListUpdated() {
+        liveDevices.postValue(managedDevices);
+
+        try {
+            for (IEmgImuDevicesUpdatedCallback cb : deviceUpdateCbs)
+                cb.onDeviceListUpdated();
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
     }
 
     protected List<BluetoothDevice> getManagedDevices() {
