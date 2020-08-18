@@ -24,8 +24,10 @@ dependencies {
     implementation project(':emgimuservice')
 
     implementation fileTree(include: ['*.jar'], dir: 'libs')
-    implementation 'androidx.appcompat:appcompat:1.1.0'
-    implementation 'com.google.android.material:material:1.1.0'
+    implementation 'androidx.appcompat:appcompat:1.2.0'
+    implementation 'com.google.android.material:material:1.2.0'
+
+    implementation files('../common/libs/achartengine-1.2.0.jar')
 
     implementation "no.nordicsemi.android:ble:$nordicBleLVer"
 
