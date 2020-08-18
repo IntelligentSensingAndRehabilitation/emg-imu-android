@@ -27,22 +27,24 @@ import org.sralab.emgimu.service.ImuQuatData;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-public class EmgImuViewModel <T> extends AndroidViewModel {
+public abstract class EmgImuViewModel <T> extends AndroidViewModel {
 
     private final static String TAG = EmgImuViewModel.class.getSimpleName();
 
     Application app;
+
     IEmgImuServiceBinder service;
 
-    boolean observe_pwr = false;
-    boolean observe_stream = false;
-    boolean observe_accel = false;
-    boolean observe_gyro = false;
-    boolean observe_mag = false;
-    boolean observe_quat = false;
+    public boolean observe_pwr = false;
+    public boolean observe_stream = false;
+    public boolean observe_accel = false;
+    public boolean observe_gyro = false;
+    public boolean observe_mag = false;
+    public boolean observe_quat = false;
 
     Map<BluetoothDevice, T> deviceMap;
     MediatorLiveData<List<T>> devicesLiveData = new MediatorLiveData<>();
@@ -52,7 +54,7 @@ public class EmgImuViewModel <T> extends AndroidViewModel {
         super(app);
 
         deviceMap = new HashMap<>();
-        devicesLiveData.setValue((List<T>) deviceMap.values());
+        devicesLiveData.setValue(new ArrayList< >());
 
         final Intent service = new Intent();
         service.setComponent(new ComponentName("org.sralab.emgimu", "org.sralab.emgimu.service.EmgImuService"));
@@ -78,13 +80,18 @@ public class EmgImuViewModel <T> extends AndroidViewModel {
         this.app.getApplicationContext().unbindService(serviceConnection);
     }
 
+    public abstract T getDev(BluetoothDevice d);
+
     List<T> apply(List<BluetoothDevice> bluetoothDevices) {
-        ArrayList<T> output = new ArrayList<>();
-        return output;
+        LinkedHashMap map = new LinkedHashMap<>();
+        for (final BluetoothDevice d : bluetoothDevices) {
+            map.put(d, getDev(d));
+        }
+        deviceMap = map;
+        return new ArrayList<>(deviceMap.values());
     }
 
     private ServiceConnection serviceConnection = new ServiceConnection() {
-
 
         @Override
         public void onServiceConnected(final ComponentName name, final IBinder binder) {
@@ -117,6 +124,14 @@ public class EmgImuViewModel <T> extends AndroidViewModel {
             service = null;
         }
     };
+
+    public IEmgImuServiceBinder getService() {
+        return service;
+    }
+
+    public Map<BluetoothDevice, T> getDeviceMap() {
+        return deviceMap;
+    }
 
     // Set of callbacks that can easily be used
     public void emgPwrUpdated(T dev, EmgPwrData data) { }
