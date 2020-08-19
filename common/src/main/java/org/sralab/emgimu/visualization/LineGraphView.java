@@ -46,7 +46,6 @@ public class LineGraphView extends LinearLayout {
 	private TimeSeries series = new TimeSeries("");
 	private XYMultipleSeriesDataset dataset = new XYMultipleSeriesDataset();
 	private XYMultipleSeriesRenderer renderer = new XYMultipleSeriesRenderer();
-	private XYSeriesRenderer seriesRenderer = new XYSeriesRenderer();
 	private GraphicalView graphicalView;
 
 	public LineGraphView(Context context) {
@@ -68,11 +67,6 @@ public class LineGraphView extends LinearLayout {
 	public void init(Context context) {
 
 		dataset.addSeries(series);
-
-		seriesRenderer.setColor(Color.BLACK);
-		seriesRenderer.setPointStyle(PointStyle.CIRCLE);
-		seriesRenderer.setFillPoints(true);
-		seriesRenderer.setShowLegendItem(false);
 
 		final XYMultipleSeriesRenderer renderer = this.renderer;
 		//set whole graph background color to transparent color
@@ -97,7 +91,7 @@ public class LineGraphView extends LinearLayout {
 
 		renderer.setShowLabels(false);
 		renderer.setShowAxes(false);
-		renderer.addSeriesRenderer(seriesRenderer);
+		renderer.addSeriesRenderer(getRenderer(0));
 
 		// defaults to auto-ranging
 		// setRange(5e6);
@@ -112,14 +106,27 @@ public class LineGraphView extends LinearLayout {
 		graphicalView.repaint();
 	}
 
+	private XYSeriesRenderer getRenderer(int i) {
+		XYSeriesRenderer render = new XYSeriesRenderer();
+		int[] colors = {Color.BLACK, Color.BLUE, Color.RED, Color.YELLOW};
+
+		render.setColor(colors[i]);
+		render.setPointStyle(PointStyle.CIRCLE);
+		render.setFillPoints(true);
+		render.setShowLegendItem(true);
+
+		return render;
+	}
+
 	public void updateSeries(List<TimeSeries> series) {
 		dataset.clear();
 		dataset.addAllSeries(Collections.unmodifiableList(series));
 
 		if (renderer.getSeriesRendererCount() != series.size()) {
 			renderer.removeAllRenderers();
-			for (TimeSeries s : series)
-				renderer.addSeriesRenderer(seriesRenderer);
+			for (int i = 0; i < series.size(); i++) {
+				renderer.addSeriesRenderer(getRenderer(i));
+			}
 		}
 
 		graphicalView.repaint();
