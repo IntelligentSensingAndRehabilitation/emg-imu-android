@@ -2,9 +2,11 @@ package org.sralab.emgimu.imu_calibration.streaming;
 
 import android.app.Application;
 import android.bluetooth.BluetoothDevice;
+import android.util.Log;
 
 import org.sralab.emgimu.EmgImuViewModel;
 import org.sralab.emgimu.service.ImuData;
+import org.sralab.emgimu.service.ImuQuatData;
 
 public class DeviceViewModel extends EmgImuViewModel<Device> {
 
@@ -16,6 +18,8 @@ public class DeviceViewModel extends EmgImuViewModel<Device> {
     public boolean getObserveGyro() { return true; }
     @Override
     public boolean getObserveMag() { return true; }
+    @Override
+    public boolean getObserveQuat() { return true; }
 
     public DeviceViewModel(Application app) {
         super(app);
@@ -44,6 +48,12 @@ public class DeviceViewModel extends EmgImuViewModel<Device> {
     public void imuMagUpdated(Device dev, ImuData mag) {
         for (int s = 0; s < mag.samples; s++)
             dev.addMag(mag.ts, mag.x[s], mag.y[s], mag.z[s]);
+    }
+
+    @Override
+    public void imuQuatUpdated(Device dev, ImuQuatData quat) {
+        float [] q = {(float) quat.q0, (float) quat.q1, (float) quat.q2, (float) quat.q3};
+        dev.setQuat(q);
     }
 
     @Override

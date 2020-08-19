@@ -36,6 +36,10 @@ public class Device {
         return liveMagSeries;
     }
 
+    private MutableLiveData<float[]> liveQuat = new MutableLiveData<>();
+    public LiveData<float []> getQuat() { return liveQuat; }
+    public void setQuat(float [] q) { liveQuat.setValue(q); }
+
     private void addValue(TimeSeries series, double ts, double val)
     {
         int N = 200;

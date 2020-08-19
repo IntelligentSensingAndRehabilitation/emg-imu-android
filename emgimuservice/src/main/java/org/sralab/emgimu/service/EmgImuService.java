@@ -1402,6 +1402,20 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
 
     @Override
     public void onImuAttitudeReceived(BluetoothDevice device, float[] quaternion) {
+	    ImuQuatData dataMsg = new ImuQuatData();
+	    dataMsg.ts = 0; // TODO
+        dataMsg.q0 = quaternion[0];
+        dataMsg.q1 = quaternion[1];
+        dataMsg.q2 = quaternion[2];
+        dataMsg.q3 = quaternion[3];
+
+        for (IEmgImuQuatCallback cb : imuQuatCbs) {
+            try {
+                cb.handleData(device, dataMsg);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
         /*
         if (networkStreaming != null && networkStreaming.isConnected()) {
             double [] data = {(double) value};

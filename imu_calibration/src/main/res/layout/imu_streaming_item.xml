@@ -4,6 +4,21 @@
     android:layout_height="wrap_content"
     android:orientation="vertical">
 
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="2dp"
+        android:background="@android:color/darker_gray"/>
+
+    <org.sralab.emgimu.imu_calibration.streaming.GimbalView
+        android:id="@+id/gimbal_view"
+        android:layout_width="match_parent"
+        android:layout_height="200dp" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="2dp"
+        android:background="@android:color/darker_gray"/>
+
     <Space
         android:layout_width="match_parent"
         android:layout_height="5dp" />

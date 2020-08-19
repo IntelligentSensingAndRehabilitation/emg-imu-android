@@ -83,18 +83,21 @@ public class ImuStreamingAdapter extends RecyclerView.Adapter<ImuStreamingAdapte
         private LineGraphView accelGraphView;
         private LineGraphView gyroGraphView;
         private LineGraphView magGraphView;
+        private GimbalView gimbalView;
 
         ViewHolder(final View itemView) {
 			super(itemView);
             accelGraphView = itemView.findViewById(R.id.graph_accel);
             gyroGraphView = itemView.findViewById(R.id.graph_gyro);
             magGraphView = itemView.findViewById(R.id.graph_mag);
+            gimbalView = itemView.findViewById(R.id.gimbal_view);
         }
 
 		private void bind(final Device device) {
             device.getAccel().observe(context, timeSeries -> accelGraphView.updateSeries(timeSeries) );
             device.getGyro().observe(context, timeSeries -> gyroGraphView.updateSeries(timeSeries) );
             device.getMag().observe(context, timeSeries -> magGraphView.updateSeries(timeSeries) );
+            device.getQuat().observe(context, q -> gimbalView.updateQuat(q));
 		}
 	}
 }
