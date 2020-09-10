@@ -634,7 +634,7 @@ public class EmgImuManager extends BleManager {
         float accel[][] = new float[3][3];
         for (int idx = 0; idx < 3; idx++) // 3 comes from "BUNDLE" param in firmware
             for (int chan = 0; chan < 3; chan++)
-                accel[chan][idx] = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT16, (chan + idx * 3) * 2) * ACCEL_SCALE;
+                accel[idx][chan] = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT16, (chan + idx * 3) * 2) * ACCEL_SCALE;
 
         mCallbacks.onImuAccelReceived(device, accel);
 
@@ -648,7 +648,7 @@ public class EmgImuManager extends BleManager {
         float gyro[][] = new float[3][3];
         for (int idx = 0; idx < 3; idx++) // 3 comes from "BUNDLE" param in firmware
             for (int chan = 0; chan < 3; chan++)
-                gyro[chan][idx] = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT16, (chan + idx * 3) * 2) * GYRO_SCALE;
+                gyro[idx][chan] = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT16, (chan + idx * 3) * 2) * GYRO_SCALE;
 
         mCallbacks.onImuGyroReceived(device, gyro);
 
@@ -661,7 +661,7 @@ public class EmgImuManager extends BleManager {
         float mag[][] = new float[3][3];
         for (int idx = 0; idx < 3; idx++) // 3 comes from "BUNDLE" param in firmware
             for (int chan = 0; chan < 3; chan++)
-                mag[chan][idx] = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT16, (chan + idx * 3) * 2);
+                mag[idx][chan] = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT16, (chan + idx * 3) * 2);
 
         mCallbacks.onImuMagReceived(device, mag);
 
