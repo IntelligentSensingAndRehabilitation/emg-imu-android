@@ -24,8 +24,8 @@ package org.sralab.emgimu.visualization;
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Paint.Align;
-import android.util.Log;
-import android.view.ViewGroup;
+import android.util.AttributeSet;
+import android.widget.LinearLayout;
 
 import org.achartengine.ChartFactory;
 import org.achartengine.GraphicalView;
@@ -35,40 +35,40 @@ import org.achartengine.model.XYMultipleSeriesDataset;
 import org.achartengine.renderer.XYMultipleSeriesRenderer;
 import org.achartengine.renderer.XYSeriesRenderer;
 
+import java.util.Collections;
+import java.util.List;
+
 /**
  * This class uses external library AChartEngine to show dynamic real time line graph for HR values
  */
-public class LineGraphView {
+public class LineGraphView extends LinearLayout {
 
-	//TimeSeries will hold the data in x,y format for single chart
-	private TimeSeries mSeries = new TimeSeries("EMG Power");
-	//XYMultipleSeriesDataset will contain all the TimeSeries
-	private XYMultipleSeriesDataset mDataset = new XYMultipleSeriesDataset();
-	//XYMultipleSeriesRenderer will contain all XYSeriesRenderer and it can be used to set the properties of whole Graph
-	private XYMultipleSeriesRenderer mMultiRenderer = new XYMultipleSeriesRenderer();
-	private GraphicalView mGraphView;
+	private TimeSeries series = new TimeSeries("");
+	private XYMultipleSeriesDataset dataset = new XYMultipleSeriesDataset();
+	private XYMultipleSeriesRenderer renderer = new XYMultipleSeriesRenderer();
+	private GraphicalView graphicalView;
 
-	public void setRange(double range) {
-        mMultiRenderer.setYAxisMax(range);
-        mMultiRenderer.setYAxisMin(-range);
-    }
+	public LineGraphView(Context context) {
+		this(context, null, 0);
+	}
+
+	public LineGraphView(Context context, AttributeSet attrs) {
+		this(context, attrs, 0);
+	}
+
 	/**
 	 * This constructor will set some properties of single chart and some properties of whole graph
 	 */
-	public LineGraphView(Context context, ViewGroup layout) {
-		//add single line chart mSeries
-		mDataset.addSeries(mSeries);
+	public LineGraphView(Context context, AttributeSet attrs, int defStyle) {
+		super(context, attrs, defStyle);
+		init(context);
+	}
 
-		//XYSeriesRenderer is used to set the properties like chart color, style of each point, etc. of single chart
-		final XYSeriesRenderer seriesRenderer = new XYSeriesRenderer();
-		//set line chart color to Black
-		seriesRenderer.setColor(Color.BLACK);
-		//set line chart style to square points
-		seriesRenderer.setPointStyle(PointStyle.CIRCLE);
-		seriesRenderer.setFillPoints(true);
-		seriesRenderer.setShowLegendItem(false);
+	public void init(Context context) {
 
-		final XYMultipleSeriesRenderer renderer = mMultiRenderer;
+		dataset.addSeries(series);
+
+		final XYMultipleSeriesRenderer renderer = this.renderer;
 		//set whole graph background color to transparent color
 		renderer.setBackgroundColor(Color.TRANSPARENT);
 		renderer.setMargins(new int[] { 5, 5, 5, 5 }); // top, left, bottom, right
@@ -88,96 +88,47 @@ public class LineGraphView {
 		//Disable zoom
 		renderer.setPanEnabled(false, false);
 		renderer.setZoomEnabled(false, false);
-		//set title to x-axis and y-axis
-		renderer.setXTitle("    Time (seconds)");
-		renderer.setYTitle("               PWR");
+
 		renderer.setShowLabels(false);
 		renderer.setShowAxes(false);
-		renderer.addSeriesRenderer(seriesRenderer);
+		renderer.addSeriesRenderer(getRenderer(0));
 
 		// defaults to auto-ranging
 		// setRange(5e6);
 
-		mGraphView = ChartFactory.getLineChartView(context, mDataset, mMultiRenderer);
-		layout.addView(mGraphView);
+		graphicalView = ChartFactory.getLineChartView(context, dataset, this.renderer);
+		addView(graphicalView);
 	}
 
-	public void repaint() {
-		mGraphView.repaint();
+	public void updateSeries(TimeSeries series) {
+		dataset.clear();
+		dataset.addSeries(series);
+		graphicalView.repaint();
 	}
 
-	private int mWindowSize = 100;
-	public void setWindowSize(int newWindow) {
-		mWindowSize = newWindow;
+	private XYSeriesRenderer getRenderer(int i) {
+		XYSeriesRenderer render = new XYSeriesRenderer();
+		int[] colors = {Color.BLACK, Color.BLUE, Color.RED, Color.YELLOW};
+
+		render.setColor(colors[i]);
+		render.setPointStyle(PointStyle.CIRCLE);
+		render.setFillPoints(true);
+		render.setShowLegendItem(true);
+
+		return render;
 	}
 
-	/**
-	 * Optimize for 2000 Hz sampling
-	 *
-	 import numpy as np
-	 import scipy.signal as sig
-	 import matplotlib.pyplot as plt
+	public void updateSeries(List<TimeSeries> series) {
+		dataset.clear();
+		dataset.addAllSeries(Collections.unmodifiableList(series));
 
-	 FS = 2000
-	 fcl = 40.0
-	 fch = 125.0
-	 w_pb = [fcl/(FS/2), fch/(FS/2)]
-
-	 b,a = sig.cheby1(2, 3, w_pb, btype='bandpass')
-	 */
-
-	private final int FIR_ORDER = 5;
-	private final double [] A = { 1.        , -3.70211638,  5.25666722, -3.39474815,  0.84242058};
-	private final double [] B = { 0.00822449,  0.        , -0.01644898,  0.        ,  0.00822449};
-	private final double [] inputs = new double[FIR_ORDER-1];  // stores history of inputs with most recent at the end
-	private final double [] outputs = new double[FIR_ORDER-1]; // stores history of outputs with most recent at the end
-
-	private boolean mFiltering = false;
-
-	final double filter(double val) {
-		double new_output = val * B[0];
-
-		for (int i = 1; i < FIR_ORDER; i++) {
-			int j = FIR_ORDER - 1 - i;
-			new_output += B[i] * inputs[j] - A[i] * outputs[j];
+		if (renderer.getSeriesRendererCount() != series.size()) {
+			renderer.removeAllRenderers();
+			for (int i = 0; i < series.size(); i++) {
+				renderer.addSeriesRenderer(getRenderer(i));
+			}
 		}
 
-		// Shift values in buffer and add new values
-		for (int i = 0; i < FIR_ORDER-1; i++) {
-			inputs[i] = (i == (FIR_ORDER-2)) ? val : inputs[i+1];
-			outputs[i] = (i == (FIR_ORDER-2)) ? new_output : outputs[i+1];
-		}
-
-		return new_output;
+		graphicalView.repaint();
 	}
-
-	public void enableFiltering(boolean enable) {
-		mFiltering = enable;
-		Log.d("LinegraphView", "Enable filtering: " + enable);
-	}
-
-	/**
-	 * add new x,y value to chart
-	 */
-	private int mCounter;
-	public void addValue(double val) {
-        mCounter++;
-
-        if (mFiltering)
-			mSeries.add(mCounter, filter(val));
-        else
-			mSeries.add(mCounter, val);
-
-        if (mSeries.getItemCount() > mWindowSize) {
-			mSeries.remove(0);
-		}
-	}
-
-	/**
-	 * clear all previous values of chart
-	 */
-	public void clearGraph() {
-		mSeries.clear();
-	}
-
 }

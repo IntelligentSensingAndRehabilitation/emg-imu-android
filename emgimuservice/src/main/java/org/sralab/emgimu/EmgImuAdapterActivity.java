@@ -1,6 +1,7 @@
 package org.sralab.emgimu;
 
 import android.bluetooth.BluetoothDevice;
+import android.os.RemoteException;
 import android.util.Log;
 import android.view.View;
 
@@ -12,7 +13,7 @@ import com.crashlytics.android.Crashlytics;
 import com.crashlytics.android.core.CrashlyticsCore;
 
 import org.sralab.emgimu.service.BuildConfig;
-import org.sralab.emgimu.service.EmgImuService;
+import org.sralab.emgimu.service.IEmgImuServiceBinder;
 
 import java.util.List;
 
@@ -25,9 +26,9 @@ public abstract class EmgImuAdapterActivity extends EmgImuBaseActivity {
 
     RecyclerView mDevicesView;
     DeviceAdapter mAdapter;
-    EmgImuService.EmgImuBinder mService;
+    IEmgImuServiceBinder mService;
 
-    public EmgImuService.EmgImuBinder getService() {
+    public IEmgImuServiceBinder getService() {
         return mService;
     }
 
@@ -44,8 +45,7 @@ public abstract class EmgImuAdapterActivity extends EmgImuBaseActivity {
         mDevicesView.addItemDecoration(new DividerItemDecoration(this, DividerItemDecoration.VERTICAL_LIST));
     }
 
-    @Override
-    protected void onServiceBinded(EmgImuService.EmgImuBinder binder) {
+    protected void onServiceBinded(IEmgImuServiceBinder binder) {
         Log.d(TAG, "onServiceBinded");
         mService = binder;
         mAdapter.setService(binder);
@@ -57,80 +57,12 @@ public abstract class EmgImuAdapterActivity extends EmgImuBaseActivity {
         mDevicesView.setAdapter(null);
     }
 
-    @Override
-    public void onDeviceConnecting(final BluetoothDevice device) {
-        Log.d(TAG, "onDeviceConnecting");
-        super.onDeviceConnecting(device);
-        //mAdapter.onDeviceAdded(device);
-    }
-
-    @Override
-    public void onDeviceConnected(final BluetoothDevice device) {
-        mAdapter.onDeviceStateChanged(device);
-
-        // Is previously connected device might be ready and this event won't fire
-        if (mService != null && mService.isReady(device)) {
-            onDeviceReady(device);
-        } else if (mService == null) {
-            Log.w(TAG, "Probable race condition");
-        }
-    }
-
-    public void onDeviceReady(final BluetoothDevice device) {
-        super.onDeviceReady(device);
-        mAdapter.onDeviceReady(device);
-    }
-
-    public void onDeviceDisconnecting(final BluetoothDevice device) {
-        super.onDeviceDisconnecting(device);
-        mAdapter.onDeviceStateChanged(device);
-    }
-
-    public void onDeviceDisconnected(final BluetoothDevice device, int reason) {
-        mAdapter.onDeviceRemoved(device);
-    }
-
-    public void onDeviceNotSupported(final BluetoothDevice device) {
-        super.onDeviceNotSupported(device);
-        mAdapter.onDeviceRemoved(device);
-    }
-
-    public void onBatteryReceived(BluetoothDevice device, float battery) {
-        mAdapter.onBatteryReceived(device, battery);
-    }
-
-    public void onEmgBuffReceived(BluetoothDevice device, long ts_ms, double[][] data) {
-        mAdapter.onEmgBuffReceived(device, ts_ms, data);
-    }
-
-    public void onImuAccelReceived(BluetoothDevice device, float[][] accel) {
-        mAdapter.onImuAccelReceived(device, accel);
-    }
-
-    public void onImuGyroReceived(BluetoothDevice device, float[][] gyro) {
-        mAdapter.onImuGyroReceived(device, gyro);
-    }
-
-    public void onImuMagReceived(BluetoothDevice device, float[][] gyro) {
-        mAdapter.onImuMagReceived(device, gyro);
-    }
-
-    public void onImuAttitudeReceived(BluetoothDevice device, float[] quaternion) {
-        mAdapter.onImuAttitudeReceived(device, quaternion);
-    }
-
-    @Override
-    protected int getAboutTextId() {
-        return 0;
-    }
-
-
     public static abstract class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder> {
 
-        EmgImuService.EmgImuBinder mService;
+        IEmgImuServiceBinder mService;
         List<BluetoothDevice> mDevices;
 
-        public EmgImuService.EmgImuBinder getService() {
+        public IEmgImuServiceBinder getService() {
             return mService;
         }
 
@@ -138,9 +70,13 @@ public abstract class EmgImuAdapterActivity extends EmgImuBaseActivity {
             return mDevices;
         }
 
-        public void setService(final EmgImuService.EmgImuBinder binder) {
+        public void setService(final IEmgImuServiceBinder binder) {
             mService = binder;
-            mDevices = mService.getManagedDevices();
+            try {
+                mDevices = mService.getManagedDevices();
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
         }
 
         public class DefaultItemAnimatorNoChange extends DefaultItemAnimator {
@@ -182,6 +118,7 @@ public abstract class EmgImuAdapterActivity extends EmgImuBaseActivity {
             }
             return -1;
         }
+
 
         void onDeviceAdded(final BluetoothDevice device) {
             final int position = getPosition(device);

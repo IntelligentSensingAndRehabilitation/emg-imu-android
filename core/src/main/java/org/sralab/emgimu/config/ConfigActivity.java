@@ -27,28 +27,37 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.PowerManager;
+import android.os.RemoteException;
 import android.provider.Settings;
 import android.util.Log;
+import android.view.View;
 import android.widget.TextView;
 
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import org.sralab.emgimu.EmgImuBaseActivity;
-import org.sralab.emgimu.service.EmgImuService;
+import org.sralab.emgimu.service.EmgImuManager;
+import org.sralab.emgimu.service.IEmgImuServiceBinder;
 
+import java.util.UUID;
+
+import no.nordicsemi.android.nrftoolbox.scanner.ScannerFragment;
 import no.nordicsemi.android.nrftoolbox.widget.DividerItemDecoration;
 
-public class ConfigActivity extends EmgImuBaseActivity {
+public class ConfigActivity extends EmgImuBaseActivity implements ScannerFragment.OnDeviceSelectedListener {
+
 	private static final String TAG = "ConfigActivity";
 
 	private RecyclerView mDevicesView;
 	private DeviceAdapter mAdapter;
-	private EmgImuService.EmgImuBinder mService;
+	private IEmgImuServiceBinder mService;
+	private DeviceViewModel dvm;
 
-	@Override
-	protected void onCreateView(final Bundle savedInstanceState) {
-		setContentView(R.layout.activity_feature_emgimu);
+	protected void onCreate(final Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.activity_config_emgimu);
 		setGUI();
 
 		// TODO: this may need to be reverted but testing for now.
@@ -62,6 +71,12 @@ public class ConfigActivity extends EmgImuBaseActivity {
 				startActivity(intent);
 			}
 		}
+
+
+		dvm = new ViewModelProvider(this, ViewModelProvider.AndroidViewModelFactory.getInstance(getApplication())).get(DeviceViewModel.class);
+		dvm.getDevicesLiveData().observe(this, devices -> mAdapter.notifyDataSetChanged());
+
+		mDevicesView.setAdapter(mAdapter = new DeviceAdapter(this, dvm));
 	}
 
 	private void setGUI() {
@@ -71,95 +86,57 @@ public class ConfigActivity extends EmgImuBaseActivity {
 	}
 
 	@Override
-	protected void onServiceBinded(final EmgImuService.EmgImuBinder binder) {
-		mDevicesView.setAdapter(mAdapter = new DeviceAdapter(binder));
+	protected void onServiceBinded(final IEmgImuServiceBinder binder) {
         mService = binder;
-        String user = mService.getUser();
-        TextView userView = findViewById(R.id.user_id);
-        userView.setText("User: " + user);
+		String user = null;
+		try {
+			user = mService.getUser();
+			TextView userView = findViewById(R.id.user_id);
+			userView.setText("User: " + user);
+		} catch (RemoteException e) {
+			e.printStackTrace();
+		}
 	}
 
 	@Override
 	protected void onServiceUnbinded() {
-		mDevicesView.setAdapter(mAdapter = null);
-	}
-
-	@Override
-	protected int getAboutTextId() {
-		return R.string.emgimu_about_text;
-	}
-
-	public void onDeviceConnecting(final BluetoothDevice device) {
-		if (mAdapter != null)
-			mAdapter.onDeviceAdded(device);
-	}
-
-	public void onDeviceConnected(final BluetoothDevice device) {
-		if (mAdapter != null)
-			mAdapter.onDeviceStateChanged(device);
-
-		// Is previously connected device might be ready and this event won't fire
-		if (mService != null && mService.isReady(device)) {
-			onDeviceReady(device);
-		} else if (mService == null) {
-			Log.w(TAG, "Probable race condition");
-		}
-	}
-
-	public void onDeviceReady(final BluetoothDevice device) {
-		if (mAdapter != null)
-			mAdapter.onDeviceReady(device);
-	}
-
-	public void onDeviceDisconnecting(final BluetoothDevice device) {
-		if (mAdapter != null)
-			mAdapter.onDeviceStateChanged(device);
-	}
-
-	public void onDeviceDisconnected(final BluetoothDevice device, int reason) {
-		Log.d(TAG, "Disconnected");
-		if (mAdapter != null)
-			mAdapter.onDeviceRemoved(device);
-	}
-
-	public void onDeviceNotSupported(final BluetoothDevice device) {
-		super.onDeviceNotSupported(device);
-		if (mAdapter != null)
-			mAdapter.onDeviceRemoved(device);
-	}
-
-    public void onEmgPwrReceived(final BluetoothDevice device, int value) {
-        if (mAdapter != null)
-            mAdapter.onPwrValueReceived(device); // Adapter will access value directly from service
-    }
-
-	public void onImuAccelReceived(BluetoothDevice device, float[][] accel) {
 
 	}
 
-	public void onImuGyroReceived(BluetoothDevice device, float[][] gyro) {
-
+	protected UUID getFilterUUID() {
+		return EmgImuManager.EMG_SERVICE_UUID;
 	}
 
-	public void onImuMagReceived(BluetoothDevice device, float[][] mag) {
-
-	}
-
-	public void onImuAttitudeReceived(BluetoothDevice device, float[] quaternion) {
-
-	}
-
-	public void onBatteryReceived(BluetoothDevice device, float battery) {
-		if (mAdapter != null)
-			mAdapter.onBatteryValueReceived(device);
-	}
-
-	public void onEmgBuffReceived(BluetoothDevice device, long ts_ms, double[][] data) {
+	/**
+	 * Called when user press ADD DEVICE button. See layout files -> onClick attribute.
+	 */
+	public void onAddDeviceClicked(final View view) {
+		showDeviceScanningDialog(getFilterUUID());
 	}
 
 	public void onDeviceSelected(final BluetoothDevice device, final String name) {
-	    super.onDeviceSelected(device, name);
-	    getService().updateSavedDevices();
-    }
+		try {
+			mService.connectDevice(device);
+		} catch (RemoteException e) {
+			e.printStackTrace();
+		}
+	}
+
+	@Override
+	public void onDialogCanceled() {
+
+	}
+
+	/**
+	 * Shows the scanner fragment.
+	 *
+	 * @param filter               the UUID filter used to filter out available devices. The fragment will always show all bonded devices as there is no information about their
+	 *                             services
+	 * @see #getFilterUUID()
+	 */
+	private void showDeviceScanningDialog(final UUID filter) {
+		final ScannerFragment dialog = ScannerFragment.getInstance(filter);
+		dialog.show(getSupportFragmentManager(), "scan_fragment");
+	}
 
 }

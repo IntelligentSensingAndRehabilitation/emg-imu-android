@@ -19,6 +19,14 @@
                 <category android:name="org.sralab.emgimu.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".streaming.ImuStreamingActivity"
+            android:label="IMU Streaming">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="org.sralab.emgimu.LAUNCHER" />
+            </intent-filter>
+        </activity>
     </application>
 
     <uses-feature android:name="android.hardware.camera" android:required="false" />

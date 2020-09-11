@@ -54,27 +54,22 @@ public class EmgPowerView extends View {
     private float mPwr = 0;
     private float mThresh = 0;
     private float mMaxHeightPwr = Short.MAX_VALUE * 2; // The range of the graph
-    public void setMinPower(float p)
+    public void setMinPower(Double p)
     {
-        mMin = p;
+        mMin = p.floatValue();
     }
-    public void setMaxPower(float p)
+    public void setMaxPower(Double p)
     {
-        mMax = p;
+        mMax = p.floatValue();
     }
-    public void setCurrentPower(float p)
+    public void setCurrentPower(Double p)
     {
-        mPwr = p;
+        mPwr = p.floatValue();
         invalidate();
     }
-    public float getMin() { return mMin; }
-    public float getMax() { return mMax; }
     public float getThreshold() { return mThresh; }
     public void setThreshold(float thresh) { mThresh = thresh; }
-
-    public void setMaxRange(float maxPwr) {
-        mMaxHeightPwr = maxPwr;
-    }
+    public void setMaxRange(float maxPwr) { mMaxHeightPwr = maxPwr; }
 
     /**
      * Converts an EMG power into a screen height, where the height

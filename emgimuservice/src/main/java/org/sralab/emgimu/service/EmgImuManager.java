@@ -36,6 +36,8 @@ import android.util.Base64;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
+import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MutableLiveData;
 
 import com.google.firebase.analytics.FirebaseAnalytics;
 import com.google.firebase.auth.FirebaseAuth;
@@ -164,8 +166,6 @@ public class EmgImuManager extends BleManager {
         mCallbacks = cb;
     }
 
-    private boolean mReady = false;
-
     private BluetoothGattCharacteristic mRecordAccessControlPointCharacteristic, mEmgLogCharacteristic;
 
     //! Data relating to logging to FireBase
@@ -213,47 +213,35 @@ public class EmgImuManager extends BleManager {
             super.initialize();
 
             log(Log.INFO, "Initializing connection");
-            requestMtu(517)
-                    .with((device, mtu) -> log(Log.INFO, "MTU Changed"))
-                    .fail((device, status) -> log(Log.WARN, "Could not set MTU"))
-                    .enqueue();
 
-            setPreferredPhy(PhyRequest.PHY_LE_2M_MASK, PhyRequest.PHY_LE_2M_MASK, PhyRequest.PHY_OPTION_NO_PREFERRED)
-                    .fail((device, status) -> log(Log.WARN, "Could not set phy"))
-                    .enqueue();
-
-            /**** Get information about device *****/
-            // TODO: if we aren't really doing anything with this data do not fetch on connection
-            // Especially if we can use a bonded device and have this cached?
-            readCharacteristic(mManufacturerCharacteristic)
-                    .with((device, data) -> mManufacturer = data.getStringValue(0))
-                    .fail((device, status) -> Log.d(TAG, "Could not read manufacturer (" + status + ")"))
-                    .enqueue();
-
-            readCharacteristic(mHardwareCharacteristic)
-                    .with((device, data) -> {
-                        mHardwareRevision = data.getStringValue(0);
-                        Log.d(TAG, "Hardware revision: " + mHardwareRevision);
-                        if (mHardwareRevision.equals("v0.3")) {
-                            mChannels = 8;
-                            Log.d(TAG, "Setting channels to 8");
-                        } else if (mHardwareRevision.equals("v0.7")) {
-                            mChannels = 2;
-                            Log.d(TAG, "Setting channels to 2");
-                        } else
-                            mChannels = 1;
-                    })
-                    .enqueue();
-
-            readCharacteristic(mFirmwareCharacteristic)
-                    .with((device, data) -> {
-                        mFirmwareRevision = data.getStringValue(0);
-                        Log.d(TAG, "Firmware revision: " + mFirmwareRevision);
-                    })
-                    .enqueue();
-
-            readCharacteristic(mSerialNumberCharacteristic)
-                    .with((device, data) -> Log.d(TAG, "Serial number; " + data.getStringValue(0)))
+            beginAtomicRequestQueue()
+                    .add(requestMtu(517)
+                        .with((device, mtu) -> log(Log.INFO, "MTU set to " + mtu))
+                        .fail((device, status) -> log(Log.WARN, "Requested MTU not supported: " + status)))
+                    .add(setPreferredPhy(PhyRequest.PHY_LE_2M_MASK, PhyRequest.PHY_LE_2M_MASK, PhyRequest.PHY_OPTION_NO_PREFERRED)
+                        .fail((device, status) -> log(Log.WARN, "Requested PHY not supported: " + status)))
+                    .add(readCharacteristic(mHardwareCharacteristic)
+                        .with((device, data) -> {
+                            mHardwareRevision = data.getStringValue(0);
+                            log(Log.INFO, "Hardware revision: " + mHardwareRevision);
+                            if (mHardwareRevision.equals("v0.3")) {
+                                mChannels = 8;
+                                log(Log.INFO, "Setting channels to 8");
+                            } else if (mHardwareRevision.equals("v0.7")) {
+                                mChannels = 2;
+                                log(Log.INFO, "Setting channels to 2");
+                            } else
+                                mChannels = 1;
+                        }))
+                    .add(readCharacteristic(mManufacturerCharacteristic)
+                        .with((device, data) -> mManufacturer = data.getStringValue(0))
+                        .fail((device, status) -> Log.d(TAG, "Could not read manufacturer (" + status + ")")))
+                    .add(readCharacteristic(mFirmwareCharacteristic)
+                        .with((device, data) -> mFirmwareRevision = data.getStringValue(0))
+                        .fail((device, status) -> log(Log.WARN, "Unable to read firmware version: " + status)))
+                    /*.add(readCharacteristic(mSerialNumberCharacteristic)
+                        .with((device, data) -> log(Log.INFO, "Serial number; " + data.getStringValue(0)))) */
+                    .done(device -> log(Log.INFO, "Target initialized. Hardware: " + mHardwareRevision + " Firmware: " + mFirmwareRevision))
                     .enqueue();
 
             setNotificationCallback(mBatteryCharacteristic).with((device ,data) -> parseBattery(device, data));
@@ -371,13 +359,16 @@ public class EmgImuManager extends BleManager {
             loadThreshold();
             loadPwrRange();
 
+            connectionState.postValue(getConnectionState());
+
             super.onDeviceReady();
-            mReady = true;
         }
 
         @Override
 		protected void onDeviceDisconnected() {
             log(Log.INFO, "onDeviceDisconnected");
+
+            connectionState.postValue(getConnectionState());
 
 		    // Clear the Device Information characteristics
             mManufacturerCharacteristic = null;
@@ -398,8 +389,6 @@ public class EmgImuManager extends BleManager {
             mEmgLogCharacteristic = null;
             mRecordAccessControlPointCharacteristic = null;
 
-            mReady = false;
-
             mChannels = 0;
 
             synchronized (this) {
@@ -411,6 +400,9 @@ public class EmgImuManager extends BleManager {
             }
 		}
     };
+
+	public MutableLiveData<Integer> connectionState = new MutableLiveData<>(BluetoothGatt.STATE_DISCONNECTED);
+	public LiveData<Integer> getConnectionLiveState() { return connectionState; }
 
     private long mPwrT0;
     private long mLastPwrCount;
@@ -481,7 +473,7 @@ public class EmgImuManager extends BleManager {
         long ts_ms = resolvePwrCounter(timestamp, counter);
 
         mEmgPwr = pwr_val;
-        mCallbacks.onEmgPwrReceived(device, mEmgPwr);
+        mCallbacks.onEmgPwrReceived(device, ts_ms, mEmgPwr);
         checkEmgClick(device, pwr_val);
 
         if (mLogging && streamLogger != null) {
@@ -630,19 +622,11 @@ public class EmgImuManager extends BleManager {
         }
 
         mEmgBuff = data;
-        mCallbacks.onEmgBuffReceived(device, buf_ts_ms, data);
+        mCallbacks.onEmgStreamReceived(device, buf_ts_ms, data);
 
         if (mLogging && streamLogger != null) {
-            streamLogger.addRawSample(buf_ts_ms, channels, samples, data);
+            streamLogger.addStreamSample(buf_ts_ms, channels, samples, data);
         }
-    }
-
-    private void parseEmgRaw(final BluetoothDevice device, final Data characteristic) {
-        // Have to manually combine to get the endian right
-        int raw_val = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0) +
-                characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1) * 256;
-        mEmgRaw = raw_val;
-        mCallbacks.onEmgRawReceived(device, mEmgRaw);
     }
 
     private void parseImuAccel(final BluetoothDevice device, final Data characteristic) {
@@ -650,7 +634,7 @@ public class EmgImuManager extends BleManager {
         float accel[][] = new float[3][3];
         for (int idx = 0; idx < 3; idx++) // 3 comes from "BUNDLE" param in firmware
             for (int chan = 0; chan < 3; chan++)
-                accel[idx][chan] = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT16, (chan + idx * 3) * 2) * ACCEL_SCALE;
+                accel[chan][idx] = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT16, (chan + idx * 3) * 2) * ACCEL_SCALE;
 
         mCallbacks.onImuAccelReceived(device, accel);
 
@@ -664,7 +648,7 @@ public class EmgImuManager extends BleManager {
         float gyro[][] = new float[3][3];
         for (int idx = 0; idx < 3; idx++) // 3 comes from "BUNDLE" param in firmware
             for (int chan = 0; chan < 3; chan++)
-                gyro[idx][chan] = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT16, (chan + idx * 3) * 2) * GYRO_SCALE;
+                gyro[chan][idx] = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT16, (chan + idx * 3) * 2) * GYRO_SCALE;
 
         mCallbacks.onImuGyroReceived(device, gyro);
 
@@ -677,7 +661,7 @@ public class EmgImuManager extends BleManager {
         float mag[][] = new float[3][3];
         for (int idx = 0; idx < 3; idx++) // 3 comes from "BUNDLE" param in firmware
             for (int chan = 0; chan < 3; chan++)
-                mag[idx][chan] = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT16, (chan + idx * 3) * 2);
+                mag[chan][idx] = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT16, (chan + idx * 3) * 2);
 
         mCallbacks.onImuMagReceived(device, mag);
 
@@ -1158,7 +1142,7 @@ public class EmgImuManager extends BleManager {
     /****** helper methods to enable and disable notifications *******/
 
     // Controls to enable what data we are receiving from the sensor
-    private void enableEmgPwrNotifications() {
+    public void enableEmgPwrNotifications() {
         setNotificationCallback(mEmgPwrCharacteristic)
                 .with((device, data) -> parseEmgPwr(device ,data));
         enableNotifications(mEmgPwrCharacteristic)
@@ -1166,11 +1150,11 @@ public class EmgImuManager extends BleManager {
                 .enqueue();
     }
 
-    private void disableEmgPwrNotifications() {
+    public void disableEmgPwrNotifications() {
         disableNotifications(mEmgPwrCharacteristic).enqueue();
     }
 
-    private void enableEmgBuffNotifications() {
+    public void enableEmgBuffNotifications() {
         setNotificationCallback(mEmgBuffCharacteristic)
                 .with((device, data) -> parseEmgBuff(device ,data));
         enableNotifications(mEmgBuffCharacteristic)
@@ -1178,11 +1162,11 @@ public class EmgImuManager extends BleManager {
                 .enqueue();
     }
 
-    private void disableEmgBuffNotifications() {
+    public void disableEmgBuffNotifications() {
         disableNotifications(mEmgBuffCharacteristic).enqueue();
     }
 
-    private void enableAttitudeNotifications() {
+    public void enableAttitudeNotifications() {
         setNotificationCallback(mImuAttitudeCharacteristic)
                 .with((device, data) -> parseImuAttitude(device ,data));
         enableNotifications(mImuAttitudeCharacteristic)
@@ -1190,11 +1174,11 @@ public class EmgImuManager extends BleManager {
                 .enqueue();
     }
 
-    private void disableAttitudeNotifications() {
+    public void disableAttitudeNotifications() {
         disableNotifications(mImuAttitudeCharacteristic).enqueue();
     }
 
-    private void enableImuNotifications() {
+    public void enableImuNotifications() {
         setNotificationCallback(mImuAccelCharacteristic)
                 .with((device, data) -> parseImuAccel(device ,data));
         enableNotifications(mImuAccelCharacteristic)
@@ -1214,7 +1198,7 @@ public class EmgImuManager extends BleManager {
                 .enqueue();
     }
 
-    private void disableImuNotifications() {
+    public void disableImuNotifications() {
         disableNotifications(mImuAccelCharacteristic).enqueue();
         disableNotifications(mImuGyroCharacteristic).enqueue();
         disableNotifications(mImuMagCharacteristic).enqueue();
@@ -1321,7 +1305,7 @@ public class EmgImuManager extends BleManager {
         if (value > threshold_high && overThreshold == false && refractory) {
             mThresholdTime = eventTime; // Store this time
             overThreshold = true;
-            mCallbacks.onEmgClick(device);
+            //mCallbacks.onEmgClick(device);
         } else if (value < threshold_low && overThreshold == true) {
             overThreshold = false;
         }
@@ -1399,17 +1383,17 @@ public class EmgImuManager extends BleManager {
         return max_pwr;
     }
 
-    private int batteryLevel = -1;
-    public double getBatteryVoltage() {
-        if (batteryLevel == -1)
-            return -1;
-        // Hardcoded conversion based on the firmware
-        double voltage = 3.0 + 1.35 * (batteryLevel / 100.0);
-        return voltage;
+    private MutableLiveData<Double> batteryVoltage = new MutableLiveData<>();
+    public LiveData<Double> getBatteryVoltage() {
+        return batteryVoltage;
     }
 
     private void parseBattery(@NonNull final BluetoothDevice device, @NonNull final Data data) {
-        batteryLevel = data.getIntValue(Data.FORMAT_UINT8, 0);
+        int batteryLevel = data.getIntValue(Data.FORMAT_UINT8, 0);
+
+        double voltage = 3.0 + 1.35 * (batteryLevel / 100.0);
+        batteryVoltage.setValue(voltage);
+
         log(Log.DEBUG, "Received battery level: " + batteryLevel);
     }
 

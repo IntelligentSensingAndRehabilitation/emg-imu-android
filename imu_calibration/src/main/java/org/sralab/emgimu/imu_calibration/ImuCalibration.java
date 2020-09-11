@@ -5,6 +5,10 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import android.util.Log;
 import android.view.WindowManager;
@@ -17,22 +21,35 @@ import org.sralab.emgimu.service.EmgImuService;
 import java.util.Date;
 import java.util.List;
 
-public class ImuCalibration extends EmgImuAdapterActivity {
+import no.nordicsemi.android.nrftoolbox.widget.DividerItemDecoration;
+
+public class ImuCalibration extends AppCompatActivity {
 
     static final private String TAG = ImuCalibration.class.getSimpleName();
 
-    private static final int REQUEST_VIDEO_CAPTURE = 1;
-    boolean recording = false;
-    long recordingStartTime;
+    CalibrationAdapter calibrationAdapater;
 
     @Override
-    protected void onCreateView(Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_imu_calibration);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         final RecyclerView recyclerView = findViewById(R.id.imu_calibration_list);
-        super.onCreateView(new CalibrationAdapter(), recyclerView);
+
+        DeviceViewModel dvm = new ViewModelProvider(this, ViewModelProvider.AndroidViewModelFactory.getInstance(getApplication())).get(DeviceViewModel.class);
+        dvm.getDevicesLiveData().observe(this, devices -> calibrationAdapater.notifyDataSetChanged());
+
+        recyclerView.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false));
+        recyclerView.addItemDecoration(new DividerItemDecoration(this, DividerItemDecoration.VERTICAL_LIST));
+
+        recyclerView.setAdapter(calibrationAdapater = new CalibrationAdapter(this, dvm));
+    }
+        /*
+        private static final int REQUEST_VIDEO_CAPTURE = 1;
+        boolean recording = false;
+        long recordingStartTime;
 
         Button startStreaming = findViewById(R.id.start_streaming_button);
         startStreaming.setOnClickListener(v -> {
@@ -68,7 +85,7 @@ public class ImuCalibration extends EmgImuAdapterActivity {
             }
         });
     }
-
+    
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
         if (requestCode == REQUEST_VIDEO_CAPTURE && resultCode == RESULT_OK) {
@@ -93,5 +110,5 @@ public class ImuCalibration extends EmgImuAdapterActivity {
         else
             return super.isChangingConfigurations();
     }
-
+    */
 }
