@@ -625,7 +625,7 @@ public class EmgImuManager extends BleManager {
         mCallbacks.onEmgStreamReceived(device, buf_ts_ms, data);
 
         if (mLogging && streamLogger != null) {
-            streamLogger.addRawSample(buf_ts_ms, channels, samples, data);
+            streamLogger.addStreamSample(buf_ts_ms, channels, samples, data);
         }
     }
 

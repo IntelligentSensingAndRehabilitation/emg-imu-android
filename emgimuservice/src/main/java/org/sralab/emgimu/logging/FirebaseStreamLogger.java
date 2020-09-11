@@ -1,5 +1,7 @@
 package org.sralab.emgimu.logging;
 
+import android.os.Handler;
+import android.os.HandlerThread;
 import android.util.Log;
 
 import com.google.firebase.auth.FirebaseAuth;
@@ -13,11 +15,10 @@ import org.sralab.emgimu.service.EmgImuManager;
 import org.sralab.emgimu.streaming.messages.EmgPwrMessage;
 import org.sralab.emgimu.streaming.messages.EmgRawMessage;
 import org.sralab.emgimu.streaming.messages.ImuAccelMessage;
-import org.sralab.emgimu.streaming.messages.ImuGyroMessage;
 import org.sralab.emgimu.streaming.messages.ImuAttitudeMessage;
+import org.sralab.emgimu.streaming.messages.ImuGyroMessage;
 import org.sralab.emgimu.streaming.messages.ImuMagMessage;
 
-import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -47,6 +48,8 @@ public class FirebaseStreamLogger extends Observable {
 
     private OutputStream dataStream;
     private boolean firstEntry;
+
+    private Handler handler;
 
     public FirebaseStreamLogger(EmgImuManager manager) {
         mManager = manager;
@@ -87,46 +90,32 @@ public class FirebaseStreamLogger extends Observable {
         }
 
 
-        Thread t = new Thread() {
-            public void run() {
-                InputStream logStream = pis;
-
-                Log.d(TAG, "Creating upload task for " + getReference());
-
-                UploadTask uploadTask = storageRef.putStream(logStream);
-                uploadTask.addOnFailureListener(exception -> {
-                    Log.e(TAG, "Failed to upload", exception);
-                    mManager.log(LogContract.Log.Level.ERROR, "Failed to upload: " + exception.getMessage() + "\\" + exception.getStackTrace().toString());
-                    synchronized (this) {
-                        this.notify();
-                    }
-                }).addOnSuccessListener(taskSnapshot -> {
-                    Log.d(TAG, "Upload of log succeeded " + taskSnapshot.toString());
-                    mManager.log(LogContract.Log.Level.DEBUG, "Upload of log succeeded " + taskSnapshot.toString());
-                    synchronized (this) {
-                        this.notify();
-                    }
-                    setChanged();
-                    notifyObservers();
-                });
-
-                // Using thread notification as wait to alert when complete
-                while (!uploadTask.isComplete()) {
-                    synchronized (this) {
-                        try {
-                            this.wait(1000);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }
-
-                Log.d(TAG, "uploadTask thread ended for " + getReference());
-
-            }
-        };
-
+        HandlerThread t = new HandlerThread("Logging") {};
         t.start();
+        handler = new Handler(t.getLooper());
+
+        InputStream logStream = pis;
+
+        Log.d(TAG, "Creating upload task for " + getReference());
+
+        UploadTask uploadTask = storageRef.putStream(logStream);
+        uploadTask.addOnFailureListener(exception -> {
+            Log.e(TAG, "Failed to upload", exception);
+            mManager.log(LogContract.Log.Level.ERROR, "Failed to upload: " + exception.getMessage() + "\\" + exception.getStackTrace().toString());
+            synchronized (this) {
+                this.notify();
+            }
+        }).addOnSuccessListener(taskSnapshot -> {
+            Log.d(TAG, "Upload of log succeeded " + taskSnapshot.toString());
+            mManager.log(LogContract.Log.Level.DEBUG, "Upload of log succeeded " + taskSnapshot.toString());
+            synchronized (this) {
+                this.notify();
+            }
+            setChanged();
+            notifyObservers();
+        });
+
+        Log.d(TAG, "uploadTask thread ended for " + getReference());
     }
 
     public String getReference() {
@@ -147,26 +136,35 @@ public class FirebaseStreamLogger extends Observable {
         return "streams/" + mUser.getUid() + "/" + mDeviceMac + "/" + dateName + ".json.gz";
     }
 
-    synchronized
-    private void addJson(String json) {
-        try {
-            long t1 = System.nanoTime();
-            if (firstEntry) {
-                dataStream.write(json.getBytes());
-                firstEntry = false;
-            } else
-                dataStream.write((",\n" + json).getBytes());
+    public class MsgWriteRunnable implements Runnable {
 
-            long t2 = System.nanoTime();
-            double duration_ms = (t2-t1) / 1e6;
-            if (duration_ms > 3)
-                Log.d(TAG, "Write took " + duration_ms + " ms");
-        } catch (IOException e) {
-            Log.e(TAG, "Error writing to stream");
+        private String msg;
+
+        public MsgWriteRunnable(String msg) {
+            this.msg = msg;
+        }
+
+        @Override
+        public void run() {
+            Log.d(TAG, "Writing");
+            try {
+                dataStream.write(msg.getBytes());
+            } catch (IOException e) {
+                Log.e(TAG, "Error writing to stream.", e);
+            }
         }
     }
 
-    public void addRawSample(long time, int channels, int samples, double [][] data) {
+    synchronized
+    private void addJson(String json) {
+        if (firstEntry) {
+            handler.post(new MsgWriteRunnable(json));
+            firstEntry = false;
+        } else
+            handler.post(new MsgWriteRunnable(",\n" + json));
+    }
+
+    public void addStreamSample(long time, int channels, int samples, double [][] data) {
         Gson gson = new Gson();
         EmgRawMessage msg = new EmgRawMessage(mDeviceMac, time, channels, samples, data);
         addJson(gson.toJson(msg));
