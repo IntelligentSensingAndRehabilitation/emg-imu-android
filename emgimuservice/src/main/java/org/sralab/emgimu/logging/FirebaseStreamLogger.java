@@ -146,7 +146,6 @@ public class FirebaseStreamLogger extends Observable {
 
         @Override
         public void run() {
-            Log.d(TAG, "Writing");
             try {
                 dataStream.write(msg.getBytes());
             } catch (IOException e) {
