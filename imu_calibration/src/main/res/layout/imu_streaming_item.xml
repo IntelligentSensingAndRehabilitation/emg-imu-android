@@ -9,7 +9,7 @@
         android:layout_height="2dp"
         android:background="@android:color/darker_gray"/>
 
-    <org.sralab.emgimu.imu_calibration.streaming.GimbalView
+    <org.sralab.emgimu.visualization.GimbalView
         android:id="@+id/gimbal_view"
         android:layout_width="match_parent"
         android:layout_height="200dp" />

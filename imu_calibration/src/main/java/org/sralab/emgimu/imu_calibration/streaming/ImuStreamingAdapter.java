@@ -29,10 +29,10 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.LiveData;
-import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.RecyclerView;
 
 import org.sralab.emgimu.imu_calibration.R;
+import org.sralab.emgimu.visualization.GimbalView;
 import org.sralab.emgimu.visualization.LineGraphView;
 
 import java.util.List;

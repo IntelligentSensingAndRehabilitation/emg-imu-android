@@ -1,4 +1,4 @@
-package org.sralab.emgimu.imu_calibration.streaming;
+package org.sralab.emgimu.visualization;
 
 import android.content.Context;
 import android.graphics.Canvas;
