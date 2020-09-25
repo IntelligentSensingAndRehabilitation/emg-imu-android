@@ -101,6 +101,16 @@ public abstract class EmgImuViewModel <T> extends AndroidViewModel {
         }
     }
 
+    public void onServiceConnected()
+    {
+
+    }
+
+    public void onServiceDisconnected()
+    {
+
+    }
+
     private ServiceConnection serviceConnection = new ServiceConnection() {
 
         @Override
@@ -121,10 +131,12 @@ public abstract class EmgImuViewModel <T> extends AndroidViewModel {
             }
 
             onDeviceListUpdated();
+            EmgImuViewModel.this.onServiceConnected();
         }
 
         @Override
         public void onServiceDisconnected(final ComponentName name) {
+            EmgImuViewModel.this.onServiceDisconnected();
             service = null;
         }
     };

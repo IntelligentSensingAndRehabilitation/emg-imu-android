@@ -433,6 +433,10 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
             return "";
         }
 
+        public String getAuthToken() {
+            return mToken;
+        }
+
         public List<String> getLoggingReferences() {
             List<String> references = new ArrayList<>();
             for (final BluetoothDevice device : getManagedDevices()) {

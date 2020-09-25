@@ -2,6 +2,7 @@ package org.sralab.emgimu.logging;
 
 import android.os.Handler;
 import android.os.Looper;
+import android.os.RemoteException;
 import android.util.Log;
 
 import com.google.firebase.auth.FirebaseAuth;
@@ -10,7 +11,7 @@ import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.Timestamp;
 
-import org.sralab.emgimu.service.EmgImuService;
+import org.sralab.emgimu.service.IEmgImuServiceBinder;
 
 import java.security.InvalidParameterException;
 import java.text.DateFormat;
@@ -83,11 +84,11 @@ public class FirebaseGameLogger {
 
     private FirebaseUser mUser;
     private FirebaseFirestore mDb;
-    private EmgImuService.EmgImuBinder mService;
+    private IEmgImuServiceBinder mService;
 
     private GamePlayRecord record;
 
-    public FirebaseGameLogger(EmgImuService.EmgImuBinder service, String game, long startTime) {
+    public FirebaseGameLogger(IEmgImuServiceBinder service, String game, long startTime) {
 
         mService = service;
 
@@ -110,7 +111,11 @@ public class FirebaseGameLogger {
         record.stopTime = null;
         record.name = game;
         record.performance = 0;
-        record.logReference = mService.getLoggingReferences();
+        try {
+            record.logReference = mService.getLoggingReferences();
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
 
         Handler mainHandler = new Handler(Looper.getMainLooper());
         mainHandler.post(()-> {
@@ -131,7 +136,11 @@ public class FirebaseGameLogger {
         record.stopTime = Timestamp.now();
         record.performance = performance;
         record.details = details;
-        record.logReference = mService.getLoggingReferences();
+        try {
+            record.logReference = mService.getLoggingReferences();
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
 
         save();
     }
