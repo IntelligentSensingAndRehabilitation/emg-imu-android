@@ -194,12 +194,10 @@ public class EmgImuManager extends BleManager {
     public void close() {
 	    super.close();
 
-        synchronized (this) {
-            if (mLogging && streamLogger != null) {
-                Log.d(TAG, "Closing stream logger");
-                streamLogger.close();
-                streamLogger = null;
-            }
+        if (mLogging && streamLogger != null) {
+            Log.d(TAG, "Closing stream logger: " + getAddress());
+            streamLogger.close();
+            streamLogger = null;
         }
     }
 
@@ -349,11 +347,9 @@ public class EmgImuManager extends BleManager {
 		    // Complete some of our initialization once we have a device connected
             fireLogger = new FirebaseEmgLogger(EmgImuManager.this);
 
-            synchronized (this) {
-                if (mLogging) {
-                    log(Log.INFO, "Created stream logger");
-                    streamLogger = new FirebaseStreamLogger(EmgImuManager.this);
-                }
+            if (mLogging) {
+                log(Log.INFO, "Created stream logger");
+                streamLogger = new FirebaseStreamLogger(EmgImuManager.this);
             }
 
             loadThreshold();
@@ -391,12 +387,10 @@ public class EmgImuManager extends BleManager {
 
             mChannels = 0;
 
-            synchronized (this) {
-                if (mLogging && streamLogger != null) {
-                    log(Log.INFO, "Closing stream logger");
-                    streamLogger.close();
-                    streamLogger = null;
-                }
+            if (mLogging && streamLogger != null) {
+                log(Log.INFO, "Closing stream logger: " + getAddress());
+                streamLogger.close();
+                streamLogger = null;
             }
 		}
     };

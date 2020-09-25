@@ -123,13 +123,16 @@ public class FirebaseStreamLogger extends Observable {
     }
 
     public void close() {
-        try {
-            dataStream.write("]".getBytes());
-            dataStream.close();
-            Log.d(TAG, "Closing PipedOutputStream");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        Log.d(TAG, "Closing PipedOutputStream");
+        handler.post(() -> {
+            try {
+                Log.d(TAG, "Close occurred");
+                dataStream.write("]".getBytes());
+                dataStream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
     }
 
     private String getFilename() {
