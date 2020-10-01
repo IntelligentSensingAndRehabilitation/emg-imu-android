@@ -1,5 +1,5 @@
 apply plugin: 'com.android.application'
-apply plugin: 'io.fabric'
+apply plugin: 'com.google.firebase.crashlytics'
 
 android {
 
@@ -64,7 +64,7 @@ dependencies {
     api 'androidx.appcompat:appcompat:1.2.0'
     api 'androidx.legacy:legacy-support-v4:1.0.0'
 
-    implementation "com.crashlytics.sdk.android:crashlytics:$crashlyticsVer"
+    implementation "com.google.firebase:firebase-crashlytics:$firebaseCrashlyticsVer"
 }
 
 apply plugin: 'com.google.gms.google-services'

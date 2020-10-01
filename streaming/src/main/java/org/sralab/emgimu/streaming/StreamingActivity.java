@@ -15,10 +15,10 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.crashlytics.android.Crashlytics;
-import com.crashlytics.android.core.CrashlyticsCore;
+import com.google.firebase.crashlytics.FirebaseCrashlytics;
 
-import io.fabric.sdk.android.Fabric;
+import org.sralab.emgimu.service.BuildConfig;
+
 import no.nordicsemi.android.nrftoolbox.widget.DividerItemDecoration;
 
 public class StreamingActivity extends AppCompatActivity {
@@ -47,10 +47,8 @@ public class StreamingActivity extends AppCompatActivity {
         setContentView(R.layout.activity_streaming);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
-        CrashlyticsCore crashlyticsCore = new CrashlyticsCore.Builder()
-                .disabled(BuildConfig.DEBUG)
-                .build();
-        Fabric.with(this, new Crashlytics.Builder().core(crashlyticsCore).build());
+        FirebaseCrashlytics crashlytics = FirebaseCrashlytics.getInstance();
+        crashlytics.setCrashlyticsCollectionEnabled(!BuildConfig.DEBUG);
 
         /*
         mRangeText = findViewById(R.id.rangeText);

@@ -9,15 +9,13 @@ import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.crashlytics.android.Crashlytics;
-import com.crashlytics.android.core.CrashlyticsCore;
+import com.google.firebase.crashlytics.FirebaseCrashlytics;
 
 import org.sralab.emgimu.service.BuildConfig;
 import org.sralab.emgimu.service.IEmgImuServiceBinder;
 
 import java.util.List;
 
-import io.fabric.sdk.android.Fabric;
 import no.nordicsemi.android.nrftoolbox.widget.DividerItemDecoration;
 
 public abstract class EmgImuAdapterActivity extends EmgImuBaseActivity {
@@ -33,10 +31,9 @@ public abstract class EmgImuAdapterActivity extends EmgImuBaseActivity {
     }
 
     protected void onCreateView(DeviceAdapter adapter, final RecyclerView view) {
-        CrashlyticsCore crashlyticsCore = new CrashlyticsCore.Builder()
-                .disabled(BuildConfig.DEBUG)
-                .build();
-        Fabric.with(this, new Crashlytics.Builder().core(crashlyticsCore).build());
+
+        FirebaseCrashlytics crashlytics = FirebaseCrashlytics.getInstance();
+        crashlytics.setCrashlyticsCollectionEnabled(!BuildConfig.DEBUG);
 
         mAdapter = adapter;
 

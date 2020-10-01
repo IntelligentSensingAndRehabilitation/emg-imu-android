@@ -42,7 +42,7 @@ dependencies {
     implementation "com.google.firebase:firebase-firestore:$firebaseFirestoreVer"
     implementation "com.google.firebase:firebase-storage:$firebaseStorageVer"
     implementation "com.google.firebase:firebase-messaging:$firebaseMessagingVer"
-    implementation "com.crashlytics.sdk.android:crashlytics:$crashlyticsVer"
+    implementation "com.google.firebase:firebase-crashlytics:$firebaseCrashlyticsVer"
 
     implementation 'com.google.code.gson:gson:2.8.6'
     implementation 'org.jetbrains:annotations:20.1.0'

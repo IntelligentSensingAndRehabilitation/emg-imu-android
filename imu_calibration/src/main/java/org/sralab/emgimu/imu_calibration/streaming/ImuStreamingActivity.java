@@ -13,13 +13,11 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.crashlytics.android.Crashlytics;
-import com.crashlytics.android.core.CrashlyticsCore;
+import com.google.firebase.crashlytics.FirebaseCrashlytics;
 
 import org.sralab.emgimu.imu_calibration.BuildConfig;
 import org.sralab.emgimu.imu_calibration.R;
 
-import io.fabric.sdk.android.Fabric;
 import no.nordicsemi.android.nrftoolbox.widget.DividerItemDecoration;
 
 public class ImuStreamingActivity extends AppCompatActivity {
@@ -46,10 +44,8 @@ public class ImuStreamingActivity extends AppCompatActivity {
         setContentView(R.layout.activity_imu_streaming);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
-        CrashlyticsCore crashlyticsCore = new CrashlyticsCore.Builder()
-                .disabled(BuildConfig.DEBUG)
-                .build();
-        Fabric.with(this, new Crashlytics.Builder().core(crashlyticsCore).build());
+        FirebaseCrashlytics crashlytics = FirebaseCrashlytics.getInstance();
+        crashlytics.setCrashlyticsCollectionEnabled(!org.sralab.emgimu.service.BuildConfig.DEBUG);
 
         /*
         mRangeText = findViewById(R.id.rangeText);

@@ -24,8 +24,6 @@ import java.util.Date;
 import java.util.List;
 import android.util.Log;
 
-import com.crashlytics.android.Crashlytics;
-import com.crashlytics.android.core.CrashlyticsCore;
 import com.google.firebase.analytics.FirebaseAnalytics;
 import com.google.gson.Gson;
 
@@ -99,10 +97,8 @@ public class Game extends EmgImuBaseActivity {
     @Override
     protected void onCreateView(Bundle savedInstanceState) {
 
-        CrashlyticsCore crashlyticsCore = new CrashlyticsCore.Builder()
-                .disabled(BuildConfig.DEBUG)
-                .build();
-        Fabric.with(this, new Crashlytics.Builder().core(crashlyticsCore).build());
+        FirebaseCrashlytics crashlytics = FirebaseCrashlytics.getInstance();
+        crashlytics.setCrashlyticsCollectionEnabled(!BuildConfig.DEBUG);
 
         accomplishmentBox = new AccomplishmentBox();
         handler = new MyHandler(this);

@@ -47,16 +47,14 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.crashlytics.android.Crashlytics;
-import com.crashlytics.android.core.CrashlyticsCore;
+import com.google.firebase.crashlytics.FirebaseCrashlytics;
 
 import java.util.List;
 
-import io.fabric.sdk.android.Fabric;
 import no.nordicsemi.android.nrftoolbox.AppHelpFragment;
 
-import org.sralab.emgimu.config.BuildConfig;
 import org.sralab.emgimu.config.R;
+import org.sralab.emgimu.service.BuildConfig;
 
 public class LauncherActivity extends AppCompatActivity {
 	private static final String NRF_CONNECT_CATEGORY = "no.nordicsemi.android.nrftoolbox.LAUNCHER";
@@ -71,10 +69,8 @@ public class LauncherActivity extends AppCompatActivity {
 	@Override
 	protected void onCreate(final Bundle savedInstanceState) {
 
-		CrashlyticsCore crashlyticsCore = new CrashlyticsCore.Builder()
-				.disabled(BuildConfig.DEBUG)
-				.build();
-		Fabric.with(this, new Crashlytics.Builder().core(crashlyticsCore).build());
+		FirebaseCrashlytics crashlytics = FirebaseCrashlytics.getInstance();
+		crashlytics.setCrashlyticsCollectionEnabled(!BuildConfig.DEBUG);
 
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_launcher);

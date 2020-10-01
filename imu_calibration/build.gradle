@@ -32,7 +32,7 @@ dependencies {
     implementation "no.nordicsemi.android:ble:$nordicBleLVer"
 
     implementation "com.google.firebase:firebase-core:$firebaseCoreVer"
-    implementation "com.crashlytics.sdk.android:crashlytics:$crashlyticsVer"
+    implementation "com.google.firebase:firebase-crashlytics:$firebaseCrashlyticsVer"
 }
 
 apply plugin: 'com.google.gms.google-services'

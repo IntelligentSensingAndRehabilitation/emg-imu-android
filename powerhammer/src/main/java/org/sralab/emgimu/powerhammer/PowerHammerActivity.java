@@ -37,10 +37,8 @@ public class PowerHammerActivity extends UnityPlayerActivity
     // Setup activity layout
     @Override protected void onCreate(Bundle savedInstanceState)
     {
-        CrashlyticsCore crashlyticsCore = new CrashlyticsCore.Builder()
-                .disabled(BuildConfig.DEBUG)
-                .build();
-        Fabric.with(this, new Crashlytics.Builder().core(crashlyticsCore).build());
+        FirebaseCrashlytics crashlytics = FirebaseCrashlytics.getInstance();
+        crashlytics.setCrashlyticsCollectionEnabled(!BuildConfig.DEBUG);
 
         // Create the service holder
         Log.d(TAG, "Creating service holder");
