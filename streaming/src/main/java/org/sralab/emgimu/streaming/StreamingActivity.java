@@ -6,6 +6,9 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.PowerManager;
 import android.provider.Settings;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.util.Log;
 import android.view.WindowManager;
 import android.widget.CheckBox;
 import android.widget.EditText;
@@ -50,7 +53,18 @@ public class StreamingActivity extends AppCompatActivity {
         FirebaseCrashlytics crashlytics = FirebaseCrashlytics.getInstance();
         crashlytics.setCrashlyticsCollectionEnabled(!BuildConfig.DEBUG);
 
-        /*
+        final RecyclerView recyclerView = findViewById(R.id.emg_list);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        recyclerView.addItemDecoration(new DividerItemDecoration(this, DividerItemDecoration.VERTICAL_LIST));
+
+        dvm = new ViewModelProvider(this, ViewModelProvider.AndroidViewModelFactory.getInstance(getApplication())).get(DeviceViewModel.class);
+        dvm.getDevicesLiveData().observe(this, devices -> streamingAdapter.notifyDataSetChanged());
+        recyclerView.setAdapter(streamingAdapter = new StreamingAdapter(this, dvm));
+
+        enableFilter = findViewById(R.id.filteringCb);
+        dvm.setFiltering(enableFilter.isChecked());
+        enableFilter.setOnCheckedChangeListener((compoundButton, b) -> dvm.setFiltering(b) );
+
         mRangeText = findViewById(R.id.rangeText);
         mRangeText.addTextChangedListener(new TextWatcher() {
             @Override
@@ -60,13 +74,12 @@ public class StreamingActivity extends AppCompatActivity {
 
             @Override
             public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-                if (streamingAdapter == null)
-                    return;
 
                 try {
-                    double range = Double.parseDouble(charSequence.toString());
+                    float range = Float.parseFloat(charSequence.toString());
                     // TODO: streamingAdapter.setRange(range);
                     Log.d(TAG, "Range change to: " + range);
+                    dvm.setRange(range);
                 } catch (NumberFormatException e) {
                     // Do nothing until valid number entered
                 }
@@ -79,19 +92,6 @@ public class StreamingActivity extends AppCompatActivity {
             }
         });
 
-        */
-
-        final RecyclerView recyclerView = findViewById(R.id.emg_list);
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        recyclerView.addItemDecoration(new DividerItemDecoration(this, DividerItemDecoration.VERTICAL_LIST));
-
-        dvm = new ViewModelProvider(this, ViewModelProvider.AndroidViewModelFactory.getInstance(getApplication())).get(DeviceViewModel.class);
-        dvm.getDevicesLiveData().observe(this, devices -> streamingAdapter.notifyDataSetChanged());
-        recyclerView.setAdapter(streamingAdapter = new StreamingAdapter(this, dvm));
-
-        enableFilter = findViewById(R.id.filteringCb);
-        dvm.setFiltering(enableFilter.isChecked());
-        enableFilter.setOnCheckedChangeListener((compoundButton, b) -> dvm.setFiltering(b) );
     }
 
 }

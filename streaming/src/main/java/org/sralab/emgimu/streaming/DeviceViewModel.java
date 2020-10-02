@@ -13,6 +13,7 @@ import android.util.Log;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MediatorLiveData;
+import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.Transformations;
 
 import org.sralab.emgimu.EmgImuViewModel;
@@ -46,6 +47,14 @@ public class DeviceViewModel extends EmgImuViewModel<Device> {
         this.filtering = filtering;
         for (Device d : getDeviceMap().values())
             d.setFiltering(filtering);
+    }
+
+    MutableLiveData<Float> range = new MutableLiveData<>(200.0f);
+    public void setRange(float range) {
+        this.range.postValue(range);
+    }
+    public LiveData<Float> getRange() {
+        return range;
     }
 
     @Override

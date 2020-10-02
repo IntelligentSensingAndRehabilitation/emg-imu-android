@@ -44,10 +44,12 @@ public class StreamingAdapter extends RecyclerView.Adapter<StreamingAdapter.View
 
     private LifecycleOwner context;
     private final LiveData<List<Device>> devices;
+    private DeviceViewModel dvm;
 
     public StreamingAdapter(LifecycleOwner context, DeviceViewModel dvm) {
         devices = dvm.getDevicesLiveData();
         this.context = context;
+        this.dvm = dvm;
     }
 
     @NonNull
@@ -84,85 +86,6 @@ public class StreamingAdapter extends RecyclerView.Adapter<StreamingAdapter.View
     @Override
     public int getItemCount() { return devices.getValue().size(); }
 
-	/*@Override
-    public void onViewRecycled(final ViewHolder holder) {
-        // When a view is recycled, we must dettach the graph from it's
-        // view so it can be used again later
-
-        final StreamingViewHolder streamingHolder = (StreamingViewHolder) holder;
-        streamingHolder.mLayoutView.removeAllViews();
-        streamingHolder.mLineGraph = null;
-    }*/
-
-	/*
-    public void toggleFiltering(boolean filter) {
-        mFiltering = filter;
-        for (LineGraphView l : mDeviceLineGraphMap.values()) {
-            l.enableFiltering(mFiltering);
-        }
-    }
-    */
-
-	/*
-    //! Get the row in the adapters for the first channel of this device
-	private int getPosition(final BluetoothDevice device) {
-        int items = 0;
-        for (final BluetoothDevice d : getDevices()) {
-            if (device == d)
-                break;
-            items += getService().getChannelCount(d);
-        }
-        return items;
-    }
-
-    private double mRange = 5e5; // default range in graphs
-    void setRange(double newRange) {
-        mRange = newRange;
-        for (LineGraphView l : mDeviceLineGraphMap.values()) {
-            l.setRange(mRange);
-        }
-    }
-
-    @Override
-    public void onDeviceReady(BluetoothDevice device) {
-        super.onDeviceReady(device);
-
-        getService().streamBuffered(device);
-    }
-
-    // Used to only update graphically for a subset of new data
-    private int updateCounter = 0;
-    public void onEmgBuffReceived(final BluetoothDevice device, long ts_ms, final double[][] data) {
-
-        int channels = getService().getChannelCount(device);
-
-        if (BuildConfig.DEBUG && data.length != channels) {
-            throw new RuntimeException("Channel count does not match expected data size");
-        }
-
-        updateCounter ++;
-        for (int channel = 0; channel < channels; channel++) {
-            // If graph exists for this device, update it with new data
-            LineGraphView mLineGraph = mDeviceLineGraphMap.get(new Pair<>(device, channel));
-            if (mLineGraph != null) {
-                for (double buffValue : data[channel]) {
-                    mLineGraph.addValue(buffValue);
-                }
-
-            }
-
-        }
-
-        if (updateCounter % 5 == 0) {
-            for(int channel = 0; channel < channels; channel++) {
-                final int position = getPosition(device) + channel;
-                if (position >= 0)
-                    notifyItemChanged(position);
-            }
-        }
-    }
-    */
-
 	class ViewHolder extends RecyclerView.ViewHolder {
 
         private LineGraphView graphView;
@@ -174,6 +97,7 @@ public class StreamingAdapter extends RecyclerView.Adapter<StreamingAdapter.View
 
 		private void bind(final Device device) {
             device.getSeries().observe(context, timeSeries -> graphView.updateSeries(timeSeries) );
+            dvm.getRange().observe(context, range -> graphView.setRange(range) );
 		}
 	}
 }

@@ -131,4 +131,9 @@ public class LineGraphView extends LinearLayout {
 
 		graphicalView.repaint();
 	}
+
+	public void setRange(double range) {
+		renderer.setYAxisMax(range);
+		renderer.setYAxisMin(-range);
+	}
 }
