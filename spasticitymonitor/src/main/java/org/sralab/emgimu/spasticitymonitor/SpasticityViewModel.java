@@ -16,7 +16,13 @@ import androidx.lifecycle.MutableLiveData;
 
 import org.sralab.emgimu.service.EmgPwrData;
 import org.sralab.emgimu.service.IEmgImuPwrDataCallback;
+import org.sralab.emgimu.service.IEmgImuQuatCallback;
 import org.sralab.emgimu.service.IEmgImuServiceBinder;
+import org.sralab.emgimu.service.ImuQuatData;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class SpasticityViewModel extends AndroidViewModel {
 
@@ -26,9 +32,13 @@ public class SpasticityViewModel extends AndroidViewModel {
 
     //private LiveEmgPwr emgPwr;
     private final MutableLiveData <Integer> emgPwr = new MutableLiveData<>();
+    private final MutableLiveData <List<Float>> imuQuat = new MutableLiveData<>();
 
     public LiveData<Integer> getEmgPwr() {
         return emgPwr;
+    }
+    public LiveData<List<Float>> getImuQuat() {
+        return imuQuat;
     }
 
     public SpasticityViewModel(Application app) {
@@ -45,6 +55,7 @@ public class SpasticityViewModel extends AndroidViewModel {
         super.onCleared();
         try {
             mService.unregisterEmgPwrObserver(pwrObserver);
+            mService.unregisterImuQuatObserver(quatObserver);
         } catch (RemoteException e) {
             Log.e(TAG, "Unable to unregister.", e);
         }
@@ -58,6 +69,17 @@ public class SpasticityViewModel extends AndroidViewModel {
         }
     };
 
+    private IEmgImuQuatCallback.Stub quatObserver = new IEmgImuQuatCallback.Stub() {
+        @Override
+        public void handleData(BluetoothDevice device, ImuQuatData data) {
+            ArrayList<Float> floats = new ArrayList<>(Arrays.asList((float)data.q0,
+                    (float)data.q1, (float)data.q2, (float)data.q3));
+            imuQuat.postValue(floats);
+            Log.d(TAG, "HERE");
+        }
+
+    };
+
     private IEmgImuServiceBinder mService;
     private ServiceConnection mServiceConnection = new ServiceConnection() {
         @SuppressWarnings("unchecked")
@@ -68,6 +90,7 @@ public class SpasticityViewModel extends AndroidViewModel {
 
             try {
                 mService.registerEmgPwrObserver(pwrObserver);
+                mService.registerImuQuatObserver(quatObserver);
             } catch (RemoteException e) {
                 e.printStackTrace();
             }
