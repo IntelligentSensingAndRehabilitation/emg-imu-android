@@ -9,8 +9,8 @@ buildscript {
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:4.1.1'
-        classpath 'com.google.gms:google-services:4.3.3'
-        classpath 'com.google.firebase:firebase-crashlytics-gradle:2.3.0'
+        classpath 'com.google.gms:google-services:4.3.4'
+        classpath 'com.google.firebase:firebase-crashlytics-gradle:2.4.1'
 
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
@@ -57,12 +57,12 @@ ext {
     minSdkInstant = 26
 
     supportLib = '28.0.0'
-    firebaseCoreVer = '17.5.0'
-    firebaseAuthVer = '19.4.0'
+    firebaseCoreVer = '18.0.0'
+    firebaseAuthVer = '20.0.1'
     firebaseStorageVer = '19.2.0'
-    firebaseFirestoreVer = '21.7.0'
-    firebaseMessagingVer = '20.3.0'
-    firebaseCrashlyticsVer = '17.2.2'
+    firebaseFirestoreVer = '22.0.0'
+    firebaseMessagingVer = '21.0.0'
+    firebaseCrashlyticsVer = '17.3.0'
     instantAppsVer = '1.1.0'
 
     nordicBleLVer = '2.2.4'

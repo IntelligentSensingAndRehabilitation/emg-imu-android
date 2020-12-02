@@ -67,7 +67,7 @@ import com.google.firebase.crashlytics.FirebaseCrashlytics;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreSettings;
-import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.firebase.installations.FirebaseInstallations;
 
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
@@ -513,9 +513,7 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
             Log.d(TAG, "User ID: " + mCurrentUser.getUid());
         }
 
-
-        FirebaseInstanceId.getInstance().getInstanceId().addOnSuccessListener(instanceIdResult -> {
-            mToken = instanceIdResult.getToken();
+        FirebaseInstallations.getInstance().getId().addOnSuccessListener(mToken -> {
             Log.d(TAG, "Received token: " + mToken);
 
             // It can happen that either one is set first
