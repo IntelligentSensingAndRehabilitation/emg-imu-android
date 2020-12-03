@@ -25,12 +25,19 @@ apply plugin: 'com.android.library'
 android {
     compileSdkVersion rootProject.compileSdk
     buildToolsVersion rootProject.buildTools
+    ndkVersion rootProject.ndkVersion
 
     defaultConfig {
         minSdkVersion rootProject.minSdk
         targetSdkVersion rootProject.compileSdk
         versionCode rootProject.versionCode
         versionName rootProject.versionName
+
+        externalNativeBuild {
+            cmake {
+                arguments '-DANDROID_STL=c++_static'
+            }
+        }
     }
 
     buildTypes {
@@ -43,6 +50,13 @@ android {
     compileOptions {
         targetCompatibility JavaVersion.VERSION_1_8
         sourceCompatibility JavaVersion.VERSION_1_8
+    }
+
+    externalNativeBuild {
+        cmake {
+            version '3.10.2'
+            path 'src/main/cpp/CMakeLists.txt'
+        }
     }
 }
 

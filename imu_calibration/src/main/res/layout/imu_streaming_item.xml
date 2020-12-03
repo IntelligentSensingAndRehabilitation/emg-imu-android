@@ -53,4 +53,9 @@
         android:layout_width="match_parent"
         android:layout_height="5dp" />
 
+    <org.sralab.emgimu.visualization.GraphView
+        android:id="@+id/graph_mag"
+        android:layout_width="fill_parent"
+        android:layout_height="100dp" />
+
 </LinearLayout>
