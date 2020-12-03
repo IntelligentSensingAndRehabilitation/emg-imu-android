@@ -201,29 +201,33 @@ class sensorgraph {
     }
 
     void render() {
-        glClearColor(0.f, 0.f, 0.f, 1.0f);
+        //glClearColor(0.f, 0.f, 0.f, 1.0f);
         glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
         glUseProgram(shaderProgram);
 
+
+        // Set X coordinates
         glEnableVertexAttribArray(vPositionHandle);
         glVertexAttribPointer(vPositionHandle, 1, GL_FLOAT, GL_FALSE, 0, xPos);
 
+        // Plot X
         glEnableVertexAttribArray(vSensorValueHandle);
         glVertexAttribPointer(vSensorValueHandle, 1, GL_FLOAT, GL_FALSE, sizeof(AccelerometerData),
                               &sensorData[sensorDataIndex].x);
-
-        glUniform4f(uFragColorHandle, 1.0f, 1.0f, 0.0f, 1.0f);
+        glUniform4f(uFragColorHandle, 1.0f, 1.0f, 0.5f, 1.0f);
         glDrawArrays(GL_LINE_STRIP, 0, SENSOR_HISTORY_LENGTH);
 
+        // Plot Y
         glVertexAttribPointer(vSensorValueHandle, 1, GL_FLOAT, GL_FALSE, sizeof(AccelerometerData),
                               &sensorData[sensorDataIndex].y);
-        glUniform4f(uFragColorHandle, 1.0f, 0.0f, 1.0f, 1.0f);
+        glUniform4f(uFragColorHandle, 1.0f, 0.5f, 1.0f, 1.0f);
         glDrawArrays(GL_LINE_STRIP, 0, SENSOR_HISTORY_LENGTH);
 
+        // Plot Z
         glVertexAttribPointer(vSensorValueHandle, 1, GL_FLOAT, GL_FALSE, sizeof(AccelerometerData),
                               &sensorData[sensorDataIndex].z);
-        glUniform4f(uFragColorHandle, 0.0f, 1.0f, 1.0f, 1.0f);
+        glUniform4f(uFragColorHandle, 0.5f, 0.5f, 1.0f, 1.0f);
         glDrawArrays(GL_LINE_STRIP, 0, SENSOR_HISTORY_LENGTH);
     }
 

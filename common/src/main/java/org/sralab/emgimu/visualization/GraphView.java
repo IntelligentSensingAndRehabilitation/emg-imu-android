@@ -22,6 +22,7 @@
 package org.sralab.emgimu.visualization;
 
 import android.content.Context;
+import android.graphics.PixelFormat;
 import android.opengl.GLSurfaceView;
 import android.util.AttributeSet;
 
@@ -44,10 +45,24 @@ public class GraphView extends GLSurfaceView {
 	public GraphView(Context context, AttributeSet attrs, int defStyle) {
 		super(context);
 		setEGLContextClientVersion(2);
+		setZOrderOnTop(true);
+		setEGLConfigChooser(8, 8, 8, 8, 16, 0);
+		getHolder().setFormat(PixelFormat.TRANSLUCENT);
+
+
 		setRenderer(new GLSurfaceView.Renderer() {
 			@Override
 			public void onSurfaceCreated(GL10 gl, EGLConfig config) {
 				GraphJNI.surfaceCreated();
+				gl.glDisable(GL10.GL_DITHER);
+				gl.glHint(GL10.GL_PERSPECTIVE_CORRECTION_HINT,
+						GL10.GL_FASTEST);
+
+				gl.glClearColor(0,0,0,0);
+				gl.glEnable(GL10.GL_CULL_FACE);
+				gl.glShadeModel(GL10.GL_SMOOTH);
+				gl.glEnable(GL10.GL_DEPTH_TEST);
+				gl.glLineWidth(15.0f);
 			}
 
 			@Override
