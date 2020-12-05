@@ -34,7 +34,6 @@ import androidx.recyclerview.widget.RecyclerView;
 import org.sralab.emgimu.imu_calibration.R;
 import org.sralab.emgimu.visualization.GimbalView;
 import org.sralab.emgimu.visualization.GraphView;
-import org.sralab.emgimu.visualization.LineGraphView;
 
 import java.util.List;
 

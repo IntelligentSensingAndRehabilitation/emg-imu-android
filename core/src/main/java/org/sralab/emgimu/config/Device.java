@@ -3,7 +3,6 @@ package org.sralab.emgimu.config;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
-import org.achartengine.model.TimeSeries;
 import org.sralab.emgimu.visualization.GraphData;
 
 public class Device {

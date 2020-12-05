@@ -34,8 +34,6 @@ dependencies {
 
     implementation "no.nordicsemi.android:ble:$nordicBleLVer"
 
-    implementation files('../common/libs/achartengine-1.2.0.jar')
-
     implementation "com.google.firebase:firebase-core:$firebaseCoreVer"
     implementation "com.google.firebase:firebase-crashlytics:$firebaseCrashlyticsVer"
 }

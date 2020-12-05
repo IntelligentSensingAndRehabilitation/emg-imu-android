@@ -3,8 +3,6 @@ package org.sralab.emgimu.mve;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
-import org.achartengine.model.TimeSeries;
-
 public class Device {
 
     private final static String TAG = Device.class.getSimpleName();

@@ -33,7 +33,6 @@ import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.RecyclerView;
 
 import org.sralab.emgimu.visualization.GraphView;
-import org.sralab.emgimu.visualization.LineGraphView;
 
 import java.util.List;
 

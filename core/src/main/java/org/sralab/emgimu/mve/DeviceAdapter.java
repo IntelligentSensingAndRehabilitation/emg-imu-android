@@ -22,24 +22,17 @@
 
 package org.sralab.emgimu.mve;
 
-import android.bluetooth.BluetoothGatt;
-import android.content.res.ColorStateList;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageButton;
-import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.core.content.ContextCompat;
 import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.LiveData;
 import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.RecyclerView;
 
 import org.sralab.emgimu.config.R;
-import org.sralab.emgimu.visualization.LineGraphView;
 
 import java.util.List;
 

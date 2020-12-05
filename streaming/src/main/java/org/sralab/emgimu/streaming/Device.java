@@ -1,11 +1,7 @@
 package org.sralab.emgimu.streaming;
 
-import android.util.Log;
-
 import androidx.lifecycle.LiveData;
-import androidx.lifecycle.MutableLiveData;
 
-import org.achartengine.model.TimeSeries;
 import org.sralab.emgimu.visualization.GraphData;
 
 import java.util.ArrayList;

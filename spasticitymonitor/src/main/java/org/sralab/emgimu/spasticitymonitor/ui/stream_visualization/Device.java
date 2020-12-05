@@ -3,7 +3,6 @@ package org.sralab.emgimu.spasticitymonitor.ui.stream_visualization;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
-import org.achartengine.model.TimeSeries;
 import org.sralab.emgimu.visualization.GraphData;
 
 import java.util.ArrayList;
