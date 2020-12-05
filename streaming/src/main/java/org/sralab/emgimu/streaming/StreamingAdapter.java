@@ -32,6 +32,7 @@ import androidx.lifecycle.LiveData;
 import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.RecyclerView;
 
+import org.sralab.emgimu.visualization.GraphView;
 import org.sralab.emgimu.visualization.LineGraphView;
 
 import java.util.List;
@@ -88,7 +89,7 @@ public class StreamingAdapter extends RecyclerView.Adapter<StreamingAdapter.View
 
 	class ViewHolder extends RecyclerView.ViewHolder {
 
-        private LineGraphView graphView;
+        private GraphView graphView;
 
         ViewHolder(final View itemView) {
 			super(itemView);
@@ -96,8 +97,8 @@ public class StreamingAdapter extends RecyclerView.Adapter<StreamingAdapter.View
         }
 
 		private void bind(final Device device) {
-            device.getSeries().observe(context, timeSeries -> graphView.updateSeries(timeSeries) );
-            dvm.getRange().observe(context, range -> graphView.setRange(range) );
+            device.getEmg().observe(context, graphData -> graphView.updateGraphData(graphData) );
+            dvm.getRange().observe(context, range -> device.setRange(range) );
 		}
 	}
 }

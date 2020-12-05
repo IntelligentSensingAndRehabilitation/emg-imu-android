@@ -4,6 +4,7 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import org.achartengine.model.TimeSeries;
+import org.sralab.emgimu.visualization.GraphData;
 
 public class Device {
 
@@ -27,27 +28,16 @@ public class Device {
     public LiveData<Integer> getConnectionState() { return connectionState; }
     public void setConnectionState(LiveData<Integer> connectionState) { this.connectionState = connectionState; }
 
-    private TimeSeries series = new TimeSeries("EMG Power");
-    private MutableLiveData<TimeSeries> liveSeries = new MutableLiveData<>();
-    public LiveData<TimeSeries> getSeries() {
-        return liveSeries;
-    }
+    private GraphData power = new GraphData(500, 1);
+    public LiveData<GraphData.Data> getPwr() { return power.getData(); }
+
     public void addPower(long ts, Integer power) {
-        final int N = 100;
-
-        if (series.getItemCount() == 0)
-            series.add(ts, power);
-        else
-            series.add(ts, power);
-
-        if (series.getItemCount() > N)
-            series.remove(0);
-
-        liveSeries.postValue(series);
+        this.power.addSample((float) ts, (float) power);
     }
 
     public Device() {
-        liveSeries.postValue(series);
+        power.setScale(1.0f / 5000.0f);
+        power.setPositive(true);
     }
 
 }

@@ -138,13 +138,14 @@ public class GraphView extends GLSurfaceView {
 						"attribute float vXPosition;" +
 						"uniform float vX0;" +
 						"uniform float vXScale;" +
+						"uniform float vY0;" +
 						"uniform float vYScale;" +
 						"attribute float vYPosition;" +
 						"void main() {" +
 						// Use this to apply an OpenGL perspective
 						//"  vec4 vPosition = vec4(vXPosition, vYPosition, 0, 1);" +
 						//"  //gl_Position = uMVPMatrix * vPosition;" +
-						"  gl_Position = vec4((vXPosition - vX0) * vXScale * 2.0 - 1.0, vYPosition * vYScale, 0, 1);" +
+						"  gl_Position = vec4((vXPosition - vX0) * vXScale * 2.0 - 1.0, (vYPosition - vY0) * vYScale, 0, 1);" +
 						"}";
 
 		private final String FragmentShaderCode =
@@ -266,7 +267,7 @@ public class GraphView extends GLSurfaceView {
 
 				// If no race conditions, the samplePointer should always point to the
 				// oldest sample
-				if (x0 != data.timestamps[samplePointer]) {
+				if (x0 != data.timestamps[samplePointer] && !Float.isNaN(data.timestamps[samplePointer])) {
 					Log.e(TAG, "Possible race condition when graphing. Could be timestamp error, too. Sample pointer: " + samplePointer);
 				}
 			}
@@ -292,6 +293,14 @@ public class GraphView extends GLSurfaceView {
 			// Set vertical scale
 			ScaleHandle = GLES20.glGetUniformLocation(GlProgram, "vYScale");
 			GLES20.glUniform1f(ScaleHandle, yScale);
+
+			// Set vertical offset
+			int Y0Handle = GLES20.glGetUniformLocation(GlProgram, "vY0");
+			if (data.positive) {
+				GLES20.glUniform1f(Y0Handle, 0.9f / yScale);
+			} else {
+				GLES20.glUniform1f(Y0Handle, 0);
+			}
 
 			// get handle to vertex shader's vPosition member
 			XPositionHandle = GLES20.glGetAttribLocation(GlProgram, "vXPosition");

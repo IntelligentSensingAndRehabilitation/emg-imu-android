@@ -38,6 +38,7 @@ import androidx.lifecycle.LiveData;
 import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.RecyclerView;
 
+import org.sralab.emgimu.visualization.GraphView;
 import org.sralab.emgimu.visualization.LineGraphView;
 
 import java.util.List;
@@ -91,7 +92,7 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
 	public class ViewHolder extends RecyclerView.ViewHolder {
 		private TextView batteryView;
         private TextView addressView;
-        private LineGraphView graphView;
+        private GraphView graphView;
         private ImageButton actionDisconnect;
 
         ColorStateList connectedColor;
@@ -127,7 +128,7 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
 
             addressView.setText(device.getAddress());
 
-            device.getSeries().observe(context, timeSeries -> graphView.updateSeries(timeSeries));
+            device.getPwr().observe(context, graphData -> graphView.updateGraphData(graphData));
 
             batteryView.setText(String.format("%.2fV", device.getBattery().getValue()));
             device.getBattery().observe(context, value -> batteryView.setText(String.format("%.2fV", value)));

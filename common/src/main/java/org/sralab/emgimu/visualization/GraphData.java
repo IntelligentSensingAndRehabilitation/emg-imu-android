@@ -5,6 +5,8 @@ import android.util.Log;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
+import java.util.Arrays;
+
 /**
  * Data interface for GraphView timeseries data. Provides commands for adding
  * samples to a rolling buffer and exposes the data through a LiveData object.
@@ -22,6 +24,7 @@ public class GraphData {
         public float [] timestamps;
         public float scale = 1.0f;
         public float [][] color;
+        public boolean positive;
     }
 
     private final Data data = new Data();
@@ -31,6 +34,7 @@ public class GraphData {
 
         this.data.numChannels = numChannels;
         this.data.numSamples = numSamples;
+        this.data.positive = false;
 
         // Initialize new data array
         data.values = new float[numChannels][];
@@ -39,7 +43,7 @@ public class GraphData {
         }
         data.timestamps = new float[numSamples];
         for (int i = 0; i < numSamples; i++)
-            data.timestamps[i] = -1.0f;
+            data.timestamps[i] = Float.NaN;
 
         data.color = new float[numChannels][];
         for (int i = 0; i < numChannels; i++) {
@@ -70,6 +74,7 @@ public class GraphData {
     public void setScale(float scale) {
         data.scale = scale;
     }
+    public void setPositive(boolean positive) { this.data.positive = positive; }
 
     public void setColor(int ch, float r, float g, float b, float alpha) {
         assert ch < data.numChannels;
@@ -90,7 +95,7 @@ public class GraphData {
             data.idx = (data.idx + 1) % data.numSamples;
         }
 
-        observedData.setValue(data);
+        observedData.postValue(data);
     }
 
     public void addSamples(float ts, float[] samples) {
@@ -105,11 +110,11 @@ public class GraphData {
             data.idx = (data.idx + 1) % data.numSamples;
         }
 
-        observedData.setValue(data);
+        observedData.postValue(data);
 
     }
 
-    public synchronized void addSamples(float [] ts, float [][] samples) {
+    public synchronized void addSamples(double [] ts, double [][] samples) {
 
         synchronized (data) {
             // Check all samples is a valid matrix dimension
@@ -121,17 +126,17 @@ public class GraphData {
             // Update the data array
             for (int s = 0; s < updateSamples; s++) {
                 for (int ch = 0; ch < data.numChannels; ch++) {
-                    data.values[ch][data.idx] = samples[ch][s];
+                    data.values[ch][data.idx] = (float) samples[ch][s];
                 }
-                data.timestamps[data.idx] = ts[s];
+                data.timestamps[data.idx] = (float) ts[s];
                 data.idx = (data.idx + 1) % data.numSamples;
             }
         }
 
-        observedData.setValue(data);
+        observedData.postValue(data);
     }
 
-    public LiveData getData() {
+    public LiveData<Data> getData() {
         return observedData;
     }
 

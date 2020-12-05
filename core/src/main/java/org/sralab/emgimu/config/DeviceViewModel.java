@@ -22,6 +22,7 @@ import org.sralab.emgimu.service.IEmgImuPwrDataCallback;
 import org.sralab.emgimu.service.IEmgImuServiceBinder;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +30,7 @@ import java.util.Map;
 public class DeviceViewModel extends EmgImuViewModel<Device> {
 
     private final static String TAG = DeviceViewModel.class.getSimpleName();
+    long t0 = new Date().getTime();
 
     public DeviceViewModel(Application app) {
         super(app);
@@ -50,7 +52,7 @@ public class DeviceViewModel extends EmgImuViewModel<Device> {
 
     @Override
     public void emgPwrUpdated(Device dev, EmgPwrData data) {
-        dev.addPower(data.ts, data.power[0]);
+        dev.addPower(data.ts - t0, data.power[0]);
     }
 
     public void removeDeviceFromService(final Device device) {

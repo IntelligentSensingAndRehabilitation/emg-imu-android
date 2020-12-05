@@ -1,9 +1,12 @@
 package org.sralab.emgimu.streaming;
 
+import android.util.Log;
+
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import org.achartengine.model.TimeSeries;
+import org.sralab.emgimu.visualization.GraphData;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,33 +20,13 @@ public class Device {
         this.filtering = filtering;
     }
 
+    GraphData emg;
+    public LiveData<GraphData.Data> getEmg() { return emg.getData(); }
+    public void setRange(float range) {
+        emg.setScale(1.0f / range);
+    }
+
     List<Filter> filter;
-    List<TimeSeries> series;
-
-    private MutableLiveData<List<TimeSeries>> liveSeries = new MutableLiveData<>();
-    public LiveData<List<TimeSeries>> getSeries() {
-        return liveSeries;
-    }
-    public void addVoltage(int ch, double ts, double power) {
-        final int N = 1000;
-
-        TimeSeries series = this.series.get(ch);
-        Filter filter = this.filter.get(ch);
-
-        if (filtering)
-            power = filter.update(power);
-
-        //series.add(ts, power);
-        if (series.getItemCount() == 0)
-            series.add(0, power);
-        else
-            series.add(series.getItemCount() + 1, power);
-
-        if (series.getItemCount() > N)
-            series.remove(0);
-
-        liveSeries.postValue(this.series);
-    }
 
     private class Filter {
         /**
@@ -85,17 +68,36 @@ public class Device {
         }
     }
 
+    public void addVoltage(double [] timestamp, double [][] voltage) {
+        if (filtering) {
+
+            final int channels = voltage.length;
+            double [][] filteredVoltage = new double[channels][];
+
+            for (int ch = 0; ch < channels; ch++) {
+                final int samples = voltage[ch].length;
+                filteredVoltage[ch] = new double[samples];
+                for (int s = 0; s < samples; s++) {
+                    filteredVoltage[ch][s] = filter.get(ch).update(voltage[ch][s]);
+                }
+            }
+
+            emg.addSamples(timestamp, filteredVoltage);
+        }
+        else
+            emg.addSamples(timestamp, voltage);
+    }
 
     public Device(int channels) {
 
+        emg = new GraphData(10000, channels);
+        emg.setScale(1.0f/20000.0f);
+
         filter = new ArrayList<>();
-        series = new ArrayList<>();
         for (int ch = 0; ch < channels; ch++) {
             filter.add(new Filter());
-            series.add(new TimeSeries(Integer.toString(ch)));
         }
 
-        liveSeries.postValue(series);
     }
 
 }

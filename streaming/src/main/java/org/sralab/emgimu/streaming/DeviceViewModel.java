@@ -26,6 +26,7 @@ import org.sralab.emgimu.service.IEmgImuStreamDataCallback;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +35,7 @@ import java.util.stream.IntStream;
 public class DeviceViewModel extends EmgImuViewModel<Device> {
 
     private final static String TAG = DeviceViewModel.class.getSimpleName();
+    long t0 = new Date().getTime();
 
     @Override
     public boolean getObserveStream() { return true; }
@@ -63,12 +65,11 @@ public class DeviceViewModel extends EmgImuViewModel<Device> {
                 .mapToObj(i -> Arrays.copyOfRange(data.voltage, i * data.samples, (i + 1) * data.samples))
                 .toArray(double[][]::new);
 
-        double ts = (double) data.ts;
-        for (int c = 0; c < data.channels; c++) {
-            for (int s = 0; s < data.samples; s++) {
-                dev.addVoltage(c, ts + s * 1000.0 / data.Fs, voltage[c][s]);
-            }
-        }
+        double [] timestamp = new double[data.samples];
+        for (int i = 0; i < data.samples; i++)
+            timestamp[i] = i * 1000.0 / data.Fs + data.ts - (float) t0;
+
+        dev.addVoltage(timestamp, voltage);
     }
 
     @Override

@@ -34,6 +34,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import org.sralab.emgimu.spasticitymonitor.R;
 import org.sralab.emgimu.visualization.GimbalView;
+import org.sralab.emgimu.visualization.GraphView;
 import org.sralab.emgimu.visualization.LineGraphView;
 
 import java.util.List;
@@ -41,8 +42,6 @@ import java.util.List;
 public class StreamingAdapter extends RecyclerView.Adapter<StreamingAdapter.ViewHolder> {
 
     private final String TAG = StreamingAdapter.class.getSimpleName();
-
-    private final Integer DISPLAY_CHANNELS = 4; // TODO: this should be adjustable and per device
 
     private LifecycleOwner context;
     private final LiveData<List<Device>> devices;
@@ -59,7 +58,7 @@ public class StreamingAdapter extends RecyclerView.Adapter<StreamingAdapter.View
     public ViewHolder onCreateViewHolder(final ViewGroup parent, final int viewType) {
 
         final View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.streaming_item, parent, false);
-        int height = parent.getMeasuredHeight() / DISPLAY_CHANNELS;
+        int height = parent.getMeasuredHeight();
 
         ViewGroup.LayoutParams params = view.getLayoutParams();
         params.height = height;
@@ -90,7 +89,7 @@ public class StreamingAdapter extends RecyclerView.Adapter<StreamingAdapter.View
 
 	class ViewHolder extends RecyclerView.ViewHolder {
 
-        private LineGraphView graphView;
+        private GraphView graphView;
         private GimbalView gimbalView;
 
         ViewHolder(final View itemView) {
@@ -100,8 +99,8 @@ public class StreamingAdapter extends RecyclerView.Adapter<StreamingAdapter.View
         }
 
 		private void bind(final Device device) {
-            device.getSeries().observe(context, timeSeries -> graphView.updateSeries(timeSeries) );
-            dvm.getRange().observe(context, range -> graphView.setRange(range) );
+            device.getEmg().observe(context, graphData -> graphView.updateGraphData(graphData) );
+            //dvm.getRange().observe(context, range -> graphView.setRange(range) );
             device.getQuat().observe(context, q -> gimbalView.updateQuat(q));
 		}
 	}

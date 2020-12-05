@@ -4,6 +4,7 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import org.achartengine.model.TimeSeries;
+import org.sralab.emgimu.visualization.GraphData;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,38 +17,10 @@ public class Device {
     public LiveData<float []> getQuat() { return liveQuat; }
     public void setQuat(float [] q) { liveQuat.postValue(q); }
 
-    private boolean filtering;
-    public void setFiltering(boolean filtering) {
-        this.filtering = filtering;
-    }
+    GraphData emg;
+    public LiveData<GraphData.Data> getEmg() { return emg.getData(); }
 
     List<Filter> filter;
-    List<TimeSeries> series;
-
-    private MutableLiveData<List<TimeSeries>> liveSeries = new MutableLiveData<>();
-    public LiveData<List<TimeSeries>> getSeries() {
-        return liveSeries;
-    }
-    public void addVoltage(int ch, double ts, double power) {
-        final int N = 100;
-
-        TimeSeries series = this.series.get(ch);
-        Filter filter = this.filter.get(ch);
-
-        if (filtering)
-            power = filter.update(power);
-
-        //series.add(ts, power);
-        if (series.getItemCount() == 0)
-            series.add(0, power);
-        else
-            series.add(series.getItemCount() + 1, power);
-
-        if (series.getItemCount() > N)
-            series.remove(0);
-
-        liveSeries.postValue(this.series);
-    }
 
     private class Filter {
         /**
@@ -89,17 +62,46 @@ public class Device {
         }
     }
 
+    // Use when receiving raw voltage. Can be problematic with filtering when data
+    // is dropped as it creates an impulse from the gap.
+    public void addVoltage(double [] timestamp, double [][] voltage) {
 
-    public Device(int channels) {
+        final int channels = voltage.length;
+        double [][] filteredVoltage = new double[channels][];
 
-        filter = new ArrayList<>();
-        series = new ArrayList<>();
         for (int ch = 0; ch < channels; ch++) {
-            filter.add(new Filter());
-            series.add(new TimeSeries(Integer.toString(ch)));
+            final int samples = voltage[ch].length;
+            filteredVoltage[ch] = new double[samples];
+            for (int s = 0; s < samples; s++) {
+                filteredVoltage[ch][s] = filter.get(ch).update(voltage[ch][s]);
+            }
         }
+        emg.addSamples(timestamp, filteredVoltage);
+    }
 
-        liveSeries.postValue(series);
+    // Use when add extracted power instead of raw traces
+    public void addPower(float ts, int sample) {
+        emg.addSample(ts, (float) sample);
+    }
+
+    public Device(boolean stream) {
+
+        if (stream) {
+
+            final int channels = 2;
+
+            emg = new GraphData(10000, channels);
+            emg.setScale(1.0f / 2000.0f);
+
+            filter = new ArrayList<>();
+            for (int ch = 0; ch < channels; ch++) {
+                filter.add(new Filter());
+            }
+        } else {
+            emg = new GraphData(1000, 1);
+            emg.setScale(1.0f / 5000.0f);
+            emg.setPositive(true);
+        }
     }
 
 }
