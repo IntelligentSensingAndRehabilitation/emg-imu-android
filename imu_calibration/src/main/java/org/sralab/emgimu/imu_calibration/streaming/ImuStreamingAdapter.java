@@ -81,11 +81,10 @@ public class ImuStreamingAdapter extends RecyclerView.Adapter<ImuStreamingAdapte
 
 	class ViewHolder extends RecyclerView.ViewHolder {
 
-        private LineGraphView accelGraphView;
-        private LineGraphView gyroGraphView;
-        private LineGraphView magGraphView;
+        private GraphView accelGraphView;
+        private GraphView gyroGraphView;
+        private GraphView magGraphView;
         private GimbalView gimbalView;
-        private GraphView graphView;
 
 
         ViewHolder(final View itemView) {
@@ -94,15 +93,14 @@ public class ImuStreamingAdapter extends RecyclerView.Adapter<ImuStreamingAdapte
             gyroGraphView = itemView.findViewById(R.id.graph_gyro);
             magGraphView = itemView.findViewById(R.id.graph_mag);
             gimbalView = itemView.findViewById(R.id.gimbal_view);
-            graphView = itemView.findViewById(R.id.graph_view_test);
+
         }
 
 		private void bind(final Device device) {
-            device.getAccel().observe(context, timeSeries -> accelGraphView.updateSeries(timeSeries) );
-            device.getGyro().observe(context, timeSeries -> gyroGraphView.updateSeries(timeSeries) );
-            //device.getMag().observe(context, timeSeries -> magGraphView.updateSeries(timeSeries) );
+            device.getAccel().observe(context, graphData -> accelGraphView.updateGraphData(graphData) );
+            device.getGyro().observe(context, graphData -> gyroGraphView.updateGraphData(graphData) );
+            device.getMag().observe(context, graphData -> magGraphView.updateGraphData(graphData) );
             device.getQuat().observe(context, q -> gimbalView.updateQuat(q));
-            device.getQuat().observe(context, q -> graphView.getLine().update(q[0]));
 		}
 	}
 }

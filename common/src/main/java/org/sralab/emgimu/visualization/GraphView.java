@@ -32,17 +32,18 @@ import android.util.Log;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
 public class GraphView extends GLSurfaceView {
 
+	private static final String TAG = GraphView.class.getSimpleName();
 
 	// Handle for object to draw
-	private Line mLine;
-
-	public Line getLine() { return mLine; }
+	private TimeSeries timeSeries;
 
 	public GraphView(Context context) {
 		super(context);
@@ -71,14 +72,9 @@ public class GraphView extends GLSurfaceView {
 			@Override
 			public void onSurfaceCreated(GL10 unused, EGLConfig config) {
 
-				GLES20.glLineWidth(15.0f);
+				GLES20.glLineWidth(5.0f);
 
-
-				mLine = new Line(100);
-
-
-				//mLine.SetVerts(-1.1f, -1.1f, 0.0f, 1.0f, 1.0f, 0.0f);
-				mLine.SetColor(.8f, .8f, 0f, 1.0f);
+				timeSeries = new TimeSeries();
 			}
 
 			@Override
@@ -101,12 +97,11 @@ public class GraphView extends GLSurfaceView {
 				// Calculate the projection and view transformation
 				Matrix.multiplyMM(vPMatrix, 0, projectionMatrix, 0, viewMatrix, 0);
 
-				//mTriangle.draw(vPMatrix);
-				mLine.draw(vPMatrix);
+				timeSeries.draw(vPMatrix);
 			}
 
 		});
-		//setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
+		setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
 	}
 
 	public static int loadShader(int type, String shaderCode){
@@ -122,19 +117,34 @@ public class GraphView extends GLSurfaceView {
 		return shader;
 	}
 
-	public class Line {
+	//! Update the data to be rendered (assumes only one TimeSeries present).
+	public void updateGraphData(GraphData.Data data) {
+		if (timeSeries != null) {
+			timeSeries.update(data);
+		}
+	}
+
+	/**
+	 * Class that holds and draws multiple TimeSeries with OpenGL. Could be separated
+	 * from this particular GraphView visualization with this particular renderer if
+	 * needs to be reused.
+ 	 */
+	public class TimeSeries {
 
 		private final String VertexShaderCode =
 				// This matrix member variable provides a hook to manipulate
 				// the coordinates of the objects that use this vertex shader
 				"uniform mat4 uMVPMatrix;" +
 						"attribute float vXPosition;" +
+						"uniform float vX0;" +
+						"uniform float vXScale;" +
+						"uniform float vYScale;" +
 						"attribute float vYPosition;" +
 						"void main() {" +
 						// Use this to apply an OpenGL perspective
 						//"  vec4 vPosition = vec4(vXPosition, vYPosition, 0, 1);" +
 						//"  //gl_Position = uMVPMatrix * vPosition;" +
-						"  gl_Position = vec4(vXPosition, vYPosition, 0, 1);" +
+						"  gl_Position = vec4((vXPosition - vX0) * vXScale * 2.0 - 1.0, vYPosition * vYScale, 0, 1);" +
 						"}";
 
 		private final String FragmentShaderCode =
@@ -150,57 +160,24 @@ public class GraphView extends GLSurfaceView {
 		protected int ColorHandle;
 		protected int MVPMatrixHandle;
 
-		float [] XCoords;
-		float [] YCoords;
+		// Handle to the graph data. Parsed in a lazy manner when rendering so not
+		// cached in the buffers below
+		private GraphData.Data data;
 
+		// Working buffers when rendering
 		private FloatBuffer XBuffer;
-		private FloatBuffer YBuffer;
+		private ArrayList<FloatBuffer> YBuffers;
 
-		// Set color with red, green, blue and alpha (opacity) values
-		float color[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+		// Sizes the local buffers expect to use
+		int numChannels = 0;
+		int numSamples = 0;
+		int samplePointer = 0;
 
-		int idx = 0;
+		float x0;
+		float xScale;
+		float yScale;
 
-		public void update(float val) {
-			Log.d("GraphView", "Update: " + val);
-			YCoords[idx] = val;
-			idx = (idx + 1) % YCoords.length;
-			YBuffer.put(YCoords);
-			YBuffer.position(0);
-		}
-
-		public Line(int N) {
-
-			XCoords = new float[N];
-			YCoords = new float[N];
-			for (int i = 0; i < N; i++) {
-				XCoords[i] = (float) i * 2.0f / (float) N - 1.0f;
-				YCoords[i] = 0.1f * (i % 10);
-			}
-
-			// initialize vertex byte buffer for shape coordinates
-			ByteBuffer bb = ByteBuffer.allocateDirect(XCoords.length * 4);
-			// use the device hardware's native byte order
-			bb.order(ByteOrder.nativeOrder());
-
-			// create a floating point buffer from the ByteBuffer
-			XBuffer = bb.asFloatBuffer();
-			// add the coordinates to the FloatBuffer
-			XBuffer.put(XCoords);
-			// set the buffer to read the first coordinate
-			XBuffer.position(0);
-
-			// initialize vertex byte buffer for shape coordinates
-			bb = ByteBuffer.allocateDirect(YCoords.length * 4);
-			// use the device hardware's native byte order
-			bb.order(ByteOrder.nativeOrder());
-
-			// create a floating point buffer from the ByteBuffer
-			YBuffer = bb.asFloatBuffer();
-			// add the coordinates to the FloatBuffer
-			YBuffer.put(YCoords);
-			// set the buffer to read the first coordinate
-			YBuffer.position(0);
+		public TimeSeries() {
 
 			int vertexShader = loadShader(GLES20.GL_VERTEX_SHADER, VertexShaderCode);
 			int fragmentShader = loadShader(GLES20.GL_FRAGMENT_SHADER, FragmentShaderCode);
@@ -211,16 +188,110 @@ public class GraphView extends GLSurfaceView {
 			GLES20.glLinkProgram(GlProgram);                  // creates OpenGL ES program executables
 		}
 
-		public void SetColor(float red, float green, float blue, float alpha) {
-			color[0] = red;
-			color[1] = green;
-			color[2] = blue;
-			color[3] = alpha;
+		public void allocate(GraphData.Data data) {
+
+			// GraphData ensures this is consistent with data lengths
+			int N = data.timestamps.length;
+
+			// initialize vertex byte buffer for shape coordinates
+			ByteBuffer bb = ByteBuffer.allocateDirect(N * 4);
+			// use the device hardware's native byte order
+			bb.order(ByteOrder.nativeOrder());
+
+			// create a floating point buffer from the ByteBuffer
+			XBuffer = bb.asFloatBuffer();
+			// add the coordinates to the FloatBuffer
+			XBuffer.put(data.timestamps);
+			// set the buffer to read the first coordinate
+			XBuffer.position(0);
+
+			YBuffers = new ArrayList<>();
+			for (int ch = 0; ch < data.numChannels; ch++) {
+
+				// initialize vertex byte buffer for shape coordinates
+				bb = ByteBuffer.allocateDirect(N * 4);
+				// use the device hardware's native byte order
+				bb.order(ByteOrder.nativeOrder());
+
+				// create a floating point buffer from the ByteBuffer
+				FloatBuffer YBuffer = bb.asFloatBuffer();
+				// add the coordinates to the FloatBuffer
+				YBuffer.put(data.values[ch]);
+				// set the buffer to read the first coordinate
+				YBuffer.position(0);
+
+				YBuffers.add(YBuffer);
+			}
+
+			numChannels = data.numChannels;
+			numSamples = data.numSamples;
+		}
+
+		public void update(GraphData.Data data) {
+
+			if ((data.numChannels != numChannels) || (data.numSamples != numSamples)) {
+				allocate(data);
+			}
+			this.data = data;
+			requestRender();  // Mark as dirty
+		}
+
+		public void parseData() {
+			// Make sure to synchronize the object to ensure data in buffers isn't
+			// changed while parsing to render.
+			synchronized (data) {
+				// this is where the next sample will be replaced, i.e. points to the
+				// oldest sample where time should be
+				samplePointer = data.idx;
+
+				XBuffer.put(data.timestamps);
+				XBuffer.position(0);
+
+				for (int ch = 0; ch < data.numChannels; ch++) {
+					YBuffers.get(ch).put(data.values[ch]);
+					YBuffers.get(ch).position(0);
+				}
+
+				// Fuck Java that it is so pitiable this requires implementing min/max
+				x0 = data.timestamps[0];
+				float xMax = data.timestamps[0];
+				for (int s = 1; s < data.numSamples; s++) {
+					if (data.timestamps[s] < x0)
+						x0 = data.timestamps[s];
+					if (data.timestamps[s] > xMax)
+						xMax = data.timestamps[s];
+				}
+				xScale = 1.0f / (xMax - x0);
+				yScale = data.scale;
+
+				// If no race conditions, the samplePointer should always point to the
+				// oldest sample
+				if (x0 != data.timestamps[samplePointer]) {
+					Log.e(TAG, "Possible race condition when graphing. Could be timestamp error, too. Sample pointer: " + samplePointer);
+				}
+			}
 		}
 
 		public void draw(float[] mvpMatrix) {
+
+			// Don't try and draw before data assigned
+			if (numChannels == 0)
+				return;
+
+			parseData();
+
 			// Add program to OpenGL ES environment
 			GLES20.glUseProgram(GlProgram);
+
+			// Set horizontal scale
+			int X0Handle = GLES20.glGetUniformLocation(GlProgram, "vX0");
+			GLES20.glUniform1f(X0Handle, x0);
+			int ScaleHandle = GLES20.glGetUniformLocation(GlProgram, "vXScale");
+			GLES20.glUniform1f(ScaleHandle, xScale);
+
+			// Set vertical scale
+			ScaleHandle = GLES20.glGetUniformLocation(GlProgram, "vYScale");
+			GLES20.glUniform1f(ScaleHandle, yScale);
 
 			// get handle to vertex shader's vPosition member
 			XPositionHandle = GLES20.glGetAttribLocation(GlProgram, "vXPosition");
@@ -238,24 +309,35 @@ public class GraphView extends GLSurfaceView {
 			// Enable a handle for the horizontal coordinates
 			GLES20.glEnableVertexAttribArray(YPositionHandle);
 
-			// Load the horizontal coordinates
-			GLES20.glVertexAttribPointer(YPositionHandle, 1, GLES20.GL_FLOAT,
-					false, 0, YBuffer);
+			for (int ch = 0; ch < numChannels; ch++) {
+				// Load the horizontal coordinates
+				GLES20.glVertexAttribPointer(YPositionHandle, 1, GLES20.GL_FLOAT,
+						false, 0, YBuffers.get(ch));
 
-			// get handle to fragment shader's vColor member
-			ColorHandle = GLES20.glGetUniformLocation(GlProgram, "vColor");
+				// get handle to fragment shader's vColor member
+				ColorHandle = GLES20.glGetUniformLocation(GlProgram, "vColor");
 
-			// Set color for drawing the triangle
-			GLES20.glUniform4fv(ColorHandle, 1, color, 0);
+				// Set color for drawing the triangle
+				GLES20.glUniform4fv(ColorHandle, 1, data.color[ch], 0);
 
-			// get handle to shape's transformation matrix
-			MVPMatrixHandle = GLES20.glGetUniformLocation(GlProgram, "uMVPMatrix");
+				// get handle to shape's transformation matrix
+				MVPMatrixHandle = GLES20.glGetUniformLocation(GlProgram, "uMVPMatrix");
 
-			// Apply the projection and view transformation
-			GLES20.glUniformMatrix4fv(MVPMatrixHandle, 1, false, mvpMatrix, 0);
+				// Apply the projection and view transformation
+				GLES20.glUniformMatrix4fv(MVPMatrixHandle, 1, false, mvpMatrix, 0);
 
-			// Draw the line
-			GLES20.glDrawArrays(GLES20.GL_LINE_STRIP, 0, XCoords.length);
+				// Draw the line
+				if (samplePointer == 0) {
+					GLES20.glDrawArrays(GLES20.GL_LINE_STRIP, 0, numSamples);
+				} else if (samplePointer == numSamples - 1) {
+					GLES20.glDrawArrays(GLES20.GL_LINE_STRIP, 1, numSamples - 1);
+				} else {
+					// Draw the oldest data from the rolling buffer
+					GLES20.glDrawArrays(GLES20.GL_LINE_STRIP, samplePointer, numSamples - samplePointer);
+					GLES20.glDrawArrays(GLES20.GL_LINE_STRIP, 0, samplePointer - 1);
+
+				}
+			}
 
 			// Disable vertex array
 			GLES20.glDisableVertexAttribArray(XPositionHandle);

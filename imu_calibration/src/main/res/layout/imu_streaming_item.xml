@@ -23,7 +23,7 @@
         android:layout_width="match_parent"
         android:layout_height="5dp" />
 
-    <org.sralab.emgimu.visualization.LineGraphView
+    <org.sralab.emgimu.visualization.GraphView
         android:id="@+id/graph_accel"
         android:layout_width="fill_parent"
         android:layout_height="100dp" />
@@ -33,7 +33,7 @@
         android:layout_height="2dp"
         android:background="@android:color/darker_gray"/>
 
-    <org.sralab.emgimu.visualization.LineGraphView
+    <org.sralab.emgimu.visualization.GraphView
         android:id="@+id/graph_gyro"
         android:layout_width="fill_parent"
         android:layout_height="100dp" />
@@ -43,17 +43,8 @@
         android:layout_height="2dp"
         android:background="@android:color/darker_gray"/>
 
-    <org.sralab.emgimu.visualization.LineGraphView
-        android:id="@+id/graph_mag"
-        android:layout_width="fill_parent"
-        android:layout_height="100dp" />
-
-    <Space
-        android:layout_width="match_parent"
-        android:layout_height="5dp" />
-
     <org.sralab.emgimu.visualization.GraphView
-        android:id="@+id/graph_view_test"
+        android:id="@+id/graph_mag"
         android:layout_width="fill_parent"
         android:layout_height="100dp" />
 

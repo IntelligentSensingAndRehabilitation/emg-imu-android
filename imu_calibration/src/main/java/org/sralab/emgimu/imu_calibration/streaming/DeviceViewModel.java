@@ -8,6 +8,8 @@ import org.sralab.emgimu.EmgImuViewModel;
 import org.sralab.emgimu.service.ImuData;
 import org.sralab.emgimu.service.ImuQuatData;
 
+import java.util.Date;
+
 public class DeviceViewModel extends EmgImuViewModel<Device> {
 
     private final static String TAG = DeviceViewModel.class.getSimpleName();
@@ -21,6 +23,7 @@ public class DeviceViewModel extends EmgImuViewModel<Device> {
     @Override
     public boolean getObserveQuat() { return true; }
 
+    long t0 = new Date().getTime();
     public DeviceViewModel(Application app) {
         super(app);
     }
@@ -32,22 +35,24 @@ public class DeviceViewModel extends EmgImuViewModel<Device> {
             d.setFiltering(filtering);
     }
 
+    final float Fs = 500.0f;
+
     @Override
     public void imuAccelUpdated(Device dev, ImuData accel) {
         for (int s = 0; s < accel.samples; s++)
-            dev.addAccel(accel.ts, accel.x[s], accel.y[s], accel.z[s]);
+            dev.addAccel(accel.ts - t0 - (accel.samples - s) / Fs, accel.x[s], accel.y[s], accel.z[s]);
     }
 
     @Override
     public void imuGyroUpdated(Device dev, ImuData gyro) {
         for (int s = 0; s < gyro.samples; s++)
-            dev.addGyro(gyro.ts, gyro.x[s], gyro.y[s], gyro.z[s]);
+            dev.addGyro(gyro.ts - t0 - (gyro.samples - s) / Fs, gyro.x[s], gyro.y[s], gyro.z[s]);
     }
 
     @Override
     public void imuMagUpdated(Device dev, ImuData mag) {
         for (int s = 0; s < mag.samples; s++)
-            dev.addMag(mag.ts, mag.x[s], mag.y[s], mag.z[s]);
+            dev.addMag(mag.ts - t0 - (mag.samples - s) / Fs, mag.x[s], mag.y[s], mag.z[s]);
     }
 
     @Override
