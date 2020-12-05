@@ -33,6 +33,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import org.sralab.emgimu.imu_calibration.R;
 import org.sralab.emgimu.visualization.GimbalView;
+import org.sralab.emgimu.visualization.GraphView;
 import org.sralab.emgimu.visualization.LineGraphView;
 
 import java.util.List;
@@ -84,6 +85,8 @@ public class ImuStreamingAdapter extends RecyclerView.Adapter<ImuStreamingAdapte
         private LineGraphView gyroGraphView;
         private LineGraphView magGraphView;
         private GimbalView gimbalView;
+        private GraphView graphView;
+
 
         ViewHolder(final View itemView) {
 			super(itemView);
@@ -91,13 +94,15 @@ public class ImuStreamingAdapter extends RecyclerView.Adapter<ImuStreamingAdapte
             gyroGraphView = itemView.findViewById(R.id.graph_gyro);
             magGraphView = itemView.findViewById(R.id.graph_mag);
             gimbalView = itemView.findViewById(R.id.gimbal_view);
+            graphView = itemView.findViewById(R.id.graph_view_test);
         }
 
 		private void bind(final Device device) {
             device.getAccel().observe(context, timeSeries -> accelGraphView.updateSeries(timeSeries) );
             device.getGyro().observe(context, timeSeries -> gyroGraphView.updateSeries(timeSeries) );
-            device.getMag().observe(context, timeSeries -> magGraphView.updateSeries(timeSeries) );
+            //device.getMag().observe(context, timeSeries -> magGraphView.updateSeries(timeSeries) );
             device.getQuat().observe(context, q -> gimbalView.updateQuat(q));
+            device.getQuat().observe(context, q -> graphView.getLine().update(q[0]));
 		}
 	}
 }

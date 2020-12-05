@@ -48,13 +48,12 @@
         android:layout_width="fill_parent"
         android:layout_height="100dp" />
 
-
     <Space
         android:layout_width="match_parent"
         android:layout_height="5dp" />
 
     <org.sralab.emgimu.visualization.GraphView
-        android:id="@+id/graph_mag"
+        android:id="@+id/graph_view_test"
         android:layout_width="fill_parent"
         android:layout_height="100dp" />
 

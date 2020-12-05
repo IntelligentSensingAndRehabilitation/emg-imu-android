@@ -27,6 +27,7 @@ import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.opengl.Matrix;
 import android.util.AttributeSet;
+import android.util.Log;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -35,34 +36,26 @@ import java.nio.FloatBuffer;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
-/**
- * This class uses external library AChartEngine to show dynamic real time line graph for HR values
- */
 public class GraphView extends GLSurfaceView {
 
+
+	// Handle for object to draw
+	private Line mLine;
+
+	public Line getLine() { return mLine; }
+
 	public GraphView(Context context) {
-		this(context, null, 0);
+		super(context);
+		init();
 	}
 
 	public GraphView(Context context, AttributeSet attrs) {
-		this(context, attrs, 0);
+		super(context, attrs);
+		init();
 	}
 
-	public static int loadShader(int type, String shaderCode){
+	private void init() {
 
-		// create a vertex shader type (GLES20.GL_VERTEX_SHADER)
-		// or a fragment shader type (GLES20.GL_FRAGMENT_SHADER)
-		int shader = GLES20.glCreateShader(type);
-
-		// add the source code to the shader and compile it
-		GLES20.glShaderSource(shader, shaderCode);
-		GLES20.glCompileShader(shader);
-
-		return shader;
-	}
-
-	public GraphView(Context context, AttributeSet attrs, int defStyle) {
-		super(context);
 		setEGLContextClientVersion(2);
 		setZOrderOnTop(true);
 		setEGLConfigChooser(8, 8, 8, 8, 16, 0);
@@ -74,9 +67,6 @@ public class GraphView extends GLSurfaceView {
 			private final float[] vPMatrix = new float[16];
 			private final float[] projectionMatrix = new float[16];
 			private final float[] viewMatrix = new float[16];
-
-			// Handle for object to draw
-			private Line mLine;
 
 			@Override
 			public void onSurfaceCreated(GL10 unused, EGLConfig config) {
@@ -116,8 +106,22 @@ public class GraphView extends GLSurfaceView {
 			}
 
 		});
-		setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
+		//setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
 	}
+
+	public static int loadShader(int type, String shaderCode){
+
+		// create a vertex shader type (GLES20.GL_VERTEX_SHADER)
+		// or a fragment shader type (GLES20.GL_FRAGMENT_SHADER)
+		int shader = GLES20.glCreateShader(type);
+
+		// add the source code to the shader and compile it
+		GLES20.glShaderSource(shader, shaderCode);
+		GLES20.glCompileShader(shader);
+
+		return shader;
+	}
+
 	public class Line {
 
 		private final String VertexShaderCode =
@@ -154,6 +158,16 @@ public class GraphView extends GLSurfaceView {
 
 		// Set color with red, green, blue and alpha (opacity) values
 		float color[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+
+		int idx = 0;
+
+		public void update(float val) {
+			Log.d("GraphView", "Update: " + val);
+			YCoords[idx] = val;
+			idx = (idx + 1) % YCoords.length;
+			YBuffer.put(YCoords);
+			YBuffer.position(0);
+		}
 
 		public Line(int N) {
 
