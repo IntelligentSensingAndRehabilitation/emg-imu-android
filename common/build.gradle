@@ -33,11 +33,6 @@ android {
         versionCode rootProject.versionCode
         versionName rootProject.versionName
 
-        externalNativeBuild {
-            cmake {
-                arguments '-DANDROID_STL=c++_static'
-            }
-        }
     }
 
     buildTypes {
@@ -52,12 +47,6 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
     }
 
-    externalNativeBuild {
-        cmake {
-            version '3.10.2'
-            path 'src/main/cpp/CMakeLists.txt'
-        }
-    }
 }
 
 dependencies {
