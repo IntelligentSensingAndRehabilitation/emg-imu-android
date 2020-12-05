@@ -1328,6 +1328,7 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
         dataMsg.x = accel[0];
         dataMsg.y = accel[1];
         dataMsg.z = accel[2];
+        dataMsg.ts = new Date().getTime();
         for (IEmgImuSenseCallback cb : imuAccelCbs) {
             try {
                 cb.handleData(device, dataMsg);
@@ -1357,7 +1358,7 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
         dataMsg.x = gyro[0];
         dataMsg.y = gyro[1];
         dataMsg.z = gyro[2];
-
+        dataMsg.ts = new Date().getTime();
         for (IEmgImuSenseCallback cb : imuGyroCbs) {
             try {
                 cb.handleData(device, dataMsg);
@@ -1388,7 +1389,7 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
         dataMsg.x = mag[0];
         dataMsg.y = mag[1];
         dataMsg.z = mag[2];
-
+        dataMsg.ts = new Date().getTime();
         for (IEmgImuSenseCallback cb : imuMagCbs) {
             try {
                 cb.handleData(device, dataMsg);
@@ -1406,7 +1407,7 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
         dataMsg.q1 = quaternion[1];
         dataMsg.q2 = quaternion[2];
         dataMsg.q3 = quaternion[3];
-
+        dataMsg.ts = new Date().getTime();
         for (IEmgImuQuatCallback cb : imuQuatCbs) {
             try {
                 cb.handleData(device, dataMsg);
