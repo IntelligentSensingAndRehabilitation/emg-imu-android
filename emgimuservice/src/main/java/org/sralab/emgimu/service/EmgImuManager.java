@@ -624,7 +624,7 @@ public class EmgImuManager extends BleManager {
     }
 
     private void parseImuAccel(final BluetoothDevice device, final Data characteristic) {
-        final float ACCEL_SCALE = 9.8f / 2048.0f; // for 16G to m/s
+        final float ACCEL_SCALE = 9.8f * 16.0f / (float) Math.pow(2.0f, 15.0f);  // for 16G to m/s
         float accel[][] = new float[3][3];
         for (int idx = 0; idx < 3; idx++) // 3 comes from "BUNDLE" param in firmware
             for (int chan = 0; chan < 3; chan++)
@@ -638,7 +638,7 @@ public class EmgImuManager extends BleManager {
     }
 
     private void parseImuGyro(final BluetoothDevice device, final Data characteristic) {
-        final float GYRO_SCALE = 1.0f / 65.5f; // at 500 deg/s to deg/s
+        final float GYRO_SCALE = 2000.0f / (float) Math.pow(2.0f, 15.0f);  // at 2000 deg/s to deg/s
         float gyro[][] = new float[3][3];
         for (int idx = 0; idx < 3; idx++) // 3 comes from "BUNDLE" param in firmware
             for (int chan = 0; chan < 3; chan++)

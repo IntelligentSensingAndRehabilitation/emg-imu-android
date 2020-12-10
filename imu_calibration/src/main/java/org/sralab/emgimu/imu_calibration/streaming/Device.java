@@ -51,9 +51,9 @@ public class Device {
 
     public Device() {
         String [] labels = new String[]{"X", "Y", "Z"};
-        accel.setScale(1.0f/100.0f);
+        accel.setScale(1.0f/(9.81f * 2.0f));
         gyro.setScale(1.0f/500.0f);
-        mag.setScale(1.0f/4000.0f);
+        mag.setScale(1.0f/1600.0f);
     }
 
 }
