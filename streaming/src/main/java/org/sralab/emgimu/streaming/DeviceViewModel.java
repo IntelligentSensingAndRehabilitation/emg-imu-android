@@ -2,40 +2,21 @@ package org.sralab.emgimu.streaming;
 
 import android.app.Application;
 import android.bluetooth.BluetoothDevice;
-import android.content.ComponentName;
-import android.content.Context;
-import android.content.Intent;
-import android.content.ServiceConnection;
-import android.os.IBinder;
-import android.os.RemoteException;
 import android.util.Log;
 
-import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
-import androidx.lifecycle.MediatorLiveData;
 import androidx.lifecycle.MutableLiveData;
-import androidx.lifecycle.Transformations;
 
 import org.sralab.emgimu.EmgImuViewModel;
-import org.sralab.emgimu.service.EmgImuService;
-import org.sralab.emgimu.service.EmgPwrData;
 import org.sralab.emgimu.service.EmgStreamData;
-import org.sralab.emgimu.service.IEmgImuPwrDataCallback;
-import org.sralab.emgimu.service.IEmgImuServiceBinder;
-import org.sralab.emgimu.service.IEmgImuStreamDataCallback;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.stream.IntStream;
 
 public class DeviceViewModel extends EmgImuViewModel<Device> {
 
     private final static String TAG = DeviceViewModel.class.getSimpleName();
-    long t0 = new Date().getTime();
+    long t0 = 0;
 
     @Override
     public boolean getObserveStream() { return true; }
@@ -65,9 +46,15 @@ public class DeviceViewModel extends EmgImuViewModel<Device> {
                 .mapToObj(i -> Arrays.copyOfRange(data.voltage, i * data.samples, (i + 1) * data.samples))
                 .toArray(double[][]::new);
 
+        if (t0 == 0) {
+            t0 = data.ts;
+        }
+
         double [] timestamp = new double[data.samples];
         for (int i = 0; i < data.samples; i++)
             timestamp[i] = i * 1000.0 / data.Fs + data.ts - (float) t0;
+
+        Log.d(TAG, "TS: " + data.ts + " " + Arrays.toString(timestamp));
 
         dev.addVoltage(timestamp, voltage);
     }

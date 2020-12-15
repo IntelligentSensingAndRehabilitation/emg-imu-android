@@ -2,35 +2,17 @@ package org.sralab.emgimu.config;
 
 import android.app.Application;
 import android.bluetooth.BluetoothDevice;
-import android.content.ComponentName;
-import android.content.Context;
-import android.content.Intent;
-import android.content.ServiceConnection;
-import android.os.IBinder;
 import android.os.RemoteException;
 import android.util.Log;
-
-import androidx.lifecycle.AndroidViewModel;
-import androidx.lifecycle.LiveData;
-import androidx.lifecycle.MediatorLiveData;
-import androidx.lifecycle.Transformations;
 
 import org.sralab.emgimu.EmgImuViewModel;
 import org.sralab.emgimu.service.EmgImuService;
 import org.sralab.emgimu.service.EmgPwrData;
-import org.sralab.emgimu.service.IEmgImuPwrDataCallback;
-import org.sralab.emgimu.service.IEmgImuServiceBinder;
-
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 public class DeviceViewModel extends EmgImuViewModel<Device> {
 
     private final static String TAG = DeviceViewModel.class.getSimpleName();
-    long t0 = new Date().getTime();
+    long t0 = 0;
 
     public DeviceViewModel(Application app) {
         super(app);
@@ -52,6 +34,9 @@ public class DeviceViewModel extends EmgImuViewModel<Device> {
 
     @Override
     public void emgPwrUpdated(Device dev, EmgPwrData data) {
+        if (t0 == 0) {
+            t0 = data.ts;
+        }
         dev.addPower(data.ts - t0, data.power[0]);
     }
 
