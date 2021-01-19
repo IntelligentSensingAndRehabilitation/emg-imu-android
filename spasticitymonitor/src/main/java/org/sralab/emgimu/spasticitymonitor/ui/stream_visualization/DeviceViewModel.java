@@ -19,7 +19,6 @@ import java.util.stream.IntStream;
 public class DeviceViewModel extends EmgImuViewModel<Device> {
 
     private final static String TAG = DeviceViewModel.class.getSimpleName();
-    long t0 = 0;
 
     private boolean STREAM_RAW_EMG = true;
     @Override
@@ -52,17 +51,13 @@ public class DeviceViewModel extends EmgImuViewModel<Device> {
     @Override
     public void emgStreamUpdated(Device dev, EmgStreamData data) {
 
-        if (t0 == 0) {
-            t0 = data.ts;
-        }
-
         double [][] voltage = IntStream.range(0, data.channels)
                 .mapToObj(i -> Arrays.copyOfRange(data.voltage, i * data.samples, (i + 1) * data.samples))
                 .toArray(double[][]::new);
 
         double [] timestamp = new double[data.samples];
         for (int i = 0; i < data.samples; i++)
-            timestamp[i] = i * 1000.0 / data.Fs + data.ts - (float) t0;
+            timestamp[i] = i * 1000.0 / data.Fs + data.ts;
 
         dev.addVoltage(timestamp, voltage);
     }
@@ -72,11 +67,7 @@ public class DeviceViewModel extends EmgImuViewModel<Device> {
     public void emgPwrUpdated(Device dev, EmgPwrData data) {
 
         if (!STREAM_RAW_EMG) {
-            if (t0 == 0) {
-                t0 = data.ts;
-            }
-
-            dev.addPower(data.ts - t0, data.power[0]);
+            dev.addPower(data.ts, data.power[0]);
         }
     }
 

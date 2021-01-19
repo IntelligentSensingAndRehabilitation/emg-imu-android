@@ -15,6 +15,8 @@ public class Device {
 
     private final static String TAG = Device.class.getSimpleName();
 
+    private long t0 = 0;
+
     private MutableLiveData<float[]> liveQuat = new MutableLiveData<>();
     public LiveData<float []> getQuat() { return liveQuat; }
     public void setQuat(float [] q) { liveQuat.postValue(q); }
@@ -68,25 +70,40 @@ public class Device {
     // is dropped as it creates an impulse from the gap.
     public void addVoltage(double [] timestamp, double [][] voltage) {
 
+        if (t0 == 0) {
+            t0 = (long) timestamp[0];
+        }
+
         final int channels = voltage.length;
+        final int samples = voltage[0].length;
         double [][] filteredVoltage = new double[channels][];
 
         for (int ch = 0; ch < channels; ch++) {
-            final int samples = voltage[ch].length;
             filteredVoltage[ch] = new double[samples];
             for (int s = 0; s < samples; s++) {
                 filteredVoltage[ch][s] = filter.get(ch).update(voltage[ch][s]);
             }
         }
+
         for (int ch = 0; ch < 2; ch++) {
             //Log.d(TAG, "Data[" + ch + "] = " + Arrays.toString(filteredVoltage[ch]));
         }
+
+        for (int s = 0; s < samples; s++) {
+            timestamp[s] = timestamp[s] - t0;
+        }
+
         emg.addSamples(timestamp, filteredVoltage);
     }
 
     // Use when add extracted power instead of raw traces
     public void addPower(float ts, int sample) {
-        emg.addSample(ts, (float) sample);
+
+        if (t0 == 0) {
+            t0 = (long) ts;
+        }
+
+        emg.addSample(ts - ts, (float) sample);
     }
 
     public Device(boolean stream) {
