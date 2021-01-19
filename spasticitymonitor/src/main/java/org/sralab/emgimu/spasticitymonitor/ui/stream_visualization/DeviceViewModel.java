@@ -26,7 +26,7 @@ public class DeviceViewModel extends EmgImuViewModel<Device> {
     public boolean getObserveStream() { return STREAM_RAW_EMG; }
 
     @Override
-    public boolean getObservePwr() { return !STREAM_RAW_EMG; }
+    public boolean getObservePwr() { return true; }
 
     @Override
     public boolean getObserveQuat() { return true; }
@@ -71,11 +71,13 @@ public class DeviceViewModel extends EmgImuViewModel<Device> {
     @Override
     public void emgPwrUpdated(Device dev, EmgPwrData data) {
 
-        if (t0 == 0) {
-            t0 = data.ts;
-        }
+        if (!STREAM_RAW_EMG) {
+            if (t0 == 0) {
+                t0 = data.ts;
+            }
 
-        dev.addPower(data.ts - t0, data.power[0]);
+            dev.addPower(data.ts - t0, data.power[0]);
+        }
     }
 
     @Override

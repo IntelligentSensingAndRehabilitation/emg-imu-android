@@ -511,7 +511,7 @@ public class EmgImuManager extends BleManager {
             case 5:
             case 6:
             case 7:
-                log(Log.WARN, "Dropped PWR samples detected but tolerable. " + err);
+                log(Log.WARN, "Dropped EMG stream samples detected but tolerable. " + err);
                 mLastBufferCount += err;
                 break;
             default:

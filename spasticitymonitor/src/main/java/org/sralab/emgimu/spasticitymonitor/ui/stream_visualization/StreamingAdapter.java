@@ -55,14 +55,7 @@ public class StreamingAdapter extends RecyclerView.Adapter<StreamingAdapter.View
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(final ViewGroup parent, final int viewType) {
-
         final View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.streaming_item, parent, false);
-        int height = parent.getMeasuredHeight();
-
-        ViewGroup.LayoutParams params = view.getLayoutParams();
-        params.height = height;
-        view.setLayoutParams(params);
-
         return new ViewHolder(view);
     }
 
