@@ -12,7 +12,6 @@ import org.sralab.emgimu.service.EmgPwrData;
 public class DeviceViewModel extends EmgImuViewModel<Device> {
 
     private final static String TAG = DeviceViewModel.class.getSimpleName();
-    long t0 = 0;
 
     public DeviceViewModel(Application app) {
         super(app);
@@ -34,10 +33,7 @@ public class DeviceViewModel extends EmgImuViewModel<Device> {
 
     @Override
     public void emgPwrUpdated(Device dev, EmgPwrData data) {
-        if (t0 == 0) {
-            t0 = data.ts;
-        }
-        dev.addPower(data.ts - t0, data.power[0]);
+        dev.addPower(data.ts, data.power[0]);
     }
 
     public void removeDeviceFromService(final Device device) {

@@ -16,7 +16,6 @@ import java.util.stream.IntStream;
 public class DeviceViewModel extends EmgImuViewModel<Device> {
 
     private final static String TAG = DeviceViewModel.class.getSimpleName();
-    long t0 = 0;
 
     @Override
     public boolean getObserveStream() { return true; }
@@ -46,13 +45,9 @@ public class DeviceViewModel extends EmgImuViewModel<Device> {
                 .mapToObj(i -> Arrays.copyOfRange(data.voltage, i * data.samples, (i + 1) * data.samples))
                 .toArray(double[][]::new);
 
-        if (t0 == 0) {
-            t0 = data.ts;
-        }
-
         double [] timestamp = new double[data.samples];
         for (int i = 0; i < data.samples; i++)
-            timestamp[i] = i * 1000.0 / data.Fs + data.ts - (float) t0;
+            timestamp[i] = i * 1000.0 / data.Fs + data.ts;
 
         //Log.d(TAG, "TS: " + data.ts + " " + Arrays.toString(timestamp));
 

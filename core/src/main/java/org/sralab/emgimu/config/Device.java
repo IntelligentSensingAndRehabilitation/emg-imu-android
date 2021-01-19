@@ -9,6 +9,8 @@ public class Device {
 
     private final static String TAG = Device.class.getSimpleName();
 
+    long t0 = 0;
+
     private String address;
     public String getAddress() {
         return address;
@@ -31,7 +33,10 @@ public class Device {
     public LiveData<GraphData.Data> getPwr() { return power.getData(); }
 
     public void addPower(long ts, Integer power) {
-        this.power.addSample((float) ts, (float) power);
+        if (t0 == 0) {
+            t0 = ts;
+        }
+        this.power.addSample((float) (ts - t0), (float) power);
     }
 
     public Device() {

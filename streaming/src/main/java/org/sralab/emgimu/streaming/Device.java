@@ -11,6 +11,8 @@ public class Device {
 
     private final static String TAG = Device.class.getSimpleName();
 
+    private long t0 = 0;
+
     private boolean filtering;
     public void setFiltering(boolean filtering) {
         this.filtering = filtering;
@@ -65,17 +67,26 @@ public class Device {
     }
 
     public void addVoltage(double [] timestamp, double [][] voltage) {
+
+        if (t0 == 0) {
+            t0 = (long) timestamp[0];
+        }
+
         if (filtering) {
 
             final int channels = voltage.length;
+            final int samples = voltage[0].length;
             double [][] filteredVoltage = new double[channels][];
 
             for (int ch = 0; ch < channels; ch++) {
-                final int samples = voltage[ch].length;
                 filteredVoltage[ch] = new double[samples];
                 for (int s = 0; s < samples; s++) {
                     filteredVoltage[ch][s] = filter.get(ch).update(voltage[ch][s]);
                 }
+            }
+
+            for (int s = 0; s < samples; s++) {
+                timestamp[s] = timestamp[s] - t0;
             }
 
             emg.addSamples(timestamp, filteredVoltage);
