@@ -1,11 +1,14 @@
 package org.sralab.emgimu.spasticitymonitor.ui.stream_visualization;
 
+import android.util.Log;
+
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import org.sralab.emgimu.visualization.GraphData;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class Device {
@@ -75,6 +78,9 @@ public class Device {
                 filteredVoltage[ch][s] = filter.get(ch).update(voltage[ch][s]);
             }
         }
+        for (int ch = 0; ch < 2; ch++) {
+            //Log.d(TAG, "Data[" + ch + "] = " + Arrays.toString(filteredVoltage[ch]));
+        }
         emg.addSamples(timestamp, filteredVoltage);
     }
 
@@ -90,7 +96,7 @@ public class Device {
             final int channels = 2;
 
             emg = new GraphData(10000, channels);
-            emg.setScale(1.0f / 2000.0f);
+            emg.setScale(1.0f / 200.0f);
 
             filter = new ArrayList<>();
             for (int ch = 0; ch < channels; ch++) {

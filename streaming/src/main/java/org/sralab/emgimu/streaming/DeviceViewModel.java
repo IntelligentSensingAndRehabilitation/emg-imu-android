@@ -54,7 +54,7 @@ public class DeviceViewModel extends EmgImuViewModel<Device> {
         for (int i = 0; i < data.samples; i++)
             timestamp[i] = i * 1000.0 / data.Fs + data.ts - (float) t0;
 
-        Log.d(TAG, "TS: " + data.ts + " " + Arrays.toString(timestamp));
+        //Log.d(TAG, "TS: " + data.ts + " " + Arrays.toString(timestamp));
 
         dev.addVoltage(timestamp, voltage);
     }

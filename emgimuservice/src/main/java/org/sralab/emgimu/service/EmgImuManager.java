@@ -66,7 +66,10 @@ import java.util.TimeZone;
 import java.util.UUID;
 
 import no.nordicsemi.android.ble.BleManager;
+import no.nordicsemi.android.ble.ConnectionPriorityRequest;
 import no.nordicsemi.android.ble.PhyRequest;
+import no.nordicsemi.android.ble.callback.FailCallback;
+import no.nordicsemi.android.ble.callback.SuccessCallback;
 import no.nordicsemi.android.ble.data.Data;
 import no.nordicsemi.android.ble.data.MutableData;
 
@@ -218,6 +221,8 @@ public class EmgImuManager extends BleManager {
                         .fail((device, status) -> log(Log.WARN, "Requested MTU not supported: " + status)))
                     .add(setPreferredPhy(PhyRequest.PHY_LE_2M_MASK, PhyRequest.PHY_LE_2M_MASK, PhyRequest.PHY_OPTION_NO_PREFERRED)
                         .fail((device, status) -> log(Log.WARN, "Requested PHY not supported: " + status)))
+                    .add(requestConnectionPriority(ConnectionPriorityRequest.CONNECTION_PRIORITY_HIGH)
+                            .fail((device, status) -> log(Log.WARN, "Failed to set connection priority: " + status)))
                     .add(readCharacteristic(mHardwareCharacteristic)
                         .with((device, data) -> {
                             mHardwareRevision = data.getStringValue(0);
@@ -600,7 +605,7 @@ public class EmgImuManager extends BleManager {
                         data[ch][sample] = ByteBuffer.wrap(t_array).order(ByteOrder.BIG_ENDIAN).getInt();
                         data[ch][sample] = microvolts_per_lsb * data[ch][sample];
                     }
-                    // Log.d(TAG, "Data[" + ch + "] = " + Arrays.toString(data[ch]));
+                    //Log.d(TAG, "Data[" + ch + "] = " + Arrays.toString(data[ch]));
                 }
 
                 break;
@@ -624,9 +629,12 @@ public class EmgImuManager extends BleManager {
     }
 
     private void parseImuAccel(final BluetoothDevice device, final Data characteristic) {
+        int len = characteristic.getValue().length;
+        int samples = len / 6; // 6 bytes per entry
+
         final float ACCEL_SCALE = 9.8f * 16.0f / (float) Math.pow(2.0f, 15.0f);  // for 16G to m/s
-        float accel[][] = new float[3][3];
-        for (int idx = 0; idx < 3; idx++) // 3 comes from "BUNDLE" param in firmware
+        float accel[][] = new float[3][samples];
+        for (int idx = 0; idx < samples; idx++)
             for (int chan = 0; chan < 3; chan++)
                 accel[chan][idx] = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT16, (chan + idx * 3) * 2) * ACCEL_SCALE;
 
@@ -638,9 +646,12 @@ public class EmgImuManager extends BleManager {
     }
 
     private void parseImuGyro(final BluetoothDevice device, final Data characteristic) {
+        int len = characteristic.getValue().length;
+        int samples = len / 6; // 6 bytes per entry
+
         final float GYRO_SCALE = 2000.0f / (float) Math.pow(2.0f, 15.0f);  // at 2000 deg/s to deg/s
-        float gyro[][] = new float[3][3];
-        for (int idx = 0; idx < 3; idx++) // 3 comes from "BUNDLE" param in firmware
+        float gyro[][] = new float[3][samples];
+        for (int idx = 0; idx < samples; idx++)
             for (int chan = 0; chan < 3; chan++)
                 gyro[chan][idx] = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT16, (chan + idx * 3) * 2) * GYRO_SCALE;
 
@@ -652,8 +663,11 @@ public class EmgImuManager extends BleManager {
     }
 
     private void parseImuMag(final BluetoothDevice device, final Data characteristic) {
-        float mag[][] = new float[3][3];
-        for (int idx = 0; idx < 3; idx++) // 3 comes from "BUNDLE" param in firmware
+        int len = characteristic.getValue().length;
+        int samples = len / 6; // 6 bytes per entry
+
+        float mag[][] = new float[3][samples];
+        for (int idx = 0; idx < samples; idx++)
             for (int chan = 0; chan < 3; chan++)
                 mag[chan][idx] = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT16, (chan + idx * 3) * 2);
 
