@@ -18,25 +18,27 @@ import androidx.camera.core.Camera;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.Preview;
 import androidx.camera.core.VideoCapture;
-import androidx.camera.core.impl.VideoCaptureConfig;
-import androidx.camera.core.internal.ThreadConfig;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.LifecycleOwner;
+import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import androidx.camera.view.PreviewView;
 
+import com.google.gson.Gson;
 import com.google.common.util.concurrent.ListenableFuture;
 
+import org.sralab.emgimu.logging.FirebaseGameLogger;
+import org.sralab.emgimu.service.IEmgImuServiceBinder;
 import org.sralab.emgimu.spasticitymonitor.R;
 import org.sralab.emgimu.spasticitymonitor.ui.stream_visualization.DeviceViewModel;
 import org.sralab.emgimu.spasticitymonitor.ui.stream_visualization.StreamingAdapter;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
 import java.util.concurrent.ExecutionException;
@@ -54,6 +56,10 @@ public class HomeFragment extends Fragment {
     private PreviewView previewView;
     private VideoCapture videoCapture;
 
+    ArrayList<String> fileNames = new ArrayList<>();
+
+    private FirebaseGameLogger mGameLogger;
+
     @SuppressLint("RestrictedApi")
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
@@ -67,6 +73,20 @@ public class HomeFragment extends Fragment {
         dvm = new ViewModelProvider(this, ViewModelProvider.AndroidViewModelFactory.getInstance(getActivity().getApplication())).get(DeviceViewModel.class);
         dvm.getDevicesLiveData().observe(getViewLifecycleOwner(), devices -> streamingAdapter.notifyDataSetChanged());
         recyclerView.setAdapter(streamingAdapter = new StreamingAdapter(this, dvm));
+
+
+        dvm.getServiceLiveData().observe(getViewLifecycleOwner(), new Observer<IEmgImuServiceBinder>() {
+            @Override
+            public void onChanged(IEmgImuServiceBinder binder) {
+                if (binder != null) {
+                    Log.d(TAG, "Service updated.");
+                    long startTime = new Date().getTime();
+                    mGameLogger = new FirebaseGameLogger(dvm.getService(), getString(R.string.app_name), startTime);
+                } else {
+                    mGameLogger = null;
+                }
+            }
+        });
 
         if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED ||
             ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED ||
@@ -90,21 +110,27 @@ public class HomeFragment extends Fragment {
         Button startButton = root.findViewById(R.id.startButton);
         Button stopButton = root.findViewById(R.id.stopButton);
 
-        ContentValues contentValues = new ContentValues();
-
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss", Locale.US);
-        Date now = new Date();
-        String fileName = formatter.format(now) + ".mp4";
-
-        contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, fileName);
-        contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "video/mp4");
-        VideoCapture.OutputFileOptions outputFile = new VideoCapture.OutputFileOptions.Builder(
-                getContext().getContentResolver(),
-                MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
-                contentValues
-        ).build();
         startButton.setOnClickListener(v ->
                 {
+                    startButton.setEnabled(false);
+                    stopButton.setEnabled(true);
+
+                    SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss", Locale.US);
+                    Date now = new Date();
+                    String fileName = formatter.format(now) + ".mp4";
+
+                    fileNames.add(fileName);
+
+                    ContentValues contentValues = new ContentValues();
+                    contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, fileName);
+                    contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "video/mp4");
+
+                    VideoCapture.OutputFileOptions outputFile = new VideoCapture.OutputFileOptions.Builder(
+                            getContext().getContentResolver(),
+                            MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+                            contentValues
+                    ).build();
+
                     videoCapture.startRecording(outputFile,
                         ContextCompat.getMainExecutor(getContext()),
                         new VideoCapture.OnVideoSavedCallback() {
@@ -119,8 +145,6 @@ public class HomeFragment extends Fragment {
                                 Log.d(TAG, "Video error");
                             }
                     });
-                    startButton.setEnabled(false);
-                    stopButton.setEnabled(true);
             }
         );
 
@@ -131,6 +155,16 @@ public class HomeFragment extends Fragment {
         });
 
         return root;
+    }
+
+    public void onStop() {
+        super.onStop();
+
+        if (mGameLogger != null) {
+            Gson gson = new Gson();
+            String json = gson.toJson(fileNames);
+            mGameLogger.finalize(fileNames.size(), json);
+        }
     }
 
     void bindPreview(@NonNull ProcessCameraProvider cameraProvider) {

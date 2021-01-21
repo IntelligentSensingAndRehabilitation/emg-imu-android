@@ -10,6 +10,7 @@ import androidx.lifecycle.MutableLiveData;
 import org.sralab.emgimu.EmgImuViewModel;
 import org.sralab.emgimu.service.EmgPwrData;
 import org.sralab.emgimu.service.EmgStreamData;
+import org.sralab.emgimu.service.IEmgImuServiceBinder;
 import org.sralab.emgimu.service.ImuQuatData;
 
 import java.util.Arrays;
@@ -19,6 +20,21 @@ import java.util.stream.IntStream;
 public class DeviceViewModel extends EmgImuViewModel<Device> {
 
     private final static String TAG = DeviceViewModel.class.getSimpleName();
+
+    MutableLiveData<IEmgImuServiceBinder> serviceLiveData = new MutableLiveData<>();
+    public MutableLiveData<IEmgImuServiceBinder> getServiceLiveData() { return serviceLiveData; }
+
+    @Override
+    public void onServiceConnected() {
+        super.onServiceConnected();
+        serviceLiveData.postValue(getService());
+    }
+
+    @Override
+    public void onServiceDisconnected() {
+        super.onServiceDisconnected();
+        serviceLiveData.postValue(getService());
+    }
 
     private boolean STREAM_RAW_EMG = true;
     @Override
