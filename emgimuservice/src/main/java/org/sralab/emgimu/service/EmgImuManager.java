@@ -585,7 +585,7 @@ public class EmgImuManager extends BleManager {
             case 0x81:
 
                 channels = format >> 4;
-                samples = 9;
+                samples = (characteristic.getValue().length - HDR_LEN) / 3 / channels;
 
                 final double ads1298_gain = 8;
                 final double vref = 2.42e6;
