@@ -713,7 +713,7 @@ public class EmgImuManager extends BleManager {
     void finishCalibration(CalibrationListener listener) {
         // TODO: needs a callback for when the stream logging stops to time
         // the write
-        disableImu();
+
         synchronized (this) {
             if (mLogging && streamLogger != null) {
                 log(Log.INFO, "Closing stream logger");
@@ -1186,19 +1186,23 @@ public class EmgImuManager extends BleManager {
         disableNotifications(mImuAttitudeCharacteristic).enqueue();
     }
 
-    public void enableImuNotifications() {
+    public void enableAccelNotifications() {
         setNotificationCallback(mImuAccelCharacteristic)
-                .with((device, data) -> parseImuAccel(device ,data));
+                .with((device, data) -> parseImuAccel(device, data));
         enableNotifications(mImuAccelCharacteristic)
                 .fail((device, status) -> log(Log.ERROR, "Unable to enable Accel notification"))
                 .enqueue();
+    }
 
+    public void enableGyroNotifications() {
         setNotificationCallback(mImuGyroCharacteristic)
-                .with((device, data) -> parseImuGyro(device ,data));
+                .with((device, data) -> parseImuGyro(device, data));
         enableNotifications(mImuGyroCharacteristic)
                 .fail((device, status) -> log(Log.ERROR, "Unable to enable Gyro notification"))
                 .enqueue();
+    }
 
+    public void enableMagNotifications() {
         setNotificationCallback(mImuMagCharacteristic)
                 .with((device, data) -> parseImuMag(device ,data));
         enableNotifications(mImuMagCharacteristic)
@@ -1206,61 +1210,20 @@ public class EmgImuManager extends BleManager {
                 .enqueue();
     }
 
-    public void disableImuNotifications() {
+    public void disableAccelNotifications() {
         disableNotifications(mImuAccelCharacteristic).enqueue();
+    }
+
+    public void disableGyroNotifications() {
         disableNotifications(mImuGyroCharacteristic).enqueue();
+    }
+
+    public void disableMagNotifications() {
         disableNotifications(mImuMagCharacteristic).enqueue();
     }
 
     /**** Public API for controlling what we are listening to ****/
     // This is mostly a very thin shim to the above methods
-
-    // Handle the two streaming modes for EMG data (raw buffered data or processed power)
-
-     public enum STREAMING_MODE {
-        STREAMING_UNKNOWN,
-        STREAMINNG_POWER,
-        STREAMING_BUFFERED
-    };
-
-    private STREAMING_MODE mStreamingMode = STREAMING_MODE.STREAMING_UNKNOWN;
-    final void enableBufferedStreamingMode() {
-
-        log(Log.INFO, "enabledBufferedStreamingMode: " + mSynced);
-
-        enableEmgBuffNotifications();
-        disableEmgPwrNotifications();
-        mStreamingMode = STREAMING_MODE.STREAMING_BUFFERED;
-    }
-
-    final void enablePowerStreamingMode() {
-
-        log(Log.INFO, "enablePowerStreamingMode: " + mSynced);
-
-        enableEmgPwrNotifications();
-        disableEmgBuffNotifications();
-        mStreamingMode = STREAMING_MODE.STREAMINNG_POWER;
-
-    }
-
-    STREAMING_MODE getStreamingMode() { return mStreamingMode; }
-
-    final void enableAttitude() {
-        enableAttitudeNotifications();
-    }
-
-    final void disableAttitude() {
-        disableAttitudeNotifications();
-    }
-
-    final void enableImu() {
-        enableImuNotifications();
-    }
-
-    final void disableImu() {
-        disableImuNotifications();
-    }
-
 
     // Accessors for the raw EMG
 	private int mEmgRaw = -1;

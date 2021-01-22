@@ -3,12 +3,17 @@ package org.sralab.emgimu.imu_calibration;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.graphics.Bitmap;
+import android.os.IBinder;
+import android.os.RemoteException;
+import android.util.Log;
 
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import org.sralab.emgimu.service.EmgImuManager;
 import org.sralab.emgimu.service.EmgImuService;
+import org.sralab.emgimu.service.IEmgImuSenseCallback;
+import org.sralab.emgimu.service.ImuData;
 
 import java.util.List;
 
@@ -18,7 +23,6 @@ public class Device implements EmgImuManager.CalibrationListener{
 
     private EmgImuService.EmgImuBinder service;
     private BluetoothDevice dev;
-    public BluetoothDevice getDevHandle() { return dev; }
 
     public String getAddress() {
         return dev.getAddress();
@@ -53,6 +57,8 @@ public class Device implements EmgImuManager.CalibrationListener{
     }
 
     public void finishCalibration() {
+        service.unregisterImuAccelObserver(accelHandler);
+        service.unregisterImuMagObserver(magHandler);
         calibrationStatus.postValue(CalibrationStatus.FINISHED);
         service.finishCalibration(dev, this);
     }
@@ -68,7 +74,6 @@ public class Device implements EmgImuManager.CalibrationListener{
     public void onUploading() {
         if (calibrationStatus.getValue() == CalibrationStatus.FINISHED) {
             setStatus("Uploading...");
-            service.disableImu(dev);
         }
     }
 
@@ -99,7 +104,8 @@ public class Device implements EmgImuManager.CalibrationListener{
         // Zeroed calibration sent to device. Proceed with calibration.
         if (calibrationStatus.getValue() == CalibrationStatus.STARTED) {
             setStatus("Collecting. Please rotate sensor.");
-            service.enableImu(dev);
+            service.registerImuAccelObserver(accelHandler);
+            service.registerImuMagObserver(magHandler);
         }
     }
 
@@ -107,4 +113,21 @@ public class Device implements EmgImuManager.CalibrationListener{
     public void onError(String msg) {
         setStatus("Error during calibration.");
     }
+
+    static class CallbackHandler extends IEmgImuSenseCallback.Stub {
+
+        String handler;
+        public CallbackHandler(String s)
+        {
+            handler = s;
+        }
+
+        @Override
+        public void handleData(BluetoothDevice device, ImuData data)  {
+            Log.v(TAG, handler + " received " + data);
+        }
+    }
+
+    private final CallbackHandler magHandler = new CallbackHandler("Mag");
+    private final CallbackHandler accelHandler = new CallbackHandler("Accel");
 }
