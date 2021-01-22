@@ -39,7 +39,6 @@ public class ImuCalibration extends AppCompatActivity {
         final RecyclerView recyclerView = findViewById(R.id.imu_calibration_list);
 
         DeviceViewModel dvm = new ViewModelProvider(this, ViewModelProvider.AndroidViewModelFactory.getInstance(getApplication())).get(DeviceViewModel.class);
-        dvm.getDevicesLiveData().observe(this, devices -> calibrationAdapater.notifyDataSetChanged());
 
         recyclerView.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false));
         recyclerView.addItemDecoration(new DividerItemDecoration(this, DividerItemDecoration.VERTICAL_LIST));

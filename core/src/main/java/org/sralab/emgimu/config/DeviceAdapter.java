@@ -53,6 +53,8 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
 	public DeviceAdapter(LifecycleOwner context, DeviceViewModel dvm) {
         devices = dvm.getDevicesLiveData();
         deviceViewModel = dvm;
+        deviceViewModel.getDevicesLiveData().observe(context, devices -> notifyDataSetChanged());
+
         this.context = context;
     }
 

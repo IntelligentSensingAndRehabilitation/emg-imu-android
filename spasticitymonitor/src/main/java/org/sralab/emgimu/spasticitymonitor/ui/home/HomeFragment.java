@@ -95,7 +95,6 @@ public class HomeFragment extends Fragment {
         recyclerView.addItemDecoration(new DividerItemDecoration(root.getContext(), DividerItemDecoration.VERTICAL_LIST));
 
         dvm = new ViewModelProvider(this, ViewModelProvider.AndroidViewModelFactory.getInstance(getActivity().getApplication())).get(DeviceViewModel.class);
-        dvm.getDevicesLiveData().observe(getViewLifecycleOwner(), devices -> streamingAdapter.notifyDataSetChanged());
         recyclerView.setAdapter(streamingAdapter = new StreamingAdapter(this, dvm));
 
 

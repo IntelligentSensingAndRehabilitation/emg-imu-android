@@ -58,7 +58,6 @@ public class StreamingActivity extends AppCompatActivity {
         recyclerView.addItemDecoration(new DividerItemDecoration(this, DividerItemDecoration.VERTICAL_LIST));
 
         dvm = new ViewModelProvider(this, ViewModelProvider.AndroidViewModelFactory.getInstance(getApplication())).get(DeviceViewModel.class);
-        dvm.getDevicesLiveData().observe(this, devices -> streamingAdapter.notifyDataSetChanged());
         recyclerView.setAdapter(streamingAdapter = new StreamingAdapter(this, dvm));
 
         enableFilter = findViewById(R.id.filteringCb);

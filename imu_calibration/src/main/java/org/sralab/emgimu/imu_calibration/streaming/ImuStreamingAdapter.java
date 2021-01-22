@@ -46,6 +46,8 @@ public class ImuStreamingAdapter extends RecyclerView.Adapter<ImuStreamingAdapte
 
     public ImuStreamingAdapter(LifecycleOwner context, DeviceViewModel dvm) {
         devices = dvm.getDevicesLiveData();
+        dvm.getDevicesLiveData().observe(context, devices -> notifyDataSetChanged());
+
         this.context = context;
     }
 

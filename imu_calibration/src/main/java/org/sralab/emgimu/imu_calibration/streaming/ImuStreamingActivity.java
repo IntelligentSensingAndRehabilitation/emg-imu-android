@@ -83,7 +83,6 @@ public class ImuStreamingActivity extends AppCompatActivity {
         recyclerView.addItemDecoration(new DividerItemDecoration(this, DividerItemDecoration.VERTICAL_LIST));
 
         dvm = new ViewModelProvider(this, ViewModelProvider.AndroidViewModelFactory.getInstance(getApplication())).get(DeviceViewModel.class);
-        dvm.getDevicesLiveData().observe(this, devices -> streamingAdapter.notifyDataSetChanged());
         recyclerView.setAdapter(streamingAdapter = new ImuStreamingAdapter(this, dvm));
     }
 

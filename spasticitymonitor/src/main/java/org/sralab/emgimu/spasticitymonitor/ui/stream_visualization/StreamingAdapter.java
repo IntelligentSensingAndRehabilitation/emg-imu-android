@@ -48,6 +48,8 @@ public class StreamingAdapter extends RecyclerView.Adapter<StreamingAdapter.View
 
     public StreamingAdapter(LifecycleOwner context, DeviceViewModel dvm) {
         devices = dvm.getDevicesLiveData();
+        dvm.getDevicesLiveData().observe(context, devices -> notifyDataSetChanged());
+
         this.context = context;
         this.dvm = dvm;
     }

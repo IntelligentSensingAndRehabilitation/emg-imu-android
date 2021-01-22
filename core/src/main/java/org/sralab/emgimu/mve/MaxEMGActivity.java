@@ -31,7 +31,6 @@ public class MaxEMGActivity extends AppCompatActivity {
         recyclerView = findViewById(R.id.recycler_view);
 
         dvm = new ViewModelProvider(this, ViewModelProvider.AndroidViewModelFactory.getInstance(getApplication())).get(DeviceViewModel.class);
-        dvm.getDevicesLiveData().observe(this, devices -> deviceAdapter.notifyDataSetChanged());
 
         recyclerView.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
         recyclerView.addItemDecoration(new DividerItemDecoration(this, DividerItemDecoration.VERTICAL_LIST));
