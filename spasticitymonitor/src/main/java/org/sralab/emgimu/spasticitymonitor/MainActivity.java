@@ -21,7 +21,6 @@ public class MainActivity extends AppCompatActivity {
     final public static String TAG = MainActivity.class.getSimpleName();
 
     private FirebaseAuth mAuth;
-    private FirebaseAnalytics mFirebaseAnalytics;
     private FirebaseUser mCurrentUser;
 
     @Override

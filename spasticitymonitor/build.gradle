@@ -57,6 +57,7 @@ dependencies {
     implementation "com.google.firebase:firebase-core:$firebaseCoreVer"
     implementation "com.google.firebase:firebase-auth:$firebaseAuthVer"
     implementation "com.google.firebase:firebase-firestore:$firebaseFirestoreVer"
+    implementation "com.google.firebase:firebase-storage:$firebaseStorageVer"
 
     testImplementation 'junit:junit:4.13'
     androidTestImplementation 'androidx.test.ext:junit:1.1.2'

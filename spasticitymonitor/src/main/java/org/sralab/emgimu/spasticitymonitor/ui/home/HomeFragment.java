@@ -4,7 +4,9 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.ContentValues;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.RemoteException;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -28,6 +30,16 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import androidx.camera.view.PreviewView;
 
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.Timestamp;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.installations.FirebaseInstallations;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
 import com.google.gson.Gson;
 import com.google.common.util.concurrent.ListenableFuture;
 
@@ -37,10 +49,13 @@ import org.sralab.emgimu.spasticitymonitor.R;
 import org.sralab.emgimu.spasticitymonitor.ui.stream_visualization.DeviceViewModel;
 import org.sralab.emgimu.spasticitymonitor.ui.stream_visualization.StreamingAdapter;
 
+import java.security.InvalidParameterException;
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
+import java.util.TimeZone;
 import java.util.concurrent.ExecutionException;
 
 import no.nordicsemi.android.nrftoolbox.widget.DividerItemDecoration;
@@ -56,7 +71,16 @@ public class HomeFragment extends Fragment {
     private PreviewView previewView;
     private VideoCapture videoCapture;
 
-    ArrayList<String> fileNames = new ArrayList<>();
+    class SpasticityTrial {
+        public String fileName;
+        // public Timestamp startTime;
+        // public Timestamp endTime;
+        public long startTime;
+        public long endTime;
+
+    }
+    ArrayList<SpasticityTrial> trials = new ArrayList<>();
+    private SpasticityTrial curTrial;
 
     private FirebaseGameLogger mGameLogger;
 
@@ -75,16 +99,13 @@ public class HomeFragment extends Fragment {
         recyclerView.setAdapter(streamingAdapter = new StreamingAdapter(this, dvm));
 
 
-        dvm.getServiceLiveData().observe(getViewLifecycleOwner(), new Observer<IEmgImuServiceBinder>() {
-            @Override
-            public void onChanged(IEmgImuServiceBinder binder) {
-                if (binder != null) {
-                    Log.d(TAG, "Service updated.");
-                    long startTime = new Date().getTime();
-                    mGameLogger = new FirebaseGameLogger(dvm.getService(), getString(R.string.app_name), startTime);
-                } else {
-                    mGameLogger = null;
-                }
+        dvm.getServiceLiveData().observe(getViewLifecycleOwner(), binder -> {
+            if (binder != null) {
+                Log.d(TAG, "Service updated.");
+                long startTime = new Date().getTime();
+                mGameLogger = new FirebaseGameLogger(dvm.getService(), getString(R.string.app_name), startTime);
+            } else {
+                mGameLogger = null;
             }
         });
 
@@ -109,17 +130,22 @@ public class HomeFragment extends Fragment {
 
         Button startButton = root.findViewById(R.id.startButton);
         Button stopButton = root.findViewById(R.id.stopButton);
+        startButton.setEnabled(true);
+        stopButton.setEnabled(false);
 
         startButton.setOnClickListener(v ->
                 {
                     startButton.setEnabled(false);
                     stopButton.setEnabled(true);
 
-                    SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss", Locale.US);
+                    SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd-HHmmss'Z'");
                     Date now = new Date();
                     String fileName = formatter.format(now) + ".mp4";
 
-                    fileNames.add(fileName);
+                    curTrial = new SpasticityTrial();
+                    curTrial.fileName = fileName;
+                    curTrial.startTime = now.getTime(); //new Timestamp(now);
+                    trials.add(curTrial);
 
                     ContentValues contentValues = new ContentValues();
                     contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, fileName);
@@ -138,6 +164,28 @@ public class HomeFragment extends Fragment {
                             @Override
                             public void onVideoSaved(@NonNull VideoCapture.OutputFileResults outputFileResults) {
                                 Log.d(TAG, "Video saved");
+
+                                FirebaseAuth mAuth = FirebaseAuth.getInstance();
+                                FirebaseUser mUser = mAuth.getCurrentUser(); // Log in performed by main service
+
+                                if (mUser == null) {
+                                    Log.e(TAG, "Should have a user assigned here");
+                                    throw new InvalidParameterException("No FirebaseUser");
+                                }
+
+                                Uri file = outputFileResults.getSavedUri();
+
+                                String uploadFileName =  "videos/" + mUser.getUid() + "/" + curTrial.fileName;
+                                FirebaseStorage storage = FirebaseStorage.getInstance();
+                                StorageReference storageRef = storage.getReference().child(uploadFileName);
+
+                                storageRef.putFile(file)
+                                        .addOnFailureListener(e -> Log.e(TAG, "Upload failed"))
+                                        .addOnSuccessListener(taskSnapshot ->
+                                        {
+                                            trials.get(trials.size() - 1).fileName = uploadFileName;
+                                            updateLogger();
+                                        });
                             }
 
                             @Override
@@ -152,19 +200,25 @@ public class HomeFragment extends Fragment {
             videoCapture.stopRecording();
             startButton.setEnabled(true);
             stopButton.setEnabled(false);
+
+            //trials.get(trials.size() - 1)
+            curTrial.endTime = new Date().getTime(); // new Timestamp(new Date());
         });
 
         return root;
     }
 
-    public void onStop() {
-        super.onStop();
-
+    public void updateLogger() {
         if (mGameLogger != null) {
             Gson gson = new Gson();
-            String json = gson.toJson(fileNames);
-            mGameLogger.finalize(fileNames.size(), json);
+            String json = gson.toJson(trials);
+            mGameLogger.finalize(trials.size(), json);
         }
+    }
+
+    public void onStop() {
+        super.onStop();
+        updateLogger();
     }
 
     void bindPreview(@NonNull ProcessCameraProvider cameraProvider) {
