@@ -1,4 +1,4 @@
-package org.sralab.emgimu.imu_calibration.streaming;
+package org.sralab.emgimu.imu_streaming;
 
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;

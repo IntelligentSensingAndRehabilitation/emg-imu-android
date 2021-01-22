@@ -1,4 +1,4 @@
-package org.sralab.emgimu.imu_calibration.streaming;
+package org.sralab.emgimu.imu_streaming;
 
 import android.content.Intent;
 import android.net.Uri;
@@ -15,8 +15,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.firebase.crashlytics.FirebaseCrashlytics;
 
-import org.sralab.emgimu.imu_calibration.BuildConfig;
-import org.sralab.emgimu.imu_calibration.R;
+import org.sralab.emgimu.streaming.R;
 
 import no.nordicsemi.android.nrftoolbox.widget.DividerItemDecoration;
 

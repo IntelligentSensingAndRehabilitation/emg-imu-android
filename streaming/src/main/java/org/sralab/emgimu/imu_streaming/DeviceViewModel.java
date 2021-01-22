@@ -1,4 +1,4 @@
-package org.sralab.emgimu.imu_calibration.streaming;
+package org.sralab.emgimu.imu_streaming;
 
 import android.app.Application;
 import android.bluetooth.BluetoothDevice;

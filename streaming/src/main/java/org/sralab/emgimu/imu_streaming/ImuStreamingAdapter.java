@@ -20,7 +20,7 @@
  * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.sralab.emgimu.imu_calibration.streaming;
+package org.sralab.emgimu.imu_streaming;
 
 import android.view.LayoutInflater;
 import android.view.View;
@@ -31,7 +31,6 @@ import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.LiveData;
 import androidx.recyclerview.widget.RecyclerView;
 
-import org.sralab.emgimu.imu_calibration.R;
 import org.sralab.emgimu.visualization.GimbalView;
 import org.sralab.emgimu.visualization.GraphView;
 
