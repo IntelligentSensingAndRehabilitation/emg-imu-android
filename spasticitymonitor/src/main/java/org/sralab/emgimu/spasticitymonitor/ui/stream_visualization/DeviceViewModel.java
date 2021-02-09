@@ -51,6 +51,7 @@ public class DeviceViewModel extends EmgImuViewModel<Device> {
     @Override
     public boolean getObserveGyro() { return true; }
 
+
     public DeviceViewModel(Application app) {
         super(app);
     }
