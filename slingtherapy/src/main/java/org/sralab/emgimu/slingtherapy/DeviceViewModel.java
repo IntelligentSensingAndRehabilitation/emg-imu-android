@@ -99,7 +99,6 @@ public class DeviceViewModel extends EmgImuViewModel<Device> {
             e.printStackTrace();
         }
 
-        // getString(R.string.title_activity_powerhammer)
         gameLogger = new FirebaseGameLogger(getService(), "Sling Therapy", startTime);
     }
 
