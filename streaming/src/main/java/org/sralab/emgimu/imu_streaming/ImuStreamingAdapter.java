@@ -31,6 +31,7 @@ import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.LiveData;
 import androidx.recyclerview.widget.RecyclerView;
 
+import org.sralab.emgimu.streaming.R;
 import org.sralab.emgimu.visualization.GimbalView;
 import org.sralab.emgimu.visualization.GraphView;
 
