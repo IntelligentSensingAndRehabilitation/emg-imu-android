@@ -65,6 +65,7 @@ interface IEmgImuServiceBinder  {
     int getConnectionState(in BluetoothDevice device);
     void registerDevicesObserver(IEmgImuDevicesUpdatedCallback callback);
     void unregisterDevicesObserver(IEmgImuDevicesUpdatedCallback callback);
+    void storeGameplayRecord(String name, long startTime, in String details);
     List<String> getLoggingReferences();
     String getAuthToken();
     // boolean isConnected(in BluetoothDevice device);

@@ -23,62 +23,14 @@ import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.TimeZone;
 
-class GamePlayRecord {
-    String name;
-    List<String> logReference;
-    Timestamp startTime;
-    Timestamp stopTime;
-    double performance;
-    String details;
-
-    public String getName()
-    {
-        return name;
-    }
-
-    public Date getStartTime()
-    {
-        return startTime.toDate();
-    }
-
-    public Date getStopTime()
-    {
-        if (stopTime == null)
-            return getStartTime();
-
-        return stopTime.toDate();
-    }
-
-    public long getDuration() {
-        if (stopTime == null)
-            return 0;
-
-        return stopTime.toDate().getTime() - startTime.toDate().getTime();
-    }
-
-    public List<String> getLogReference() {
-        if (logReference == null) {
-            return new ArrayList<String>();
-        }
-
-        return logReference;
-    }
-
-    public double getPerformance() {
-        return performance;
-    }
-
-    public String getDetails() {
-        if (details == null) {
-            return "{}";
-        }
-
-        return details;
-    }
-
-}
-
 public class FirebaseGameLogger {
+    /** Logger can be used in two ways.
+     *
+     *  1) original approach where it handles the log file and is told to finalize it when done
+     *  2) also simply writing a game play record that is passed
+     *
+     *  Both use a consistent naming format to save in memory.
+     */
 
     private String TAG = FirebaseGameLogger.class.getSimpleName();
 
@@ -88,8 +40,7 @@ public class FirebaseGameLogger {
 
     private GamePlayRecord record;
 
-    public FirebaseGameLogger(IEmgImuServiceBinder service, String game, long startTime) {
-
+    void configureService(IEmgImuServiceBinder service) {
         mService = service;
 
         FirebaseAuth mAuth = FirebaseAuth.getInstance();
@@ -105,6 +56,15 @@ public class FirebaseGameLogger {
             Log.e(TAG, "Unable to get Firestore DB");
             throw new InvalidParameterException("No Firestore DB");
         }
+    }
+
+    public FirebaseGameLogger(IEmgImuServiceBinder service) {
+        configureService(service);
+    }
+
+    public FirebaseGameLogger(IEmgImuServiceBinder service, String game, long startTime) {
+
+        configureService(service);
 
         record = new GamePlayRecord();
         record.startTime = new Timestamp(new Date(startTime));
@@ -142,6 +102,11 @@ public class FirebaseGameLogger {
             e.printStackTrace();
         }
 
+        save();
+    }
+
+    public void writeRecord(GamePlayRecord record) {
+        this.record = record;
         save();
     }
 

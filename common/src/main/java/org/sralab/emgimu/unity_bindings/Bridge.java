@@ -7,16 +7,15 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.os.Handler;
 import android.os.IBinder;
-import android.os.Looper;
 import android.os.RemoteException;
 import android.util.Log;
-import android.widget.Toast;
 
 import org.sralab.emgimu.service.EmgPwrData;
 import org.sralab.emgimu.service.IEmgImuPwrDataCallback;
 import org.sralab.emgimu.service.IEmgImuServiceBinder;
+
+import java.util.Date;
 
 public class Bridge extends Application
 {
@@ -34,14 +33,14 @@ public class Bridge extends Application
         }
     };
 
-    private IEmgImuServiceBinder mService;
+    private IEmgImuServiceBinder service;
     private ServiceConnection mServiceConnection = new ServiceConnection() {
         @SuppressWarnings("unchecked")
         @Override
-        public void onServiceConnected(final ComponentName name, final IBinder service) {
-            mService = IEmgImuServiceBinder.Stub.asInterface(service);
+        public void onServiceConnected(final ComponentName name, final IBinder binder) {
+            service = IEmgImuServiceBinder.Stub.asInterface(binder);
             try {
-                mService.registerEmgPwrObserver(pwrObserver);
+                service.registerEmgPwrObserver(pwrObserver);
             } catch (RemoteException e) {
                 throw new RuntimeException(e);
             }
@@ -49,21 +48,44 @@ public class Bridge extends Application
 
         @Override
         public void onServiceDisconnected(final ComponentName name) {
-            mService = null;
+            service = null;
         }
     };
 
+    long startTime;
+    String gameName;
+    String gameLog;
+    public void logTrial(String roundInfo) {
+        // expects to receive something that can be added to a list, which can
+        // be serialized to JSON
+        if (gameLog == null || gameLog.length() == 0) {
+            gameLog = "[" + roundInfo + "]";
+        } else {
+            gameLog = gameLog.substring(0, gameLog.length() - 2) + ", " + roundInfo + "]";
+        }
+
+        try {
+            service.storeGameplayRecord(gameName, startTime, gameLog);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+    }
+
     public void connectService(final Context ctx, final PluginCallback callback) {
-        Log.d(TAG, "onResume");
+        Log.d(TAG, "connectService");
         final Intent service = new Intent();
         service.setComponent(new ComponentName("org.sralab.emgimu", "org.sralab.emgimu.service.EmgImuService"));
         ctx.bindService(service, mServiceConnection, Context.BIND_AUTO_CREATE);
         this.callback = callback;  // avoid dead links
+
+        startTime = new Date().getTime();
+        gameName = ctx.getPackageName();
     }
 
     protected void disconnectService(final Context ctx) {
+        Log.d(TAG, "disconnectService");
         ctx.unbindService(mServiceConnection);
-        mService = null;
+        service = null;
         callback = null;
     }
 }

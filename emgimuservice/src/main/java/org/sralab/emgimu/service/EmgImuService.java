@@ -75,6 +75,8 @@ import org.json.JSONException;
 import org.sralab.emgimu.controller.IEmgDecoder;
 import org.sralab.emgimu.controller.IEmgDecoderProvider;
 import org.sralab.emgimu.logging.EmgLogFetchJobService;
+import org.sralab.emgimu.logging.FirebaseGameLogger;
+import org.sralab.emgimu.logging.GamePlayRecord;
 import org.sralab.emgimu.streaming.NetworkStreaming;
 
 import java.util.ArrayList;
@@ -194,6 +196,21 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
         @Override
         public void unregisterDevicesObserver(IEmgImuDevicesUpdatedCallback callback) throws RemoteException {
             deviceUpdateCbs.remove(callback);
+        }
+
+        @Override
+        public void storeGameplayRecord(String name, long startTime, String details) throws RemoteException {
+            GamePlayRecord record = new GamePlayRecord();
+            record.setName(name);
+            record.setDetails(details);
+            record.setLogReference(getLoggingReferences());
+            record.setStartTime(startTime);
+            record.setStopTime(new Date().getTime());
+
+            Log.d(TAG, "Storing game play record");
+
+            FirebaseGameLogger logger = new FirebaseGameLogger(mBinder);
+            logger.writeRecord(record);
         }
 
         public LiveData<Integer> getConnectionLiveState(@NotNull final BluetoothDevice device) {
