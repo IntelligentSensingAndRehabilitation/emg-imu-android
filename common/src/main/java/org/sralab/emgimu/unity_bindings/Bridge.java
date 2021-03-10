@@ -22,34 +22,14 @@ public class Bridge extends Application
 {
     public static final String TAG = Bridge.class.getSimpleName();
 
-    // our native method, which will be called from Unity3D
-    public void PrintString( final Context ctx, final String message )
-    {
-        //create / show an android toast, with message and short duration.
-        new Handler(Looper.getMainLooper()).post(new Runnable() {
-            @Override
-            public void run() {
-                Toast.makeText(ctx, message, Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
-
+    /** Unity registers the callback to receive messages from android */
     private PluginCallback callback;
-
-    public PluginCallback getCallback() {
-        return callback;
-    }
-
-    public void RegisterCallback( final Context ctx, PluginCallback callback) {
-        callback.onSuccess("received");
-        this.callback = callback;
-    }
 
     private final IEmgImuPwrDataCallback.Stub pwrObserver = new IEmgImuPwrDataCallback.Stub() {
         @Override
         public void handleData(BluetoothDevice device, EmgPwrData data) throws RemoteException {
-            if (getCallback() != null) {
-                getCallback().onSuccess(Integer.toString(data.power[0]));
+            if (callback != null) {
+                callback.onSuccess(Integer.toString(data.power[0]));
             }
         }
     };
@@ -73,15 +53,17 @@ public class Bridge extends Application
         }
     };
 
-    public void onResume(final Context ctx) {
+    public void connectService(final Context ctx, final PluginCallback callback) {
         Log.d(TAG, "onResume");
         final Intent service = new Intent();
         service.setComponent(new ComponentName("org.sralab.emgimu", "org.sralab.emgimu.service.EmgImuService"));
         ctx.bindService(service, mServiceConnection, Context.BIND_AUTO_CREATE);
+        this.callback = callback;  // avoid dead links
     }
 
-    protected void onPause(final Context ctx) {
+    protected void disconnectService(final Context ctx) {
         ctx.unbindService(mServiceConnection);
         mService = null;
+        callback = null;
     }
 }
