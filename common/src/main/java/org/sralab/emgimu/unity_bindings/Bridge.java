@@ -12,8 +12,10 @@ import android.os.RemoteException;
 import android.util.Log;
 
 import org.sralab.emgimu.service.EmgPwrData;
+import org.sralab.emgimu.service.EmgStreamData;
 import org.sralab.emgimu.service.IEmgImuPwrDataCallback;
 import org.sralab.emgimu.service.IEmgImuServiceBinder;
+import org.sralab.emgimu.service.IEmgImuStreamDataCallback;
 
 import java.util.Date;
 
@@ -33,6 +35,11 @@ public class Bridge extends Application
         }
     };
 
+    private final IEmgImuStreamDataCallback.Stub streamObserver  = new IEmgImuStreamDataCallback.Stub() {
+        @Override
+        public void handleData(BluetoothDevice device, EmgStreamData data) {}
+    };
+
     private IEmgImuServiceBinder service;
     private ServiceConnection mServiceConnection = new ServiceConnection() {
         @SuppressWarnings("unchecked")
@@ -41,6 +48,7 @@ public class Bridge extends Application
             service = IEmgImuServiceBinder.Stub.asInterface(binder);
             try {
                 service.registerEmgPwrObserver(pwrObserver);
+                service.registerEmgStreamObserver(streamObserver);
             } catch (RemoteException e) {
                 throw new RuntimeException(e);
             }
@@ -61,7 +69,7 @@ public class Bridge extends Application
         if (gameLog == null || gameLog.length() == 0) {
             gameLog = "[" + roundInfo + "]";
         } else {
-            gameLog = gameLog.substring(0, gameLog.length() - 2) + ", " + roundInfo + "]";
+            gameLog = gameLog.substring(0, gameLog.length() - 1) + ", " + roundInfo + "]";
         }
 
         try {
