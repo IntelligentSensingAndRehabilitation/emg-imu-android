@@ -706,6 +706,7 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
 
     protected void showBLEDialog() {
         final Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+        enableIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         startActivity(enableIntent);
     }
 
