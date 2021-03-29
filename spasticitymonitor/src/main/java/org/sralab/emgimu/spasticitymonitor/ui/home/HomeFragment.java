@@ -83,6 +83,8 @@ public class HomeFragment extends Fragment {
     private SpasticityTrial curTrial;
 
     private FirebaseGameLogger mGameLogger;
+    private FirebaseStorage storage;
+    private FirebaseUser mUser;
 
     @SuppressLint("RestrictedApi")
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -93,6 +95,16 @@ public class HomeFragment extends Fragment {
         final RecyclerView recyclerView = root.findViewById(R.id.emg_list);
         recyclerView.setLayoutManager(new LinearLayoutManager(root.getContext()));
         recyclerView.addItemDecoration(new DividerItemDecoration(root.getContext(), DividerItemDecoration.VERTICAL_LIST));
+
+        // Required for video uploading
+        FirebaseAuth mAuth = FirebaseAuth.getInstance();
+        mUser = mAuth.getCurrentUser(); // Log in performed by main service
+        storage = FirebaseStorage.getInstance();
+
+        if (mUser == null) {
+            Log.e(TAG, "Should have a user assigned here");
+            throw new InvalidParameterException("No FirebaseUser");
+        }
 
         dvm = new ViewModelProvider(this, ViewModelProvider.AndroidViewModelFactory.getInstance(getActivity().getApplication())).get(DeviceViewModel.class);
         recyclerView.setAdapter(streamingAdapter = new StreamingAdapter(this, dvm));
@@ -141,8 +153,10 @@ public class HomeFragment extends Fragment {
                     Date now = new Date();
                     String fileName = formatter.format(now) + ".mp4";
 
+                    String uploadFileName =  "videos/" + mUser.getUid() + "/" + fileName;
+
                     curTrial = new SpasticityTrial();
-                    curTrial.fileName = fileName;
+                    curTrial.fileName = uploadFileName;
                     curTrial.startTime = now.getTime(); //new Timestamp(now);
                     trials.add(curTrial);
 
@@ -162,29 +176,15 @@ public class HomeFragment extends Fragment {
 
                             @Override
                             public void onVideoSaved(@NonNull VideoCapture.OutputFileResults outputFileResults) {
-                                Log.d(TAG, "Video saved");
-
-                                FirebaseAuth mAuth = FirebaseAuth.getInstance();
-                                FirebaseUser mUser = mAuth.getCurrentUser(); // Log in performed by main service
-
-                                if (mUser == null) {
-                                    Log.e(TAG, "Should have a user assigned here");
-                                    throw new InvalidParameterException("No FirebaseUser");
-                                }
+                                Log.d(TAG, "Video saved. Uploading");
 
                                 Uri file = outputFileResults.getSavedUri();
 
-                                String uploadFileName =  "videos/" + mUser.getUid() + "/" + curTrial.fileName;
-                                FirebaseStorage storage = FirebaseStorage.getInstance();
                                 StorageReference storageRef = storage.getReference().child(uploadFileName);
 
                                 storageRef.putFile(file)
                                         .addOnFailureListener(e -> Log.e(TAG, "Upload failed"))
-                                        .addOnSuccessListener(taskSnapshot ->
-                                        {
-                                            trials.get(trials.size() - 1).fileName = uploadFileName;
-                                            updateLogger();
-                                        });
+                                        .addOnSuccessListener(taskSnapshot -> Log.d(TAG, "Upload succeeded"));
                             }
 
                             @Override
