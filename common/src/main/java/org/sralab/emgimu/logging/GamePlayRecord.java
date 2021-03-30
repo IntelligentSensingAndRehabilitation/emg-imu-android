@@ -56,6 +56,10 @@ public class GamePlayRecord  {
         return performance;
     }
 
+    public void setPerformance(double performance) {
+        this.performance = performance;
+    }
+
     public String getDetails() {
         if (details == null) {
             return "{}";

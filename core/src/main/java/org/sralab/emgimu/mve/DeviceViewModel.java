@@ -2,16 +2,26 @@ package org.sralab.emgimu.mve;
 
 import android.app.Application;
 import android.bluetooth.BluetoothDevice;
+import android.util.Log;
 
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
+import com.google.gson.Gson;
+
 import org.sralab.emgimu.EmgImuViewModel;
+import org.sralab.emgimu.logging.FirebaseGameLogger;
+import org.sralab.emgimu.logging.GamePlayRecord;
 import org.sralab.emgimu.service.EmgPwrData;
+
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.Date;
 
 public class DeviceViewModel extends EmgImuViewModel<Device> {
 
     private final static String TAG = DeviceViewModel.class.getSimpleName();
+    private FirebaseGameLogger gameLogger;
 
     @Override
     public boolean getObservePwr() { return true; }
@@ -20,8 +30,29 @@ public class DeviceViewModel extends EmgImuViewModel<Device> {
     public void setRange(Integer range) { this.range.postValue(range); }
     public LiveData<Integer> getRange() { return range; }
 
+    private class MvcSensor {
+        String address;
+        float maximum;
+        float minimum;
+    }
+
+    private class MvcTrial {
+        long timestamp;
+        ArrayList<MvcSensor> sensors;
+    }
+
+    ArrayList <MvcTrial> trials;
+
+    GamePlayRecord gameRecord;
+
     public DeviceViewModel(Application app) {
         super(app);
+
+        gameRecord = new GamePlayRecord();
+        gameRecord.setName("MaxEMGActivation");
+        gameRecord.setStartTime(new Date().getTime());
+
+        trials = new ArrayList<>();
     }
 
     @Override
@@ -40,4 +71,34 @@ public class DeviceViewModel extends EmgImuViewModel<Device> {
         for (final Device d : getDevicesLiveData().getValue()) { d.reset(); }
     }
 
+    public void saveMvc() {
+
+        MvcTrial trial = new MvcTrial();
+        trial.timestamp = new Date().getTime();
+        trial.sensors = new ArrayList<>();
+
+        for (final Device d: getDevicesLiveData().getValue()) {
+            MvcSensor sensor = new MvcSensor();
+            sensor.address = d.getAddress();
+            sensor.maximum = d.getMaximum().getValue().floatValue();
+            sensor.minimum = d.getMinimum().getValue().floatValue();
+            trial.sensors.add(sensor);
+        }
+
+        trials.add(trial);
+        Gson gson = new Gson();
+        String json = gson.toJson(trials);
+
+        gameRecord.setDetails(json);
+        gameRecord.setStopTime(new Date().getTime());
+        gameRecord.setPerformance(gameRecord.getPerformance() + 1);
+        gameLogger.writeRecord(gameRecord);
+
+    }
+
+    @Override
+    public void onServiceConnected() {
+        super.onServiceConnected();
+        gameLogger = new FirebaseGameLogger(getService());
+    }
 }

@@ -91,6 +91,7 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
         public ViewHolder(final View itemView) {
 			super(itemView);
 			power = itemView.findViewById(R.id.emg_power_view);
+
         }
 
 		private void bind(final Device device) {

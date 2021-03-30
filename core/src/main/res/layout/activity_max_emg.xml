@@ -41,28 +41,8 @@
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:text="@string/save_btn"
-            android:visibility="gone"
             tools:ignore="ButtonStyle" />
-
-        <Button
-            android:id="@+id/save_threshold_button"
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:text="@string/save_threshold_btn"
-            tools:ignore="ButtonStyle" />
-
-        <EditText
-            android:id="@+id/emg_max_scale"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:contentDescription="Scale"
-            android:ems="10"
-            android:inputType="number"
-            android:text="1000" />
-
-
+        
     </LinearLayout>
 
 
