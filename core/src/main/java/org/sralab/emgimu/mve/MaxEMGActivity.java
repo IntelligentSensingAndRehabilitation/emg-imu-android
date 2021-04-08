@@ -41,7 +41,10 @@ public class MaxEMGActivity extends AppCompatActivity {
         mClearMaxButton.setOnClickListener(view -> dvm.reset());
 
         Button mSaveMaxButton = findViewById(R.id.save_max_button);
-        mSaveMaxButton.setOnClickListener(view -> dvm.saveMvc());
+        mSaveMaxButton.setOnClickListener(view -> {
+            dvm.saveMvc();
+            dvm.reset();
+        });
     }
 
 }

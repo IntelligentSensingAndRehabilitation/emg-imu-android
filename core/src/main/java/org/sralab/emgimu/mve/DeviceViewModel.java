@@ -2,6 +2,7 @@ package org.sralab.emgimu.mve;
 
 import android.app.Application;
 import android.bluetooth.BluetoothDevice;
+import android.os.RemoteException;
 import android.util.Log;
 
 import androidx.lifecycle.LiveData;
@@ -26,6 +27,9 @@ public class DeviceViewModel extends EmgImuViewModel<Device> {
     @Override
     public boolean getObservePwr() { return true; }
 
+    @Override
+    public boolean getObserveStream() { return true; }
+
     MutableLiveData<Integer> range = new MutableLiveData<>(20000);
     public void setRange(Integer range) { this.range.postValue(range); }
     public LiveData<Integer> getRange() { return range; }
@@ -47,10 +51,6 @@ public class DeviceViewModel extends EmgImuViewModel<Device> {
 
     public DeviceViewModel(Application app) {
         super(app);
-
-        gameRecord = new GamePlayRecord();
-        gameRecord.setName("MaxEMGActivation");
-        gameRecord.setStartTime(new Date().getTime());
 
         trials = new ArrayList<>();
     }
@@ -94,11 +94,21 @@ public class DeviceViewModel extends EmgImuViewModel<Device> {
         gameRecord.setPerformance(gameRecord.getPerformance() + 1);
         gameLogger.writeRecord(gameRecord);
 
+        try {
+            gameRecord.setLogReference(getService().getLoggingReferences());
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
     public void onServiceConnected() {
         super.onServiceConnected();
         gameLogger = new FirebaseGameLogger(getService());
+
+        gameRecord = new GamePlayRecord();
+        gameRecord.setName("MaxEMGActivation");
+        gameRecord.setStartTime(new Date().getTime());
+
     }
 }
