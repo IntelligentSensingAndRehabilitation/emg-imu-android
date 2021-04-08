@@ -74,7 +74,7 @@ public class Device {
 
         if (filtering) {
 
-            final int channels = voltage.length;
+            final int channels = 1; //voltage.length;
             final int samples = voltage[0].length;
             double [][] filteredVoltage = new double[channels][];
 
@@ -97,7 +97,7 @@ public class Device {
 
     public Device(int channels) {
 
-        emg = new GraphData(10000, channels);
+        emg = new GraphData(10000, 1);
         emg.setScale(1.0f/20000.0f);
 
         filter = new ArrayList<>();

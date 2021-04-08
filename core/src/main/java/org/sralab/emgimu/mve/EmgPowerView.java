@@ -53,7 +53,7 @@ public class EmgPowerView extends View {
     private float mMax = 0;
     private float mPwr = 0;
     private float mThresh = 0;
-    private float mMaxHeightPwr = Short.MAX_VALUE * 2; // The range of the graph
+    private float mMaxHeightPwr = Integer.MAX_VALUE * 2; // The range of the graph
     public void setMinPower(Double p)
     {
         mMin = p.floatValue();
