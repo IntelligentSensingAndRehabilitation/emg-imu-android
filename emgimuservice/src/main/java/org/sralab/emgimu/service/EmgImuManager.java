@@ -219,8 +219,8 @@ public class EmgImuManager extends BleManager {
                     .add(requestMtu(517)
                         .with((device, mtu) -> log(Log.INFO, "MTU set to " + mtu))
                         .fail((device, status) -> log(Log.WARN, "Requested MTU not supported: " + status)))
-                    .add(setPreferredPhy(PhyRequest.PHY_LE_2M_MASK, PhyRequest.PHY_LE_2M_MASK, PhyRequest.PHY_OPTION_NO_PREFERRED)
-                        .fail((device, status) -> log(Log.WARN, "Requested PHY not supported: " + status)))
+                    /*.add(setPreferredPhy(PhyRequest.PHY_LE_2M_MASK, PhyRequest.PHY_LE_2M_MASK, PhyRequest.PHY_OPTION_NO_PREFERRED)
+                        .fail((device, status) -> log(Log.WARN, "Requested PHY not supported: " + status)))*/
                     .add(requestConnectionPriority(ConnectionPriorityRequest.CONNECTION_PRIORITY_HIGH)
                             .fail((device, status) -> log(Log.WARN, "Failed to set connection priority: " + status)))
                     .add(readCharacteristic(mHardwareCharacteristic)
@@ -254,6 +254,8 @@ public class EmgImuManager extends BleManager {
                     .enqueue();
             readCharacteristic(mBatteryCharacteristic).with((device, data) -> parseBattery(device, data))
                     .enqueue();
+
+            //syncDevice();
         }
 
 		boolean isDeviceInfoServiceSupported(final BluetoothGatt gatt) {
@@ -1020,7 +1022,7 @@ public class EmgImuManager extends BleManager {
 
     private boolean mSynced;
     private long t0() {
-        return new GregorianCalendar(2018, 0, 0).getTime().getTime();
+        return new GregorianCalendar(2021, 0, 0).getTime().getTime();
     }
     /**
      * Pass the current time into the sensor. This is in a strange format to keep thinks
@@ -1035,6 +1037,7 @@ public class EmgImuManager extends BleManager {
         final int dt = (int) nowToTimestamp();
 
         log(Log.VERBOSE, "Sending sync signal with offset " + dt);
+        log(Log.VERBOSE, "mRecordAccessControlPointCharacteristic: " + mRecordAccessControlPointCharacteristic);
 
         final int size = 6;
         MutableData data = new MutableData(new byte[size]);
