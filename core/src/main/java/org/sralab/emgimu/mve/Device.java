@@ -27,7 +27,7 @@ public class Device {
     public void setPower(int power)
     {
         // Smooth inputs
-        final double LPF_ALPHA = 0.1;
+        final double LPF_ALPHA = 0.025;
         double smooth_power = this.power.getValue() * (1-LPF_ALPHA) + ((double) power) * LPF_ALPHA;
 
         this.power.postValue(smooth_power);
