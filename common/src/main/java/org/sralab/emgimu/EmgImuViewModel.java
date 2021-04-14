@@ -159,6 +159,10 @@ public abstract class EmgImuViewModel <T> extends AndroidViewModel {
         @Override
         public void handleData(BluetoothDevice device, EmgPwrData data) {
             T dev = deviceMap.get(device);
+            if (dev == null) {
+                Log.w(TAG, "Dropping pwrObserver as no matching device found. Likely during a disconnection");
+                return;
+            }
             emgPwrUpdated(dev, data);
         }
     };
@@ -168,6 +172,10 @@ public abstract class EmgImuViewModel <T> extends AndroidViewModel {
         @Override
         public void handleData(BluetoothDevice device, EmgStreamData data) {
             T dev = deviceMap.get(device);
+            if (dev == null) {
+                Log.w(TAG, "Dropping streamObserver as no matching device found. Likely during a disconnection");
+                return;
+            }
             emgStreamUpdated(dev, data);
         }
     };
@@ -176,7 +184,12 @@ public abstract class EmgImuViewModel <T> extends AndroidViewModel {
     private final IEmgImuSenseCallback.Stub accelObserver = new IEmgImuSenseCallback.Stub() {
         @Override
         public void handleData(BluetoothDevice device, ImuData data) throws RemoteException {
-            imuAccelUpdated(deviceMap.get(device), data);
+            T dev = deviceMap.get(device);
+            if (dev == null) {
+                Log.w(TAG, "Dropping accelObserver as no matching device found. Likely during a disconnection");
+                return;
+            }
+            imuAccelUpdated(dev, data);
         }
     };
 
@@ -184,7 +197,12 @@ public abstract class EmgImuViewModel <T> extends AndroidViewModel {
     private final IEmgImuSenseCallback.Stub gyroObserver = new IEmgImuSenseCallback.Stub() {
         @Override
         public void handleData(BluetoothDevice device, ImuData data) throws RemoteException {
-            imuGyroUpdated(deviceMap.get(device), data);
+            T dev = deviceMap.get(device);
+            if (dev == null) {
+                Log.w(TAG, "Dropping gyroObserver as no matching device found. Likely during a disconnection");
+                return;
+            }
+            imuGyroUpdated(dev, data);
         }
     };
 
@@ -192,7 +210,12 @@ public abstract class EmgImuViewModel <T> extends AndroidViewModel {
     private final IEmgImuSenseCallback.Stub magObserver = new IEmgImuSenseCallback.Stub() {
         @Override
         public void handleData(BluetoothDevice device, ImuData data) throws RemoteException {
-            imuMagUpdated(deviceMap.get(device), data);
+            T dev = deviceMap.get(device);
+            if (dev == null) {
+                Log.w(TAG, "Dropping magObserver as no matching device found. Likely during a disconnection");
+                return;
+            }
+            imuMagUpdated(dev, data);
         }
     };
 
@@ -200,7 +223,12 @@ public abstract class EmgImuViewModel <T> extends AndroidViewModel {
     private final IEmgImuQuatCallback.Stub quatObserver = new IEmgImuQuatCallback.Stub() {
         @Override
         public void handleData(BluetoothDevice device, ImuQuatData data) throws RemoteException {
-            imuQuatUpdated(deviceMap.get(device), data);
+            T dev = deviceMap.get(device);
+            if (dev == null) {
+                Log.w(TAG, "Dropping quatObserver as no matching device found. Likely during a disconnection");
+                return;
+            }
+            imuQuatUpdated(dev, data);
         }
     };
 }
