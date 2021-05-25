@@ -100,13 +100,13 @@ public class FirebaseStreamLogger extends Observable {
 
         UploadTask uploadTask = storageRef.putStream(logStream);
         uploadTask.addOnFailureListener(exception -> {
-            Log.e(TAG, "Failed to upload", exception);
+            Log.e(TAG, "Failed to upload: " + getReference(), exception);
             mManager.log(LogContract.Log.Level.ERROR, "Failed to upload: " + exception.getMessage() + "\\" + exception.getStackTrace().toString());
             synchronized (this) {
                 this.notify();
             }
         }).addOnSuccessListener(taskSnapshot -> {
-            Log.d(TAG, "Upload of log succeeded " + taskSnapshot.toString());
+            Log.d(TAG, "Upload of log succeeded " + getReference() + " " + taskSnapshot.toString());
             mManager.log(LogContract.Log.Level.DEBUG, "Upload of log succeeded " + taskSnapshot.toString());
             synchronized (this) {
                 this.notify();
@@ -114,8 +114,6 @@ public class FirebaseStreamLogger extends Observable {
             setChanged();
             notifyObservers();
         });
-
-        Log.d(TAG, "uploadTask thread ended for " + getReference());
     }
 
     public String getReference() {
