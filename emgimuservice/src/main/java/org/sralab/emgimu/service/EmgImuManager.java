@@ -21,6 +21,7 @@
  */
 package org.sralab.emgimu.service;
 
+import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
@@ -216,13 +217,6 @@ public class EmgImuManager extends BleManager {
             log(Log.INFO, "Initializing connection");
 
             beginAtomicRequestQueue()
-                    .add(requestMtu(517)
-                        .with((device, mtu) -> log(Log.INFO, "MTU set to " + mtu))
-                        .fail((device, status) -> log(Log.WARN, "Requested MTU not supported: " + status)))
-                    .add(setPreferredPhy(PhyRequest.PHY_LE_2M_MASK, PhyRequest.PHY_LE_2M_MASK, PhyRequest.PHY_OPTION_NO_PREFERRED)
-                        .fail((device, status) -> log(Log.WARN, "Requested PHY not supported: " + status)))
-                    .add(requestConnectionPriority(ConnectionPriorityRequest.CONNECTION_PRIORITY_HIGH)
-                            .fail((device, status) -> log(Log.WARN, "Failed to set connection priority: " + status)))
                     .add(readCharacteristic(mHardwareCharacteristic)
                         .with((device, data) -> {
                             mHardwareRevision = data.getStringValue(0);
@@ -245,7 +239,26 @@ public class EmgImuManager extends BleManager {
                     /*.add(readCharacteristic(mSerialNumberCharacteristic)
                         .with((device, data) -> log(Log.INFO, "Serial number; " + data.getStringValue(0)))) */
                     .done(device -> log(Log.INFO, "Target initialized. Hardware: " + mHardwareRevision + " Firmware: " + mFirmwareRevision))
+                    .add(requestMtu(517)
+                            .with((device, mtu) -> log(Log.INFO, "MTU set to " + mtu))
+                            .fail((device, status) -> log(Log.WARN, "Requested MTU not supported: " + status)))
+                    .add(requestConnectionPriority(ConnectionPriorityRequest.CONNECTION_PRIORITY_HIGH)
+                            .fail((device, status) -> log(Log.WARN, "Failed to set connection priority: " + status)))
                     .enqueue();
+
+            BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
+
+            if (!adapter.isLe2MPhySupported()) {
+                log(Log.ERROR, "2M PHY not supported!");
+            } else {
+                setPreferredPhy(PhyRequest.PHY_LE_2M_MASK, PhyRequest.PHY_LE_2M_MASK, PhyRequest.PHY_OPTION_NO_PREFERRED)
+                        .fail((device, status) -> log(Log.WARN, "Request PHY failed: " + status))
+                        .done(device -> log(Log.WARN, "Setting PHY succeeded"))
+                        .enqueue();
+            }
+            if (!adapter.isLeExtendedAdvertisingSupported()) {
+                log(Log.ERROR, "LE Extended Advertising not supported!");
+            }
 
             setNotificationCallback(mBatteryCharacteristic).with((device ,data) -> parseBattery(device, data));
             enableNotifications(mBatteryCharacteristic)
