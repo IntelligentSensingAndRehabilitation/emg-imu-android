@@ -53,12 +53,14 @@ import androidx.core.content.ContextCompat;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
+/*
 import com.firebase.jobdispatcher.FirebaseJobDispatcher;
 import com.firebase.jobdispatcher.GooglePlayDriver;
 import com.firebase.jobdispatcher.Job;
 import com.firebase.jobdispatcher.Lifetime;
 import com.firebase.jobdispatcher.RetryStrategy;
 import com.firebase.jobdispatcher.Trigger;
+ */
 import com.google.firebase.Timestamp;
 import com.google.firebase.analytics.FirebaseAnalytics;
 import com.google.firebase.auth.FirebaseAuth;
@@ -309,7 +311,7 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
         public void updateSavedDevices() {
             Log.d(TAG, "updateSavedDevices called on binder");
             serviceUpdateSavedDevices();
-            configureLoggingSavedDevices();
+            //configureLoggingSavedDevices();
         }
 
         public void registerEmgStreamObserver(IEmgImuStreamDataCallback callback) throws RemoteException {
@@ -1006,6 +1008,7 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
         return Collections.unmodifiableList(devices);
     }
 
+    /*
 	private void configureLoggingSavedDevices() {
 
         // Create a new dispatcher using the Google Play driver.
@@ -1057,6 +1060,7 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
             e.printStackTrace();
         }
     }
+    */
 
     /** Core service components **/
     private final BroadcastReceiver bluetoothStateBroadcastReceiver = new BroadcastReceiver() {

@@ -1,57 +1,12 @@
 // IEmgImuServiceBinder.aidl
 package org.sralab.emgimu.service;
 
-// Declare any non-default types here with import statements
 
-oneway interface IEmgImuDevicesUpdatedCallback {
-    void onDeviceListUpdated();
-}
-
-parcelable EmgStreamData {
-    long ts;
-    int channels;
-    int samples;
-    int Fs;
-    double [] voltage;
-}
-
-oneway interface IEmgImuStreamDataCallback {
-    void handleData(in BluetoothDevice device, in EmgStreamData data);
-}
-
-parcelable EmgPwrData {
-    long ts;
-    int channels;
-    int [] power;
-}
-
-oneway interface IEmgImuPwrDataCallback {
-    void handleData(in BluetoothDevice device, in EmgPwrData data);
-}
-
-parcelable ImuData {
-    long ts;
-    float [] x;
-    float [] y;
-    float [] z;
-    int samples;
-}
-
-oneway interface IEmgImuSenseCallback {
-    void handleData(in BluetoothDevice device, in ImuData data);
-}
-
-parcelable ImuQuatData {
-    long ts;
-    double q0;
-    double q1;
-    double q2;
-    double q3;
-}
-
-oneway interface IEmgImuQuatCallback {
-    void handleData(in BluetoothDevice device, in ImuQuatData data);
-}
+import org.sralab.emgimu.service.IEmgImuDevicesUpdatedCallback;
+import org.sralab.emgimu.service.IEmgImuStreamDataCallback;
+import org.sralab.emgimu.service.IEmgImuPwrDataCallback;
+import org.sralab.emgimu.service.IEmgImuSenseCallback;
+import org.sralab.emgimu.service.IEmgImuQuatCallback;
 
 interface IEmgImuServiceBinder  {
 
