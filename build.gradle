@@ -4,13 +4,12 @@ buildscript {
     repositories {
         jcenter()
         google()
-
-
     }
+
     dependencies {
-        classpath 'com.android.tools.build:gradle:4.1.2'
-        classpath 'com.google.gms:google-services:4.3.4'
-        classpath 'com.google.firebase:firebase-crashlytics-gradle:2.4.1'
+        classpath 'com.android.tools.build:gradle:4.2.1'
+        classpath 'com.google.gms:google-services:4.3.8'
+        classpath 'com.google.firebase:firebase-crashlytics-gradle:2.6.1'
 
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
@@ -21,11 +20,6 @@ allprojects {
     repositories {
         google()
         jcenter()
-
-        flatDir {
-            dirs 'libs'
-        }
-
         mavenCentral()
         maven { url "https://jitpack.io" }
     }
@@ -51,19 +45,19 @@ ext {
     // can be used for dependency resolution above if required
     //googlePlayServicesVersion   = "15.0.1"
 
-    buildTools = '29.0.2'
+    buildTools = '30.0.2'
     compileSdk = 28
     minSdk = 26
     minSdkInstant = 26
     ndkVersion = '21.2.6472646'
 
     supportLib = '28.0.0'
-    firebaseCoreVer = '18.0.2'
-    firebaseAuthVer = '20.0.3'
-    firebaseStorageVer = '19.2.1'
-    firebaseFirestoreVer = '22.1.1'
-    firebaseMessagingVer = '21.0.1'
-    firebaseCrashlyticsVer = '17.3.1'
+    firebaseCoreVer = '19.0.0'
+    firebaseAuthVer = '21.0.1'
+    firebaseStorageVer = '20.0.0'
+    firebaseFirestoreVer = '23.0.0'
+    firebaseMessagingVer = '22.0.0'
+    firebaseCrashlyticsVer = '18.0.0'
     instantAppsVer = '1.1.0'
 
     nordicBleLVer = '2.2.4'
