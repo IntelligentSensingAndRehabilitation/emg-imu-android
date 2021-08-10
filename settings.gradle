@@ -6,3 +6,4 @@ include ':streaming'
 // Uncomment these lines if you want to import the DFULibrary as a project, not from jcenter
 // include ':dfu'
 // project(':dfu').projectDir = file('../DFULibrary/dfu')
+include ':gaitvideoimu'
