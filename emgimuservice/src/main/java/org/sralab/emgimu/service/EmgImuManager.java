@@ -379,8 +379,8 @@ public class EmgImuManager extends BleManager {
         }
 
         @Override
-		protected void onDeviceDisconnected() {
-            log(Log.INFO, "onDeviceDisconnected");
+		protected void onServicesInvalidated() {
+            log(Log.INFO, "onServicesInvalidated");
 
             connectionState.postValue(getConnectionState());
 
@@ -411,6 +411,7 @@ public class EmgImuManager extends BleManager {
                 streamLogger = null;
             }
 		}
+
     };
 
 	public MutableLiveData<Integer> connectionState = new MutableLiveData<>(BluetoothGatt.STATE_DISCONNECTED);
