@@ -157,15 +157,15 @@ public class GaitVideoImu extends AppCompatActivity {
                                     startButton.setEnabled(true);
                                     stopButton.setEnabled(false);
 
-                                    showVideoStatus("Uploading...");
+                                    showVideoStatus("Uploading "  + fileName + "...");
 
                                     Uri file = outputFileResults.getSavedUri();
 
                                     StorageReference storageRef = storage.getReference().child(uploadFileName);
 
                                     storageRef.putFile(file)
-                                            .addOnFailureListener(e -> showVideoStatus("Upload failed"))
-                                            .addOnSuccessListener(taskSnapshot -> showVideoStatus("Upload succeeded"));
+                                            .addOnFailureListener(e -> showVideoStatus("Upload "  + fileName + " failed"))
+                                            .addOnSuccessListener(taskSnapshot -> showVideoStatus("Upload "  + fileName + " succeeded"));
                                 }
 
                                 @Override
