@@ -2,7 +2,7 @@ package org.sralab.emgimu.streaming.messages;
 
 public class ForceMessage {
 
-    public final String MSG = "Force";
+    public final String MSG = "DynamometerForce";
     public String bluetoothMac;
     public long timestamp;
     public double [] data;
