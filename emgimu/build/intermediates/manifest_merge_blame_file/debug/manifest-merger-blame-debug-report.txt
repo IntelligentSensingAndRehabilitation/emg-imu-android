@@ -1,0 +1,800 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    xmlns:dist="http://schemas.android.com/apk/distribution"
+4    package="org.sralab.emgimu"
+5    android:versionCode="7"
+6    android:versionName="0.28" >
+7
+8    <uses-sdk
+9        android:minSdkVersion="26"
+9-->C:\Users\vstepanov\Documents\Projects\emg-imu\android\emgimu\src\main\AndroidManifest.xml
+10        android:targetSdkVersion="28" />
+10-->C:\Users\vstepanov\Documents\Projects\emg-imu\android\emgimu\src\main\AndroidManifest.xml
+11
+12    <dist:module dist:instant="true" />
+12-->C:\Users\vstepanov\Documents\Projects\emg-imu\android\emgimu\src\main\AndroidManifest.xml:7:5-40
+12-->C:\Users\vstepanov\Documents\Projects\emg-imu\android\emgimu\src\main\AndroidManifest.xml:7:18-37
+13
+14    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+14-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:32:5-81
+14-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:32:22-78
+15    <uses-permission android:name="android.permission.WRITE_SETTINGS" />
+15-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:33:5-73
+15-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:33:22-70
+16    <uses-permission android:name="android.permission.BLUETOOTH" />
+16-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:34:5-68
+16-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:34:22-65
+17    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+17-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:35:5-74
+17-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:35:22-71
+18    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+18-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:36:5-81
+18-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:36:22-78
+19    <uses-permission android:name="no.nordicsemi.android.LOG" />
+19-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:37:5-65
+19-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:37:22-62
+20
+21    <uses-feature
+21-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:39:5-41:35
+22        android:name="android.hardware.bluetooth_le"
+22-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:40:9-53
+23        android:required="true" />
+23-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:41:9-32
+24    <uses-feature
+24-->[:imu_calibration] C:\Users\vstepanov\Documents\Projects\emg-imu\android\imu_calibration\build\intermediates\merged_manifest\debug\AndroidManifest.xml:17:5-19:36
+25        android:name="android.hardware.camera"
+25-->[:imu_calibration] C:\Users\vstepanov\Documents\Projects\emg-imu\android\imu_calibration\build\intermediates\merged_manifest\debug\AndroidManifest.xml:18:9-47
+26        android:required="false" />
+26-->[:imu_calibration] C:\Users\vstepanov\Documents\Projects\emg-imu\android\imu_calibration\build\intermediates\merged_manifest\debug\AndroidManifest.xml:19:9-33
+27
+28    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+28-->[:emgimuservice] C:\Users\vstepanov\Documents\Projects\emg-imu\android\emgimuservice\build\intermediates\merged_manifest\debug\AndroidManifest.xml:10:5-79
+28-->[:emgimuservice] C:\Users\vstepanov\Documents\Projects\emg-imu\android\emgimuservice\build\intermediates\merged_manifest\debug\AndroidManifest.xml:10:22-76
+29    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+29-->[:emgimuservice] C:\Users\vstepanov\Documents\Projects\emg-imu\android\emgimuservice\build\intermediates\merged_manifest\debug\AndroidManifest.xml:14:5-81
+29-->[:emgimuservice] C:\Users\vstepanov\Documents\Projects\emg-imu\android\emgimuservice\build\intermediates\merged_manifest\debug\AndroidManifest.xml:14:22-78
+30    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" /> <!-- Required to request whitelisting for power optimization to allow log fetching to occur -->
+30-->[:emgimuservice] C:\Users\vstepanov\Documents\Projects\emg-imu\android\emgimuservice\build\intermediates\merged_manifest\debug\AndroidManifest.xml:15:5-77
+30-->[:emgimuservice] C:\Users\vstepanov\Documents\Projects\emg-imu\android\emgimuservice\build\intermediates\merged_manifest\debug\AndroidManifest.xml:15:22-74
+31    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" /> <!-- Required for analytics -->
+31-->[:emgimuservice] C:\Users\vstepanov\Documents\Projects\emg-imu\android\emgimuservice\build\intermediates\merged_manifest\debug\AndroidManifest.xml:18:5-95
+31-->[:emgimuservice] C:\Users\vstepanov\Documents\Projects\emg-imu\android\emgimuservice\build\intermediates\merged_manifest\debug\AndroidManifest.xml:18:22-92
+32    <uses-permission android:name="android.permission.INTERNET" />
+32-->[:emgimuservice] C:\Users\vstepanov\Documents\Projects\emg-imu\android\emgimuservice\build\intermediates\merged_manifest\debug\AndroidManifest.xml:21:5-67
+32-->[:emgimuservice] C:\Users\vstepanov\Documents\Projects\emg-imu\android\emgimuservice\build\intermediates\merged_manifest\debug\AndroidManifest.xml:21:22-64
+33    <uses-permission android:name="android.permission.WAKE_LOCK" />
+33-->[:emgimuservice] C:\Users\vstepanov\Documents\Projects\emg-imu\android\emgimuservice\build\intermediates\merged_manifest\debug\AndroidManifest.xml:22:5-68
+33-->[:emgimuservice] C:\Users\vstepanov\Documents\Projects\emg-imu\android\emgimuservice\build\intermediates\merged_manifest\debug\AndroidManifest.xml:22:22-65
+34
+35    <uses-feature
+35-->[:common] C:\Users\vstepanov\Documents\Projects\emg-imu\android\common\build\intermediates\merged_manifest\debug\AndroidManifest.xml:30:5-32:35
+36        android:glEsVersion="0x00020000"
+36-->[:common] C:\Users\vstepanov\Documents\Projects\emg-imu\android\common\build\intermediates\merged_manifest\debug\AndroidManifest.xml:31:9-41
+37        android:required="true" /> <!-- Required by older versions of Google Play services to create IID tokens -->
+37-->[:common] C:\Users\vstepanov\Documents\Projects\emg-imu\android\common\build\intermediates\merged_manifest\debug\AndroidManifest.xml:32:9-32
+38    <uses-permission android:name="com.google.android.c2dm.permission.RECEIVE" />
+38-->[com.google.firebase:firebase-messaging:22.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\25bb2a955b36819d1897faff1a45de36\jetified-firebase-messaging-22.0.0\AndroidManifest.xml:25:5-82
+38-->[com.google.firebase:firebase-messaging:22.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\25bb2a955b36819d1897faff1a45de36\jetified-firebase-messaging-22.0.0\AndroidManifest.xml:25:22-79
+39    <uses-permission android:name="com.google.android.finsky.permission.BIND_GET_INSTALL_REFERRER_SERVICE" />
+39-->[com.google.android.gms:play-services-measurement:19.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\2b9ffe6bea7459f6f4b988cd409db7a0\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:26:5-110
+39-->[com.google.android.gms:play-services-measurement:19.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\2b9ffe6bea7459f6f4b988cd409db7a0\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:26:22-107
+40    <!--
+41	Location permission is required on Android 6+.
+42	Since Android 10 the FINE LOCATION will be required.
+43    -->
+44    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+44-->[no.nordicsemi.android.support.v18:scanner:1.4.3] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\49e15888930ffcfeac5494b4ec6d3bca\jetified-scanner-1.4.3\AndroidManifest.xml:22:5-79
+44-->[no.nordicsemi.android.support.v18:scanner:1.4.3] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\49e15888930ffcfeac5494b4ec6d3bca\jetified-scanner-1.4.3\AndroidManifest.xml:22:22-76
+45
+46    <application
+46-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:43:5-84:19
+47        android:allowBackup="true"
+47-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:44:9-35
+48        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
+48-->[androidx.core:core:1.5.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\b659bd06b879e523cb1d01cef28d3a27\core-1.5.0\AndroidManifest.xml:24:18-86
+49        android:debuggable="true"
+50        android:extractNativeLibs="false"
+51        android:fullBackupContent="true"
+51-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:45:9-41
+52        android:icon="@mipmap/ic_launcher"
+52-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:46:9-43
+53        android:label="@string/app_name"
+53-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:47:9-41
+54        android:roundIcon="@mipmap/ic_launcher_round"
+54-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:48:9-54
+55        android:testOnly="true"
+56        android:theme="@style/AppTheme" >
+56-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:49:9-40
+57        <activity
+57-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:50:9-62:20
+58            android:name="org.sralab.emgimu.launcher.LauncherActivity"
+58-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:51:13-71
+59            android:icon="@mipmap/ic_launcher"
+59-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:52:13-47
+60            android:label="@string/app_name"
+60-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:53:13-45
+61            android:launchMode="singleTask"
+61-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:54:13-44
+62            android:roundIcon="@mipmap/ic_launcher_round"
+62-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:55:13-58
+63            android:theme="@style/AppTheme.TranslucentStatusBar" >
+63-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:56:13-65
+64            <intent-filter>
+64-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:57:13-61:29
+65                <action android:name="android.intent.action.MAIN" />
+65-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:58:17-69
+65-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:58:25-66
+66
+67                <category android:name="android.intent.category.LAUNCHER" />
+67-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:60:17-77
+67-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:60:27-74
+68            </intent-filter>
+69        </activity>
+70        <activity
+70-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:63:9-73:20
+71            android:name="org.sralab.emgimu.config.ConfigActivity"
+71-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:64:13-67
+72            android:icon="@drawable/ic_config"
+72-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:65:13-47
+73            android:label="@string/title_activity_config"
+73-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:66:13-58
+74            android:launchMode="singleTask" >
+74-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:67:13-44
+75            <intent-filter>
+75-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:68:13-72:29
+76                <action android:name="android.intent.action.MAIN" />
+76-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:58:17-69
+76-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:58:25-66
+77
+78                <category android:name="org.sralab.emgimu.LAUNCHER" />
+78-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:71:17-71
+78-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:71:27-68
+79            </intent-filter>
+80        </activity>
+81        <activity
+81-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:74:9-83:20
+82            android:name="org.sralab.emgimu.mve.MaxEMGActivity"
+82-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:75:13-64
+83            android:icon="@drawable/ic_mve"
+83-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:76:13-44
+84            android:label="@string/title_activity_max_emg" >
+84-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:77:13-59
+85            <intent-filter>
+85-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:68:13-72:29
+86                <action android:name="android.intent.action.MAIN" />
+86-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:58:17-69
+86-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:58:25-66
+87
+88                <category android:name="org.sralab.emgimu.LAUNCHER" />
+88-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:71:17-71
+88-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:71:27-68
+89            </intent-filter>
+90        </activity>
+91        <activity
+91-->[:streaming] C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\build\intermediates\merged_manifest\debug\AndroidManifest.xml:15:9-25:20
+92            android:name="org.sralab.emgimu.streaming.StreamingActivity"
+92-->[:streaming] C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\build\intermediates\merged_manifest\debug\AndroidManifest.xml:16:13-73
+93            android:icon="@drawable/ic_streaming"
+93-->[:streaming] C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\build\intermediates\merged_manifest\debug\AndroidManifest.xml:17:13-50
+94            android:label="@string/streaming_title"
+94-->[:streaming] C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\build\intermediates\merged_manifest\debug\AndroidManifest.xml:18:13-52
+95            android:launchMode="singleTask" >
+95-->[:streaming] C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\build\intermediates\merged_manifest\debug\AndroidManifest.xml:19:13-44
+96            <intent-filter>
+96-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:68:13-72:29
+97                <action android:name="android.intent.action.MAIN" />
+97-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:58:17-69
+97-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:58:25-66
+98
+99                <category android:name="org.sralab.emgimu.LAUNCHER" />
+99-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:71:17-71
+99-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:71:27-68
+100            </intent-filter>
+101        </activity>
+102        <activity
+102-->[:streaming] C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\build\intermediates\merged_manifest\debug\AndroidManifest.xml:26:9-34:20
+103            android:name="org.sralab.emgimu.imu_streaming.ImuStreamingActivity"
+103-->[:streaming] C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\build\intermediates\merged_manifest\debug\AndroidManifest.xml:27:13-80
+104            android:label="IMU Streaming" >
+104-->[:streaming] C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\build\intermediates\merged_manifest\debug\AndroidManifest.xml:28:13-42
+105            <intent-filter>
+105-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:68:13-72:29
+106                <action android:name="android.intent.action.MAIN" />
+106-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:58:17-69
+106-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:58:25-66
+107
+108                <category android:name="org.sralab.emgimu.LAUNCHER" />
+108-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:71:17-71
+108-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:71:27-68
+109            </intent-filter>
+110        </activity>
+111
+112        <meta-data
+112-->[:streaming] C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\build\intermediates\merged_manifest\debug\AndroidManifest.xml:36:9-38:72
+113            android:name="io.fabric.ApiKey"
+113-->[:streaming] C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\build\intermediates\merged_manifest\debug\AndroidManifest.xml:37:13-44
+114            android:value="8751562450c786ca67410fd4e08fbb7c9303dbea" />
+114-->[:streaming] C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\build\intermediates\merged_manifest\debug\AndroidManifest.xml:38:13-69
+115
+116        <activity
+116-->[:imu_calibration] C:\Users\vstepanov\Documents\Projects\emg-imu\android\imu_calibration\build\intermediates\merged_manifest\debug\AndroidManifest.xml:22:9-30:20
+117            android:name="org.sralab.emgimu.imu_calibration.ImuCalibration"
+117-->[:imu_calibration] C:\Users\vstepanov\Documents\Projects\emg-imu\android\imu_calibration\build\intermediates\merged_manifest\debug\AndroidManifest.xml:23:13-76
+118            android:label="@string/title_activity_imu_calibration" >
+118-->[:imu_calibration] C:\Users\vstepanov\Documents\Projects\emg-imu\android\imu_calibration\build\intermediates\merged_manifest\debug\AndroidManifest.xml:24:13-67
+119            <intent-filter>
+119-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:68:13-72:29
+120                <action android:name="android.intent.action.MAIN" />
+120-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:58:17-69
+120-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:58:25-66
+121
+122                <category android:name="org.sralab.emgimu.LAUNCHER" />
+122-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:71:17-71
+122-->[:core] C:\Users\vstepanov\Documents\Projects\emg-imu\android\core\build\intermediates\merged_manifest\debug\AndroidManifest.xml:71:27-68
+123            </intent-filter>
+124        </activity>
+125
+126        <service
+126-->[:emgimuservice] C:\Users\vstepanov\Documents\Projects\emg-imu\android\emgimuservice\build\intermediates\merged_manifest\debug\AndroidManifest.xml:25:9-28:60
+127            android:name="org.sralab.emgimu.service.EmgImuService"
+127-->[:emgimuservice] C:\Users\vstepanov\Documents\Projects\emg-imu\android\emgimuservice\build\intermediates\merged_manifest\debug\AndroidManifest.xml:26:13-67
+128            android:exported="true"
+128-->[:emgimuservice] C:\Users\vstepanov\Documents\Projects\emg-imu\android\emgimuservice\build\intermediates\merged_manifest\debug\AndroidManifest.xml:27:13-36
+129            android:label="@string/emgimu_feature_title" /> <!-- android:process=":remote" -->
+129-->[:emgimuservice] C:\Users\vstepanov\Documents\Projects\emg-imu\android\emgimuservice\build\intermediates\merged_manifest\debug\AndroidManifest.xml:28:13-57
+130        <service
+130-->[:emgimuservice] C:\Users\vstepanov\Documents\Projects\emg-imu\android\emgimuservice\build\intermediates\merged_manifest\debug\AndroidManifest.xml:30:9-36:19
+131            android:name="org.sralab.emgimu.logging.EmgLogFetchJobService"
+131-->[:emgimuservice] C:\Users\vstepanov\Documents\Projects\emg-imu\android\emgimuservice\build\intermediates\merged_manifest\debug\AndroidManifest.xml:31:13-75
+132            android:exported="false" >
+132-->[:emgimuservice] C:\Users\vstepanov\Documents\Projects\emg-imu\android\emgimuservice\build\intermediates\merged_manifest\debug\AndroidManifest.xml:32:13-37
+133            <intent-filter>
+133-->[:emgimuservice] C:\Users\vstepanov\Documents\Projects\emg-imu\android\emgimuservice\build\intermediates\merged_manifest\debug\AndroidManifest.xml:33:13-35:29
+134                <action android:name="com.firebase.jobdispatcher.ACTION_EXECUTE" />
+134-->[:emgimuservice] C:\Users\vstepanov\Documents\Projects\emg-imu\android\emgimuservice\build\intermediates\merged_manifest\debug\AndroidManifest.xml:34:17-84
+134-->[:emgimuservice] C:\Users\vstepanov\Documents\Projects\emg-imu\android\emgimuservice\build\intermediates\merged_manifest\debug\AndroidManifest.xml:34:25-81
+135            </intent-filter>
+136        </service>
+137        <service
+137-->[:emgimuservice] C:\Users\vstepanov\Documents\Projects\emg-imu\android\emgimuservice\build\intermediates\merged_manifest\debug\AndroidManifest.xml:37:9-44:19
+138            android:name="org.sralab.emgimu.service.MyFirebaseMessagingService"
+138-->[:emgimuservice] C:\Users\vstepanov\Documents\Projects\emg-imu\android\emgimuservice\build\intermediates\merged_manifest\debug\AndroidManifest.xml:38:13-80
+139            android:enabled="true"
+139-->[:emgimuservice] C:\Users\vstepanov\Documents\Projects\emg-imu\android\emgimuservice\build\intermediates\merged_manifest\debug\AndroidManifest.xml:39:13-35
+140            android:exported="true" >
+140-->[:emgimuservice] C:\Users\vstepanov\Documents\Projects\emg-imu\android\emgimuservice\build\intermediates\merged_manifest\debug\AndroidManifest.xml:40:13-36
+141            <intent-filter>
+141-->[:emgimuservice] C:\Users\vstepanov\Documents\Projects\emg-imu\android\emgimuservice\build\intermediates\merged_manifest\debug\AndroidManifest.xml:41:13-43:29
+142                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+142-->[:emgimuservice] C:\Users\vstepanov\Documents\Projects\emg-imu\android\emgimuservice\build\intermediates\merged_manifest\debug\AndroidManifest.xml:42:17-78
+142-->[:emgimuservice] C:\Users\vstepanov\Documents\Projects\emg-imu\android\emgimuservice\build\intermediates\merged_manifest\debug\AndroidManifest.xml:42:25-75
+143            </intent-filter>
+144        </service>
+145        <!--
+146            meta-data
+147            android:name="com.google.firebase.messaging.default_notification_icon"
+148            android:resource="@drawable/ic_stat_ic_notification" /
+149        -->
+150        <!--
+151             Set color used with incoming notification messages. This is used when no color is set for the incoming
+152             notification message. See README(https://goo.gl/6BKBk7) for more.
+153        -->
+154        <meta-data
+154-->[:emgimuservice] C:\Users\vstepanov\Documents\Projects\emg-imu\android\emgimuservice\build\intermediates\merged_manifest\debug\AndroidManifest.xml:55:9-57:71
+155            android:name="com.google.firebase.messaging.default_notification_channel_id"
+155-->[:emgimuservice] C:\Users\vstepanov\Documents\Projects\emg-imu\android\emgimuservice\build\intermediates\merged_manifest\debug\AndroidManifest.xml:56:13-89
+156            android:value="@string/default_notification_channel_id" />
+156-->[:emgimuservice] C:\Users\vstepanov\Documents\Projects\emg-imu\android\emgimuservice\build\intermediates\merged_manifest\debug\AndroidManifest.xml:57:13-68
+157        <meta-data
+157-->[:emgimuservice] C:\Users\vstepanov\Documents\Projects\emg-imu\android\emgimuservice\build\intermediates\merged_manifest\debug\AndroidManifest.xml:58:9-60:53
+158            android:name="com.google.firebase.messaging.default_notification_color"
+158-->[:emgimuservice] C:\Users\vstepanov\Documents\Projects\emg-imu\android\emgimuservice\build\intermediates\merged_manifest\debug\AndroidManifest.xml:59:13-84
+159            android:resource="@color/sral_orange" />
+159-->[:emgimuservice] C:\Users\vstepanov\Documents\Projects\emg-imu\android\emgimuservice\build\intermediates\merged_manifest\debug\AndroidManifest.xml:60:13-50
+160
+161        <service
+161-->[com.google.firebase:firebase-crashlytics:18.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\bc5e108f725affae2c4d750e097463ae\jetified-firebase-crashlytics-18.0.0\AndroidManifest.xml:15:9-21:19
+162            android:name="com.google.firebase.components.ComponentDiscoveryService"
+162-->[com.google.firebase:firebase-crashlytics:18.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\bc5e108f725affae2c4d750e097463ae\jetified-firebase-crashlytics-18.0.0\AndroidManifest.xml:16:13-84
+163            android:directBootAware="true"
+163-->[com.google.firebase:firebase-common:20.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\dcc71886187771cd70e0aa4133968ff4\jetified-firebase-common-20.0.0\AndroidManifest.xml:35:13-43
+164            android:exported="false" >
+164-->[com.google.firebase:firebase-crashlytics:18.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\bc5e108f725affae2c4d750e097463ae\jetified-firebase-crashlytics-18.0.0\AndroidManifest.xml:17:13-37
+165            <meta-data
+165-->[com.google.firebase:firebase-crashlytics:18.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\bc5e108f725affae2c4d750e097463ae\jetified-firebase-crashlytics-18.0.0\AndroidManifest.xml:18:13-20:85
+166                android:name="com.google.firebase.components:com.google.firebase.crashlytics.CrashlyticsRegistrar"
+166-->[com.google.firebase:firebase-crashlytics:18.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\bc5e108f725affae2c4d750e097463ae\jetified-firebase-crashlytics-18.0.0\AndroidManifest.xml:19:17-115
+167                android:value="com.google.firebase.components.ComponentRegistrar" />
+167-->[com.google.firebase:firebase-crashlytics:18.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\bc5e108f725affae2c4d750e097463ae\jetified-firebase-crashlytics-18.0.0\AndroidManifest.xml:20:17-82
+168            <meta-data
+168-->[com.google.firebase:firebase-auth:21.0.1] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\824b3aab1a57f07cee28f67efff4ac59\jetified-firebase-auth-21.0.1\AndroidManifest.xml:77:13-79:85
+169                android:name="com.google.firebase.components:com.google.firebase.auth.FirebaseAuthRegistrar"
+169-->[com.google.firebase:firebase-auth:21.0.1] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\824b3aab1a57f07cee28f67efff4ac59\jetified-firebase-auth-21.0.1\AndroidManifest.xml:78:17-109
+170                android:value="com.google.firebase.components.ComponentRegistrar" />
+170-->[com.google.firebase:firebase-auth:21.0.1] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\824b3aab1a57f07cee28f67efff4ac59\jetified-firebase-auth-21.0.1\AndroidManifest.xml:79:17-82
+171            <meta-data
+171-->[com.google.firebase:firebase-firestore:23.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\8db0472dc8b8e3b6e2ffc9c79448e741\jetified-firebase-firestore-23.0.0\AndroidManifest.xml:20:13-22:85
+172                android:name="com.google.firebase.components:com.google.firebase.firestore.FirestoreRegistrar"
+172-->[com.google.firebase:firebase-firestore:23.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\8db0472dc8b8e3b6e2ffc9c79448e741\jetified-firebase-firestore-23.0.0\AndroidManifest.xml:21:17-111
+173                android:value="com.google.firebase.components.ComponentRegistrar" />
+173-->[com.google.firebase:firebase-firestore:23.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\8db0472dc8b8e3b6e2ffc9c79448e741\jetified-firebase-firestore-23.0.0\AndroidManifest.xml:22:17-82
+174            <meta-data
+174-->[com.google.firebase:firebase-storage:20.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\11bc28d39025340768e1ab7c59013bb8\jetified-firebase-storage-20.0.0\AndroidManifest.xml:33:13-35:85
+175                android:name="com.google.firebase.components:com.google.firebase.storage.StorageRegistrar"
+175-->[com.google.firebase:firebase-storage:20.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\11bc28d39025340768e1ab7c59013bb8\jetified-firebase-storage-20.0.0\AndroidManifest.xml:34:17-107
+176                android:value="com.google.firebase.components.ComponentRegistrar" />
+176-->[com.google.firebase:firebase-storage:20.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\11bc28d39025340768e1ab7c59013bb8\jetified-firebase-storage-20.0.0\AndroidManifest.xml:35:17-82
+177            <meta-data
+177-->[com.google.firebase:firebase-messaging:22.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\25bb2a955b36819d1897faff1a45de36\jetified-firebase-messaging-22.0.0\AndroidManifest.xml:52:13-54:85
+178                android:name="com.google.firebase.components:com.google.firebase.messaging.FirebaseMessagingRegistrar"
+178-->[com.google.firebase:firebase-messaging:22.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\25bb2a955b36819d1897faff1a45de36\jetified-firebase-messaging-22.0.0\AndroidManifest.xml:53:17-119
+179                android:value="com.google.firebase.components.ComponentRegistrar" />
+179-->[com.google.firebase:firebase-messaging:22.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\25bb2a955b36819d1897faff1a45de36\jetified-firebase-messaging-22.0.0\AndroidManifest.xml:54:17-82
+180            <meta-data
+180-->[com.google.android.gms:play-services-measurement-api:19.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\5421b0440c5286686bd9b52c02a20314\jetified-play-services-measurement-api-19.0.0\AndroidManifest.xml:30:13-32:85
+181                android:name="com.google.firebase.components:com.google.firebase.analytics.connector.internal.AnalyticsConnectorRegistrar"
+181-->[com.google.android.gms:play-services-measurement-api:19.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\5421b0440c5286686bd9b52c02a20314\jetified-play-services-measurement-api-19.0.0\AndroidManifest.xml:31:17-139
+182                android:value="com.google.firebase.components.ComponentRegistrar" />
+182-->[com.google.android.gms:play-services-measurement-api:19.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\5421b0440c5286686bd9b52c02a20314\jetified-play-services-measurement-api-19.0.0\AndroidManifest.xml:32:17-82
+183            <meta-data
+183-->[com.google.firebase:firebase-installations:17.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\9fb0ff0fe967574086bc97b7b133fa92\jetified-firebase-installations-17.0.0\AndroidManifest.xml:18:13-20:85
+184                android:name="com.google.firebase.components:com.google.firebase.installations.FirebaseInstallationsRegistrar"
+184-->[com.google.firebase:firebase-installations:17.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\9fb0ff0fe967574086bc97b7b133fa92\jetified-firebase-installations-17.0.0\AndroidManifest.xml:19:17-127
+185                android:value="com.google.firebase.components.ComponentRegistrar" />
+185-->[com.google.firebase:firebase-installations:17.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\9fb0ff0fe967574086bc97b7b133fa92\jetified-firebase-installations-17.0.0\AndroidManifest.xml:20:17-82
+186            <meta-data
+186-->[com.google.firebase:firebase-datatransport:18.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\47540310d8768052e769592a7a296965\jetified-firebase-datatransport-18.0.0\AndroidManifest.xml:28:13-30:85
+187                android:name="com.google.firebase.components:com.google.firebase.datatransport.TransportRegistrar"
+187-->[com.google.firebase:firebase-datatransport:18.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\47540310d8768052e769592a7a296965\jetified-firebase-datatransport-18.0.0\AndroidManifest.xml:29:17-115
+188                android:value="com.google.firebase.components.ComponentRegistrar" />
+188-->[com.google.firebase:firebase-datatransport:18.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\47540310d8768052e769592a7a296965\jetified-firebase-datatransport-18.0.0\AndroidManifest.xml:30:17-82
+189        </service>
+190
+191        <activity
+191-->[com.google.firebase:firebase-auth:21.0.1] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\824b3aab1a57f07cee28f67efff4ac59\jetified-firebase-auth-21.0.1\AndroidManifest.xml:27:9-44:20
+192            android:name="com.google.firebase.auth.internal.GenericIdpActivity"
+192-->[com.google.firebase:firebase-auth:21.0.1] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\824b3aab1a57f07cee28f67efff4ac59\jetified-firebase-auth-21.0.1\AndroidManifest.xml:28:13-80
+193            android:excludeFromRecents="true"
+193-->[com.google.firebase:firebase-auth:21.0.1] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\824b3aab1a57f07cee28f67efff4ac59\jetified-firebase-auth-21.0.1\AndroidManifest.xml:29:13-46
+194            android:exported="true"
+194-->[com.google.firebase:firebase-auth:21.0.1] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\824b3aab1a57f07cee28f67efff4ac59\jetified-firebase-auth-21.0.1\AndroidManifest.xml:30:13-36
+195            android:launchMode="singleTask"
+195-->[com.google.firebase:firebase-auth:21.0.1] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\824b3aab1a57f07cee28f67efff4ac59\jetified-firebase-auth-21.0.1\AndroidManifest.xml:31:13-44
+196            android:theme="@android:style/Theme.Translucent.NoTitleBar" >
+196-->[com.google.firebase:firebase-auth:21.0.1] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\824b3aab1a57f07cee28f67efff4ac59\jetified-firebase-auth-21.0.1\AndroidManifest.xml:32:13-72
+197            <intent-filter>
+197-->[com.google.firebase:firebase-auth:21.0.1] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\824b3aab1a57f07cee28f67efff4ac59\jetified-firebase-auth-21.0.1\AndroidManifest.xml:33:13-43:29
+198                <action android:name="android.intent.action.VIEW" />
+198-->[com.google.firebase:firebase-auth:21.0.1] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\824b3aab1a57f07cee28f67efff4ac59\jetified-firebase-auth-21.0.1\AndroidManifest.xml:34:17-69
+198-->[com.google.firebase:firebase-auth:21.0.1] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\824b3aab1a57f07cee28f67efff4ac59\jetified-firebase-auth-21.0.1\AndroidManifest.xml:34:25-66
+199
+200                <category android:name="android.intent.category.DEFAULT" />
+200-->[com.google.firebase:firebase-auth:21.0.1] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\824b3aab1a57f07cee28f67efff4ac59\jetified-firebase-auth-21.0.1\AndroidManifest.xml:36:17-76
+200-->[com.google.firebase:firebase-auth:21.0.1] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\824b3aab1a57f07cee28f67efff4ac59\jetified-firebase-auth-21.0.1\AndroidManifest.xml:36:27-73
+201                <category android:name="android.intent.category.BROWSABLE" />
+201-->[com.google.firebase:firebase-auth:21.0.1] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\824b3aab1a57f07cee28f67efff4ac59\jetified-firebase-auth-21.0.1\AndroidManifest.xml:37:17-78
+201-->[com.google.firebase:firebase-auth:21.0.1] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\824b3aab1a57f07cee28f67efff4ac59\jetified-firebase-auth-21.0.1\AndroidManifest.xml:37:27-75
+202
+203                <data
+203-->[com.google.firebase:firebase-auth:21.0.1] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\824b3aab1a57f07cee28f67efff4ac59\jetified-firebase-auth-21.0.1\AndroidManifest.xml:39:17-42:51
+204                    android:host="firebase.auth"
+204-->[com.google.firebase:firebase-auth:21.0.1] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\824b3aab1a57f07cee28f67efff4ac59\jetified-firebase-auth-21.0.1\AndroidManifest.xml:40:21-49
+205                    android:path="/"
+205-->[com.google.firebase:firebase-auth:21.0.1] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\824b3aab1a57f07cee28f67efff4ac59\jetified-firebase-auth-21.0.1\AndroidManifest.xml:41:21-37
+206                    android:scheme="genericidp" />
+206-->[com.google.firebase:firebase-auth:21.0.1] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\824b3aab1a57f07cee28f67efff4ac59\jetified-firebase-auth-21.0.1\AndroidManifest.xml:42:21-48
+207            </intent-filter>
+208        </activity>
+209        <activity
+209-->[com.google.firebase:firebase-auth:21.0.1] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\824b3aab1a57f07cee28f67efff4ac59\jetified-firebase-auth-21.0.1\AndroidManifest.xml:45:9-62:20
+210            android:name="com.google.firebase.auth.internal.RecaptchaActivity"
+210-->[com.google.firebase:firebase-auth:21.0.1] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\824b3aab1a57f07cee28f67efff4ac59\jetified-firebase-auth-21.0.1\AndroidManifest.xml:46:13-79
+211            android:excludeFromRecents="true"
+211-->[com.google.firebase:firebase-auth:21.0.1] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\824b3aab1a57f07cee28f67efff4ac59\jetified-firebase-auth-21.0.1\AndroidManifest.xml:47:13-46
+212            android:exported="true"
+212-->[com.google.firebase:firebase-auth:21.0.1] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\824b3aab1a57f07cee28f67efff4ac59\jetified-firebase-auth-21.0.1\AndroidManifest.xml:48:13-36
+213            android:launchMode="singleTask"
+213-->[com.google.firebase:firebase-auth:21.0.1] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\824b3aab1a57f07cee28f67efff4ac59\jetified-firebase-auth-21.0.1\AndroidManifest.xml:49:13-44
+214            android:theme="@android:style/Theme.Translucent.NoTitleBar" >
+214-->[com.google.firebase:firebase-auth:21.0.1] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\824b3aab1a57f07cee28f67efff4ac59\jetified-firebase-auth-21.0.1\AndroidManifest.xml:50:13-72
+215            <intent-filter>
+215-->[com.google.firebase:firebase-auth:21.0.1] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\824b3aab1a57f07cee28f67efff4ac59\jetified-firebase-auth-21.0.1\AndroidManifest.xml:51:13-61:29
+216                <action android:name="android.intent.action.VIEW" />
+216-->[com.google.firebase:firebase-auth:21.0.1] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\824b3aab1a57f07cee28f67efff4ac59\jetified-firebase-auth-21.0.1\AndroidManifest.xml:34:17-69
+216-->[com.google.firebase:firebase-auth:21.0.1] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\824b3aab1a57f07cee28f67efff4ac59\jetified-firebase-auth-21.0.1\AndroidManifest.xml:34:25-66
+217
+218                <category android:name="android.intent.category.DEFAULT" />
+218-->[com.google.firebase:firebase-auth:21.0.1] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\824b3aab1a57f07cee28f67efff4ac59\jetified-firebase-auth-21.0.1\AndroidManifest.xml:36:17-76
+218-->[com.google.firebase:firebase-auth:21.0.1] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\824b3aab1a57f07cee28f67efff4ac59\jetified-firebase-auth-21.0.1\AndroidManifest.xml:36:27-73
+219                <category android:name="android.intent.category.BROWSABLE" />
+219-->[com.google.firebase:firebase-auth:21.0.1] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\824b3aab1a57f07cee28f67efff4ac59\jetified-firebase-auth-21.0.1\AndroidManifest.xml:37:17-78
+219-->[com.google.firebase:firebase-auth:21.0.1] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\824b3aab1a57f07cee28f67efff4ac59\jetified-firebase-auth-21.0.1\AndroidManifest.xml:37:27-75
+220
+221                <data
+221-->[com.google.firebase:firebase-auth:21.0.1] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\824b3aab1a57f07cee28f67efff4ac59\jetified-firebase-auth-21.0.1\AndroidManifest.xml:39:17-42:51
+222                    android:host="firebase.auth"
+222-->[com.google.firebase:firebase-auth:21.0.1] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\824b3aab1a57f07cee28f67efff4ac59\jetified-firebase-auth-21.0.1\AndroidManifest.xml:40:21-49
+223                    android:path="/"
+223-->[com.google.firebase:firebase-auth:21.0.1] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\824b3aab1a57f07cee28f67efff4ac59\jetified-firebase-auth-21.0.1\AndroidManifest.xml:41:21-37
+224                    android:scheme="recaptcha" />
+224-->[com.google.firebase:firebase-auth:21.0.1] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\824b3aab1a57f07cee28f67efff4ac59\jetified-firebase-auth-21.0.1\AndroidManifest.xml:42:21-48
+225            </intent-filter>
+226        </activity>
+227
+228        <service
+228-->[com.google.firebase:firebase-auth:21.0.1] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\824b3aab1a57f07cee28f67efff4ac59\jetified-firebase-auth-21.0.1\AndroidManifest.xml:64:9-73:19
+229            android:name="com.google.firebase.auth.api.fallback.service.FirebaseAuthFallbackService"
+229-->[com.google.firebase:firebase-auth:21.0.1] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\824b3aab1a57f07cee28f67efff4ac59\jetified-firebase-auth-21.0.1\AndroidManifest.xml:65:13-101
+230            android:enabled="true"
+230-->[com.google.firebase:firebase-auth:21.0.1] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\824b3aab1a57f07cee28f67efff4ac59\jetified-firebase-auth-21.0.1\AndroidManifest.xml:66:13-35
+231            android:exported="false" >
+231-->[com.google.firebase:firebase-auth:21.0.1] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\824b3aab1a57f07cee28f67efff4ac59\jetified-firebase-auth-21.0.1\AndroidManifest.xml:67:13-37
+232            <intent-filter>
+232-->[com.google.firebase:firebase-auth:21.0.1] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\824b3aab1a57f07cee28f67efff4ac59\jetified-firebase-auth-21.0.1\AndroidManifest.xml:68:13-72:29
+233                <action android:name="com.google.firebase.auth.api.gms.service.START" />
+233-->[com.google.firebase:firebase-auth:21.0.1] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\824b3aab1a57f07cee28f67efff4ac59\jetified-firebase-auth-21.0.1\AndroidManifest.xml:69:17-89
+233-->[com.google.firebase:firebase-auth:21.0.1] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\824b3aab1a57f07cee28f67efff4ac59\jetified-firebase-auth-21.0.1\AndroidManifest.xml:69:25-86
+234
+235                <category android:name="android.intent.category.DEFAULT" />
+235-->[com.google.firebase:firebase-auth:21.0.1] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\824b3aab1a57f07cee28f67efff4ac59\jetified-firebase-auth-21.0.1\AndroidManifest.xml:36:17-76
+235-->[com.google.firebase:firebase-auth:21.0.1] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\824b3aab1a57f07cee28f67efff4ac59\jetified-firebase-auth-21.0.1\AndroidManifest.xml:36:27-73
+236            </intent-filter>
+237        </service>
+238
+239        <activity
+239-->[com.google.android.gms:play-services-base:17.1.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\5cc8106824a54f5cbb3948cfbfcb812e\jetified-play-services-base-17.1.0\AndroidManifest.xml:23:9-26:75
+240            android:name="com.google.android.gms.common.api.GoogleApiActivity"
+240-->[com.google.android.gms:play-services-base:17.1.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\5cc8106824a54f5cbb3948cfbfcb812e\jetified-play-services-base-17.1.0\AndroidManifest.xml:24:13-79
+241            android:exported="false"
+241-->[com.google.android.gms:play-services-base:17.1.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\5cc8106824a54f5cbb3948cfbfcb812e\jetified-play-services-base-17.1.0\AndroidManifest.xml:25:13-37
+242            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+242-->[com.google.android.gms:play-services-base:17.1.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\5cc8106824a54f5cbb3948cfbfcb812e\jetified-play-services-base-17.1.0\AndroidManifest.xml:26:13-72
+243
+244        <receiver
+244-->[com.google.firebase:firebase-messaging:22.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\25bb2a955b36819d1897faff1a45de36\jetified-firebase-messaging-22.0.0\AndroidManifest.xml:28:9-35:20
+245            android:name="com.google.firebase.iid.FirebaseInstanceIdReceiver"
+245-->[com.google.firebase:firebase-messaging:22.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\25bb2a955b36819d1897faff1a45de36\jetified-firebase-messaging-22.0.0\AndroidManifest.xml:29:13-78
+246            android:exported="true"
+246-->[com.google.firebase:firebase-messaging:22.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\25bb2a955b36819d1897faff1a45de36\jetified-firebase-messaging-22.0.0\AndroidManifest.xml:30:13-36
+247            android:permission="com.google.android.c2dm.permission.SEND" >
+247-->[com.google.firebase:firebase-messaging:22.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\25bb2a955b36819d1897faff1a45de36\jetified-firebase-messaging-22.0.0\AndroidManifest.xml:31:13-73
+248            <intent-filter>
+248-->[com.google.firebase:firebase-messaging:22.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\25bb2a955b36819d1897faff1a45de36\jetified-firebase-messaging-22.0.0\AndroidManifest.xml:32:13-34:29
+249                <action android:name="com.google.android.c2dm.intent.RECEIVE" />
+249-->[com.google.firebase:firebase-messaging:22.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\25bb2a955b36819d1897faff1a45de36\jetified-firebase-messaging-22.0.0\AndroidManifest.xml:33:17-81
+249-->[com.google.firebase:firebase-messaging:22.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\25bb2a955b36819d1897faff1a45de36\jetified-firebase-messaging-22.0.0\AndroidManifest.xml:33:25-78
+250            </intent-filter>
+251        </receiver>
+252        <!--
+253             FirebaseMessagingService performs security checks at runtime,
+254             but set to not exported to explicitly avoid allowing another app to call it.
+255        -->
+256        <service
+256-->[com.google.firebase:firebase-messaging:22.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\25bb2a955b36819d1897faff1a45de36\jetified-firebase-messaging-22.0.0\AndroidManifest.xml:41:9-48:19
+257            android:name="com.google.firebase.messaging.FirebaseMessagingService"
+257-->[com.google.firebase:firebase-messaging:22.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\25bb2a955b36819d1897faff1a45de36\jetified-firebase-messaging-22.0.0\AndroidManifest.xml:42:13-82
+258            android:directBootAware="true"
+258-->[com.google.firebase:firebase-messaging:22.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\25bb2a955b36819d1897faff1a45de36\jetified-firebase-messaging-22.0.0\AndroidManifest.xml:43:13-43
+259            android:exported="false" >
+259-->[com.google.firebase:firebase-messaging:22.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\25bb2a955b36819d1897faff1a45de36\jetified-firebase-messaging-22.0.0\AndroidManifest.xml:44:13-37
+260            <intent-filter android:priority="-500" >
+260-->[:emgimuservice] C:\Users\vstepanov\Documents\Projects\emg-imu\android\emgimuservice\build\intermediates\merged_manifest\debug\AndroidManifest.xml:41:13-43:29
+261                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+261-->[:emgimuservice] C:\Users\vstepanov\Documents\Projects\emg-imu\android\emgimuservice\build\intermediates\merged_manifest\debug\AndroidManifest.xml:42:17-78
+261-->[:emgimuservice] C:\Users\vstepanov\Documents\Projects\emg-imu\android\emgimuservice\build\intermediates\merged_manifest\debug\AndroidManifest.xml:42:25-75
+262            </intent-filter>
+263        </service>
+264
+265        <provider
+265-->[com.google.firebase:firebase-common:20.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\dcc71886187771cd70e0aa4133968ff4\jetified-firebase-common-20.0.0\AndroidManifest.xml:26:9-31:39
+266            android:name="com.google.firebase.provider.FirebaseInitProvider"
+266-->[com.google.firebase:firebase-common:20.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\dcc71886187771cd70e0aa4133968ff4\jetified-firebase-common-20.0.0\AndroidManifest.xml:27:13-77
+267            android:authorities="org.sralab.emgimu.firebaseinitprovider"
+267-->[com.google.firebase:firebase-common:20.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\dcc71886187771cd70e0aa4133968ff4\jetified-firebase-common-20.0.0\AndroidManifest.xml:28:13-72
+268            android:directBootAware="true"
+268-->[com.google.firebase:firebase-common:20.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\dcc71886187771cd70e0aa4133968ff4\jetified-firebase-common-20.0.0\AndroidManifest.xml:29:13-43
+269            android:exported="false"
+269-->[com.google.firebase:firebase-common:20.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\dcc71886187771cd70e0aa4133968ff4\jetified-firebase-common-20.0.0\AndroidManifest.xml:30:13-37
+270            android:initOrder="100" />
+270-->[com.google.firebase:firebase-common:20.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\dcc71886187771cd70e0aa4133968ff4\jetified-firebase-common-20.0.0\AndroidManifest.xml:31:13-36
+271
+272        <receiver
+272-->[com.google.android.gms:play-services-measurement:19.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\2b9ffe6bea7459f6f4b988cd409db7a0\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:29:9-33:20
+273            android:name="com.google.android.gms.measurement.AppMeasurementReceiver"
+273-->[com.google.android.gms:play-services-measurement:19.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\2b9ffe6bea7459f6f4b988cd409db7a0\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:30:13-85
+274            android:enabled="true"
+274-->[com.google.android.gms:play-services-measurement:19.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\2b9ffe6bea7459f6f4b988cd409db7a0\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:31:13-35
+275            android:exported="false" >
+275-->[com.google.android.gms:play-services-measurement:19.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\2b9ffe6bea7459f6f4b988cd409db7a0\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:32:13-37
+276        </receiver>
+277
+278        <service
+278-->[com.google.android.gms:play-services-measurement:19.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\2b9ffe6bea7459f6f4b988cd409db7a0\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:35:9-38:40
+279            android:name="com.google.android.gms.measurement.AppMeasurementService"
+279-->[com.google.android.gms:play-services-measurement:19.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\2b9ffe6bea7459f6f4b988cd409db7a0\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:36:13-84
+280            android:enabled="true"
+280-->[com.google.android.gms:play-services-measurement:19.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\2b9ffe6bea7459f6f4b988cd409db7a0\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:37:13-35
+281            android:exported="false" />
+281-->[com.google.android.gms:play-services-measurement:19.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\2b9ffe6bea7459f6f4b988cd409db7a0\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:38:13-37
+282        <service
+282-->[com.google.android.gms:play-services-measurement:19.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\2b9ffe6bea7459f6f4b988cd409db7a0\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:39:9-43:72
+283            android:name="com.google.android.gms.measurement.AppMeasurementJobService"
+283-->[com.google.android.gms:play-services-measurement:19.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\2b9ffe6bea7459f6f4b988cd409db7a0\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:40:13-87
+284            android:enabled="true"
+284-->[com.google.android.gms:play-services-measurement:19.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\2b9ffe6bea7459f6f4b988cd409db7a0\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:41:13-35
+285            android:exported="false"
+285-->[com.google.android.gms:play-services-measurement:19.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\2b9ffe6bea7459f6f4b988cd409db7a0\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:42:13-37
+286            android:permission="android.permission.BIND_JOB_SERVICE" />
+286-->[com.google.android.gms:play-services-measurement:19.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\2b9ffe6bea7459f6f4b988cd409db7a0\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:43:13-69
+287
+288        <meta-data
+288-->[com.google.android.gms:play-services-basement:17.1.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\6d0f4622e3be951a2c6071dd54c8c36e\jetified-play-services-basement-17.1.0\AndroidManifest.xml:23:9-25:69
+289            android:name="com.google.android.gms.version"
+289-->[com.google.android.gms:play-services-basement:17.1.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\6d0f4622e3be951a2c6071dd54c8c36e\jetified-play-services-basement-17.1.0\AndroidManifest.xml:24:13-58
+290            android:value="@integer/google_play_services_version" />
+290-->[com.google.android.gms:play-services-basement:17.1.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\6d0f4622e3be951a2c6071dd54c8c36e\jetified-play-services-basement-17.1.0\AndroidManifest.xml:25:13-66
+291
+292        <provider
+292-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:31:9-37:35
+293            android:name="androidx.work.impl.WorkManagerInitializer"
+293-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:32:13-69
+294            android:authorities="org.sralab.emgimu.workmanager-init"
+294-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:33:13-68
+295            android:directBootAware="false"
+295-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:34:13-44
+296            android:exported="false"
+296-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:35:13-37
+297            android:multiprocess="true" />
+297-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:36:13-40
+298
+299        <service
+299-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:39:9-44:35
+300            android:name="androidx.work.impl.background.systemalarm.SystemAlarmService"
+300-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:40:13-88
+301            android:directBootAware="false"
+301-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:41:13-44
+302            android:enabled="@bool/enable_system_alarm_service_default"
+302-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:42:13-72
+303            android:exported="false" />
+303-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:43:13-37
+304        <service
+304-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:45:9-51:35
+305            android:name="androidx.work.impl.background.systemjob.SystemJobService"
+305-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:46:13-84
+306            android:directBootAware="false"
+306-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:47:13-44
+307            android:enabled="@bool/enable_system_job_service_default"
+307-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:48:13-70
+308            android:exported="true"
+308-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:49:13-36
+309            android:permission="android.permission.BIND_JOB_SERVICE" />
+309-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:50:13-69
+310        <service
+310-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:52:9-57:35
+311            android:name="androidx.work.impl.foreground.SystemForegroundService"
+311-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:53:13-81
+312            android:directBootAware="false"
+312-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:54:13-44
+313            android:enabled="@bool/enable_system_foreground_service_default"
+313-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:55:13-77
+314            android:exported="false" />
+314-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:56:13-37
+315
+316        <receiver
+316-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:59:9-64:35
+317            android:name="androidx.work.impl.utils.ForceStopRunnable$BroadcastReceiver"
+317-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:60:13-88
+318            android:directBootAware="false"
+318-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:61:13-44
+319            android:enabled="true"
+319-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:62:13-35
+320            android:exported="false" />
+320-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:63:13-37
+321        <receiver
+321-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:65:9-75:20
+322            android:name="androidx.work.impl.background.systemalarm.ConstraintProxy$BatteryChargingProxy"
+322-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:66:13-106
+323            android:directBootAware="false"
+323-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:67:13-44
+324            android:enabled="false"
+324-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:68:13-36
+325            android:exported="false" >
+325-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:69:13-37
+326            <intent-filter>
+326-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:71:13-74:29
+327                <action android:name="android.intent.action.ACTION_POWER_CONNECTED" />
+327-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:72:17-87
+327-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:72:25-84
+328                <action android:name="android.intent.action.ACTION_POWER_DISCONNECTED" />
+328-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:73:17-90
+328-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:73:25-87
+329            </intent-filter>
+330        </receiver>
+331        <receiver
+331-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:76:9-86:20
+332            android:name="androidx.work.impl.background.systemalarm.ConstraintProxy$BatteryNotLowProxy"
+332-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:77:13-104
+333            android:directBootAware="false"
+333-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:78:13-44
+334            android:enabled="false"
+334-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:79:13-36
+335            android:exported="false" >
+335-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:80:13-37
+336            <intent-filter>
+336-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:82:13-85:29
+337                <action android:name="android.intent.action.BATTERY_OKAY" />
+337-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:83:17-77
+337-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:83:25-74
+338                <action android:name="android.intent.action.BATTERY_LOW" />
+338-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:84:17-76
+338-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:84:25-73
+339            </intent-filter>
+340        </receiver>
+341        <receiver
+341-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:87:9-97:20
+342            android:name="androidx.work.impl.background.systemalarm.ConstraintProxy$StorageNotLowProxy"
+342-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:88:13-104
+343            android:directBootAware="false"
+343-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:89:13-44
+344            android:enabled="false"
+344-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:90:13-36
+345            android:exported="false" >
+345-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:91:13-37
+346            <intent-filter>
+346-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:93:13-96:29
+347                <action android:name="android.intent.action.DEVICE_STORAGE_LOW" />
+347-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:94:17-83
+347-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:94:25-80
+348                <action android:name="android.intent.action.DEVICE_STORAGE_OK" />
+348-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:95:17-82
+348-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:95:25-79
+349            </intent-filter>
+350        </receiver>
+351        <receiver
+351-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:98:9-107:20
+352            android:name="androidx.work.impl.background.systemalarm.ConstraintProxy$NetworkStateProxy"
+352-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:99:13-103
+353            android:directBootAware="false"
+353-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:100:13-44
+354            android:enabled="false"
+354-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:101:13-36
+355            android:exported="false" >
+355-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:102:13-37
+356            <intent-filter>
+356-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:104:13-106:29
+357                <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
+357-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:105:17-79
+357-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:105:25-76
+358            </intent-filter>
+359        </receiver>
+360        <receiver
+360-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:108:9-119:20
+361            android:name="androidx.work.impl.background.systemalarm.RescheduleReceiver"
+361-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:109:13-88
+362            android:directBootAware="false"
+362-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:110:13-44
+363            android:enabled="false"
+363-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:111:13-36
+364            android:exported="false" >
+364-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:112:13-37
+365            <intent-filter>
+365-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:114:13-118:29
+366                <action android:name="android.intent.action.BOOT_COMPLETED" />
+366-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:115:17-79
+366-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:115:25-76
+367                <action android:name="android.intent.action.TIME_SET" />
+367-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:116:17-73
+367-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:116:25-70
+368                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+368-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:117:17-81
+368-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:117:25-78
+369            </intent-filter>
+370        </receiver>
+371        <receiver
+371-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:120:9-129:20
+372            android:name="androidx.work.impl.background.systemalarm.ConstraintProxyUpdateReceiver"
+372-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:121:13-99
+373            android:directBootAware="false"
+373-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:122:13-44
+374            android:enabled="@bool/enable_system_alarm_service_default"
+374-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:123:13-72
+375            android:exported="false" >
+375-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:124:13-37
+376            <intent-filter>
+376-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:126:13-128:29
+377                <action android:name="androidx.work.impl.background.systemalarm.UpdateProxies" />
+377-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:127:17-98
+377-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:127:25-95
+378            </intent-filter>
+379        </receiver>
+380        <receiver
+380-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:130:9-140:20
+381            android:name="androidx.work.impl.diagnostics.DiagnosticsReceiver"
+381-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:131:13-78
+382            android:directBootAware="false"
+382-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:132:13-44
+383            android:enabled="true"
+383-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:133:13-35
+384            android:exported="true"
+384-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:134:13-36
+385            android:permission="android.permission.DUMP" >
+385-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:135:13-57
+386            <intent-filter>
+386-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:137:13-139:29
+387                <action android:name="androidx.work.diagnostics.REQUEST_DIAGNOSTICS" />
+387-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:138:17-88
+387-->[androidx.work:work-runtime:2.4.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\06b998bd5648c1f80df1fdd9e2c7db15\work-runtime-2.4.0\AndroidManifest.xml:138:25-85
+388            </intent-filter>
+389        </receiver>
+390
+391        <service
+391-->[com.google.android.datatransport:transport-backend-cct:3.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\f016288a8cc65c5c850dcda870029216\jetified-transport-backend-cct-3.0.0\AndroidManifest.xml:29:9-35:19
+392            android:name="com.google.android.datatransport.runtime.backends.TransportBackendDiscovery"
+392-->[com.google.android.datatransport:transport-backend-cct:3.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\f016288a8cc65c5c850dcda870029216\jetified-transport-backend-cct-3.0.0\AndroidManifest.xml:30:13-103
+393            android:exported="false" >
+393-->[com.google.android.datatransport:transport-backend-cct:3.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\f016288a8cc65c5c850dcda870029216\jetified-transport-backend-cct-3.0.0\AndroidManifest.xml:31:13-37
+394            <meta-data
+394-->[com.google.android.datatransport:transport-backend-cct:3.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\f016288a8cc65c5c850dcda870029216\jetified-transport-backend-cct-3.0.0\AndroidManifest.xml:32:13-34:39
+395                android:name="backend:com.google.android.datatransport.cct.CctBackendFactory"
+395-->[com.google.android.datatransport:transport-backend-cct:3.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\f016288a8cc65c5c850dcda870029216\jetified-transport-backend-cct-3.0.0\AndroidManifest.xml:33:17-94
+396                android:value="cct" />
+396-->[com.google.android.datatransport:transport-backend-cct:3.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\f016288a8cc65c5c850dcda870029216\jetified-transport-backend-cct-3.0.0\AndroidManifest.xml:34:17-36
+397        </service>
+398        <service
+398-->[com.google.android.datatransport:transport-runtime:3.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\15bf5df14801d7e1ee05f1e0d71d61ea\jetified-transport-runtime-3.0.0\AndroidManifest.xml:26:9-30:19
+399            android:name="com.google.android.datatransport.runtime.scheduling.jobscheduling.JobInfoSchedulerService"
+399-->[com.google.android.datatransport:transport-runtime:3.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\15bf5df14801d7e1ee05f1e0d71d61ea\jetified-transport-runtime-3.0.0\AndroidManifest.xml:27:13-117
+400            android:exported="false"
+400-->[com.google.android.datatransport:transport-runtime:3.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\15bf5df14801d7e1ee05f1e0d71d61ea\jetified-transport-runtime-3.0.0\AndroidManifest.xml:28:13-37
+401            android:permission="android.permission.BIND_JOB_SERVICE" >
+401-->[com.google.android.datatransport:transport-runtime:3.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\15bf5df14801d7e1ee05f1e0d71d61ea\jetified-transport-runtime-3.0.0\AndroidManifest.xml:29:13-69
+402        </service>
+403
+404        <receiver
+404-->[com.google.android.datatransport:transport-runtime:3.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\15bf5df14801d7e1ee05f1e0d71d61ea\jetified-transport-runtime-3.0.0\AndroidManifest.xml:32:9-34:40
+405            android:name="com.google.android.datatransport.runtime.scheduling.jobscheduling.AlarmManagerSchedulerBroadcastReceiver"
+405-->[com.google.android.datatransport:transport-runtime:3.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\15bf5df14801d7e1ee05f1e0d71d61ea\jetified-transport-runtime-3.0.0\AndroidManifest.xml:33:13-132
+406            android:exported="false" />
+406-->[com.google.android.datatransport:transport-runtime:3.0.0] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\15bf5df14801d7e1ee05f1e0d71d61ea\jetified-transport-runtime-3.0.0\AndroidManifest.xml:34:13-37
+407
+408        <service
+408-->[androidx.room:room-runtime:2.2.5] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\217d972fadd0697962decaa5e1e65240\room-runtime-2.2.5\AndroidManifest.xml:25:9-28:40
+409            android:name="androidx.room.MultiInstanceInvalidationService"
+409-->[androidx.room:room-runtime:2.2.5] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\217d972fadd0697962decaa5e1e65240\room-runtime-2.2.5\AndroidManifest.xml:26:13-74
+410            android:directBootAware="true"
+410-->[androidx.room:room-runtime:2.2.5] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\217d972fadd0697962decaa5e1e65240\room-runtime-2.2.5\AndroidManifest.xml:27:13-43
+411            android:exported="false" />
+411-->[androidx.room:room-runtime:2.2.5] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\217d972fadd0697962decaa5e1e65240\room-runtime-2.2.5\AndroidManifest.xml:28:13-37
+412        <!--
+413		Service used to scan in background to emulate scanning with
+414		PendingIntent on Android 4.3 - 7.x. Service will scan in background with given
+415		settings and filters.
+416        -->
+417        <service
+417-->[no.nordicsemi.android.support.v18:scanner:1.4.3] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\49e15888930ffcfeac5494b4ec6d3bca\jetified-scanner-1.4.3\AndroidManifest.xml:31:9-33:40
+418            android:name="no.nordicsemi.android.support.v18.scanner.ScannerService"
+418-->[no.nordicsemi.android.support.v18:scanner:1.4.3] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\49e15888930ffcfeac5494b4ec6d3bca\jetified-scanner-1.4.3\AndroidManifest.xml:32:13-84
+419            android:exported="false" />
+419-->[no.nordicsemi.android.support.v18:scanner:1.4.3] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\49e15888930ffcfeac5494b4ec6d3bca\jetified-scanner-1.4.3\AndroidManifest.xml:33:13-37
+420        <!--
+421		The receiver used to scan with PendingIntent on Android 8+.
+422		It will translate results from android.bluetooth.le package to
+423		no.nordicsemi.android.support.v18, apply filters or perform batching,
+424		depending on the settings.
+425        -->
+426        <receiver
+426-->[no.nordicsemi.android.support.v18:scanner:1.4.3] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\49e15888930ffcfeac5494b4ec6d3bca\jetified-scanner-1.4.3\AndroidManifest.xml:41:9-48:20
+427            android:name="no.nordicsemi.android.support.v18.scanner.PendingIntentReceiver"
+427-->[no.nordicsemi.android.support.v18:scanner:1.4.3] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\49e15888930ffcfeac5494b4ec6d3bca\jetified-scanner-1.4.3\AndroidManifest.xml:42:13-91
+428            android:exported="true" >
+428-->[no.nordicsemi.android.support.v18:scanner:1.4.3] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\49e15888930ffcfeac5494b4ec6d3bca\jetified-scanner-1.4.3\AndroidManifest.xml:43:13-36
+429            <intent-filter>
+429-->[no.nordicsemi.android.support.v18:scanner:1.4.3] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\49e15888930ffcfeac5494b4ec6d3bca\jetified-scanner-1.4.3\AndroidManifest.xml:45:13-47:29
+430                <action android:name="no.nordicsemi.android.support.v18.ACTION_FOUND" />
+430-->[no.nordicsemi.android.support.v18:scanner:1.4.3] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\49e15888930ffcfeac5494b4ec6d3bca\jetified-scanner-1.4.3\AndroidManifest.xml:46:17-89
+430-->[no.nordicsemi.android.support.v18:scanner:1.4.3] C:\Users\vstepanov\.gradle\caches\transforms-2\files-2.1\49e15888930ffcfeac5494b4ec6d3bca\jetified-scanner-1.4.3\AndroidManifest.xml:46:25-86
+431            </intent-filter>
+432        </receiver>
+433    </application>
+434
+435</manifest>

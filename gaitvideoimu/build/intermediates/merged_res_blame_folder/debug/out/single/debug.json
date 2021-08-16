@@ -1,0 +1,62 @@
+[
+    {
+        "merged": "C:\\Users\\vstepanov\\Documents\\Projects\\emg-imu\\android\\gaitvideoimu\\build\\intermediates\\merged_res\\debug\\mipmap-mdpi_ic_gaitimu_launcher.png.flat",
+        "source": "C:\\Users\\vstepanov\\Documents\\Projects\\emg-imu\\android\\gaitvideoimu\\src\\main\\res\\mipmap-mdpi\\ic_gaitimu_launcher.png"
+    },
+    {
+        "merged": "C:\\Users\\vstepanov\\Documents\\Projects\\emg-imu\\android\\gaitvideoimu\\build\\intermediates\\merged_res\\debug\\mipmap-xhdpi_ic_gaitimu_launcher.png.flat",
+        "source": "C:\\Users\\vstepanov\\Documents\\Projects\\emg-imu\\android\\gaitvideoimu\\src\\main\\res\\mipmap-xhdpi\\ic_gaitimu_launcher.png"
+    },
+    {
+        "merged": "C:\\Users\\vstepanov\\Documents\\Projects\\emg-imu\\android\\gaitvideoimu\\build\\intermediates\\merged_res\\debug\\mipmap-hdpi_ic_gaitimu_launcher.png.flat",
+        "source": "C:\\Users\\vstepanov\\Documents\\Projects\\emg-imu\\android\\gaitvideoimu\\src\\main\\res\\mipmap-hdpi\\ic_gaitimu_launcher.png"
+    },
+    {
+        "merged": "C:\\Users\\vstepanov\\Documents\\Projects\\emg-imu\\android\\gaitvideoimu\\build\\intermediates\\merged_res\\debug\\layout_streaming_item.xml.flat",
+        "source": "C:\\Users\\vstepanov\\Documents\\Projects\\emg-imu\\android\\gaitvideoimu\\src\\main\\res\\layout\\streaming_item.xml"
+    },
+    {
+        "merged": "C:\\Users\\vstepanov\\Documents\\Projects\\emg-imu\\android\\gaitvideoimu\\build\\intermediates\\merged_res\\debug\\mipmap-hdpi_ic_gaitimu_launcher_round.png.flat",
+        "source": "C:\\Users\\vstepanov\\Documents\\Projects\\emg-imu\\android\\gaitvideoimu\\src\\main\\res\\mipmap-hdpi\\ic_gaitimu_launcher_round.png"
+    },
+    {
+        "merged": "C:\\Users\\vstepanov\\Documents\\Projects\\emg-imu\\android\\gaitvideoimu\\build\\intermediates\\merged_res\\debug\\mipmap-anydpi-v26_ic_gaitimu_launcher.xml.flat",
+        "source": "C:\\Users\\vstepanov\\Documents\\Projects\\emg-imu\\android\\gaitvideoimu\\src\\main\\res\\mipmap-anydpi-v26\\ic_gaitimu_launcher.xml"
+    },
+    {
+        "merged": "C:\\Users\\vstepanov\\Documents\\Projects\\emg-imu\\android\\gaitvideoimu\\build\\intermediates\\merged_res\\debug\\mipmap-xxhdpi_ic_gaitimu_launcher.png.flat",
+        "source": "C:\\Users\\vstepanov\\Documents\\Projects\\emg-imu\\android\\gaitvideoimu\\src\\main\\res\\mipmap-xxhdpi\\ic_gaitimu_launcher.png"
+    },
+    {
+        "merged": "C:\\Users\\vstepanov\\Documents\\Projects\\emg-imu\\android\\gaitvideoimu\\build\\intermediates\\merged_res\\debug\\mipmap-mdpi_ic_gaitimu_launcher_round.png.flat",
+        "source": "C:\\Users\\vstepanov\\Documents\\Projects\\emg-imu\\android\\gaitvideoimu\\src\\main\\res\\mipmap-mdpi\\ic_gaitimu_launcher_round.png"
+    },
+    {
+        "merged": "C:\\Users\\vstepanov\\Documents\\Projects\\emg-imu\\android\\gaitvideoimu\\build\\intermediates\\merged_res\\debug\\mipmap-xxhdpi_ic_gaitimu_launcher_round.png.flat",
+        "source": "C:\\Users\\vstepanov\\Documents\\Projects\\emg-imu\\android\\gaitvideoimu\\src\\main\\res\\mipmap-xxhdpi\\ic_gaitimu_launcher_round.png"
+    },
+    {
+        "merged": "C:\\Users\\vstepanov\\Documents\\Projects\\emg-imu\\android\\gaitvideoimu\\build\\intermediates\\merged_res\\debug\\mipmap-anydpi-v26_ic_gaitimu_launcher_round.xml.flat",
+        "source": "C:\\Users\\vstepanov\\Documents\\Projects\\emg-imu\\android\\gaitvideoimu\\src\\main\\res\\mipmap-anydpi-v26\\ic_gaitimu_launcher_round.xml"
+    },
+    {
+        "merged": "C:\\Users\\vstepanov\\Documents\\Projects\\emg-imu\\android\\gaitvideoimu\\build\\intermediates\\merged_res\\debug\\drawable_ic_gait_launcher_foreground.xml.flat",
+        "source": "C:\\Users\\vstepanov\\Documents\\Projects\\emg-imu\\android\\gaitvideoimu\\src\\main\\res\\drawable\\ic_gait_launcher_foreground.xml"
+    },
+    {
+        "merged": "C:\\Users\\vstepanov\\Documents\\Projects\\emg-imu\\android\\gaitvideoimu\\build\\intermediates\\merged_res\\debug\\mipmap-xxxhdpi_ic_gaitimu_launcher.png.flat",
+        "source": "C:\\Users\\vstepanov\\Documents\\Projects\\emg-imu\\android\\gaitvideoimu\\src\\main\\res\\mipmap-xxxhdpi\\ic_gaitimu_launcher.png"
+    },
+    {
+        "merged": "C:\\Users\\vstepanov\\Documents\\Projects\\emg-imu\\android\\gaitvideoimu\\build\\intermediates\\merged_res\\debug\\layout_activity_gait_video_imu.xml.flat",
+        "source": "C:\\Users\\vstepanov\\Documents\\Projects\\emg-imu\\android\\gaitvideoimu\\src\\main\\res\\layout\\activity_gait_video_imu.xml"
+    },
+    {
+        "merged": "C:\\Users\\vstepanov\\Documents\\Projects\\emg-imu\\android\\gaitvideoimu\\build\\intermediates\\merged_res\\debug\\mipmap-xxxhdpi_ic_gaitimu_launcher_round.png.flat",
+        "source": "C:\\Users\\vstepanov\\Documents\\Projects\\emg-imu\\android\\gaitvideoimu\\src\\main\\res\\mipmap-xxxhdpi\\ic_gaitimu_launcher_round.png"
+    },
+    {
+        "merged": "C:\\Users\\vstepanov\\Documents\\Projects\\emg-imu\\android\\gaitvideoimu\\build\\intermediates\\merged_res\\debug\\mipmap-xhdpi_ic_gaitimu_launcher_round.png.flat",
+        "source": "C:\\Users\\vstepanov\\Documents\\Projects\\emg-imu\\android\\gaitvideoimu\\src\\main\\res\\mipmap-xhdpi\\ic_gaitimu_launcher_round.png"
+    }
+]

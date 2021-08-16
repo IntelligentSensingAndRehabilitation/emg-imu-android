@@ -1,0 +1,71 @@
+-- Merging decision tree log ---
+manifest
+ADDED from C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml:2:1-38:12
+INJECTED from C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml:2:1-38:12
+INJECTED from C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml:2:1-38:12
+	package
+		ADDED from C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml:5:5-42
+		INJECTED from C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml
+		INJECTED from C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml
+	android:sharedUserId
+		ADDED from C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml:3:5-45
+	xmlns:android
+		ADDED from C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml:2:11-69
+	android:installLocation
+		ADDED from C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml:4:5-35
+uses-permission#android.permission.BLUETOOTH
+ADDED from C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml:7:5-68
+	android:name
+		ADDED from C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml:7:22-65
+uses-permission#android.permission.BLUETOOTH_ADMIN
+ADDED from C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml:8:5-74
+	android:name
+		ADDED from C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml:8:22-71
+application
+ADDED from C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml:10:5-37:19
+activity#org.sralab.emgimu.streaming.StreamingActivity
+ADDED from C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml:13:9-23:20
+	android:label
+		ADDED from C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml:16:13-52
+	android:launchMode
+		ADDED from C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml:17:13-44
+	android:icon
+		ADDED from C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml:15:13-50
+	android:name
+		ADDED from C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml:14:13-73
+intent-filter#action:name:android.intent.action.MAIN+category:name:org.sralab.emgimu.LAUNCHER
+ADDED from C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml:18:13-22:29
+action#android.intent.action.MAIN
+ADDED from C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml:19:17-69
+	android:name
+		ADDED from C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml:19:25-66
+category#org.sralab.emgimu.LAUNCHER
+ADDED from C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml:21:17-71
+	android:name
+		ADDED from C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml:21:27-68
+activity#org.sralab.emgimu.imu_streaming.ImuStreamingActivity
+ADDED from C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml:25:9-32:20
+	android:label
+		ADDED from C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml:27:13-42
+	android:name
+		ADDED from C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml:26:13-80
+meta-data#io.fabric.ApiKey
+ADDED from C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml:34:9-36:72
+	android:value
+		ADDED from C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml:36:13-69
+	android:name
+		ADDED from C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml:35:13-44
+uses-sdk
+INJECTED from C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml reason: use-sdk injection requested
+INJECTED from C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml
+INJECTED from C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml
+INJECTED from C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml
+INJECTED from C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml
+	android:targetSdkVersion
+		INJECTED from C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml
+		ADDED from C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml
+		INJECTED from C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml
+	android:minSdkVersion
+		INJECTED from C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml
+		ADDED from C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml
+		INJECTED from C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml

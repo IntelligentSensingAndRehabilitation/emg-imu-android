@@ -1,0 +1,28 @@
+R_DEF: Internal format may change without notice
+local
+dimen fab_margin
+drawable layout_border
+id calibration_image
+id calibration_status
+id calibration_status_title
+id finish_calibration_button
+id imu_calibration_list
+id sensor_id
+id start_calibration_button
+id start_streaming_button
+id stop_streaming_button
+id toolbar_actionbar
+layout activity_imu_calibration
+layout view_calibration
+string current_calibration
+string default_web_client_id
+string firebase_database_url
+string gcm_defaultSenderId
+string google_api_key
+string google_app_id
+string google_crash_reporting_api_key
+string google_storage_bucket
+string project_id
+string start_calibration
+string title_activity_imu_calibration
+string title_imu_calibration

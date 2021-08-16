@@ -1,0 +1,2 @@
+org/sralab/emgimu/BuildConfig.java
+ org.sralab.emgimu.BuildConfig

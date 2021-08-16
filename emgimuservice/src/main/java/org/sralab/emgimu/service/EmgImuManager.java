@@ -21,6 +21,8 @@
  */
 package org.sralab.emgimu.service;
 
+import static java.lang.Math.abs;
+
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
@@ -69,17 +71,13 @@ import java.util.UUID;
 import no.nordicsemi.android.ble.BleManager;
 import no.nordicsemi.android.ble.ConnectionPriorityRequest;
 import no.nordicsemi.android.ble.PhyRequest;
-import no.nordicsemi.android.ble.callback.FailCallback;
-import no.nordicsemi.android.ble.callback.SuccessCallback;
 import no.nordicsemi.android.ble.data.Data;
 import no.nordicsemi.android.ble.data.MutableData;
 
-import static java.lang.Math.abs;
-
 public class EmgImuManager extends BleManager {
-	private final String TAG = "EmgImuManager";
+    private final String TAG = "EmgImuManager";
 
-	/** Device Information UUID **/
+    /** Device Information UUID **/
     private final static UUID DEVICE_INFORMATION_SERVICE = UUID.fromString("0000180A-0000-1000-8000-00805f9b34fb");
     private final static UUID MANUFACTURER_NAME_CHARACTERISTIC = UUID.fromString("00002A29-0000-1000-8000-00805f9b34fb");
     private final static UUID SERIAL_NUMBER_CHARACTERISTIC = UUID.fromString("00002A25-0000-1000-8000-00805f9b34fb");
@@ -94,10 +92,22 @@ public class EmgImuManager extends BleManager {
     private BluetoothGattCharacteristic mBatteryCharacteristic;
 
     /** EMG Service UUID **/
-	public final static UUID EMG_SERVICE_UUID = UUID.fromString("00001234-1212-EFDE-1523-785FEF13D123");
+/*	public final static UUID EMG_SERVICE_UUID = UUID.fromString("00001234-1212-EFDE-1523-785FEF13D123");
     public final static UUID EMG_RAW_CHAR_UUID = UUID.fromString("00001235-1212-EFDE-1523-785FEF13D123");
     public final static UUID EMG_BUFF_CHAR_UUID = UUID.fromString("00001236-1212-EFDE-1523-785FEF13D123");
-    public final static UUID EMG_PWR_CHAR_UUID = UUID.fromString("00001237-1212-EFDE-1523-785FEF13D123");
+<<<<<<< HEAD
+    public final static UUID EMG_PWR_CHAR_UUID = UUID.fromString("00001237-1212-EFDE-1523-785FEF13D123");*/
+
+    /** Dynamometer UUID **/
+    /** Copy of EMG Service UUID **/
+    public final static UUID EMG_SERVICE_UUID = UUID.fromString("6E400001-B5A3-F393-E0A9-E50E24DCCA9E");
+    public final static UUID EMG_RAW_CHAR_UUID = UUID.fromString("6E400003-B5A3-F393-E0A9-E50E24DCCA9E");
+    public final static UUID EMG_BUFF_CHAR_UUID = UUID.fromString("6E400002-B5A3-F393-E0A9-E50E24DCCA9E");
+    //public final static UUID EMG_PWR_CHAR_UUID = UUID.fromString("6E400004-B5A3-F393-E0A9-E50E24DCCA9E");
+//=======
+    public final static UUID EMG_PWR_CHAR_UUID = UUID.fromString("6E400003-B5A3-F393-E0A9-E50E24DCCA9E"); // #1: revised UUID to pyboard device
+    //public final static UUID EMG_PWR_CHAR_UUID = UUID.fromString("00001237-1212-EFDE-1523-785FEF13D123"); // previous
+//>>>>>>> master
 
     /** IMU Service UUID **/
     public final static UUID IMU_SERVICE_UUID = UUID.fromString("00002234-1212-EFDE-1523-785FEF13D123");
@@ -181,22 +191,22 @@ public class EmgImuManager extends BleManager {
     private int mChannels;
 
     public EmgImuManager(final Context context) {
-		super(context);
+        super(context);
         mSynced = false;
         mFetchRecords = false;
 
         log(Log.INFO, "EmgImuManager created");
-	}
+    }
 
     @NonNull
-	@Override
-	protected BleManagerGattCallback getGattCallback()
+    @Override
+    protected BleManagerGattCallback getGattCallback()
     {
-		return new EmgImuManagerGattCallback();
-	}
+        return new EmgImuManagerGattCallback();
+    }
 
     public void close() {
-	    super.close();
+        super.close();
 
         if (mLogging && streamLogger != null) {
             Log.d(TAG, "Closing stream logger: " + getAddress());
@@ -205,10 +215,10 @@ public class EmgImuManager extends BleManager {
         }
     }
 
-	/**
-	 * BluetoothGatt callbacks for connection/disconnection, service discovery, receiving indication, etc
-	 */
-	private class EmgImuManagerGattCallback extends BleManagerGattCallback {
+    /**
+     * BluetoothGatt callbacks for connection/disconnection, service discovery, receiving indication, etc
+     */
+    private class EmgImuManagerGattCallback extends BleManagerGattCallback {
 
         @Override
         protected void initialize() {
@@ -218,24 +228,24 @@ public class EmgImuManager extends BleManager {
 
             beginAtomicRequestQueue()
                     .add(readCharacteristic(mHardwareCharacteristic)
-                        .with((device, data) -> {
-                            mHardwareRevision = data.getStringValue(0);
-                            log(Log.INFO, "Hardware revision: " + mHardwareRevision);
-                            if (mHardwareRevision.equals("v0.3")) {
-                                mChannels = 8;
-                                log(Log.INFO, "Setting channels to 8");
-                            } else if (mHardwareRevision.equals("v0.7")) {
-                                mChannels = 2;
-                                log(Log.INFO, "Setting channels to 2");
-                            } else
-                                mChannels = 1;
-                        }))
+                            .with((device, data) -> {
+                                mHardwareRevision = data.getStringValue(0);
+                                log(Log.INFO, "Hardware revision: " + mHardwareRevision);
+                                if (mHardwareRevision.equals("v0.3")) {
+                                    mChannels = 8;
+                                    log(Log.INFO, "Setting channels to 8");
+                                } else if (mHardwareRevision.equals("v0.7")) {
+                                    mChannels = 2;
+                                    log(Log.INFO, "Setting channels to 2");
+                                } else
+                                    mChannels = 1;
+                            }))
                     .add(readCharacteristic(mManufacturerCharacteristic)
-                        .with((device, data) -> mManufacturer = data.getStringValue(0))
-                        .fail((device, status) -> Log.d(TAG, "Could not read manufacturer (" + status + ")")))
+                            .with((device, data) -> mManufacturer = data.getStringValue(0))
+                            .fail((device, status) -> Log.d(TAG, "Could not read manufacturer (" + status + ")")))
                     .add(readCharacteristic(mFirmwareCharacteristic)
-                        .with((device, data) -> mFirmwareRevision = data.getStringValue(0))
-                        .fail((device, status) -> log(Log.WARN, "Unable to read firmware version: " + status)))
+                            .with((device, data) -> mFirmwareRevision = data.getStringValue(0))
+                            .fail((device, status) -> log(Log.WARN, "Unable to read firmware version: " + status)))
                     /*.add(readCharacteristic(mSerialNumberCharacteristic)
                         .with((device, data) -> log(Log.INFO, "Serial number; " + data.getStringValue(0)))) */
                     .done(device -> log(Log.INFO, "Target initialized. Hardware: " + mHardwareRevision + " Firmware: " + mFirmwareRevision))
@@ -269,7 +279,7 @@ public class EmgImuManager extends BleManager {
                     .enqueue();
         }
 
-		boolean isDeviceInfoServiceSupported(final BluetoothGatt gatt) {
+        boolean isDeviceInfoServiceSupported(final BluetoothGatt gatt) {
             final BluetoothGattService deviceInfoService = gatt.getService(DEVICE_INFORMATION_SERVICE);
             if (deviceInfoService != null) {
                 mManufacturerCharacteristic = deviceInfoService.getCharacteristic(MANUFACTURER_NAME_CHARACTERISTIC);
@@ -302,10 +312,10 @@ public class EmgImuManager extends BleManager {
             return  mBatteryCharacteristic != null;
         }
 
-		@Override
-		protected boolean isRequiredServiceSupported(final BluetoothGatt gatt) {
-			final BluetoothGattService llService = gatt.getService(EMG_SERVICE_UUID);
-			if (llService != null) {
+        @Override
+        protected boolean isRequiredServiceSupported(final BluetoothGatt gatt) {
+            final BluetoothGattService llService = gatt.getService(EMG_SERVICE_UUID);
+            if (llService != null) {
                 mEmgRawCharacteristic = llService.getCharacteristic(EMG_RAW_CHAR_UUID);
                 mEmgBuffCharacteristic = llService.getCharacteristic(EMG_BUFF_CHAR_UUID);
                 mEmgPwrCharacteristic  = llService.getCharacteristic(EMG_PWR_CHAR_UUID);
@@ -316,25 +326,22 @@ public class EmgImuManager extends BleManager {
                 }
             }
 
-            boolean deviceInfoSupported = isDeviceInfoServiceSupported(gatt);
-            if (!deviceInfoSupported)
-                log(Log.ERROR, "Device info is not supported");
+            // #2: took out this check for mmt
+            //boolean deviceInfoSupported = isDeviceInfoServiceSupported(gatt);
+            //if (!deviceInfoSupported)
+            //    log(Log.ERROR, "Device info is not supported");
 
-			boolean batterySupported = isBatteryServiceSupported(gatt);
-            if (!batterySupported)
-                log(Log.ERROR, "Battery is not supported");
+            //boolean batterySupported = isBatteryServiceSupported(gatt);
+            //if (!batterySupported)
+            //    log(Log.ERROR, "Battery is not supported");
 
-			return  (mEmgRawCharacteristic != null) &&
-                    (mEmgPwrCharacteristic != null) &&
-                    (mEmgBuffCharacteristic != null) &&
-                    deviceInfoSupported &&
-                    batterySupported;
-		}
+            return  mEmgPwrCharacteristic != null;
+        }
 
-		@Override
-		protected boolean isOptionalServiceSupported(final BluetoothGatt gatt) {
+        @Override
+        protected boolean isOptionalServiceSupported(final BluetoothGatt gatt) {
 
-		    // Determine if logging is supported
+            // Determine if logging is supported
             final BluetoothGattService llService = gatt.getService(EMG_SERVICE_UUID);
             if (llService != null) {
                 mRecordAccessControlPointCharacteristic = llService.getCharacteristic(EMG_RACP_CHAR_UUID);
@@ -358,11 +365,11 @@ public class EmgImuManager extends BleManager {
             log(Log.INFO, "Optional services found. Logging: " + supportsLogging + " IMU: " + supportsImu);
 
             return supportsLogging && supportsImu;
-		}
+        }
 
         @Override
         public void onDeviceReady() {
-		    // Complete some of our initialization once we have a device connected
+            // Complete some of our initialization once we have a device connected
             fireLogger = new FirebaseEmgLogger(EmgImuManager.this);
 
             if (mLogging) {
@@ -379,12 +386,12 @@ public class EmgImuManager extends BleManager {
         }
 
         @Override
-		protected void onDeviceDisconnected() {
+        protected void onDeviceDisconnected() {
             log(Log.INFO, "onDeviceDisconnected");
 
             connectionState.postValue(getConnectionState());
 
-		    // Clear the Device Information characteristics
+            // Clear the Device Information characteristics
             mManufacturerCharacteristic = null;
             mSerialNumberCharacteristic = null;
             mHardwareCharacteristic = null;
@@ -410,11 +417,11 @@ public class EmgImuManager extends BleManager {
                 streamLogger.close();
                 streamLogger = null;
             }
-		}
+        }
     };
 
-	public MutableLiveData<Integer> connectionState = new MutableLiveData<>(BluetoothGatt.STATE_DISCONNECTED);
-	public LiveData<Integer> getConnectionLiveState() { return connectionState; }
+    public MutableLiveData<Integer> connectionState = new MutableLiveData<>(BluetoothGatt.STATE_DISCONNECTED);
+    public LiveData<Integer> getConnectionLiveState() { return connectionState; }
 
     private long mPwrT0;
     private long mLastPwrCount;
@@ -438,7 +445,7 @@ public class EmgImuManager extends BleManager {
         byte err = (byte) (counter - counter_aliased);
         switch (err) {
             case 1:
-            //case -255:
+                //case -255:
                 // ideal, no apparent dropped samples
                 mLastPwrCount++;
                 break;
@@ -474,24 +481,38 @@ public class EmgImuManager extends BleManager {
 
     private void parseEmgPwr(BluetoothDevice device,  Data characteristic) {
         final byte [] buffer = characteristic.getValue();
-        byte format = buffer[0];
+
+/*        final byte [] buffer = null;
+        //byte format = buffer[0];
+        byte format = 0x01;
         assert(format == 16);
-        byte counter = buffer[1];
-        long timestamp = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 2);
+        //byte counter = buffer[1];
+                long timestamp = 0;*/
+
+        int counter = 256 * buffer[1] + buffer[2];
+        int pwr_val = 256 * buffer[3] + buffer[4];
+        Log.d(TAG, "Hi Victor from parseEmgPwr: "
+                + "buffer.length= " + buffer.length
+                + " | counter= " + counter
+                + " | power= " + pwr_val); // #1/1 change for mmt
+        /*
+                long timestamp = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 2);
 
         int pwr_val = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 6) +
             characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 7) * 256;
+         */
 
-        long ts_ms = resolvePwrCounter(timestamp, counter);
-
+        //long ts_ms = resolvePwrCounter(timestamp, counter);
+        long ts_ms = new Date().getTime();
         mEmgPwr = pwr_val;
         mCallbacks.onEmgPwrReceived(device, ts_ms, mEmgPwr);
-        checkEmgClick(device, pwr_val);
+        //checkEmgClick(device, pwr_val);
 
-        if (mLogging && streamLogger != null) {
+        // logging to firebase db
+/*        if (mLogging && streamLogger != null) {
             double [] data = {(double) mEmgPwr};
             streamLogger.addPwrSample(ts_ms, data);
-        }
+        }*/
     }
 
     private long mBufT0;
@@ -549,6 +570,7 @@ public class EmgImuManager extends BleManager {
     }
 
     private void parseEmgBuff(final BluetoothDevice device, final Data characteristic) {
+        //final byte [] buffer = characteristic.getValue();
         final byte [] buffer = characteristic.getValue();
         int len = buffer.length;
 
@@ -909,7 +931,7 @@ public class EmgImuManager extends BleManager {
         final int opCode = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, offset);
         offset += 2; // skip the operator
 
-         if (opCode == OP_CODE_SET_TIMESTAMP_COMPLETE) {
+        if (opCode == OP_CODE_SET_TIMESTAMP_COMPLETE) {
             // Now the timestamp has been acknowledged, we can fetch the records
 
             if(mFetchRecords) {
@@ -931,28 +953,28 @@ public class EmgImuManager extends BleManager {
             }
 
         } else if (opCode == OP_CODE_NUMBER_OF_STORED_RECORDS_RESPONSE) {
-             // We've obtained the number of all records
-             final int number = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, offset);
+            // We've obtained the number of all records
+            final int number = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, offset);
 
-             // Request the records
-             if (number > 0) {
-                 // TODO: this could be made more precise. It ignores the timestamp on device
+            // Request the records
+            if (number > 0) {
+                // TODO: this could be made more precise. It ignores the timestamp on device
 
-                 // ms since a fixed date
-                 float dt = 5000;
-                 long now = new Date().getTime();
-                 long T0 = now - (long) (dt * number);
+                // ms since a fixed date
+                float dt = 5000;
+                long now = new Date().getTime();
+                long T0 = now - (long) (dt * number);
 
-                 log(Log.VERBOSE, "There are " + number + " records. Preparing firebase log for T0: " + T0);
+                log(Log.VERBOSE, "There are " + number + " records. Preparing firebase log for T0: " + T0);
 
-                 // This calls back to firebaseLogReady
-                 fireLogger.prepareLog(T0);
-             } else {
-                 log(Log.VERBOSE, "No records found");
-                 if (successCallback != null)
-                     successCallback.onFetchSucceeded(getBluetoothDevice());
-             }
-         } else if (opCode == OP_CODE_RESPONSE_CODE) {
+                // This calls back to firebaseLogReady
+                fireLogger.prepareLog(T0);
+            } else {
+                log(Log.VERBOSE, "No records found");
+                if (successCallback != null)
+                    successCallback.onFetchSucceeded(getBluetoothDevice());
+            }
+        } else if (opCode == OP_CODE_RESPONSE_CODE) {
             final int requestedOpCode = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, offset);
             final int responseCode = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, offset + 1);
             log(Log.VERBOSE, "Response result for: " + requestedOpCode + " is: " + responseCode);
@@ -1128,23 +1150,23 @@ public class EmgImuManager extends BleManager {
         setIndicationCallback(mRecordAccessControlPointCharacteristic)
                 .with((dev, data) -> parseRACPIndication(dev, data));
         enableIndications(mRecordAccessControlPointCharacteristic)
-            .done(dev ->
-            {
-                log(Log.VERBOSE, "RACP indication enabled");
+                .done(dev ->
+                {
+                    log(Log.VERBOSE, "RACP indication enabled");
 
-                setNotificationCallback(mEmgLogCharacteristic)
-                        .with((d, data) -> parseLog(d, data));
-                enableNotifications(mEmgLogCharacteristic)
-                        .done(device ->
-                        {
-                            log(Log.VERBOSE, "Log characteristic indication enabled");
-                            syncDevice();
-                        })
-                        .fail((d, status) -> logFetchFailed(d,"Failed to enable Log characteristic notifications (" + status + ")"))
-                        .enqueue();
-            })
-            .fail((device, status) -> logFetchFailed(device, "Failed to enable RACP characteristic indications (" + status + ")"))
-            .enqueue();
+                    setNotificationCallback(mEmgLogCharacteristic)
+                            .with((d, data) -> parseLog(d, data));
+                    enableNotifications(mEmgLogCharacteristic)
+                            .done(device ->
+                            {
+                                log(Log.VERBOSE, "Log characteristic indication enabled");
+                                syncDevice();
+                            })
+                            .fail((d, status) -> logFetchFailed(d,"Failed to enable Log characteristic notifications (" + status + ")"))
+                            .enqueue();
+                })
+                .fail((device, status) -> logFetchFailed(device, "Failed to enable RACP characteristic indications (" + status + ")"))
+                .enqueue();
 
     }
 
@@ -1239,7 +1261,7 @@ public class EmgImuManager extends BleManager {
     // This is mostly a very thin shim to the above methods
 
     // Accessors for the raw EMG
-	private int mEmgRaw = -1;
+    private int mEmgRaw = -1;
     int getEmgRaw() { return mEmgRaw; }
 
     //! Return if this is the raw EMG characteristic

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:dist="http://schemas.android.com/apk/distribution"
+    package="org.sralab.emgimu.imu_calibration" >
+
+    <uses-sdk
+        android:minSdkVersion="26"
+        android:targetSdkVersion="28" />
+
+    <dist:module
+        dist:instant="false"
+        dist:onDemand="true"
+        dist:title="@string/title_imu_calibration" >
+        <dist:fusing dist:include="true" />
+    </dist:module>
+
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
+
+    <application>
+        <activity
+            android:name="org.sralab.emgimu.imu_calibration.ImuCalibration"
+            android:label="@string/title_activity_imu_calibration" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="org.sralab.emgimu.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>

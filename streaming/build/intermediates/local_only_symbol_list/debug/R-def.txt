@@ -1,0 +1,30 @@
+R_DEF: Internal format may change without notice
+local
+color colorAccent
+color colorPrimary
+color colorPrimaryDark
+drawable ic_streaming
+id emg_list
+id filteringCb
+id gimbal_view
+id graph_accel
+id graph_gyro
+id graph_mag
+id graph_pwr
+id rangeText
+id textView
+layout activity_imu_streaming
+layout activity_streaming
+layout imu_streaming_item
+layout streaming_item
+string app_name
+string default_web_client_id
+string firebase_database_url
+string gcm_defaultSenderId
+string google_api_key
+string google_app_id
+string google_crash_reporting_api_key
+string google_storage_bucket
+string project_id
+string streaming_title
+style AppTheme
