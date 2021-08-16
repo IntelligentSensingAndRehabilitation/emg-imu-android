@@ -41,6 +41,8 @@ org/sralab/emgimu/parser/RecordAccessControlPointParser.java
  org.sralab.emgimu.parser.RecordAccessControlPointParser
 org/sralab/emgimu/streaming/messages/EmgPwrMessage.java
  org.sralab.emgimu.streaming.messages.EmgPwrMessage
+org/sralab/emgimu/streaming/messages/ForceMessage.java
+ org.sralab.emgimu.streaming.messages.ForceMessage
 org/sralab/emgimu/logging/FirebaseEmgLogger.java
  org.sralab.emgimu.logging.FirebaseEmgLogger
  org.sralab.emgimu.logging.FirebaseEmgLogger$1

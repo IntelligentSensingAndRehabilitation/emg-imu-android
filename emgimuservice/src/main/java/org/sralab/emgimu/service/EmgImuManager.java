@@ -509,10 +509,11 @@ public class EmgImuManager extends BleManager {
         //checkEmgClick(device, pwr_val);
 
         // logging to firebase db
-/*        if (mLogging && streamLogger != null) {
+        if (mLogging && streamLogger != null) {
             double [] data = {(double) mEmgPwr};
-            streamLogger.addPwrSample(ts_ms, data);
-        }*/
+            streamLogger.addForceSample(ts_ms, data);
+            Log.d(TAG, "sent force data to db");
+        }
     }
 
     private long mBufT0;
