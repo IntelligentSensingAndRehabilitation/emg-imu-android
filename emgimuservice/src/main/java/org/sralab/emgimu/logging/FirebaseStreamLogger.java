@@ -14,6 +14,7 @@ import com.google.gson.Gson;
 import org.sralab.emgimu.service.EmgImuManager;
 import org.sralab.emgimu.streaming.messages.EmgPwrMessage;
 import org.sralab.emgimu.streaming.messages.EmgRawMessage;
+import org.sralab.emgimu.streaming.messages.ForceMessage;
 import org.sralab.emgimu.streaming.messages.ImuAccelMessage;
 import org.sralab.emgimu.streaming.messages.ImuAttitudeMessage;
 import org.sralab.emgimu.streaming.messages.ImuGyroMessage;
@@ -173,6 +174,12 @@ public class FirebaseStreamLogger extends Observable {
     public void addPwrSample(long time, double [] data) {
         Gson gson = new Gson();
         EmgPwrMessage msg = new EmgPwrMessage(mDeviceMac, time, data);
+        addJson(gson.toJson(msg));
+    }
+
+    public void addForceSample(long time, double [] data) {
+        Gson gson = new Gson();
+        ForceMessage msg = new ForceMessage(mDeviceMac, time, data);
         addJson(gson.toJson(msg));
     }
 
