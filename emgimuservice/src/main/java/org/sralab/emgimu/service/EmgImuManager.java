@@ -643,14 +643,18 @@ public class EmgImuManager extends BleManager {
     }
 
     private void parseImuAccel(final BluetoothDevice device, final Data characteristic) {
-        int len = characteristic.getValue().length;
+        int counter = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, 0);
+        long timestamp = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 2);
+        Log.d(TAG, "Accel. Counter: " + counter + " Timestamp: " + timestamp);
+
+        int len = characteristic.getValue().length - 6;
         int samples = len / 6; // 6 bytes per entry
 
         final float ACCEL_SCALE = 9.8f * 16.0f / (float) Math.pow(2.0f, 15.0f);  // for 16G to m/s
         float accel[][] = new float[3][samples];
         for (int idx = 0; idx < samples; idx++)
             for (int chan = 0; chan < 3; chan++)
-                accel[chan][idx] = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT16, (chan + idx * 3) * 2) * ACCEL_SCALE;
+                accel[chan][idx] = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT16, (chan + idx * 3) * 2 + 6) * ACCEL_SCALE;
 
         mCallbacks.onImuAccelReceived(device, accel);
 
@@ -660,14 +664,18 @@ public class EmgImuManager extends BleManager {
     }
 
     private void parseImuGyro(final BluetoothDevice device, final Data characteristic) {
-        int len = characteristic.getValue().length;
+        int counter = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, 0);
+        long timestamp = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 2);
+        Log.d(TAG, "Gyro. Counter: " + counter + " Timestamp: " + timestamp);
+
+        int len = characteristic.getValue().length - 6;
         int samples = len / 6; // 6 bytes per entry
 
         final float GYRO_SCALE = 2000.0f / (float) Math.pow(2.0f, 15.0f);  // at 2000 deg/s to deg/s
         float gyro[][] = new float[3][samples];
         for (int idx = 0; idx < samples; idx++)
             for (int chan = 0; chan < 3; chan++)
-                gyro[chan][idx] = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT16, (chan + idx * 3) * 2) * GYRO_SCALE;
+                gyro[chan][idx] = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT16, (chan + idx * 3) * 2 + 6) * GYRO_SCALE;
 
         mCallbacks.onImuGyroReceived(device, gyro);
 
@@ -677,13 +685,17 @@ public class EmgImuManager extends BleManager {
     }
 
     private void parseImuMag(final BluetoothDevice device, final Data characteristic) {
-        int len = characteristic.getValue().length;
+        int counter = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, 0);
+        long timestamp = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 2);
+        Log.d(TAG, "Mag. Counter: " + counter + " Timestamp: " + timestamp);
+
+        int len = characteristic.getValue().length - 6;
         int samples = len / 6; // 6 bytes per entry
 
         float mag[][] = new float[3][samples];
         for (int idx = 0; idx < samples; idx++)
             for (int chan = 0; chan < 3; chan++)
-                mag[chan][idx] = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT16, (chan + idx * 3) * 2);
+                mag[chan][idx] = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT16, (chan + idx * 3) * 2 + 6);
 
         mCallbacks.onImuMagReceived(device, mag);
 
@@ -693,10 +705,14 @@ public class EmgImuManager extends BleManager {
     }
 
     private void parseImuAttitude(final BluetoothDevice device, final Data characteristic) {
+        int counter = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, 0);
+        long timestamp = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 2);
+        Log.d(TAG, "Attitude. Counter: " + counter + " Timestamp: " + timestamp);
+
         final float scale = 1.0f / 32767f;
         float quat[] = new float[4];
         for (int i = 0; i < 4; i++)
-            quat[i] = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT16, i * 2) * scale;
+            quat[i] = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT16, i * 2 + 6) * scale;
         mCallbacks.onImuAttitudeReceived(device, quat);
 
         if (mLogging && streamLogger != null) {
