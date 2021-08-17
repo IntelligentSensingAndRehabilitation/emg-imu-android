@@ -8,6 +8,8 @@ public class EmgRawMessage {
     public final String MSG = "EmgRaw";
     public String bluetoothMac;
     public long timestamp;
+    public long sensor_timestamp;
+    public int sensor_counter;
     public int channels;
     public int samples;
     String data;
@@ -20,11 +22,15 @@ public class EmgRawMessage {
         return dst;
     }
 
-    public EmgRawMessage(String bluetoothMac, long timestamp, int channels, int samples, double [][] data) {
+    public EmgRawMessage(String bluetoothMac, long timestamp,
+                         long sensor_timestamp, int sensor_counter,
+                         int channels, int samples, double [][] data) {
         this.bluetoothMac = bluetoothMac;
         this.timestamp = timestamp;
         this.channels = channels;
         this.samples = samples;
+        this.sensor_timestamp = sensor_timestamp;
+        this.sensor_counter = sensor_counter;
 
         float [] float_data = new float[channels * samples];
         for(int i = 0; i < channels; i++)

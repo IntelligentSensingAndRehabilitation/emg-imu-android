@@ -108,7 +108,7 @@ public class EmgImuManager extends BleManager {
     public final static UUID IMU_ATTITUDE_CHAR_UUID = UUID.fromString("00002238-1212-EFDE-1523-785FEF13D123");
     public final static UUID IMU_CALIBRATION_CHAR_UUID = UUID.fromString("00002239-1212-EFDE-1523-785FEF13D123");
 
-    private final double EMG_FS = 2000.0;
+    private final float EMG_FS = 2000.0f;
     private final int EMG_BUFFER_LEN = (40 / 2); // elements in UINT16
 
     private BluetoothGattCharacteristic mEmgRawCharacteristic, mEmgBuffCharacteristic, mEmgPwrCharacteristic;
@@ -420,73 +420,77 @@ public class EmgImuManager extends BleManager {
 	public MutableLiveData<Integer> connectionState = new MutableLiveData<>(BluetoothGatt.STATE_DISCONNECTED);
 	public LiveData<Integer> getConnectionLiveState() { return connectionState; }
 
-    private long mPwrT0;
-    private long mLastPwrCount;
+    class TimestampResolved {
 
-    private long resolvePwrCounter(long timestamp, byte counter) {
-        /**
-         * Tracks if the counter is reliable and if so uses this to work
-         * out the timestamp for this sample. If there is a drop resets
-         * based on the transmitted timestamp.
-         */
+        int last_counter;
+        long last_sensor_timestamp;
 
+        float sensor_Fs;
+        float rtc_Fs;
 
-        // counter is the power sample counter which should be running at a fixed rate
-        final double COUNTER_HZ = 100.0;
+        double delta = 0;
+        boolean updated = false;
+        int alias = 65536;
 
-        // convert timestamp into ms since some arbitrary T0
-        long timestamp_real = timestampToReal(timestamp);
+        String name;
 
-        // convert counter into ms, although this aliases frequently
-        byte counter_aliased = (byte) (mLastPwrCount % 256);
-        byte err = (byte) (counter - counter_aliased);
-        switch (err) {
-            case 1:
-            //case -255:
-                // ideal, no apparent dropped samples
-                mLastPwrCount++;
-                break;
-            case 2:
-            case 3:
-            case 4:
-            case 5:
-            case 6:
-            case 7:
-                log(Log.WARN, "Dropped PWR samples detected but tolerable. " + err);
-                mLastPwrCount += err;
-                break;
-            default:
-                // TODO: sometime err is 0. Determine if this is duplicate packets.
-                log(Log.WARN, "Too many dropped samples detected: " + err);
-                mLastPwrCount = counter;
-                mPwrT0 = timestamp_real - (long) (mLastPwrCount * 1000 / COUNTER_HZ);
-                break;
+        public TimestampResolved(float Fs, String name) {
+            this.sensor_Fs = Fs;
+            rtc_Fs = 8.0f;
+            updated = false;
+            this.name = name;
         }
 
-        // nominal combination
-        long resolved_ms = mPwrT0 + (long) (mLastPwrCount * 1000 / COUNTER_HZ);
-
-        long diff = resolved_ms - timestamp_real;
-        if (abs(diff) > 200) {
-            log(Log.ERROR, "Timebase drift. Diff: " + diff + " Resolved: " + resolved_ms + " transmitted: " + timestamp_real);
-            mPwrT0 = timestamp_real - (long) (mLastPwrCount * 1000 / COUNTER_HZ);
-            resolved_ms = mPwrT0 + (long) (mLastPwrCount * 1000 / COUNTER_HZ);
+        public TimestampResolved setAlias(int alias) {
+            this.alias = alias;
+            return this;
         }
 
-        return resolved_ms;
+        public long resolveTime(int counter, long timestamp, int samples) {
+
+            float counter_timestamp = counter / (sensor_Fs / samples);
+            if (!updated) {
+                updated = true;
+                this.delta = new Date().getTime() - (long) (counter_timestamp * 1000.0f);
+            }
+
+            long counter_diff = counter - last_counter;
+            if (counter_diff > 1) {
+                Log.d(TAG, this.name + " Missed sample " + counter + " " + last_counter);
+            } else if (counter_diff < 0) {
+                Log.d(TAG, this.name + " Wraparound. " + this.alias + " " + counter);
+                this.delta = this.delta + this.alias / (sensor_Fs / samples) * 1000.0f;
+            }
+            last_counter = counter;
+
+            long final_timestamp = (long) (this.delta + counter_timestamp * 1000.0f);
+            long real_delta = new Date().getTime() - final_timestamp;
+            if (real_delta > 200 || real_delta < -200) {
+                Log.e(TAG, this.name + " Significant sensor drift detected. " + final_timestamp + " " + real_delta);
+                this.delta = this.delta + real_delta;
+            }
+
+            //final_timestamp = timestampToReal(timestamp);
+            return final_timestamp;
+        }
     }
+
+    TimestampResolved emgPwrResolver = new TimestampResolved(EMG_FS / 20, "EmgPwr").setAlias(256);
+    TimestampResolved emgStreamResolver = new TimestampResolved(EMG_FS, "EmgStream").setAlias(256);
 
     private void parseEmgPwr(BluetoothDevice device,  Data characteristic) {
         final byte [] buffer = characteristic.getValue();
         byte format = buffer[0];
         assert(format == 16);
-        byte counter = buffer[1];
+
+        int counter = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1);
         long timestamp = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 2);
+        timestamp = timestampToReal(timestamp);
 
         int pwr_val = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 6) +
             characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 7) * 256;
 
-        long ts_ms = resolvePwrCounter(timestamp, counter);
+        long ts_ms = emgPwrResolver.resolveTime(counter, timestamp, 1);
 
         mEmgPwr = pwr_val;
         mCallbacks.onEmgPwrReceived(device, ts_ms, mEmgPwr);
@@ -494,62 +498,8 @@ public class EmgImuManager extends BleManager {
 
         if (mLogging && streamLogger != null) {
             double [] data = {(double) mEmgPwr};
-            streamLogger.addPwrSample(ts_ms, data);
+            streamLogger.addPwrSample(new Date().getTime(), timestamp, counter, data);
         }
-    }
-
-    private long mBufT0;
-    private long mLastBufferCount;
-    private long resolveBufCounter(long timestamp, byte counter, double Fs) {
-        /**
-         * Tracks if the counter is reliable and if so uses this to work
-         * out the timestamp for this sample. If there is a drop resets
-         * based on the transmitted timestamp.
-         */
-
-        // counter is the power sample counter which should be running at a fixed rate
-        final double COUNTER_HZ = Fs;
-
-        // convert timestamp into ms since some arbitrary T0
-        long timestamp_real = timestampToReal(timestamp);
-
-        // convert counter into ms, although this aliases frequently
-        byte counter_aliased = (byte) (mLastBufferCount % 256);
-        byte err = (byte) (counter - counter_aliased);
-        switch (err) {
-            case 1:
-                //case -255:
-                // ideal, no apparent dropped samples
-                mLastBufferCount++;
-                break;
-            case 2:
-            case 3:
-            case 4:
-            case 5:
-            case 6:
-            case 7:
-                log(Log.WARN, "Dropped EMG stream samples detected but tolerable. " + err);
-                mLastBufferCount += err;
-                break;
-            default:
-                // TODO: sometime err is 0. Determine if this is duplicate packets.
-                log(Log.WARN, "Too many dropped samples detected. Err: " + err + " Counter: " + counter + " Aliased: " + counter_aliased + " Count: " + mLastBufferCount);
-                mLastBufferCount = counter;
-                mBufT0 = timestamp_real - (long) (mLastBufferCount * 1000 / COUNTER_HZ);
-                break;
-        }
-
-        // nominal combination
-        long resolved_ms = mBufT0 + (long) (mLastBufferCount * 1000 / COUNTER_HZ);
-
-        long diff = resolved_ms - timestamp_real;
-        if (abs(diff) > 200) {
-            log(Log.ERROR, "Timebase drift. Diff: " + diff + " Resolved: " + resolved_ms + " transmitted: " + timestamp_real);
-            mBufT0 = timestamp_real - (long) (mLastBufferCount * 1000 / COUNTER_HZ);
-            resolved_ms = mBufT0 + (long) (mLastBufferCount * 1000 / COUNTER_HZ);
-        }
-
-        return resolved_ms;
     }
 
     private void parseEmgBuff(final BluetoothDevice device, final Data characteristic) {
@@ -560,8 +510,10 @@ public class EmgImuManager extends BleManager {
 
         double microvolts_per_lsb;
 
-        byte counter = buffer[1];
+        int counter = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1);
         long timestamp = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 2);
+        timestamp = timestampToReal(timestamp);
+
         long buf_ts_ms = 0;
 
         double [][] data;
@@ -572,8 +524,7 @@ public class EmgImuManager extends BleManager {
         switch(format) {
             // Data from single channel system
             case 16: // 1 channel of 16 bit data
-
-                buf_ts_ms = resolveBufCounter(timestamp, counter, EMG_FS / EMG_BUFFER_LEN); // 2khz but 8 samples per buffer);
+                buf_ts_ms = emgStreamResolver.resolveTime(counter, timestamp, EMG_BUFFER_LEN);
 
                 // Have to manually combine to get the endian right
 
@@ -609,7 +560,8 @@ public class EmgImuManager extends BleManager {
                 double full_scale_range = 2 * vref / ads1298_gain;
                 microvolts_per_lsb = full_scale_range / ((1<<24) - 1);
 
-                buf_ts_ms = resolveBufCounter(timestamp, counter, 2000.0 / samples);
+                buf_ts_ms = emgStreamResolver.resolveTime(counter, timestamp, samples);
+
                 //log(Log.DEBUG, " Counter: " + counter + " timestamp: " + timestamp + " ms: " + buf_ts_ms + " scale: " + microvolts_per_lsb);
 
                 // representation of the data is 3 bytes per sample, 8 channels, and then N samples
@@ -641,56 +593,7 @@ public class EmgImuManager extends BleManager {
         mCallbacks.onEmgStreamReceived(device, buf_ts_ms, data);
 
         if (mLogging && streamLogger != null) {
-            streamLogger.addStreamSample(buf_ts_ms, channels, samples, data);
-        }
-    }
-
-    class TimestampResolved {
-
-        int last_counter;
-        long last_sensor_timestamp;
-
-        float sensor_Fs;
-        float rtc_Fs;
-
-        double delta = 0;
-        boolean updated = false;
-
-        String name;
-
-        public TimestampResolved(float Fs, String name) {
-            this.sensor_Fs = Fs;
-            rtc_Fs = 8.0f;
-            updated = false;
-            this.name = name;
-        }
-
-        public long resolveTime(int counter, long timestamp, int samples) {
-
-            float counter_timestamp = counter / (sensor_Fs / samples);
-            if (!updated) {
-                updated = true;
-                this.delta = new Date().getTime() - (long) (counter_timestamp * 1000.0f);
-            }
-
-            long counter_diff = counter - last_counter;
-            if (counter_diff > 1) {
-                Log.d(TAG, this.name + " Missed sample " + counter + " " + last_counter);
-            } else if (counter_diff < 0) {
-                Log.d(TAG, this.name + " Wraparound");
-                this.delta = this.delta + 65536 / (sensor_Fs / samples);
-            }
-            last_counter = counter;
-
-            long final_timestamp = (long) (this.delta + counter_timestamp * 1000.0f);
-            long real_delta = new Date().getTime() - final_timestamp;
-            if (real_delta > 200 || real_delta < -200) {
-                Log.e(TAG, this.name + " Significant sensor drift detected. " + final_timestamp + " " + real_delta);
-                this.delta = this.delta + real_delta;
-            }
-
-            final_timestamp = timestampToReal(timestamp);
-            return final_timestamp;
+            streamLogger.addStreamSample(new Date().getTime(), timestamp, counter, channels, samples, data);
         }
     }
 
@@ -703,11 +606,12 @@ public class EmgImuManager extends BleManager {
     private void parseImuAccel(final BluetoothDevice device, final Data characteristic) {
         int counter = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, 0);
         long timestamp = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 2);
+        timestamp = timestampToReal(timestamp);
 
         int len = characteristic.getValue().length - 6;
         int samples = len / 6; // 6 bytes per entry
 
-        long updated_timestamp = accelResolver.resolveTime(counter, timestamp, samples);
+        accelResolver.resolveTime(counter, timestamp, samples);
 
         final float ACCEL_SCALE = 9.8f * 16.0f / (float) Math.pow(2.0f, 15.0f);  // for 16G to m/s
         float accel[][] = new float[3][samples];
@@ -719,18 +623,19 @@ public class EmgImuManager extends BleManager {
 
         if (mLogging && streamLogger != null) {
             // long sensor_timestamp, int sensor_counter
-            streamLogger.addAccelSample(new Date().getTime(), updated_timestamp, counter, accel);
+            streamLogger.addAccelSample(new Date().getTime(), timestamp, counter, accel);
         }
     }
 
     private void parseImuGyro(final BluetoothDevice device, final Data characteristic) {
         int counter = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, 0);
         long timestamp = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 2);
+        timestamp = timestampToReal(timestamp);
 
         int len = characteristic.getValue().length - 6;
         int samples = len / 6; // 6 bytes per entry
 
-        long updated_timestamp = gyroResolver.resolveTime(counter, timestamp, samples);
+        gyroResolver.resolveTime(counter, timestamp, samples);
 
         final float GYRO_SCALE = 2000.0f / (float) Math.pow(2.0f, 15.0f);  // at 2000 deg/s to deg/s
         float gyro[][] = new float[3][samples];
@@ -741,18 +646,19 @@ public class EmgImuManager extends BleManager {
         mCallbacks.onImuGyroReceived(device, gyro);
 
         if (mLogging && streamLogger != null) {
-            streamLogger.addGyroSample(new Date().getTime(), updated_timestamp, counter, gyro);
+            streamLogger.addGyroSample(new Date().getTime(), timestamp, counter, gyro);
         }
     }
 
     private void parseImuMag(final BluetoothDevice device, final Data characteristic) {
         int counter = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, 0);
         long timestamp = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 2);
+        timestamp = timestampToReal(timestamp);
 
         int len = characteristic.getValue().length - 6;
         int samples = len / 6; // 6 bytes per entry
 
-        long updated_timestamp = magResolver.resolveTime(counter, timestamp, samples);
+        magResolver.resolveTime(counter, timestamp, samples);
 
         float mag[][] = new float[3][samples];
         for (int idx = 0; idx < samples; idx++)
@@ -762,15 +668,16 @@ public class EmgImuManager extends BleManager {
         mCallbacks.onImuMagReceived(device, mag);
 
         if (mLogging && streamLogger != null) {
-            streamLogger.addMagSample(new Date().getTime(), updated_timestamp, counter, mag);
+            streamLogger.addMagSample(new Date().getTime(), timestamp, counter, mag);
         }
     }
 
     private void parseImuAttitude(final BluetoothDevice device, final Data characteristic) {
         int counter = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, 0);
         long timestamp = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 2);
+        timestamp = timestampToReal(timestamp);
 
-        long updated_timestamp = attitudeResolver.resolveTime(counter, timestamp, 1);
+        attitudeResolver.resolveTime(counter, timestamp, 1);
 
         final float scale = 1.0f / 32767f;
         float quat[] = new float[4];
@@ -779,7 +686,7 @@ public class EmgImuManager extends BleManager {
         mCallbacks.onImuAttitudeReceived(device, quat);
 
         if (mLogging && streamLogger != null) {
-            streamLogger.addAttitudeSample(new Date().getTime(), updated_timestamp, counter, quat);
+            streamLogger.addAttitudeSample(new Date().getTime(), timestamp, counter, quat);
         }
     }
 
@@ -1113,7 +1020,7 @@ public class EmgImuManager extends BleManager {
 
     private boolean mSynced;
     private long t0() {
-        return new GregorianCalendar(2018, 0, 0).getTime().getTime();
+        return new GregorianCalendar(2021, 0, 0).getTime().getTime();
     }
     /**
      * Pass the current time into the sensor. This is in a strange format to keep thinks

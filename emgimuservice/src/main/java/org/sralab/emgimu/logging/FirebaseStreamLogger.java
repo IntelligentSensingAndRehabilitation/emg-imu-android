@@ -164,15 +164,15 @@ public class FirebaseStreamLogger extends Observable {
             handler.post(new MsgWriteRunnable(",\n" + json));
     }
 
-    public void addStreamSample(long time, int channels, int samples, double [][] data) {
+    public void addStreamSample(long time, long sensor_timestamp, int sensor_counter, int channels, int samples, double [][] data) {
         Gson gson = new Gson();
-        EmgRawMessage msg = new EmgRawMessage(mDeviceMac, time, channels, samples, data);
+        EmgRawMessage msg = new EmgRawMessage(mDeviceMac, time, sensor_timestamp, sensor_counter, channels, samples, data);
         addJson(gson.toJson(msg));
     }
 
-    public void addPwrSample(long time, double [] data) {
+    public void addPwrSample(long time, long sensor_timestamp, int sensor_counter, double [] data) {
         Gson gson = new Gson();
-        EmgPwrMessage msg = new EmgPwrMessage(mDeviceMac, time, data);
+        EmgPwrMessage msg = new EmgPwrMessage(mDeviceMac, time, sensor_timestamp, sensor_counter, data);
         addJson(gson.toJson(msg));
     }
 
