@@ -642,13 +642,67 @@ public class EmgImuManager extends BleManager {
         }
     }
 
+    class TimestampResolved {
+
+        int last_counter;
+        long last_sensor_timestamp;
+
+        float sensor_Fs;
+        float rtc_Fs;
+
+        double delta = 0;
+        boolean updated = false;
+
+        String name;
+
+        public TimestampResolved(float Fs, String name) {
+            this.sensor_Fs = Fs;
+            rtc_Fs = 8.0f;
+            updated = false;
+            this.name = name;
+        }
+
+        public long resolveTime(int counter, long timestamp, int samples) {
+
+            float counter_timestamp = counter / (sensor_Fs / samples);
+            if (!updated) {
+                updated = true;
+                this.delta = new Date().getTime() - (long) (counter_timestamp * 1000.0f);
+            }
+
+            long counter_diff = counter - last_counter;
+            if (counter_diff > 1) {
+                Log.d(TAG, this.name + " Missed sample " + counter + " " + last_counter);
+            } else if (counter_diff < 0) {
+                Log.d(TAG, this.name + " Wraparound");
+                this.delta = this.delta + 65536 / (sensor_Fs / samples);
+            }
+            last_counter = counter;
+
+            long final_timestamp = (long) (this.delta + counter_timestamp * 1000.0f);
+            long real_delta = new Date().getTime() - final_timestamp;
+            if (real_delta > 200 || real_delta < -200) {
+                Log.e(TAG, this.name + " Significant sensor drift detected. " + final_timestamp + " " + real_delta);
+                this.delta = this.delta + real_delta;
+            }
+            return final_timestamp;
+        }
+    }
+
+    float IMU_FS = 562.5f;
+    TimestampResolved accelResolver = new TimestampResolved(IMU_FS, "Accel");
+    TimestampResolved gyroResolver = new TimestampResolved(IMU_FS, "Gyro");
+    TimestampResolved magResolver = new TimestampResolved(IMU_FS, "Mag");
+    TimestampResolved attitudeResolver = new TimestampResolved(IMU_FS / 10.0f, "Attitude");
+
     private void parseImuAccel(final BluetoothDevice device, final Data characteristic) {
         int counter = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, 0);
         long timestamp = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 2);
-        Log.d(TAG, "Accel. Counter: " + counter + " Timestamp: " + timestamp);
 
         int len = characteristic.getValue().length - 6;
         int samples = len / 6; // 6 bytes per entry
+
+        accelResolver.resolveTime(counter, timestamp, samples);
 
         final float ACCEL_SCALE = 9.8f * 16.0f / (float) Math.pow(2.0f, 15.0f);  // for 16G to m/s
         float accel[][] = new float[3][samples];
@@ -659,17 +713,19 @@ public class EmgImuManager extends BleManager {
         mCallbacks.onImuAccelReceived(device, accel);
 
         if (mLogging && streamLogger != null) {
-            streamLogger.addAccelSample(new Date().getTime(), accel);
+            // long sensor_timestamp, int sensor_counter
+            streamLogger.addAccelSample(new Date().getTime(), timestamp, counter, accel);
         }
     }
 
     private void parseImuGyro(final BluetoothDevice device, final Data characteristic) {
         int counter = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, 0);
         long timestamp = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 2);
-        Log.d(TAG, "Gyro. Counter: " + counter + " Timestamp: " + timestamp);
 
         int len = characteristic.getValue().length - 6;
         int samples = len / 6; // 6 bytes per entry
+
+        gyroResolver.resolveTime(counter, timestamp, samples);
 
         final float GYRO_SCALE = 2000.0f / (float) Math.pow(2.0f, 15.0f);  // at 2000 deg/s to deg/s
         float gyro[][] = new float[3][samples];
@@ -680,17 +736,18 @@ public class EmgImuManager extends BleManager {
         mCallbacks.onImuGyroReceived(device, gyro);
 
         if (mLogging && streamLogger != null) {
-            streamLogger.addGyroSample(new Date().getTime(), gyro);
+            streamLogger.addGyroSample(new Date().getTime(), timestamp, counter, gyro);
         }
     }
 
     private void parseImuMag(final BluetoothDevice device, final Data characteristic) {
         int counter = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, 0);
         long timestamp = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 2);
-        Log.d(TAG, "Mag. Counter: " + counter + " Timestamp: " + timestamp);
 
         int len = characteristic.getValue().length - 6;
         int samples = len / 6; // 6 bytes per entry
+
+        magResolver.resolveTime(counter, timestamp, samples);
 
         float mag[][] = new float[3][samples];
         for (int idx = 0; idx < samples; idx++)
@@ -700,14 +757,15 @@ public class EmgImuManager extends BleManager {
         mCallbacks.onImuMagReceived(device, mag);
 
         if (mLogging && streamLogger != null) {
-            streamLogger.addMagSample(new Date().getTime(), mag);
+            streamLogger.addMagSample(new Date().getTime(), timestamp, counter, mag);
         }
     }
 
     private void parseImuAttitude(final BluetoothDevice device, final Data characteristic) {
         int counter = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, 0);
         long timestamp = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 2);
-        Log.d(TAG, "Attitude. Counter: " + counter + " Timestamp: " + timestamp);
+
+        attitudeResolver.resolveTime(counter, timestamp, 1);
 
         final float scale = 1.0f / 32767f;
         float quat[] = new float[4];
@@ -716,7 +774,7 @@ public class EmgImuManager extends BleManager {
         mCallbacks.onImuAttitudeReceived(device, quat);
 
         if (mLogging && streamLogger != null) {
-            streamLogger.addAttitudeSample(new Date().getTime(), quat);
+            streamLogger.addAttitudeSample(new Date().getTime(), timestamp, counter, quat);
         }
     }
 

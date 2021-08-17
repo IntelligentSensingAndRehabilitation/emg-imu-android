@@ -176,27 +176,27 @@ public class FirebaseStreamLogger extends Observable {
         addJson(gson.toJson(msg));
     }
 
-    public void addAttitudeSample(long time, float [] data) {
+    public void addAttitudeSample(long time, long sensor_timestamp, int sensor_counter, float [] data) {
         Gson gson = new Gson();
-        ImuAttitudeMessage msg = new ImuAttitudeMessage(mDeviceMac, time, data);
+        ImuAttitudeMessage msg = new ImuAttitudeMessage(mDeviceMac, time, sensor_timestamp, sensor_counter, data);
         addJson(gson.toJson(msg));
     }
 
-    public void addAccelSample(long time, float [][] data) {
+    public void addAccelSample(long time, long sensor_timestamp, int sensor_counter, float [][] data) {
         Gson gson = new Gson();
-        ImuAccelMessage msg = new ImuAccelMessage(mDeviceMac, time, data);
+        ImuAccelMessage msg = new ImuAccelMessage(mDeviceMac, time, sensor_timestamp, sensor_counter, data);
         addJson(gson.toJson(msg));
     }
 
-    public void addGyroSample(long time, float [][] data) {
+    public void addGyroSample(long time, long sensor_timestamp, int sensor_counter, float [][] data) {
         Gson gson = new Gson();
-        ImuGyroMessage msg = new ImuGyroMessage(mDeviceMac, time, data);
+        ImuGyroMessage msg = new ImuGyroMessage(mDeviceMac, time, sensor_timestamp, sensor_counter, data);
         addJson(gson.toJson(msg));
     }
 
-    public void addMagSample(long time, float [][] data) {
+    public void addMagSample(long time, long sensor_timestamp, int sensor_counter, float [][] data) {
         Gson gson = new Gson();
-        ImuMagMessage msg = new ImuMagMessage(mDeviceMac, time, data);
+        ImuMagMessage msg = new ImuMagMessage(mDeviceMac, time, sensor_timestamp, sensor_counter, data);
         addJson(gson.toJson(msg));
     }
 }
