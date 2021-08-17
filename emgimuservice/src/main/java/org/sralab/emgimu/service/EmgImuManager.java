@@ -69,6 +69,7 @@ import java.util.UUID;
 import no.nordicsemi.android.ble.BleManager;
 import no.nordicsemi.android.ble.ConnectionPriorityRequest;
 import no.nordicsemi.android.ble.PhyRequest;
+import no.nordicsemi.android.ble.RequestQueue;
 import no.nordicsemi.android.ble.callback.FailCallback;
 import no.nordicsemi.android.ble.callback.SuccessCallback;
 import no.nordicsemi.android.ble.data.Data;
@@ -216,7 +217,7 @@ public class EmgImuManager extends BleManager {
 
             log(Log.INFO, "Initializing connection");
 
-            beginAtomicRequestQueue()
+            RequestQueue initQueue = beginAtomicRequestQueue()
                     .add(readCharacteristic(mHardwareCharacteristic)
                         .with((device, data) -> {
                             mHardwareRevision = data.getStringValue(0);
@@ -243,22 +244,22 @@ public class EmgImuManager extends BleManager {
                             .with((device, mtu) -> log(Log.INFO, "MTU set to " + mtu))
                             .fail((device, status) -> log(Log.WARN, "Requested MTU not supported: " + status)))
                     .add(requestConnectionPriority(ConnectionPriorityRequest.CONNECTION_PRIORITY_HIGH)
-                            .fail((device, status) -> log(Log.WARN, "Failed to set connection priority: " + status)))
-                    .enqueue();
+                            .fail((device, status) -> log(Log.WARN, "Failed to set connection priority: " + status)));
 
             BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
 
             if (!adapter.isLe2MPhySupported()) {
                 log(Log.ERROR, "2M PHY not supported!");
             } else {
-                setPreferredPhy(PhyRequest.PHY_LE_2M_MASK, PhyRequest.PHY_LE_2M_MASK, PhyRequest.PHY_OPTION_NO_PREFERRED)
+                initQueue.add(setPreferredPhy(PhyRequest.PHY_LE_2M_MASK, PhyRequest.PHY_LE_2M_MASK, PhyRequest.PHY_OPTION_NO_PREFERRED)
                         .fail((device, status) -> log(Log.WARN, "Request PHY failed: " + status))
-                        .done(device -> log(Log.WARN, "Setting PHY succeeded"))
-                        .enqueue();
+                        .done(device -> log(Log.WARN, "Setting PHY succeeded")));
             }
             if (!adapter.isLeExtendedAdvertisingSupported()) {
                 log(Log.ERROR, "LE Extended Advertising not supported!");
             }
+            initQueue.done(device -> syncDevice());
+            initQueue.enqueue();
 
             setNotificationCallback(mBatteryCharacteristic).with((device ,data) -> parseBattery(device, data));
             enableNotifications(mBatteryCharacteristic)
@@ -267,6 +268,8 @@ public class EmgImuManager extends BleManager {
                     .enqueue();
             readCharacteristic(mBatteryCharacteristic).with((device, data) -> parseBattery(device, data))
                     .enqueue();
+
+
         }
 
 		boolean isDeviceInfoServiceSupported(final BluetoothGatt gatt) {
@@ -685,6 +688,8 @@ public class EmgImuManager extends BleManager {
                 Log.e(TAG, this.name + " Significant sensor drift detected. " + final_timestamp + " " + real_delta);
                 this.delta = this.delta + real_delta;
             }
+
+            final_timestamp = timestampToReal(timestamp);
             return final_timestamp;
         }
     }
@@ -702,7 +707,7 @@ public class EmgImuManager extends BleManager {
         int len = characteristic.getValue().length - 6;
         int samples = len / 6; // 6 bytes per entry
 
-        accelResolver.resolveTime(counter, timestamp, samples);
+        long updated_timestamp = accelResolver.resolveTime(counter, timestamp, samples);
 
         final float ACCEL_SCALE = 9.8f * 16.0f / (float) Math.pow(2.0f, 15.0f);  // for 16G to m/s
         float accel[][] = new float[3][samples];
@@ -714,7 +719,7 @@ public class EmgImuManager extends BleManager {
 
         if (mLogging && streamLogger != null) {
             // long sensor_timestamp, int sensor_counter
-            streamLogger.addAccelSample(new Date().getTime(), timestamp, counter, accel);
+            streamLogger.addAccelSample(new Date().getTime(), updated_timestamp, counter, accel);
         }
     }
 
@@ -725,7 +730,7 @@ public class EmgImuManager extends BleManager {
         int len = characteristic.getValue().length - 6;
         int samples = len / 6; // 6 bytes per entry
 
-        gyroResolver.resolveTime(counter, timestamp, samples);
+        long updated_timestamp = gyroResolver.resolveTime(counter, timestamp, samples);
 
         final float GYRO_SCALE = 2000.0f / (float) Math.pow(2.0f, 15.0f);  // at 2000 deg/s to deg/s
         float gyro[][] = new float[3][samples];
@@ -736,7 +741,7 @@ public class EmgImuManager extends BleManager {
         mCallbacks.onImuGyroReceived(device, gyro);
 
         if (mLogging && streamLogger != null) {
-            streamLogger.addGyroSample(new Date().getTime(), timestamp, counter, gyro);
+            streamLogger.addGyroSample(new Date().getTime(), updated_timestamp, counter, gyro);
         }
     }
 
@@ -747,7 +752,7 @@ public class EmgImuManager extends BleManager {
         int len = characteristic.getValue().length - 6;
         int samples = len / 6; // 6 bytes per entry
 
-        magResolver.resolveTime(counter, timestamp, samples);
+        long updated_timestamp = magResolver.resolveTime(counter, timestamp, samples);
 
         float mag[][] = new float[3][samples];
         for (int idx = 0; idx < samples; idx++)
@@ -757,7 +762,7 @@ public class EmgImuManager extends BleManager {
         mCallbacks.onImuMagReceived(device, mag);
 
         if (mLogging && streamLogger != null) {
-            streamLogger.addMagSample(new Date().getTime(), timestamp, counter, mag);
+            streamLogger.addMagSample(new Date().getTime(), updated_timestamp, counter, mag);
         }
     }
 
@@ -765,7 +770,7 @@ public class EmgImuManager extends BleManager {
         int counter = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, 0);
         long timestamp = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 2);
 
-        attitudeResolver.resolveTime(counter, timestamp, 1);
+        long updated_timestamp = attitudeResolver.resolveTime(counter, timestamp, 1);
 
         final float scale = 1.0f / 32767f;
         float quat[] = new float[4];
@@ -774,7 +779,7 @@ public class EmgImuManager extends BleManager {
         mCallbacks.onImuAttitudeReceived(device, quat);
 
         if (mLogging && streamLogger != null) {
-            streamLogger.addAttitudeSample(new Date().getTime(), timestamp, counter, quat);
+            streamLogger.addAttitudeSample(new Date().getTime(), updated_timestamp, counter, quat);
         }
     }
 
