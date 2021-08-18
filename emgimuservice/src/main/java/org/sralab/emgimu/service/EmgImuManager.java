@@ -370,7 +370,7 @@ public class EmgImuManager extends BleManager {
 
             if (mLogging) {
                 log(Log.INFO, "Created stream logger");
-                streamLogger = new FirebaseStreamLogger(EmgImuManager.this);
+                streamLogger = new FirebaseStreamLogger(EmgImuManager.this, getContext());
             }
 
             loadThreshold();
@@ -725,7 +725,7 @@ public class EmgImuManager extends BleManager {
                     // We are essentially using closing and opening to flush a log to the
                     // server, so start a new one.
                     log(Log.INFO, "Streamed uploaded. Creating a new stream logger.");
-                    streamLogger = new FirebaseStreamLogger(EmgImuManager.this);
+                    streamLogger = new FirebaseStreamLogger(EmgImuManager.this, getContext());
 
                     FirebaseAuth mAuth = FirebaseAuth.getInstance();
                     FirebaseUser mUser = mAuth.getCurrentUser();

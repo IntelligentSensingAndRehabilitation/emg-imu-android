@@ -1,5 +1,8 @@
 package org.sralab.emgimu.logging;
 
+import static android.content.Context.MODE_PRIVATE;
+
+import android.content.Context;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.util.Log;
@@ -19,6 +22,9 @@ import org.sralab.emgimu.streaming.messages.ImuAttitudeMessage;
 import org.sralab.emgimu.streaming.messages.ImuGyroMessage;
 import org.sralab.emgimu.streaming.messages.ImuMagMessage;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -45,13 +51,13 @@ public class FirebaseStreamLogger extends Observable {
     private String dateName;
     private StorageReference storageRef;
 
-
+    private OutputStream localWriter;
     private OutputStream dataStream;
     private boolean firstEntry;
-
+    private Context context;
     private Handler handler;
 
-    public FirebaseStreamLogger(EmgImuManager manager) {
+    public FirebaseStreamLogger(EmgImuManager manager, Context context) {
         mManager = manager;
         mDeviceMac = manager.getAddress();
 
@@ -114,6 +120,20 @@ public class FirebaseStreamLogger extends Observable {
             setChanged();
             notifyObservers();
         });
+
+        try {
+            File file = new File(context.getExternalFilesDir("stream_logs"), getLocalFilename());
+            String fileName = file.getAbsolutePath();
+            localWriter = new FileOutputStream(fileName);
+            Log.d(TAG, "Opened: " + fileName);
+
+            localWriter = new GZIPOutputStream(localWriter);
+            localWriter.write("[".getBytes());
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public String getReference() {
@@ -127,6 +147,9 @@ public class FirebaseStreamLogger extends Observable {
                 Log.d(TAG, "Close occurred");
                 dataStream.write("]".getBytes());
                 dataStream.close();
+
+                localWriter.write("]".getBytes());
+                localWriter.close();
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -135,6 +158,10 @@ public class FirebaseStreamLogger extends Observable {
 
     private String getFilename() {
         return "streams/" + mUser.getUid() + "/" + mDeviceMac + "/" + dateName + ".json.gz";
+    }
+
+    private String getLocalFilename() {
+        return mDeviceMac.replace(":", "") + "_" + dateName + ".json.gz";
     }
 
     public class MsgWriteRunnable implements Runnable {
@@ -149,6 +176,7 @@ public class FirebaseStreamLogger extends Observable {
         public void run() {
             try {
                 dataStream.write(msg.getBytes());
+                localWriter.write(msg.getBytes());
             } catch (IOException e) {
                 Log.e(TAG, "Error writing to stream.", e);
             }
