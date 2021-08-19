@@ -1365,6 +1365,7 @@ public class EmgImuManager extends BleManager {
         double voltage = 3.0 + 1.35 * (batteryLevel / 100.0);
         batteryVoltage.setValue(voltage);
 
+        mCallbacks.onBatteryReceived(device, (float) voltage);
         log(Log.DEBUG, "Received battery level: " + batteryLevel);
     }
 

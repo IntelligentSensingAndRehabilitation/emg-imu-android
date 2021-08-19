@@ -7,6 +7,7 @@ import org.sralab.emgimu.service.IEmgImuStreamDataCallback;
 import org.sralab.emgimu.service.IEmgImuPwrDataCallback;
 import org.sralab.emgimu.service.IEmgImuSenseCallback;
 import org.sralab.emgimu.service.IEmgImuQuatCallback;
+import org.sralab.emgimu.service.IEmgImuBatCallback;
 
 interface IEmgImuServiceBinder  {
 
@@ -41,4 +42,8 @@ interface IEmgImuServiceBinder  {
     void unregisterImuMagObserver(IEmgImuSenseCallback callback);
     void registerImuQuatObserver(IEmgImuQuatCallback callback);
     void unregisterImuQuatObserver(IEmgImuQuatCallback callback);
+
+    // For receiving battery data
+    void registerBatObserver(IEmgImuBatCallback callback);
+    void unregisterBatObserver(IEmgImuBatCallback callback);
 }

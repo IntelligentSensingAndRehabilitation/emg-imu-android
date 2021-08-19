@@ -141,6 +141,7 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
     private List <IEmgImuSenseCallback> imuGyroCbs = new ArrayList<>();
     private List <IEmgImuSenseCallback> imuMagCbs = new ArrayList<>();
     private List <IEmgImuQuatCallback> imuQuatCbs = new ArrayList<>();
+    private List <IEmgImuBatCallback> batCbs = new ArrayList<>();
 
 
     public interface OnEmgDecodedListener {
@@ -434,6 +435,16 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
                     manager.disableAttitudeNotifications();
                 }
             }
+        }
+
+        @Override
+        public void registerBatObserver(IEmgImuBatCallback callback) throws RemoteException {
+            batCbs.add(callback);
+        }
+
+        @Override
+        public void unregisterBatObserver(IEmgImuBatCallback callback) throws RemoteException {
+            batCbs.remove(callback);
         }
 
         public String getUser() {
@@ -1251,6 +1262,13 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
 
     @Override
     public void onBatteryReceived(BluetoothDevice device, float battery) {
+	    for (IEmgImuBatCallback cb : batCbs) {
+            try {
+                cb.handleData(device, battery);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     public void onEmgPwrReceived(final BluetoothDevice device, long ts_ms, int value)
