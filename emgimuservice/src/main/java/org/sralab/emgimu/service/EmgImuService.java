@@ -674,7 +674,7 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
         for (final BluetoothDevice d : managedDevices) {
             EmgImuManager manager = initializeManager();
             manager.setConnectionObserver(EmgImuService.this);
-            manager.connect(d)
+            manager.connect(d).retry(2, 500).useAutoConnect(true)
                     .fail((device, status) -> Log.e(TAG, "Unable to connect to device: " + device + " status: " + status) )
                     .enqueue();
             bleManagers.put(d, manager);
@@ -725,13 +725,7 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
         super.onUnbind(intent);
         Log.i(TAG, "onUnbind");
 
-        getHandler().postDelayed(() -> {
-            if (true) { // TODO: mBinded == false) {
-                Log.i(TAG, "Timeout occurred and service still not bound. Shutting down.");
-                stopSelf();
-
-            }
-        }, 5000);
+        stopSelf();
 
         // We want the onRebind method be called if anything else binds to it again
         return true;
@@ -739,11 +733,13 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
 
     @Override
     public void onDeviceConnecting(@NonNull BluetoothDevice device) {
-
+        Log.d(TAG, "onDeviceConnecting: " + device);
     }
 
     @Override
 	public void onDeviceConnected(final BluetoothDevice device) {
+        Log.d(TAG, "onDeviceConnected: " + device);
+
         // See if a log fetch has been requested
         Pair<Runnable, Integer> p = logFetchStartId.get(device.getAddress());
         if (p != null) {
@@ -765,12 +761,12 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
 
     @Override
     public void onDeviceFailedToConnect(@NonNull BluetoothDevice device, int reason) {
-
+        Log.d(TAG, "onDeviceFailedToConnect: " + device);
     }
 
     @Override
     public void onDeviceDisconnected(@NonNull final BluetoothDevice device, @DisconnectionReason final int reason) {
-
+        Log.d(TAG, "onDeviceDisconnected: " + device);
         /*
         // TODO
 		if (!mBinded) {
@@ -783,7 +779,7 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
 
     @Override
     public void onDeviceReady(BluetoothDevice device) {
-
+        Log.d(TAG, "onDeviceReady: " + device);
         // See if a log fetch has been requested
         if(logFetchStartId.get(device.getAddress()) != null) {
             getBleManager(device).fetchLogRecords(device1 -> onEmgLogFetchCompleted(device1), (device12, reason) -> onEmgLogFetchFailed(device12, reason));
@@ -821,7 +817,7 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
 
     @Override
     public void onDeviceDisconnecting(@NonNull BluetoothDevice device) {
-
+        Log.d(TAG, "onDeviceDisconnecting: " + device);
     }
 
 

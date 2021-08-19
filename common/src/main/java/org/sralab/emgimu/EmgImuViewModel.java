@@ -68,6 +68,9 @@ public abstract class EmgImuViewModel <T> extends AndroidViewModel {
     protected void onCleared() {
         super.onCleared();
         try {
+            if (service == null) {
+                throw new RuntimeException("Service disconnected before unregistering.");
+            }
             service.unregisterDevicesObserver(deviceListObserver);
             if (getObservePwr()) service.unregisterEmgPwrObserver(pwrObserver);
             if (getObserveStream()) service.unregisterEmgStreamObserver(streamObserver);
