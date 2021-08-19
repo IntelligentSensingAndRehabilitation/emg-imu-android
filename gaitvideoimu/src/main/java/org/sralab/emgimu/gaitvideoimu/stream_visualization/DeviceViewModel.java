@@ -50,8 +50,16 @@ public class DeviceViewModel extends EmgImuViewModel<Device> {
     @Override
     public boolean getObserveAccel() { return true; }
 
+    @Override
+    public boolean getObserveBat() { return true; }
+
     public DeviceViewModel(Application app) {
         super(app);
+    }
+
+    @Override
+    public void batUpdated(Device dev, float bat) {
+        dev.setBattery(bat);
     }
 
     @Override
