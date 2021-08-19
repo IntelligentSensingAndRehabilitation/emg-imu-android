@@ -70,6 +70,7 @@ import no.nordicsemi.android.ble.BleManager;
 import no.nordicsemi.android.ble.ConnectionPriorityRequest;
 import no.nordicsemi.android.ble.PhyRequest;
 import no.nordicsemi.android.ble.RequestQueue;
+import no.nordicsemi.android.ble.callback.BeforeCallback;
 import no.nordicsemi.android.ble.callback.FailCallback;
 import no.nordicsemi.android.ble.callback.SuccessCallback;
 import no.nordicsemi.android.ble.data.Data;
@@ -96,7 +97,6 @@ public class EmgImuManager extends BleManager {
 
     /** EMG Service UUID **/
 	public final static UUID EMG_SERVICE_UUID = UUID.fromString("00001234-1212-EFDE-1523-785FEF13D123");
-    public final static UUID EMG_RAW_CHAR_UUID = UUID.fromString("00001235-1212-EFDE-1523-785FEF13D123");
     public final static UUID EMG_BUFF_CHAR_UUID = UUID.fromString("00001236-1212-EFDE-1523-785FEF13D123");
     public final static UUID EMG_PWR_CHAR_UUID = UUID.fromString("00001237-1212-EFDE-1523-785FEF13D123");
 
@@ -111,7 +111,7 @@ public class EmgImuManager extends BleManager {
     private final float EMG_FS = 2000.0f;
     private final int EMG_BUFFER_LEN = (40 / 2); // elements in UINT16
 
-    private BluetoothGattCharacteristic mEmgRawCharacteristic, mEmgBuffCharacteristic, mEmgPwrCharacteristic;
+    private BluetoothGattCharacteristic mEmgBuffCharacteristic, mEmgPwrCharacteristic;
     private BluetoothGattCharacteristic mImuAccelCharacteristic, mImuGyroCharacteristic, mImuMagCharacteristic, mImuAttitudeCharacteristic;
     private BluetoothGattCharacteristic mImuCalibrationCharacteristic;
 
@@ -309,7 +309,6 @@ public class EmgImuManager extends BleManager {
 		protected boolean isRequiredServiceSupported(final BluetoothGatt gatt) {
 			final BluetoothGattService llService = gatt.getService(EMG_SERVICE_UUID);
 			if (llService != null) {
-                mEmgRawCharacteristic = llService.getCharacteristic(EMG_RAW_CHAR_UUID);
                 mEmgBuffCharacteristic = llService.getCharacteristic(EMG_BUFF_CHAR_UUID);
                 mEmgPwrCharacteristic  = llService.getCharacteristic(EMG_PWR_CHAR_UUID);
 
@@ -327,8 +326,7 @@ public class EmgImuManager extends BleManager {
             if (!batterySupported)
                 log(Log.ERROR, "Battery is not supported");
 
-			return  (mEmgRawCharacteristic != null) &&
-                    (mEmgPwrCharacteristic != null) &&
+			return  (mEmgPwrCharacteristic != null) &&
                     (mEmgBuffCharacteristic != null) &&
                     deviceInfoSupported &&
                     batterySupported;
@@ -372,9 +370,6 @@ public class EmgImuManager extends BleManager {
                 log(Log.INFO, "Created stream logger");
                 streamLogger = new FirebaseStreamLogger(EmgImuManager.this, getContext());
             }
-
-            loadThreshold();
-            loadPwrRange();
 
             connectionState.postValue(getConnectionState());
 
@@ -492,12 +487,10 @@ public class EmgImuManager extends BleManager {
 
         long ts_ms = emgPwrResolver.resolveTime(counter, timestamp, 1);
 
-        mEmgPwr = pwr_val;
-        mCallbacks.onEmgPwrReceived(device, ts_ms, mEmgPwr);
-        checkEmgClick(device, pwr_val);
+        mCallbacks.onEmgPwrReceived(device, ts_ms, pwr_val);
 
         if (mLogging && streamLogger != null) {
-            double [] data = {(double) mEmgPwr};
+            double [] data = {(double) pwr_val};
             streamLogger.addPwrSample(new Date().getTime(), timestamp, counter, data);
         }
     }
@@ -589,7 +582,6 @@ public class EmgImuManager extends BleManager {
             throw new RuntimeException("Channel count seemed to change between calls");
         }
 
-        mEmgBuff = data;
         mCallbacks.onEmgStreamReceived(device, buf_ts_ms, data);
 
         if (mLogging && streamLogger != null) {
@@ -1151,9 +1143,9 @@ public class EmgImuManager extends BleManager {
 
     // Controls to enable what data we are receiving from the sensor
     public void enableEmgPwrNotifications() {
-        setNotificationCallback(mEmgPwrCharacteristic)
-                .with((device, data) -> parseEmgPwr(device ,data));
         enableNotifications(mEmgPwrCharacteristic)
+                .before(device -> setNotificationCallback(mEmgPwrCharacteristic).with((_device, data) -> parseEmgPwr(_device ,data)))
+                .done(device -> log(Log.INFO, "EMG power notifications enabled successfully"))
                 .fail((device, status) -> log(Log.ERROR, "Unable to enable EMG power notification"))
                 .enqueue();
     }
@@ -1163,9 +1155,9 @@ public class EmgImuManager extends BleManager {
     }
 
     public void enableEmgBuffNotifications() {
-        setNotificationCallback(mEmgBuffCharacteristic)
-                .with((device, data) -> parseEmgBuff(device ,data));
         enableNotifications(mEmgBuffCharacteristic)
+                .before(device -> setNotificationCallback(mEmgBuffCharacteristic).with((_device, data) -> parseEmgBuff(_device ,data)))
+                .done(device -> log(Log.INFO, "EMG buffer notifications enabled successfully"))
                 .fail((device, status) -> log(Log.ERROR, "Unable to enable EMG buffer notification"))
                 .enqueue();
     }
@@ -1175,10 +1167,10 @@ public class EmgImuManager extends BleManager {
     }
 
     public void enableAttitudeNotifications() {
-        setNotificationCallback(mImuAttitudeCharacteristic)
-                .with((device, data) -> parseImuAttitude(device ,data));
         enableNotifications(mImuAttitudeCharacteristic)
-                .fail((device, status) -> log(Log.ERROR, "Unable to enable Attitude notification"))
+                .before(device -> setNotificationCallback(mImuAttitudeCharacteristic).with((_device, data) -> parseImuAttitude(_device, data)))
+                .done(device -> log(Log.INFO, "Attitude notifications enabled successfully"))
+                .fail((device, status) -> log(Log.ERROR, "Unable to enable Attitude notification: " + status))
                 .enqueue();
     }
 
@@ -1187,26 +1179,26 @@ public class EmgImuManager extends BleManager {
     }
 
     public void enableAccelNotifications() {
-        setNotificationCallback(mImuAccelCharacteristic)
-                .with((device, data) -> parseImuAccel(device, data));
         enableNotifications(mImuAccelCharacteristic)
-                .fail((device, status) -> log(Log.ERROR, "Unable to enable Accel notification"))
+                .before(device -> setNotificationCallback(mImuAccelCharacteristic).with((_device, data) -> parseImuAccel(_device, data)))
+                .done(device -> log(Log.INFO, "Accel notifications enabled successfully"))
+                .fail((device, status) -> log(Log.ERROR, "Unable to enable Accel notification: " + status))
                 .enqueue();
     }
 
     public void enableGyroNotifications() {
-        setNotificationCallback(mImuGyroCharacteristic)
-                .with((device, data) -> parseImuGyro(device, data));
         enableNotifications(mImuGyroCharacteristic)
-                .fail((device, status) -> log(Log.ERROR, "Unable to enable Gyro notification"))
+                .before(device -> setNotificationCallback(mImuGyroCharacteristic).with((_device, data) -> parseImuGyro(_device, data)))
+                .done(device -> log(Log.INFO, "Gyro notifications enabled successfully"))
+                .fail((device, status) -> log(Log.ERROR, "Unable to enable Gyro notification: " + status))
                 .enqueue();
     }
 
     public void enableMagNotifications() {
-        setNotificationCallback(mImuMagCharacteristic)
-                .with((device, data) -> parseImuMag(device ,data));
         enableNotifications(mImuMagCharacteristic)
-                .fail((device, status) -> log(Log.ERROR, "Unable to enable Mag notification"))
+                .before(device -> setNotificationCallback(mImuMagCharacteristic).with((_device, data) -> parseImuMag(_device, data)))
+                .done(device -> log(Log.INFO, "Mag notifications enabled successfully"))
+                .fail((device, status) -> log(Log.ERROR, "Unable to enable Mag notification: " + status))
                 .enqueue();
     }
 
@@ -1225,133 +1217,10 @@ public class EmgImuManager extends BleManager {
     /**** Public API for controlling what we are listening to ****/
     // This is mostly a very thin shim to the above methods
 
-    // Accessors for the raw EMG
-	private int mEmgRaw = -1;
-    int getEmgRaw() { return mEmgRaw; }
-
-    //! Return if this is the raw EMG characteristic
-    private boolean isEmgRawCharacteristic(final BluetoothGattCharacteristic characteristic) {
-        if (characteristic == null)
-            return false;
-
-        return EMG_RAW_CHAR_UUID.equals(characteristic.getUuid());
-    }
-
-    // Accessors for the EMG power
-    private int mEmgPwr = -1;
-    int getEmgPwr() { return mEmgPwr; }
-
-    // TODO: this should be user calibrate-able, or automatic
-    private double MAX_SCALE = Short.MAX_VALUE * 2;
-    private double MIN_SCALE = 0x0000; // TODO: this should be user calibrate-able, or automatic
-
-    // Scale EMG from 0 to 1.0 using configurable endpoints
-    double getEmgPwrScaled() {
-        double val = (mEmgPwr - MIN_SCALE) / (MAX_SCALE - MIN_SCALE);
-        if (val > 1.0)
-            val = 1.0;
-        else if (val < 0.0)
-            val = 0.0;
-        return val;
-    }
-
-    //! Output true when EMG power goes over threshold
-    private long THRESHOLD_TIME_NS = 500 * (int)1e6; // 500 ms
-    private float max_pwr = 2000;
-    private float min_pwr = 100;
-    private float threshold_low = 200;
-    private float threshold_high = 500;
-    private long mThresholdTime = 0;
-    private boolean overThreshold;
-
-    /**
-     * Check if a click event happened when EMG goes ovre threshold with hysteresis and
-     * refractory period.
-     */
-    private void checkEmgClick(final BluetoothDevice device, int value) {
-        // Have a refractory time to prevent noise making multiple events
-        long eventTime = System.nanoTime();
-        boolean refractory = (eventTime - mThresholdTime) > THRESHOLD_TIME_NS;
-
-        if (value > threshold_high && overThreshold == false && refractory) {
-            mThresholdTime = eventTime; // Store this time
-            overThreshold = true;
-            //mCallbacks.onEmgClick(device);
-        } else if (value < threshold_low && overThreshold == true) {
-            overThreshold = false;
-        }
-    }
-
-    // Accessors for the EMG buffer
-    private double [][] mEmgBuff;
-    double[][] getEmgBuff() {
-        return mEmgBuff;
-    }
-
-
     public String getAddress() {
         if (getBluetoothDevice() == null)
             return "";
         return getBluetoothDevice().getAddress();
-    }
-
-
-    private String devicePrefName(String pref) {
-        return pref + "_" + getBluetoothDevice();
-    }
-
-    void setClickThreshold(float min, float max) {
-        log(Log.INFO, "New threshold " + min + " " + max);
-
-        threshold_low = min;
-        threshold_high = max;
-
-        SharedPreferences sharedPref = getContext().getSharedPreferences(EmgImuService.SERVICE_PREFERENCES, Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPref.edit();
-        editor.putFloat(devicePrefName(EmgImuService.THRESHOLD_LOW_PREFERENCE), threshold_low);
-        editor.putFloat(devicePrefName(EmgImuService.THRESHOLD_HIGH_PREFERENCE), threshold_high);
-        editor.apply();
-    }
-
-    private void loadThreshold() {
-        SharedPreferences sharedPref = getContext().getSharedPreferences(EmgImuService.SERVICE_PREFERENCES, Context.MODE_PRIVATE);
-        threshold_low = sharedPref.getFloat(devicePrefName(EmgImuService.THRESHOLD_LOW_PREFERENCE), threshold_low);
-        threshold_high = sharedPref.getFloat(devicePrefName(EmgImuService.THRESHOLD_HIGH_PREFERENCE), threshold_high);
-
-        log(Log.INFO, "Loaded threshold " + threshold_low + " " + threshold_high);
-    }
-
-    void setPwrRange(float min, float max) {
-        log(Log.INFO, "New range " + min + " " + max);
-
-        min_pwr = min;
-        max_pwr = max;
-
-        SharedPreferences sharedPref = getContext().getSharedPreferences(EmgImuService.SERVICE_PREFERENCES, Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPref.edit();
-        editor.putFloat(devicePrefName(EmgImuService.MIN_PWR_PREFERENCE), min_pwr);
-        editor.putFloat(devicePrefName(EmgImuService.MAX_PWR_PREFERENCE), max_pwr);
-        editor.apply();
-    }
-
-    private void loadPwrRange() {
-        SharedPreferences sharedPref = getContext().getSharedPreferences(EmgImuService.SERVICE_PREFERENCES, Context.MODE_PRIVATE);
-        min_pwr = sharedPref.getFloat(devicePrefName(EmgImuService.MIN_PWR_PREFERENCE), min_pwr);
-        max_pwr = sharedPref.getFloat(devicePrefName(EmgImuService.MAX_PWR_PREFERENCE), max_pwr);
-
-        log(Log.INFO, "Loaded range " + min_pwr + " " + max_pwr + " From preference: " + devicePrefName(EmgImuService.MIN_PWR_PREFERENCE));
-    }
-
-    float getHighThreshold() {
-        return threshold_high;
-    }
-
-    float getMinPwr() {
-        return min_pwr;
-    }
-
-    float getMaxPwr() {
-        return max_pwr;
     }
 
     private MutableLiveData<Double> batteryVoltage = new MutableLiveData<>();
@@ -1387,10 +1256,6 @@ public class EmgImuManager extends BleManager {
         }
 
         return streamLogger.getReference();
-    }
-
-    public int getChannelCount() {
-        return mChannels;
     }
 
     public void filterInfoPrint(@NonNull final String message) {

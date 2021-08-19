@@ -105,10 +105,6 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
 
     public static final String SERVICE_PREFERENCES = "org.sralab.emgimu.PREFERENCES";
     public static final String DEVICE_PREFERENCE = "org.sralab.emgimu.DEVICE_LIST";
-    public static final String MIN_PWR_PREFERENCE = "org.sralab.emgimu.MIN_PWR_PREFERENCE";
-    public static final String MAX_PWR_PREFERENCE = "org.sralab.emgimu.MAX_PWR_PREFERENCE";
-    public static final String THRESHOLD_LOW_PREFERENCE = "org.sralab.emgimu.THRESHOLD_LOW_PREFERENCE";
-    public static final String THRESHOLD_HIGH_PREFERENCE = "org.sralab.emgimu.THRESHOLD_HIGH_PREFERENCE";
 
 	private final static String EMGIMU_GROUP_ID = "emgimu_connected_sensors";
 	private final static int NOTIFICATION_ID = 1000;
@@ -255,46 +251,10 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
 
         }
 
-
-        //! Set threshold
-        public void setClickThreshold(final BluetoothDevice device, float min, float max) {
-            final EmgImuManager manager = (EmgImuManager) getBleManager(device);
-            manager.setClickThreshold(min, max);
-        }
-
-        //! Set threshold
-        public void setPwrRange(final BluetoothDevice device, float min, float max) {
-            final EmgImuManager manager = (EmgImuManager) getBleManager(device);
-            manager.setPwrRange(min, max);
-        }
-
-        //! Get threshold
-        public float getClickThreshold(final BluetoothDevice device) {
-            final EmgImuManager manager = (EmgImuManager) getBleManager(device);
-            return manager.getHighThreshold();
-        }
-
-        //! Get threshold
-        public float getMinPwr(final BluetoothDevice device) {
-            final EmgImuManager manager = (EmgImuManager) getBleManager(device);
-            return manager.getMinPwr();
-        }
-
-        //! Get threshold
-        public float getMaxPwr(final BluetoothDevice device) {
-            final EmgImuManager manager = (EmgImuManager) getBleManager(device);
-            return manager.getMaxPwr();
-        }
-
         //! Get battery
         public LiveData<Double> getBattery(final BluetoothDevice device) {
             final EmgImuManager manager = (EmgImuManager) getBleManager(device);
             return manager.getBatteryVoltage();
-        }
-
-        public int getChannelCount(final BluetoothDevice device) {
-            final EmgImuManager manager = (EmgImuManager) getBleManager(device);
-            return manager.getChannelCount();
         }
 
         public void startCalibration(final BluetoothDevice device, EmgImuManager.CalibrationListener listener) {
@@ -727,24 +687,6 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
         final Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
         enableIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         startActivity(enableIntent);
-    }
-
-    public void onError(BluetoothDevice device, String message, int errorCode) {
-
-        if (errorCode == GattError.GATT_INVALID_PDU) {
-            Log.e(TAG, "Received invalid PDU. Will continue", new Exception("backtrack"));
-            return;
-        }
-        //mBinder.log(device, LogContract.Log.Level.WARNING, "onError: " + message +
-        //        " errorCode: " + errorCode + "(" + GattError.parseConnectionError(errorCode) + ")");
-        Log.e(TAG, "onError", new Exception("backtrack"));
-
-        // See if a log fetch has been requested
-        Pair<Runnable, Integer> p = logFetchStartId.get(device.getAddress());
-        if (p != null) {
-            Log.d(TAG, "Unable to download log from " + device.getAddress() + " list of threads " + logFetchStartId);
-            smartStop(device);
-        }
     }
 
     @Override
