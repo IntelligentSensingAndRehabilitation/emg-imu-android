@@ -320,7 +320,8 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
             emgStreamCbs.add(callback);
             for (final BluetoothDevice device : getManagedDevices()) {
                 final EmgImuManager manager = (EmgImuManager) getBleManager(device);
-                manager.enableEmgBuffNotifications();
+                if (manager.isReady())
+                    manager.enableEmgBuffNotifications();
             }
         }
 
@@ -341,7 +342,8 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
             emgPwrCbs.add(callback);
             for (final BluetoothDevice device : getManagedDevices()) {
                 final EmgImuManager manager = (EmgImuManager) getBleManager(device);
-                manager.enableEmgPwrNotifications();
+                if (manager.isReady())
+                    manager.enableEmgPwrNotifications();
             }
         }
 
@@ -362,7 +364,8 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
             imuAccelCbs.add(callback);
             for (final BluetoothDevice device : getManagedDevices()) {
                 final EmgImuManager manager = getBleManager(device);
-                manager.enableAccelNotifications();
+                if (manager.isReady())
+                    manager.enableAccelNotifications();
             }
         }
 
@@ -382,7 +385,8 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
             imuGyroCbs.add(callback);
             for (final BluetoothDevice device : getManagedDevices()) {
                 final EmgImuManager manager = getBleManager(device);
-                manager.enableGyroNotifications();
+                if (manager.isReady())
+                    manager.enableGyroNotifications();
             }
         }
 
@@ -402,7 +406,8 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
             imuMagCbs.add(callback);
             for (final BluetoothDevice device : getManagedDevices()) {
                 final EmgImuManager manager = getBleManager(device);
-                manager.enableMagNotifications();
+                if (manager.isReady())
+                    manager.enableMagNotifications();
             }
         }
 
@@ -422,7 +427,8 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
             imuQuatCbs.add(callback);
             for (final BluetoothDevice device : getManagedDevices()) {
                 final EmgImuManager manager = getBleManager(device);
-                manager.enableAttitudeNotifications();
+                if (manager.isReady())
+                    manager.enableAttitudeNotifications();
             }
         }
 
