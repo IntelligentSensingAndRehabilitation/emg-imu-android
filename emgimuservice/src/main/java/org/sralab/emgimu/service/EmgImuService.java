@@ -39,6 +39,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.os.RemoteException;
 import android.text.TextUtils;
 import android.util.Log;
@@ -449,7 +450,7 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
     public void onCreate() {
         Log.d(TAG, "onCreate()");
 
-        handler = new Handler();
+        handler = new Handler(Looper.getMainLooper());
 
         // Initialize the map of BLE managers
         bleManagers = new HashMap<>();

@@ -70,13 +70,8 @@ import no.nordicsemi.android.ble.BleManager;
 import no.nordicsemi.android.ble.ConnectionPriorityRequest;
 import no.nordicsemi.android.ble.PhyRequest;
 import no.nordicsemi.android.ble.RequestQueue;
-import no.nordicsemi.android.ble.callback.BeforeCallback;
-import no.nordicsemi.android.ble.callback.FailCallback;
-import no.nordicsemi.android.ble.callback.SuccessCallback;
 import no.nordicsemi.android.ble.data.Data;
 import no.nordicsemi.android.ble.data.MutableData;
-
-import static java.lang.Math.abs;
 
 public class EmgImuManager extends BleManager {
 	private final String TAG = "EmgImuManager";
