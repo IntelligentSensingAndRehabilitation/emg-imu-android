@@ -101,11 +101,6 @@ public class HomeFragment extends Fragment {
         mUser = mAuth.getCurrentUser(); // Log in performed by main service
         storage = FirebaseStorage.getInstance();
 
-        if (mUser == null) {
-            Log.e(TAG, "Should have a user assigned here");
-            throw new InvalidParameterException("No FirebaseUser");
-        }
-
         dvm = new ViewModelProvider(this, ViewModelProvider.AndroidViewModelFactory.getInstance(getActivity().getApplication())).get(DeviceViewModel.class);
         recyclerView.setAdapter(streamingAdapter = new StreamingAdapter(this, dvm));
 
