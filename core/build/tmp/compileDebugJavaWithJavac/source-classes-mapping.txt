@@ -1,7 +1,7 @@
 no/nordicsemi/android/nrftoolbox/AppHelpFragment.java
  no.nordicsemi.android.nrftoolbox.AppHelpFragment
-org/sralab/emgimu/mve/Device.java
- org.sralab.emgimu.mve.Device
+org/sralab/emgimu/config/DeviceViewModel.java
+ org.sralab.emgimu.config.DeviceViewModel
 org/sralab/emgimu/mve/MaxEMGActivity.java
  org.sralab.emgimu.mve.MaxEMGActivity
 no/nordicsemi/android/nrftoolbox/scanner/ScannerFragment.java
@@ -20,11 +20,8 @@ org/sralab/emgimu/mve/EmgPowerView.java
  org.sralab.emgimu.mve.EmgPowerView
  org.sralab.emgimu.mve.EmgPowerView$OnMaxChangedEventListener
  org.sralab.emgimu.mve.EmgPowerView$mListener
-org/sralab/emgimu/launcher/LauncherActivity.java
- org.sralab.emgimu.launcher.LauncherActivity
- org.sralab.emgimu.launcher.LauncherActivity$1
- org.sralab.emgimu.launcher.LauncherActivity$2
- org.sralab.emgimu.launcher.LauncherActivity$3
+org/sralab/emgimu/config/ConfigActivity.java
+ org.sralab.emgimu.config.ConfigActivity
 no/nordicsemi/android/nrftoolbox/scanner/ExtendedBluetoothDevice.java
  no.nordicsemi.android.nrftoolbox.scanner.ExtendedBluetoothDevice
 org/sralab/emgimu/config/BuildConfig.java
@@ -38,13 +35,16 @@ no/nordicsemi/android/nrftoolbox/scanner/DeviceListAdapter.java
  no.nordicsemi.android.nrftoolbox.scanner.DeviceListAdapter
  no.nordicsemi.android.nrftoolbox.scanner.DeviceListAdapter$1
  no.nordicsemi.android.nrftoolbox.scanner.DeviceListAdapter$ViewHolder
-org/sralab/emgimu/config/ConfigActivity.java
- org.sralab.emgimu.config.ConfigActivity
-org/sralab/emgimu/config/DeviceViewModel.java
- org.sralab.emgimu.config.DeviceViewModel
 org/sralab/emgimu/config/Device.java
  org.sralab.emgimu.config.Device
+org/sralab/emgimu/launcher/LauncherActivity.java
+ org.sralab.emgimu.launcher.LauncherActivity
+ org.sralab.emgimu.launcher.LauncherActivity$1
+ org.sralab.emgimu.launcher.LauncherActivity$2
+ org.sralab.emgimu.launcher.LauncherActivity$3
 org/sralab/emgimu/config/DeviceAdapter.java
  org.sralab.emgimu.config.DeviceAdapter
  org.sralab.emgimu.config.DeviceAdapter$DefaultItemAnimatorNoChange
  org.sralab.emgimu.config.DeviceAdapter$ViewHolder
+org/sralab/emgimu/mve/Device.java
+ org.sralab.emgimu.mve.Device

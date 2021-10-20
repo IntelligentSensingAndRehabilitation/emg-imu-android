@@ -13,10 +13,17 @@ org/sralab/emgimu/streaming/messages/ImuMagMessage.java
 org/sralab/emgimu/streaming/NetworkStreaming.java
  org.sralab.emgimu.streaming.NetworkStreaming
  org.sralab.emgimu.streaming.NetworkStreaming$MessageReceiver
-org/sralab/emgimu/service/EmgImuObserver.java
- org.sralab.emgimu.service.EmgImuObserver
-org/sralab/emgimu/service/MyFirebaseMessagingService.java
- org.sralab.emgimu.service.MyFirebaseMessagingService
+org/sralab/emgimu/service/EmgImuManager.java
+ org.sralab.emgimu.service.EmgImuManager
+ org.sralab.emgimu.service.EmgImuManager$1
+ org.sralab.emgimu.service.EmgImuManager$CalibrationListener
+ org.sralab.emgimu.service.EmgImuManager$EmgImuManagerGattCallback
+ org.sralab.emgimu.service.EmgImuManager$LogFetchFailedCallback
+ org.sralab.emgimu.service.EmgImuManager$LogFetchSuccessCallback
+org/sralab/emgimu/logging/FirebaseEmgLogger.java
+ org.sralab.emgimu.logging.FirebaseEmgLogger
+ org.sralab.emgimu.logging.FirebaseEmgLogger$1
+ org.sralab.emgimu.logging.FirebaseEmgLogger$2
 org/sralab/emgimu/streaming/messages/ImuGyroMessage.java
  org.sralab.emgimu.streaming.messages.ImuGyroMessage
 org/sralab/emgimu/logging/FirebaseEmgLogEntry.java
@@ -41,23 +48,16 @@ org/sralab/emgimu/streaming/messages/EmgRawMessage.java
  org.sralab.emgimu.streaming.messages.EmgRawMessage
 org/sralab/emgimu/parser/RecordAccessControlPointParser.java
  org.sralab.emgimu.parser.RecordAccessControlPointParser
-org/sralab/emgimu/streaming/messages/EmgPwrMessage.java
- org.sralab.emgimu.streaming.messages.EmgPwrMessage
-org/sralab/emgimu/logging/FirebaseEmgLogger.java
- org.sralab.emgimu.logging.FirebaseEmgLogger
- org.sralab.emgimu.logging.FirebaseEmgLogger$1
- org.sralab.emgimu.logging.FirebaseEmgLogger$2
-org/sralab/emgimu/service/EmgImuManager.java
- org.sralab.emgimu.service.EmgImuManager
- org.sralab.emgimu.service.EmgImuManager$1
- org.sralab.emgimu.service.EmgImuManager$CalibrationListener
- org.sralab.emgimu.service.EmgImuManager$EmgImuManagerGattCallback
- org.sralab.emgimu.service.EmgImuManager$LogFetchFailedCallback
- org.sralab.emgimu.service.EmgImuManager$LogFetchSuccessCallback
 org/sralab/emgimu/logging/FirebaseStreamLogger.java
  org.sralab.emgimu.logging.FirebaseStreamLogger
  org.sralab.emgimu.logging.FirebaseStreamLogger$1
  org.sralab.emgimu.logging.FirebaseStreamLogger$MsgWriteRunnable
+org/sralab/emgimu/service/MyFirebaseMessagingService.java
+ org.sralab.emgimu.service.MyFirebaseMessagingService
+org/sralab/emgimu/streaming/messages/EmgPwrMessage.java
+ org.sralab.emgimu.streaming.messages.EmgPwrMessage
+org/sralab/emgimu/service/EmgImuObserver.java
+ org.sralab.emgimu.service.EmgImuObserver
 org/sralab/emgimu/service/EmgImuService.java
  org.sralab.emgimu.service.EmgImuService
  org.sralab.emgimu.service.EmgImuService$1
