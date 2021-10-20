@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "C:\\Users\\vstepanov\\Documents\\Projects\\emg-imu\\android\\emgimu\\build\\intermediates\\incremental\\mergeDebugResources\\merged.dir\\values-km\\values-km.xml",
+            "outputFile": "C:\\Users\\vstepanov\\Documents\\Projects\\dynamometer\\emg-imu\\android\\emgimu\\build\\intermediates\\incremental\\mergeDebugResources\\merged.dir\\values-km\\values-km.xml",
             "map": [
                 {
                     "source": "C:\\Users\\vstepanov\\.gradle\\caches\\transforms-2\\files-2.1\\5cc8106824a54f5cbb3948cfbfcb812e\\jetified-play-services-base-17.1.0\\res\\values-km\\values.xml",

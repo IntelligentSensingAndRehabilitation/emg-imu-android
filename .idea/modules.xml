@@ -7,7 +7,6 @@
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/core/android.core.iml" filepath="$PROJECT_DIR$/.idea/modules/core/android.core.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/emgimu/android.emgimu.iml" filepath="$PROJECT_DIR$/.idea/modules/emgimu/android.emgimu.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/emgimuservice/android.emgimuservice.iml" filepath="$PROJECT_DIR$/.idea/modules/emgimuservice/android.emgimuservice.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/gaitvideoimu/android.gaitvideoimu.iml" filepath="$PROJECT_DIR$/.idea/modules/gaitvideoimu/android.gaitvideoimu.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/imu_calibration/android.imu_calibration.iml" filepath="$PROJECT_DIR$/.idea/modules/imu_calibration/android.imu_calibration.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/spasticitymonitor/android.spasticitymonitor.iml" filepath="$PROJECT_DIR$/.idea/modules/spasticitymonitor/android.spasticitymonitor.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/streaming/android.streaming.iml" filepath="$PROJECT_DIR$/.idea/modules/streaming/android.streaming.iml" />

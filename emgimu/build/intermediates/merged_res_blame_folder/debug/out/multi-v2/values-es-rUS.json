@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "C:\\Users\\vstepanov\\Documents\\Projects\\emg-imu\\android\\emgimu\\build\\intermediates\\incremental\\mergeDebugResources\\merged.dir\\values-es-rUS\\values-es-rUS.xml",
+            "outputFile": "C:\\Users\\vstepanov\\Documents\\Projects\\dynamometer\\emg-imu\\android\\emgimu\\build\\intermediates\\incremental\\mergeDebugResources\\merged.dir\\values-es-rUS\\values-es-rUS.xml",
             "map": [
                 {
                     "source": "C:\\Users\\vstepanov\\.gradle\\caches\\transforms-2\\files-2.1\\25bb2a955b36819d1897faff1a45de36\\jetified-firebase-messaging-22.0.0\\res\\values-es-rUS\\values.xml",

@@ -181,7 +181,7 @@ public class FirebaseStreamLogger extends Observable {
         Gson gson = new Gson();
         ForceMessage msg = new ForceMessage(mDeviceMac, time, data);
         addJson(gson.toJson(msg));
-        Log.d("TAG", "hello from addForceSample in FirebaseStreamLogger.java");
+        //Log.d("TAG", "hello from addForceSample in FirebaseStreamLogger.java");
     }
 
     public void addAttitudeSample(long time, float [] data) {

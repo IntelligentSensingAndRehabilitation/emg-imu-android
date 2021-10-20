@@ -6,64 +6,64 @@
 6
 7    <uses-sdk
 8        android:minSdkVersion="26"
-8-->C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml
+8-->C:\Users\vstepanov\Documents\Projects\dynamometer\emg-imu\android\streaming\src\main\AndroidManifest.xml
 9        android:targetSdkVersion="28" />
-9-->C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml
+9-->C:\Users\vstepanov\Documents\Projects\dynamometer\emg-imu\android\streaming\src\main\AndroidManifest.xml
 10
 11    <uses-permission android:name="android.permission.BLUETOOTH" />
-11-->C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml:7:5-68
-11-->C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml:7:22-65
+11-->C:\Users\vstepanov\Documents\Projects\dynamometer\emg-imu\android\streaming\src\main\AndroidManifest.xml:7:5-68
+11-->C:\Users\vstepanov\Documents\Projects\dynamometer\emg-imu\android\streaming\src\main\AndroidManifest.xml:7:22-65
 12    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
-12-->C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml:8:5-74
-12-->C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml:8:22-71
+12-->C:\Users\vstepanov\Documents\Projects\dynamometer\emg-imu\android\streaming\src\main\AndroidManifest.xml:8:5-74
+12-->C:\Users\vstepanov\Documents\Projects\dynamometer\emg-imu\android\streaming\src\main\AndroidManifest.xml:8:22-71
 13
 14    <application>
-14-->C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml:10:5-37:19
+14-->C:\Users\vstepanov\Documents\Projects\dynamometer\emg-imu\android\streaming\src\main\AndroidManifest.xml:10:5-37:19
 15        <activity
-15-->C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml:13:9-23:20
+15-->C:\Users\vstepanov\Documents\Projects\dynamometer\emg-imu\android\streaming\src\main\AndroidManifest.xml:13:9-23:20
 16            android:name="org.sralab.emgimu.streaming.StreamingActivity"
-16-->C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml:14:13-73
+16-->C:\Users\vstepanov\Documents\Projects\dynamometer\emg-imu\android\streaming\src\main\AndroidManifest.xml:14:13-73
 17            android:icon="@drawable/ic_streaming"
-17-->C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml:15:13-50
+17-->C:\Users\vstepanov\Documents\Projects\dynamometer\emg-imu\android\streaming\src\main\AndroidManifest.xml:15:13-50
 18            android:label="@string/streaming_title"
-18-->C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml:16:13-52
+18-->C:\Users\vstepanov\Documents\Projects\dynamometer\emg-imu\android\streaming\src\main\AndroidManifest.xml:16:13-52
 19            android:launchMode="singleTask" >
-19-->C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml:17:13-44
+19-->C:\Users\vstepanov\Documents\Projects\dynamometer\emg-imu\android\streaming\src\main\AndroidManifest.xml:17:13-44
 20            <intent-filter>
-20-->C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml:18:13-22:29
+20-->C:\Users\vstepanov\Documents\Projects\dynamometer\emg-imu\android\streaming\src\main\AndroidManifest.xml:18:13-22:29
 21                <action android:name="android.intent.action.MAIN" />
-21-->C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml:19:17-69
-21-->C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml:19:25-66
+21-->C:\Users\vstepanov\Documents\Projects\dynamometer\emg-imu\android\streaming\src\main\AndroidManifest.xml:19:17-69
+21-->C:\Users\vstepanov\Documents\Projects\dynamometer\emg-imu\android\streaming\src\main\AndroidManifest.xml:19:25-66
 22
 23                <category android:name="org.sralab.emgimu.LAUNCHER" />
-23-->C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml:21:17-71
-23-->C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml:21:27-68
+23-->C:\Users\vstepanov\Documents\Projects\dynamometer\emg-imu\android\streaming\src\main\AndroidManifest.xml:21:17-71
+23-->C:\Users\vstepanov\Documents\Projects\dynamometer\emg-imu\android\streaming\src\main\AndroidManifest.xml:21:27-68
 24            </intent-filter>
 25        </activity>
 26        <activity
-26-->C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml:25:9-32:20
+26-->C:\Users\vstepanov\Documents\Projects\dynamometer\emg-imu\android\streaming\src\main\AndroidManifest.xml:25:9-32:20
 27            android:name="org.sralab.emgimu.imu_streaming.ImuStreamingActivity"
-27-->C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml:26:13-80
+27-->C:\Users\vstepanov\Documents\Projects\dynamometer\emg-imu\android\streaming\src\main\AndroidManifest.xml:26:13-80
 28            android:label="IMU Streaming" >
-28-->C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml:27:13-42
+28-->C:\Users\vstepanov\Documents\Projects\dynamometer\emg-imu\android\streaming\src\main\AndroidManifest.xml:27:13-42
 29            <intent-filter>
-29-->C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml:18:13-22:29
+29-->C:\Users\vstepanov\Documents\Projects\dynamometer\emg-imu\android\streaming\src\main\AndroidManifest.xml:18:13-22:29
 30                <action android:name="android.intent.action.MAIN" />
-30-->C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml:19:17-69
-30-->C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml:19:25-66
+30-->C:\Users\vstepanov\Documents\Projects\dynamometer\emg-imu\android\streaming\src\main\AndroidManifest.xml:19:17-69
+30-->C:\Users\vstepanov\Documents\Projects\dynamometer\emg-imu\android\streaming\src\main\AndroidManifest.xml:19:25-66
 31
 32                <category android:name="org.sralab.emgimu.LAUNCHER" />
-32-->C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml:21:17-71
-32-->C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml:21:27-68
+32-->C:\Users\vstepanov\Documents\Projects\dynamometer\emg-imu\android\streaming\src\main\AndroidManifest.xml:21:17-71
+32-->C:\Users\vstepanov\Documents\Projects\dynamometer\emg-imu\android\streaming\src\main\AndroidManifest.xml:21:27-68
 33            </intent-filter>
 34        </activity>
 35
 36        <meta-data
-36-->C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml:34:9-36:72
+36-->C:\Users\vstepanov\Documents\Projects\dynamometer\emg-imu\android\streaming\src\main\AndroidManifest.xml:34:9-36:72
 37            android:name="io.fabric.ApiKey"
-37-->C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml:35:13-44
+37-->C:\Users\vstepanov\Documents\Projects\dynamometer\emg-imu\android\streaming\src\main\AndroidManifest.xml:35:13-44
 38            android:value="8751562450c786ca67410fd4e08fbb7c9303dbea" />
-38-->C:\Users\vstepanov\Documents\Projects\emg-imu\android\streaming\src\main\AndroidManifest.xml:36:13-69
+38-->C:\Users\vstepanov\Documents\Projects\dynamometer\emg-imu\android\streaming\src\main\AndroidManifest.xml:36:13-69
 39    </application>
 40
 41</manifest>

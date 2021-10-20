@@ -47,6 +47,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.protobuf.UInt32Value;
 
 import org.sralab.emgimu.logging.FirebaseEmgLogger;
 import org.sralab.emgimu.logging.FirebaseStreamLogger;
@@ -489,12 +490,22 @@ public class EmgImuManager extends BleManager {
         //byte counter = buffer[1];
                 long timestamp = 0;*/
 
-        int counter = 256 * buffer[1] + buffer[2];
-        int pwr_val = 256 * buffer[3] + buffer[4];
-        Log.d(TAG, "Hi Victor from parseEmgPwr: "
-                + "buffer.length= " + buffer.length
-                + " | counter= " + counter
-                + " | power= " + pwr_val); // #1/1 change for mmt
+/*        int counter = 256 * buffer[1] + buffer[2];
+        int pwr_val = 256 * buffer[3] + buffer[4];*/
+
+        final int counterQuotient = buffer[1] & 0xFF; // byte comes in signed, need it unsigned
+        final int counterRemainder = buffer[2] & 0xFF;
+        final int forceQuotient = buffer[3] & 0xFF;
+        final int forceRemainder = buffer[4] & 0xFF;
+
+        int counter = 256 * counterQuotient + counterRemainder;
+        int pwr_val = 256 * forceQuotient + forceRemainder;
+
+//        Log.d(TAG, "Hi Victor from parseEmgPwr: "
+//                + "buffer.length= " + buffer.length
+//                + " | counter= " + counter
+//                + " | power= " + pwr_val); // #1/1 change for mmt
+        Log.d(TAG, "Received: " + counter + ',' + pwr_val + ", (" + buffer[1] + ", " + buffer[2] + ')');
         /*
                 long timestamp = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 2);
 
@@ -512,7 +523,7 @@ public class EmgImuManager extends BleManager {
         if (mLogging && streamLogger != null) {
             double [] data = {(double) mEmgPwr};
             streamLogger.addForceSample(ts_ms, data);
-            Log.d(TAG, "sent force data to db");
+            //Log.d(TAG, "sent force data to db");
         }
     }
 

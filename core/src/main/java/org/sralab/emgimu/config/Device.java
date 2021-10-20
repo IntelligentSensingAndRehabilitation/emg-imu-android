@@ -40,7 +40,8 @@ public class Device {
     }
 
     public Device() {
-        power.setScale(1.0f / 5000.0f);
+//        power.setScale(1.0f / 5000.0f);
+        power.setScale(1.0f / 100.0f);
         power.setPositive(true);
     }
 

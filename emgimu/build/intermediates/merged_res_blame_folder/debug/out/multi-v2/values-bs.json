@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "C:\\Users\\vstepanov\\Documents\\Projects\\emg-imu\\android\\emgimu\\build\\intermediates\\incremental\\mergeDebugResources\\merged.dir\\values-bs\\values-bs.xml",
+            "outputFile": "C:\\Users\\vstepanov\\Documents\\Projects\\dynamometer\\emg-imu\\android\\emgimu\\build\\intermediates\\incremental\\mergeDebugResources\\merged.dir\\values-bs\\values-bs.xml",
             "map": [
                 {
                     "source": "C:\\Users\\vstepanov\\.gradle\\caches\\transforms-2\\files-2.1\\b659bd06b879e523cb1d01cef28d3a27\\core-1.5.0\\res\\values-bs\\values-bs.xml",

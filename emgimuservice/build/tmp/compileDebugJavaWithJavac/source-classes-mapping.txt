@@ -29,6 +29,8 @@ org/sralab/emgimu/service/firebase/FirebaseMagCalibration.java
  org.sralab.emgimu.service.firebase.FirebaseMagCalibration
 org/sralab/emgimu/streaming/messages/TrackingXYCoordinate.java
  org.sralab.emgimu.streaming.messages.TrackingXYCoordinate
+org/sralab/emgimu/streaming/messages/ForceMessage.java
+ org.sralab.emgimu.streaming.messages.ForceMessage
 org/sralab/emgimu/service/BuildConfig.java
  org.sralab.emgimu.service.BuildConfig
 org/sralab/emgimu/streaming/messages/ImuAccelMessage.java
@@ -41,11 +43,6 @@ org/sralab/emgimu/parser/RecordAccessControlPointParser.java
  org.sralab.emgimu.parser.RecordAccessControlPointParser
 org/sralab/emgimu/streaming/messages/EmgPwrMessage.java
  org.sralab.emgimu.streaming.messages.EmgPwrMessage
-org/sralab/emgimu/service/EmgImuService.java
- org.sralab.emgimu.service.EmgImuService
- org.sralab.emgimu.service.EmgImuService$1
- org.sralab.emgimu.service.EmgImuService$EmgImuBinder
- org.sralab.emgimu.service.EmgImuService$OnEmgDecodedListener
 org/sralab/emgimu/logging/FirebaseEmgLogger.java
  org.sralab.emgimu.logging.FirebaseEmgLogger
  org.sralab.emgimu.logging.FirebaseEmgLogger$1
@@ -61,5 +58,8 @@ org/sralab/emgimu/logging/FirebaseStreamLogger.java
  org.sralab.emgimu.logging.FirebaseStreamLogger
  org.sralab.emgimu.logging.FirebaseStreamLogger$1
  org.sralab.emgimu.logging.FirebaseStreamLogger$MsgWriteRunnable
-org/sralab/emgimu/streaming/messages/ForceMessage.java
- org.sralab.emgimu.streaming.messages.ForceMessage
+org/sralab/emgimu/service/EmgImuService.java
+ org.sralab.emgimu.service.EmgImuService
+ org.sralab.emgimu.service.EmgImuService$1
+ org.sralab.emgimu.service.EmgImuService$EmgImuBinder
+ org.sralab.emgimu.service.EmgImuService$OnEmgDecodedListener
