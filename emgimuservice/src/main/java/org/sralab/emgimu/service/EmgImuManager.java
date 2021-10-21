@@ -108,6 +108,12 @@ public class EmgImuManager extends BleManager {
     public final static UUID IMU_ATTITUDE_CHAR_UUID = UUID.fromString("00002238-1212-EFDE-1523-785FEF13D123");
     public final static UUID IMU_CALIBRATION_CHAR_UUID = UUID.fromString("00002239-1212-EFDE-1523-785FEF13D123");
 
+    /** FORCE UUID **/
+    public final static UUID FORCE_SERVICE_UUID = UUID.fromString("6E400001-B5A3-F393-E0A9-E50E24DCCA9E");
+    public final static UUID FORCE_WRITE_CHAR_UUID = UUID.fromString("6E400002-B5A3-F393-E0A9-E50E24DCCA9E");
+    public final static UUID FORCE_READ_CHAR_UUID = UUID.fromString("6E400003-B5A3-F393-E0A9-E50E24DCCA9E");
+    public final static UUID FORCE_MESS_CHAR_UUID = UUID.fromString("6E400004-B5A3-F393-E0A9-E50E24DCCA9E");
+
     private final float EMG_FS = 2000.0f;
     private final int EMG_BUFFER_LEN = (40 / 2); // elements in UINT16
 
@@ -352,13 +358,14 @@ public class EmgImuManager extends BleManager {
                 mImuMagCharacteristic = iaService.getCharacteristic(IMU_MAG_CHAR_UUID);
                 mImuAttitudeCharacteristic = iaService.getCharacteristic(IMU_ATTITUDE_CHAR_UUID);
                 mImuCalibrationCharacteristic = iaService.getCharacteristic(IMU_CALIBRATION_CHAR_UUID);
+                log(Log.INFO, "---> IMU Service Detected!");
             }
             boolean supportsImu = mImuAccelCharacteristic != null &&
                     mImuGyroCharacteristic != null &&
                     mImuMagCharacteristic != null &&
                     mImuAttitudeCharacteristic != null;
 
-            log(Log.INFO, "Optional services found. Logging: " + supportsLogging + " IMU: " + supportsImu);
+            log(Log.INFO, "--> Yo, Victor: Optional services found. Logging: " + supportsLogging + " IMU: " + supportsImu);
 
             return supportsLogging && supportsImu;
 		}
