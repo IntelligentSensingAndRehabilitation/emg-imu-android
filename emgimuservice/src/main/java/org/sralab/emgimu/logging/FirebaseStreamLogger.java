@@ -18,6 +18,7 @@ import org.sralab.emgimu.streaming.messages.ImuAccelMessage;
 import org.sralab.emgimu.streaming.messages.ImuAttitudeMessage;
 import org.sralab.emgimu.streaming.messages.ImuGyroMessage;
 import org.sralab.emgimu.streaming.messages.ImuMagMessage;
+import org.sralab.emgimu.streaming.messages.ForceMessage;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -198,5 +199,12 @@ public class FirebaseStreamLogger extends Observable {
         Gson gson = new Gson();
         ImuMagMessage msg = new ImuMagMessage(mDeviceMac, time, sensor_timestamp, sensor_counter, data);
         addJson(gson.toJson(msg));
+    }
+
+    public void addForceSample(long time, double [] data) {
+        Gson gson = new Gson();
+        ForceMessage msg = new ForceMessage(mDeviceMac, time, data);
+        addJson(gson.toJson(msg));
+        Log.d("TAG", "hello from addForceSample in FirebaseStreamLogger.java");
     }
 }
