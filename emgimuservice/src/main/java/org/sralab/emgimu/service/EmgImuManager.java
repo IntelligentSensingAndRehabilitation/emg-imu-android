@@ -311,7 +311,7 @@ public class EmgImuManager extends BleManager {
             return  mBatteryCharacteristic != null;
         }
 
-		@Override
+/*		@Override
 		protected boolean isRequiredServiceSupported(final BluetoothGatt gatt) {
 			final BluetoothGattService llService = gatt.getService(EMG_SERVICE_UUID);
 			if (llService != null) {
@@ -338,9 +338,16 @@ public class EmgImuManager extends BleManager {
                     (mEmgBuffCharacteristic != null) &&
                     deviceInfoSupported &&
                     batterySupported;
-		}
+		}*/
 
-		@Override
+        @Override
+        protected boolean isRequiredServiceSupported(final BluetoothGatt gatt) {
+
+            log(Log.INFO, "isRequiredServiceSupported is empty and returns true");
+            return true;
+        }
+
+/*		@Override
 		protected boolean isOptionalServiceSupported(final BluetoothGatt gatt) {
 
 		    // Determine if logging is supported
@@ -365,10 +372,73 @@ public class EmgImuManager extends BleManager {
                     mImuMagCharacteristic != null &&
                     mImuAttitudeCharacteristic != null;
 
+*//*            final BluetoothGattService forceService = gatt.getService(FORCE_WRITE_CHAR_UUID);
+            if (forceService != null) {
+                log(Log.INFO, "------> Force Service Detected!");
+            } else {
+                log(Log.INFO, "------> Force Service NOT DETECTED!");
+            }*//*
+
             log(Log.INFO, "--> Yo, Victor: Optional services found. Logging: " + supportsLogging + " IMU: " + supportsImu);
 
             return supportsLogging && supportsImu;
-		}
+		}*/
+
+        @Override
+        protected boolean isOptionalServiceSupported(final BluetoothGatt gatt) {
+            // 1. EMG
+            final BluetoothGattService llService = gatt.getService(EMG_SERVICE_UUID);
+            if (llService != null) {
+                mEmgRawCharacteristic = llService.getCharacteristic(EMG_RAW_CHAR_UUID);
+                mEmgBuffCharacteristic = llService.getCharacteristic(EMG_BUFF_CHAR_UUID);
+                mEmgPwrCharacteristic  = llService.getCharacteristic(EMG_PWR_CHAR_UUID);
+
+                log(Log.INFO, "Characteristics for service " + llService.getUuid());
+                for (BluetoothGattCharacteristic c : llService.getCharacteristics() ) {
+                    log(Log.INFO, "Found: " + c.getUuid());
+                }
+            }
+
+            boolean deviceInfoSupported = isDeviceInfoServiceSupported(gatt);
+            if (!deviceInfoSupported)
+                log(Log.ERROR, "Device info is not supported");
+
+            boolean batterySupported = isBatteryServiceSupported(gatt);
+            if (!batterySupported)
+                log(Log.ERROR, "Battery is not supported");
+
+            // Determine if logging is supported
+            if (llService != null) {
+                mRecordAccessControlPointCharacteristic = llService.getCharacteristic(EMG_RACP_CHAR_UUID);
+                mEmgLogCharacteristic = llService.getCharacteristic(EMG_LOG_CHAR_UUID);
+            }
+            boolean supportsLogging = (mEmgLogCharacteristic != null) && (mRecordAccessControlPointCharacteristic != null);
+
+            // IMU
+            final BluetoothGattService iaService = gatt.getService(IMU_SERVICE_UUID);
+            if (iaService != null) {
+                mImuAccelCharacteristic = iaService.getCharacteristic(IMU_ACCEL_CHAR_UUID);
+                mImuGyroCharacteristic = iaService.getCharacteristic(IMU_GYRO_CHAR_UUID);
+                mImuMagCharacteristic = iaService.getCharacteristic(IMU_MAG_CHAR_UUID);
+                mImuAttitudeCharacteristic = iaService.getCharacteristic(IMU_ATTITUDE_CHAR_UUID);
+                mImuCalibrationCharacteristic = iaService.getCharacteristic(IMU_CALIBRATION_CHAR_UUID);
+                log(Log.INFO, "---> IMU Service Detected!");
+            }
+/*            boolean supportsImu = mImuAccelCharacteristic != null &&
+                    mImuGyroCharacteristic != null &&
+                    mImuMagCharacteristic != null &&
+                    mImuAttitudeCharacteristic != null;*/
+
+
+            // FORCE
+            final BluetoothGattService forceService = gatt.getService(FORCE_SERVICE_UUID);
+            if (forceService != null) {
+                log(Log.INFO, "------> Force Service Detected!");
+            } else {
+                log(Log.INFO, "------> Force Service NOT DETECTED!");
+            }
+            return true;
+        }
 
         @Override
         public void onDeviceReady() {
@@ -696,7 +766,6 @@ public class EmgImuManager extends BleManager {
             streamLogger.addAttitudeSample(new Date().getTime(), timestamp, counter, quat);
         }
     }
-
 
     public interface CalibrationListener
     {

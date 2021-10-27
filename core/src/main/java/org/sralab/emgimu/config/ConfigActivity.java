@@ -102,7 +102,7 @@ public class ConfigActivity extends EmgImuBaseActivity implements ScannerFragmen
 	}
 
 	protected UUID getFilterUUID() {
-		return EmgImuManager.EMG_SERVICE_UUID;
+		return EmgImuManager.EMG_SERVICE_UUID; // return EmgImuManager.FORCE_SERVICE_UUID;
 	}
 
 	/**
