@@ -120,6 +120,7 @@ public class EmgImuManager extends BleManager {
     private BluetoothGattCharacteristic mEmgRawCharacteristic, mEmgBuffCharacteristic, mEmgPwrCharacteristic;
     private BluetoothGattCharacteristic mImuAccelCharacteristic, mImuGyroCharacteristic, mImuMagCharacteristic, mImuAttitudeCharacteristic;
     private BluetoothGattCharacteristic mImuCalibrationCharacteristic;
+    private BluetoothGattCharacteristic mForceCharacteristic;
 
     /**
      * Record Access Control Point characteristic UUID
@@ -1323,6 +1324,19 @@ public class EmgImuManager extends BleManager {
 
     public void disableMagNotifications() {
         disableNotifications(mImuMagCharacteristic).enqueue();
+    }
+
+    // controls what data we're receiving from the force sensor
+    public void enableForceNotifications() {
+        setNotificationCallback(mForceCharacteristic)
+                .with((device, data) -> parseForce(device ,data));
+        enableNotifications(mForceCharacteristic)
+                .fail((device, status) -> log(Log.ERROR, "Unable to enable force notification"))
+                .enqueue();
+    }
+
+    public void disableForceNotifications() {
+        disableNotifications(mForceCharacteristic).enqueue();
     }
 
     /**** Public API for controlling what we are listening to ****/
