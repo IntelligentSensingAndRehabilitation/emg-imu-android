@@ -767,6 +767,33 @@ public class EmgImuManager extends BleManager {
         }
     }
 
+    private void parseForce(BluetoothDevice device,  Data characteristic) {
+        final byte [] buffer = characteristic.getValue();
+
+        final int counterQuotient = buffer[1] & 0xFF; // byte comes in signed, need it unsigned
+        final int counterRemainder = buffer[2] & 0xFF;
+        final int forceQuotient = buffer[3] & 0xFF;
+        final int forceRemainder = buffer[4] & 0xFF;
+
+        int counter = 256 * counterQuotient + counterRemainder;
+        int pwr_val = 256 * forceQuotient + forceRemainder;
+
+        Log.d(TAG, "Received: " + counter + ',' + pwr_val + ", (" + buffer[1] + ", " + buffer[2] + ')');
+
+        // This needs to be cleaned up
+/*        long ts_ms = new Date().getTime();
+        mEmgPwr = pwr_val;
+        mCallbacks.onEmgPwrReceived(device, ts_ms, mEmgPwr);
+        //checkEmgClick(device, pwr_val);
+
+        // logging to firebase db
+        if (mLogging && streamLogger != null) {
+            double [] data = {(double) mEmgPwr};
+            streamLogger.addForceSample(ts_ms, data);
+            //Log.d(TAG, "sent force data to db");
+        }*/
+    }
+
     public interface CalibrationListener
     {
         void onUploading();
