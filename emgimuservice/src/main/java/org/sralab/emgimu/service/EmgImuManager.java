@@ -784,7 +784,7 @@ public class EmgImuManager extends BleManager {
         // This needs to be cleaned up
         long ts_ms = new Date().getTime();
         mForce = force_val;
-        mCallbacks.onForceReceived(device, ts_ms, mForce);
+        //mCallbacks.onForceReceived(device, ts_ms, mForce);
         //checkEmgClick(device, pwr_val);
 
         // logging to firebase db
