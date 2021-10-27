@@ -271,6 +271,16 @@ public class EmgImuManager extends BleManager {
             readCharacteristic(mBatteryCharacteristic).with((device, data) -> parseBattery(device, data))
                     .enqueue();
 
+            if(mForceCharacteristic != null) {
+                setNotificationCallback(mForceCharacteristic).with((device, data) -> parseForce(device, data));
+                enableNotifications(mForceCharacteristic)
+                        .done(device -> log(Log.DEBUG, "Force characteristic notification enabled"))
+                        .fail((d, status) -> log(Log.DEBUG, "Failed to enable force characteristic notification"))
+                        .enqueue();
+                readCharacteristic(mForceCharacteristic).with((device, data) -> parseForce(device, data))
+                .enqueue();
+            }
+
 
         }
 
@@ -380,10 +390,9 @@ public class EmgImuManager extends BleManager {
 
         @Override
         protected boolean isOptionalServiceSupported(final BluetoothGatt gatt) {
-            // 1. EMG
             final BluetoothGattService llService = gatt.getService(EMG_SERVICE_UUID);
             if (llService != null) {
-                mEmgRawCharacteristic = llService.getCharacteristic(EMG_RAW_CHAR_UUID);
+                //mEmgRawCharacteristic = llService.getCharacteristic(EMG_RAW_CHAR_UUID);
                 mEmgBuffCharacteristic = llService.getCharacteristic(EMG_BUFF_CHAR_UUID);
                 mEmgPwrCharacteristic  = llService.getCharacteristic(EMG_PWR_CHAR_UUID);
 
@@ -416,7 +425,7 @@ public class EmgImuManager extends BleManager {
                 mImuMagCharacteristic = iaService.getCharacteristic(IMU_MAG_CHAR_UUID);
                 mImuAttitudeCharacteristic = iaService.getCharacteristic(IMU_ATTITUDE_CHAR_UUID);
                 mImuCalibrationCharacteristic = iaService.getCharacteristic(IMU_CALIBRATION_CHAR_UUID);
-                log(Log.INFO, "---> IMU Service Detected!");
+                log(Log.INFO, "IMU Service Detected!");
             }
 /*            boolean supportsImu = mImuAccelCharacteristic != null &&
                     mImuGyroCharacteristic != null &&
@@ -1314,7 +1323,7 @@ public class EmgImuManager extends BleManager {
     }
 
     // controls what data we're receiving from the force sensor
-    public void enableForceNotifications() {
+/*    public void enableForceNotifications() {
         setNotificationCallback(mForceCharacteristic)
                 .with((device, data) -> parseForce(device ,data));
         enableNotifications(mForceCharacteristic)
@@ -1324,7 +1333,7 @@ public class EmgImuManager extends BleManager {
 
     public void disableForceNotifications() {
         disableNotifications(mForceCharacteristic).enqueue();
-    }
+    }*/
 
     /**** Public API for controlling what we are listening to ****/
     // This is mostly a very thin shim to the above methods
@@ -1334,12 +1343,12 @@ public class EmgImuManager extends BleManager {
     int getEmgRaw() { return mEmgRaw; }
 
     //! Return if this is the raw EMG characteristic
-    private boolean isEmgRawCharacteristic(final BluetoothGattCharacteristic characteristic) {
+/*    private boolean isEmgRawCharacteristic(final BluetoothGattCharacteristic characteristic) {
         if (characteristic == null)
             return false;
 
         return EMG_RAW_CHAR_UUID.equals(characteristic.getUuid());
-    }
+    }*/
 
     // Accessors for the EMG power
     private int mEmgPwr = -1;
@@ -1395,7 +1404,7 @@ public class EmgImuManager extends BleManager {
     double[][] getEmgBuff() {
         return mEmgBuff;
     }
-    
+
     public String getAddress() {
         if (getBluetoothDevice() == null)
             return "";
