@@ -39,4 +39,7 @@ public interface EmgImuObserver {
     void onImuGyroReceived(final BluetoothDevice device, float[][] gyro);
     void onImuMagReceived(final BluetoothDevice device, float[][] mag);
     void onImuAttitudeReceived(final BluetoothDevice device, float[] quaternion);
+
+    // Callbacks for Force updates
+    void onForceReceived(final BluetoothDevice device, long ts_ms, int force);
 }
