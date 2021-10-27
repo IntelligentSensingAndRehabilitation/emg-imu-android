@@ -777,22 +777,22 @@ public class EmgImuManager extends BleManager {
         final int forceRemainder = buffer[4] & 0xFF;
 
         int counter = 256 * counterQuotient + counterRemainder;
-        int pwr_val = 256 * forceQuotient + forceRemainder;
+        int force_val = 256 * forceQuotient + forceRemainder;
 
-        Log.d(TAG, "Received: " + counter + ',' + pwr_val + ", (" + buffer[1] + ", " + buffer[2] + ')');
+        Log.d(TAG, "Received: " + counter + ',' + force_val + ", (" + buffer[1] + ", " + buffer[2] + ')');
 
         // This needs to be cleaned up
-/*        long ts_ms = new Date().getTime();
-        mEmgPwr = pwr_val;
-        mCallbacks.onEmgPwrReceived(device, ts_ms, mEmgPwr);
+        long ts_ms = new Date().getTime();
+        mForce = force_val;
+        //mCallbacks.onForceStreamReceived(device, ts_ms, mForce);
         //checkEmgClick(device, pwr_val);
 
         // logging to firebase db
         if (mLogging && streamLogger != null) {
-            double [] data = {(double) mEmgPwr};
+            double [] data = {(double) mForce};
             streamLogger.addForceSample(ts_ms, data);
             //Log.d(TAG, "sent force data to db");
-        }*/
+        }
     }
 
     public interface CalibrationListener
@@ -1357,6 +1357,10 @@ public class EmgImuManager extends BleManager {
     // Accessors for the EMG power
     private int mEmgPwr = -1;
     int getEmgPwr() { return mEmgPwr; }
+
+    // Accessors for the FORCE power
+    private int mForce = -1;
+    int getForce() {return mForce; }
 
     // TODO: this should be user calibrate-able, or automatic
     private double MAX_SCALE = Short.MAX_VALUE * 2;
