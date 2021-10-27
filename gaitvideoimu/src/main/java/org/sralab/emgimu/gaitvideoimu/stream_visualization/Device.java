@@ -20,6 +20,13 @@ public class Device {
     public LiveData<float []> getQuat() { return liveQuat; }
     public void setQuat(float [] q) { liveQuat.postValue(q); }
 
+    private MutableLiveData<Boolean> connected = new MutableLiveData<>();
+    public LiveData<Boolean> getConnected() { return connected; };
+
+    private MutableLiveData<Float> battery = new MutableLiveData<>();
+    public LiveData<Float> getBattery() { return battery; };
+    public void setBattery(float bat) { battery.postValue(bat); }
+
     GraphData gyro;
     public LiveData<GraphData.Data> getGyro() { return gyro.getData(); }
 
@@ -34,6 +41,8 @@ public class Device {
         }
 
         gyro.addSamples(timestamps, data);
+
+        connected.postValue(true);
     }
 
     public Device() {

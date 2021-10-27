@@ -22,9 +22,12 @@
 
 package org.sralab.emgimu.gaitvideoimu.stream_visualization;
 
+import android.graphics.Color;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.LifecycleOwner;
@@ -85,16 +88,20 @@ public class StreamingAdapter extends RecyclerView.Adapter<StreamingAdapter.View
 
         private GraphView graphView;
         private GimbalView gimbalView;
+        private TextView batteryView;
 
         ViewHolder(final View itemView) {
 			super(itemView);
             graphView = itemView.findViewById(R.id.graph_pwr);
             gimbalView = itemView.findViewById(R.id.gimbal_view);
+            batteryView = itemView.findViewById(R.id.bat_txt);
         }
 
 		private void bind(final Device device) {
             device.getGyro().observe(context, graphData -> graphView.updateGraphData(graphData) );
             device.getQuat().observe(context, q -> gimbalView.updateQuat(q));
+            device.getConnected().observe(context, con -> gimbalView.setBackgroundColor(con ? Color.parseColor("#FFFFFF") : Color.parseColor("#999999")));
+            device.getBattery().observe(context, bat -> batteryView.setText(String.format("%.2f", bat)) );
 		}
 	}
 }

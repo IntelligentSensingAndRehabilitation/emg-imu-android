@@ -16,6 +16,7 @@ import androidx.lifecycle.MutableLiveData;
 
 import org.sralab.emgimu.service.EmgPwrData;
 import org.sralab.emgimu.service.EmgStreamData;
+import org.sralab.emgimu.service.IEmgImuBatCallback;
 import org.sralab.emgimu.service.IEmgImuDevicesUpdatedCallback;
 import org.sralab.emgimu.service.IEmgImuPwrDataCallback;
 import org.sralab.emgimu.service.IEmgImuQuatCallback;
@@ -45,6 +46,7 @@ public abstract class EmgImuViewModel <T> extends AndroidViewModel {
     public boolean getObserveGyro() { return false; }
     public boolean getObserveMag() { return false; }
     public boolean getObserveQuat() { return false; }
+    public boolean getObserveBat() { return false; }
 
     Map<BluetoothDevice, T> deviceMap;
     MutableLiveData<List<T>> devicesLiveData = new MutableLiveData<>();
@@ -66,6 +68,9 @@ public abstract class EmgImuViewModel <T> extends AndroidViewModel {
     protected void onCleared() {
         super.onCleared();
         try {
+            if (service == null) {
+                throw new RuntimeException("Service disconnected before unregistering.");
+            }
             service.unregisterDevicesObserver(deviceListObserver);
             if (getObservePwr()) service.unregisterEmgPwrObserver(pwrObserver);
             if (getObserveStream()) service.unregisterEmgStreamObserver(streamObserver);
@@ -73,6 +78,7 @@ public abstract class EmgImuViewModel <T> extends AndroidViewModel {
             if (getObserveGyro()) service.unregisterImuGyroObserver(gyroObserver);
             if (getObserveMag()) service.unregisterImuMagObserver(magObserver);
             if (getObserveQuat()) service.unregisterImuQuatObserver(quatObserver);
+            if (getObserveBat()) service.unregisterBatObserver(batObserver);
         } catch (RemoteException e) {
             throw new RuntimeException(e);
         }
@@ -126,6 +132,7 @@ public abstract class EmgImuViewModel <T> extends AndroidViewModel {
                 if (getObserveGyro()) service.registerImuGyroObserver(gyroObserver);
                 if (getObserveMag()) service.registerImuMagObserver(magObserver);
                 if (getObserveQuat()) service.registerImuQuatObserver(quatObserver);
+                if (getObserveBat()) service.registerBatObserver(batObserver);
             } catch (RemoteException e) {
                 throw new RuntimeException(e);
             }
@@ -229,6 +236,19 @@ public abstract class EmgImuViewModel <T> extends AndroidViewModel {
                 return;
             }
             imuQuatUpdated(dev, data);
+        }
+    };
+
+    public void batUpdated(T dev, float bat) { }
+    private final IEmgImuBatCallback.Stub batObserver = new IEmgImuBatCallback.Stub() {
+        @Override
+        public void handleData(BluetoothDevice device, float bat) throws RemoteException {
+            T dev = deviceMap.get(device);
+            if (dev == null) {
+                Log.w(TAG, "Dropping batObserver as no matching device found. Likely during a disconnection");
+                return;
+            }
+            batUpdated(dev, bat);
         }
     };
 }
