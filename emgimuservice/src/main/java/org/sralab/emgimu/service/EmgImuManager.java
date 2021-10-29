@@ -105,9 +105,8 @@ public class EmgImuManager extends BleManager {
 
     /** FORCE UUID **/
     public final static UUID FORCE_SERVICE_UUID = UUID.fromString("6E400001-B5A3-F393-E0A9-E50E24DCCA9E");
-    public final static UUID FORCE_WRITE_CHAR_UUID = UUID.fromString("6E400002-B5A3-F393-E0A9-E50E24DCCA9E");
-    public final static UUID FORCE_READ_CHAR_UUID = UUID.fromString("6E400003-B5A3-F393-E0A9-E50E24DCCA9E");
-    public final static UUID FORCE_MESS_CHAR_UUID = UUID.fromString("6E400004-B5A3-F393-E0A9-E50E24DCCA9E");
+    public final static UUID FORCE_WRITE_CHAR_UUID = UUID.fromString("6E400003-B5A3-F393-E0A9-E50E24DCCA9E");
+
 
     private final float EMG_FS = 2000.0f;
     private final int EMG_BUFFER_LEN = (40 / 2); // elements in UINT16
@@ -188,7 +187,7 @@ public class EmgImuManager extends BleManager {
         mSynced = false;
         mFetchRecords = false;
 
-        log(Log.INFO, "EmgImuManager created");
+        log(Log.INFO, "EmgImuManager created!");
 	}
 
     @NonNull
@@ -272,15 +271,12 @@ public class EmgImuManager extends BleManager {
                     .enqueue();
 
             if(mForceCharacteristic != null) {
-                setNotificationCallback(mForceCharacteristic).with((device, data) -> parseForce(device, data));
                 enableNotifications(mForceCharacteristic)
+                        .before(device -> setNotificationCallback(mForceCharacteristic).with((_device, data) -> parseForce(_device, data)))
                         .done(device -> log(Log.DEBUG, "Force characteristic notification enabled"))
                         .fail((d, status) -> log(Log.DEBUG, "Failed to enable force characteristic notification"))
                         .enqueue();
-                readCharacteristic(mForceCharacteristic).with((device, data) -> parseForce(device, data))
-                .enqueue();
             }
-
 
         }
 
@@ -437,9 +433,17 @@ public class EmgImuManager extends BleManager {
             final BluetoothGattService forceService = gatt.getService(FORCE_SERVICE_UUID);
             if (forceService != null) {
                 log(Log.INFO, "------> Force Service Detected!");
+
+                mForceCharacteristic = forceService.getCharacteristic(FORCE_WRITE_CHAR_UUID);
+                if (mForceCharacteristic != null)
+                {
+                    log(Log.INFO, "FORCE_WRITE_CHAR_UUID - exists!");
+                }
+
             } else {
                 log(Log.INFO, "------> Force Service NOT DETECTED!");
             }
+
             return true;
         }
 
@@ -570,6 +574,8 @@ public class EmgImuManager extends BleManager {
         long ts_ms = emgPwrResolver.resolveTime(counter, timestamp, 1);
 
         mCallbacks.onEmgPwrReceived(device, ts_ms, pwr_val);
+
+       // log(Log.INFO, "parseEmgPwr = " + pwr_val);
 
         if (mLogging && streamLogger != null) {
             double [] data = {(double) pwr_val};
@@ -766,7 +772,13 @@ public class EmgImuManager extends BleManager {
 
     private void parseForce(BluetoothDevice device,  Data characteristic) {
         final byte [] buffer = characteristic.getValue();
+        log(Log.INFO, "parseForce is being triggered!");
 
+        if (buffer.length < 1) {
+            log(Log.INFO, "WTF!!!");
+            return;
+
+        }
         final int counterQuotient = buffer[1] & 0xFF; // byte comes in signed, need it unsigned
         final int counterRemainder = buffer[2] & 0xFF;
         final int forceQuotient = buffer[3] & 0xFF;
@@ -775,7 +787,7 @@ public class EmgImuManager extends BleManager {
         int counter = 256 * counterQuotient + counterRemainder;
         int force_val = 256 * forceQuotient + forceRemainder;
 
-        Log.d(TAG, "Received: " + counter + ',' + force_val + ", (" + buffer[1] + ", " + buffer[2] + ')');
+        //log(Log.INFO, "Received: " + counter + ',' + force_val + ", (" + buffer[1] + ", " + buffer[2] + ')');
 
         // This needs to be cleaned up
         long ts_ms = new Date().getTime();
@@ -783,11 +795,15 @@ public class EmgImuManager extends BleManager {
         //mCallbacks.onForceReceived(device, ts_ms, mForce);
         //checkEmgClick(device, pwr_val);
 
+        mCallbacks.onEmgPwrReceived(device, ts_ms, mForce * 10);
+        log(Log.INFO, "parseForce = " + force_val);
+
         // logging to firebase db
         if (mLogging && streamLogger != null) {
             double [] data = {(double) mForce};
             streamLogger.addForceSample(ts_ms, data);
             //Log.d(TAG, "sent force data to db");
+            log(Log.INFO, "sent force data to db");
         }
     }
 
@@ -1251,11 +1267,11 @@ public class EmgImuManager extends BleManager {
 
     // Controls to enable what data we are receiving from the sensor
     public void enableEmgPwrNotifications() {
-        enableNotifications(mEmgPwrCharacteristic)
-                .before(device -> setNotificationCallback(mEmgPwrCharacteristic).with((_device, data) -> parseEmgPwr(_device ,data)))
-                .done(device -> log(Log.INFO, "EMG power notifications enabled successfully"))
-                .fail((device, status) -> log(Log.ERROR, "Unable to enable EMG power notification"))
-                .enqueue();
+    enableNotifications(mEmgPwrCharacteristic)
+            .before(device -> setNotificationCallback(mEmgPwrCharacteristic).with((_device, data) -> parseEmgPwr(_device ,data)))
+            .done(device -> log(Log.INFO, "EMG power notifications enabled successfully"))
+            .fail((device, status) -> log(Log.ERROR, "Unable to enable EMG power notification"))
+            .enqueue();
     }
 
     public void disableEmgPwrNotifications() {
