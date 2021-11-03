@@ -37,7 +37,8 @@
 	<string name="action_settings">Settings</string>
 	<string name="action_connect">CONNECT</string>
 	<string name="action_select">SELECT DEVICE</string>
-	<string name="action_add_device">ADD DEVICE</string>
+	<string name="action_add_device">ADD EMG-IMU DEVICE</string>
+	<string name="action_add_force_device">ADD FORCE DEVICE</string>
 	<string name="action_connecting">CONNECTING…</string>
 	<string name="action_disconnect">DISCONNECT</string>
 

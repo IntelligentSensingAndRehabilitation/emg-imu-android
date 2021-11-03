@@ -80,11 +80,22 @@
 			style="@style/Widget.Connect"
 			android:layout_width="wrap_content"
 			android:layout_height="wrap_content"
+			android:layout_alignParentLeft="true"
 			android:layout_alignParentBottom="true"
-			android:layout_centerHorizontal="true"
 			android:layout_marginBottom="@dimen/activity_vertical_margin_bottom"
 			android:onClick="onAddDeviceClicked"
-			android:text="@string/action_add_device"/>
+			android:text="@string/action_add_device" />
+
+		<Button
+			android:id="@+id/action_force_connect"
+			style="@style/Widget.Connect"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_alignParentBottom="true"
+			android:layout_alignParentRight="true"
+			android:layout_marginBottom="@dimen/activity_vertical_margin_bottom"
+			android:onClick="onAddDeviceClicked"
+			android:text="@string/action_add_force_device" />
 
 	</no.nordicsemi.android.nrftoolbox.widget.ForegroundRelativeLayout>
 </LinearLayout>
