@@ -102,14 +102,7 @@ public class ConfigActivity extends EmgImuBaseActivity implements ScannerFragmen
 	}
 
 	protected UUID getFilterUUID() {
-		return EmgImuManager.EMG_SERVICE_UUID; 	// return EmgImuManager.FORCE_SERVICE_UUID;
-												// this corresponds to the devices that show up
-												// when "ADD DEVICE" button is pressed in the
-												// Config page.
-												// Way to fool it. Compile using EMG_SERVICE_UUID
-												// Connect EMG sensors. Revise to FORCE_SERVICE_UUID
-												// Recompile. The EMG sensors will auto-connect, plus
-												// the scanner will show the dynamometer.
+		return EmgImuManager.EMG_SERVICE_UUID;
 	}
 
 	protected UUID getForceFilterUUID()
@@ -153,5 +146,4 @@ public class ConfigActivity extends EmgImuBaseActivity implements ScannerFragmen
 		final ScannerFragment dialog = ScannerFragment.getInstance(filter);
 		dialog.show(getSupportFragmentManager(), "scan_fragment");
 	}
-
 }
