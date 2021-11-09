@@ -23,6 +23,7 @@ interface IEmgImuServiceBinder  {
     void unregisterDevicesObserver(IEmgImuDevicesUpdatedCallback callback);
     void storeGameplayRecord(String name, long startTime, in String details);
     List<String> getLoggingReferences();
+    String getAuthToken();
     // boolean isConnected(in BluetoothDevice device);
     // boolean isReady(in BluetoothDevice device);
 

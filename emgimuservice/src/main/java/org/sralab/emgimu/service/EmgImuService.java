@@ -121,6 +121,7 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
 	private FirebaseAuth mAuth;
     private FirebaseAnalytics mFirebaseAnalytics;
     private FirebaseUser mCurrentUser;
+    private String mToken;
 
     private Handler handler;
 
@@ -419,6 +420,10 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
             return "";
         }
 
+        public String getAuthToken() {
+            return mToken;
+        }
+
         public List<String> getLoggingReferences() {
             List<String> references = new ArrayList<>();
             for (final BluetoothDevice device : getManagedDevices()) {
@@ -471,6 +476,7 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
         Log.d(TAG, "onServiceCreated");
 
         mAuth = FirebaseAuth.getInstance();
+        mToken = null;
 
         // Check if user is signed in (non-null) and update UI accordingly.
         mCurrentUser = mAuth.getCurrentUser();
@@ -483,7 +489,9 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
                             mCurrentUser = mAuth.getCurrentUser();
 
                             Log.d(TAG, "signInAnonymously:success. UID:" + mCurrentUser.getUid());
-
+                            // It can happen that either one is set first
+                            if (mToken != null && mCurrentUser != null)
+                                storeToken();
                         } else {
                             // If sign in fails, display a message to the user.
                             Log.d(TAG, "signInAnonymously:failure" + task.getException());
@@ -492,6 +500,14 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
         } else {
             Log.d(TAG, "User ID: " + mCurrentUser.getUid());
         }
+        FirebaseInstallations.getInstance().getId().addOnSuccessListener(mToken -> {
+            Log.d(TAG, "Received token: " + mToken);
+
+            // It can happen that either one is set first
+            if (mToken != null && mCurrentUser != null)
+                storeToken();
+
+        });
 
         // Obtain the FirebaseAnalytics instance.
         mFirebaseAnalytics = FirebaseAnalytics.getInstance(this);
@@ -503,6 +519,20 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
         networkStreaming = new NetworkStreaming();
 	}
 
+    private void storeToken()
+    {
+        Log.d(TAG, "Updating token for user in firestore");
+        FirebaseFirestore mDb = FirebaseFirestore.getInstance();
+        FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder().build();
+        mDb.setFirestoreSettings(settings);
+        DocumentReference doc = mDb.collection("fcmTokens").document(mCurrentUser.getUid());
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("token", mToken);
+        data.put("updated", Timestamp.now());
+        doc.set(data);
+    }
+    
     private final SimpleArrayMap<String, Pair<Runnable, Integer>> logFetchStartId = new SimpleArrayMap<>();
 
     @Override
