@@ -30,7 +30,8 @@ public class Bridge extends Application
         @Override
         public void handleData(BluetoothDevice device, EmgPwrData data) throws RemoteException {
             if (callback != null) {
-                callback.onSuccess(Integer.toString(data.power[0]));
+                //callback.onSuccess(Integer.toString(data.power[0]));
+                callback.onSuccess(Integer.toString(7));
             }
         }
     };
@@ -60,6 +61,7 @@ public class Bridge extends Application
         }
     };
 
+    // These methods get called from Unity
     long startTime;
     String gameName;
     String gameLog;
