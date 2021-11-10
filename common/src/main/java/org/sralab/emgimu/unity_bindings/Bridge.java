@@ -30,8 +30,7 @@ public class Bridge extends Application
         @Override
         public void handleData(BluetoothDevice device, EmgPwrData data) throws RemoteException {
             if (callback != null) {
-                //callback.onSuccess(Integer.toString(data.power[0]));
-                callback.onSuccess(Integer.toString(7));
+                callback.onSuccess(Integer.toString(data.power[0]));
             }
         }
     };
@@ -48,6 +47,8 @@ public class Bridge extends Application
         public void onServiceConnected(final ComponentName name, final IBinder binder) {
             service = IEmgImuServiceBinder.Stub.asInterface(binder);
             try {
+                callback.sendDeviceList(service.getManagedDevices().toString());
+                Log.d(TAG, service.getManagedDevices().toString());
                 service.registerEmgPwrObserver(pwrObserver);
                 service.registerEmgStreamObserver(streamObserver);
             } catch (RemoteException e) {
@@ -82,6 +83,7 @@ public class Bridge extends Application
     }
 
     public void connectService(final Context ctx, final PluginCallback callback) {
+        // This method gets called from Unity, which created the connection
         Log.d(TAG, "connectService");
         final Intent service = new Intent();
         service.setComponent(new ComponentName("org.sralab.emgimu", "org.sralab.emgimu.service.EmgImuService"));

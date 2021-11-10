@@ -1,5 +1,5 @@
 package org.sralab.emgimu.service;
 
-oneway interface IEmgImuDevicesUpdatedCallback {
+interface IEmgImuDevicesUpdatedCallback {
     void onDeviceListUpdated();
 }
