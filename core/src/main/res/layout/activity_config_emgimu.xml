@@ -59,7 +59,7 @@
 			android:layout_marginTop="2dp"
 			android:layout_marginBottom="@dimen/activity_vertical_margin_bottom_narrow"
 			android:layout_below="@+id/user_id"
-			android:layout_above="@+id/action_connect"
+			android:layout_above="@+id/button_container"
 			android:layout_weight="1"
 			android:orientation="vertical">
 
@@ -75,16 +75,40 @@
 				android:layout_height="match_parent"/>
 		</LinearLayout>
 
-		<Button
-			android:id="@+id/action_connect"
-			style="@style/Widget.Connect"
+		<LinearLayout
+			android:id="@+id/button_container"
 			android:layout_width="wrap_content"
 			android:layout_height="wrap_content"
-			android:layout_alignParentBottom="true"
+			android:orientation="horizontal"
 			android:layout_centerHorizontal="true"
-			android:layout_marginBottom="@dimen/activity_vertical_margin_bottom"
-			android:onClick="onAddDeviceClicked"
-			android:text="@string/action_add_device"/>
+			android:layout_marginRight="@dimen/feature_horizontal_margin"
+			android:layout_marginLeft="@dimen/feature_horizontal_margin"
+			android:layout_alignParentBottom="true">
 
+			<Button
+				style="@style/Widget.Connect"
+				android:id="@+id/action_connect"
+				android:layout_weight="1"
+				android:layout_width="0dp"
+				android:layout_height="wrap_content"
+				android:layout_marginBottom="@dimen/activity_vertical_margin_bottom"
+				android:onClick="onAddDeviceClicked"
+				android:layout_gravity="center_horizontal"
+				android:textSize="10dp"
+				android:text="@string/action_add_device" />
+
+			<Button
+				style="@style/Widget.Connect"
+				android:id="@+id/action_force_connect"
+				android:layout_height="wrap_content"
+				android:layout_weight="1"
+				android:layout_width="0dp"
+				android:layout_marginBottom="@dimen/activity_vertical_margin_bottom"
+				android:onClick="onAddForceDeviceClicked"
+				android:layout_gravity="center_horizontal"
+				android:textSize="10dp"
+				android:text="@string/action_add_force_device" />
+
+		</LinearLayout>
 	</no.nordicsemi.android.nrftoolbox.widget.ForegroundRelativeLayout>
 </LinearLayout>

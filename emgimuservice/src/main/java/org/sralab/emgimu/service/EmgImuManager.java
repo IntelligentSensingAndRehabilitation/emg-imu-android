@@ -103,12 +103,18 @@ public class EmgImuManager extends BleManager {
     public final static UUID IMU_ATTITUDE_CHAR_UUID = UUID.fromString("00002238-1212-EFDE-1523-785FEF13D123");
     public final static UUID IMU_CALIBRATION_CHAR_UUID = UUID.fromString("00002239-1212-EFDE-1523-785FEF13D123");
 
+    /** FORCE UUID **/
+    public final static UUID FORCE_SERVICE_UUID = UUID.fromString("6E400001-B5A3-F393-E0A9-E50E24DCCA9E");
+    public final static UUID FORCE_WRITE_CHAR_UUID = UUID.fromString("6E400003-B5A3-F393-E0A9-E50E24DCCA9E");
+
+
     private final float EMG_FS = 2000.0f;
     private final int EMG_BUFFER_LEN = (40 / 2); // elements in UINT16
 
     private BluetoothGattCharacteristic mEmgBuffCharacteristic, mEmgPwrCharacteristic;
     private BluetoothGattCharacteristic mImuAccelCharacteristic, mImuGyroCharacteristic, mImuMagCharacteristic, mImuAttitudeCharacteristic;
     private BluetoothGattCharacteristic mImuCalibrationCharacteristic;
+    private BluetoothGattCharacteristic mForceCharacteristic;
 
     /**
      * Record Access Control Point characteristic UUID
@@ -181,7 +187,7 @@ public class EmgImuManager extends BleManager {
         mSynced = false;
         mFetchRecords = false;
 
-        log(Log.INFO, "EmgImuManager created");
+        log(Log.INFO, "EmgImuManager created!");
 	}
 
     @NonNull
@@ -264,6 +270,13 @@ public class EmgImuManager extends BleManager {
             readCharacteristic(mBatteryCharacteristic).with((device, data) -> parseBattery(device, data))
                     .enqueue();
 
+            if(mForceCharacteristic != null) {
+                enableNotifications(mForceCharacteristic)
+                        .before(device -> setNotificationCallback(mForceCharacteristic).with((_device, data) -> parseForce(_device, data)))
+                        .done(device -> log(Log.DEBUG, "Force characteristic notification enabled"))
+                        .fail((d, status) -> log(Log.DEBUG, "Failed to enable force characteristic notification"))
+                        .enqueue();
+            }
 
         }
 
@@ -300,10 +313,15 @@ public class EmgImuManager extends BleManager {
             return  mBatteryCharacteristic != null;
         }
 
-		@Override
-		protected boolean isRequiredServiceSupported(final BluetoothGatt gatt) {
-			final BluetoothGattService llService = gatt.getService(EMG_SERVICE_UUID);
-			if (llService != null) {
+        @Override
+        protected boolean isRequiredServiceSupported(final BluetoothGatt gatt) {
+            return true;
+        }
+
+        @Override
+        protected boolean isOptionalServiceSupported(final BluetoothGatt gatt) {
+            final BluetoothGattService llService = gatt.getService(EMG_SERVICE_UUID);
+            if (llService != null) {
                 mEmgBuffCharacteristic = llService.getCharacteristic(EMG_BUFF_CHAR_UUID);
                 mEmgPwrCharacteristic  = llService.getCharacteristic(EMG_PWR_CHAR_UUID);
 
@@ -317,27 +335,18 @@ public class EmgImuManager extends BleManager {
             if (!deviceInfoSupported)
                 log(Log.ERROR, "Device info is not supported");
 
-			boolean batterySupported = isBatteryServiceSupported(gatt);
+            boolean batterySupported = isBatteryServiceSupported(gatt);
             if (!batterySupported)
                 log(Log.ERROR, "Battery is not supported");
 
-			return  (mEmgPwrCharacteristic != null) &&
-                    (mEmgBuffCharacteristic != null) &&
-                    deviceInfoSupported &&
-                    batterySupported;
-		}
-
-		@Override
-		protected boolean isOptionalServiceSupported(final BluetoothGatt gatt) {
-
-		    // Determine if logging is supported
-            final BluetoothGattService llService = gatt.getService(EMG_SERVICE_UUID);
+            // Determine if logging is supported
             if (llService != null) {
                 mRecordAccessControlPointCharacteristic = llService.getCharacteristic(EMG_RACP_CHAR_UUID);
                 mEmgLogCharacteristic = llService.getCharacteristic(EMG_LOG_CHAR_UUID);
             }
             boolean supportsLogging = (mEmgLogCharacteristic != null) && (mRecordAccessControlPointCharacteristic != null);
 
+            // IMU
             final BluetoothGattService iaService = gatt.getService(IMU_SERVICE_UUID);
             if (iaService != null) {
                 mImuAccelCharacteristic = iaService.getCharacteristic(IMU_ACCEL_CHAR_UUID);
@@ -345,16 +354,24 @@ public class EmgImuManager extends BleManager {
                 mImuMagCharacteristic = iaService.getCharacteristic(IMU_MAG_CHAR_UUID);
                 mImuAttitudeCharacteristic = iaService.getCharacteristic(IMU_ATTITUDE_CHAR_UUID);
                 mImuCalibrationCharacteristic = iaService.getCharacteristic(IMU_CALIBRATION_CHAR_UUID);
+                log(Log.INFO, "IMU Service Detected!");
             }
             boolean supportsImu = mImuAccelCharacteristic != null &&
                     mImuGyroCharacteristic != null &&
                     mImuMagCharacteristic != null &&
                     mImuAttitudeCharacteristic != null;
 
-            log(Log.INFO, "Optional services found. Logging: " + supportsLogging + " IMU: " + supportsImu);
 
-            return supportsLogging && supportsImu;
-		}
+            // FORCE
+            final BluetoothGattService forceService = gatt.getService(FORCE_SERVICE_UUID);
+            if (forceService != null) {
+                log(Log.INFO, "Force Service Detected!");
+                mForceCharacteristic = forceService.getCharacteristic(FORCE_WRITE_CHAR_UUID);
+            } else {
+                log(Log.INFO, "Force Service NOT detected!");
+            }
+            return true;
+        }
 
         @Override
         public void onDeviceReady() {
@@ -550,8 +567,6 @@ public class EmgImuManager extends BleManager {
 
                 buf_ts_ms = emgStreamResolver.resolveTime(counter, timestamp, samples);
 
-                //log(Log.DEBUG, " Counter: " + counter + " timestamp: " + timestamp + " ms: " + buf_ts_ms + " scale: " + microvolts_per_lsb);
-
                 // representation of the data is 3 bytes per sample, 8 channels, and then N samples
                 data = new double[channels][samples];
                 for (int ch = 0; ch < channels; ch++) {
@@ -562,7 +577,6 @@ public class EmgImuManager extends BleManager {
                         data[ch][sample] = ByteBuffer.wrap(t_array).order(ByteOrder.BIG_ENDIAN).getInt();
                         data[ch][sample] = microvolts_per_lsb * data[ch][sample];
                     }
-                    //Log.d(TAG, "Data[" + ch + "] = " + Arrays.toString(data[ch]));
                 }
 
                 break;
@@ -677,6 +691,33 @@ public class EmgImuManager extends BleManager {
         }
     }
 
+    private void parseForce(BluetoothDevice device,  Data characteristic) {
+        final byte [] buffer = characteristic.getValue();
+
+        if (buffer.length < 1) {
+            log(Log.INFO, "parseForce is empty!");
+            return;
+
+        }
+        final int counterQuotient = buffer[1] & 0xFF; // byte comes in signed, need it unsigned
+        final int counterRemainder = buffer[2] & 0xFF;
+        final int forceQuotient = buffer[3] & 0xFF;
+        final int forceRemainder = buffer[4] & 0xFF;
+
+        int counter = 256 * counterQuotient + counterRemainder;
+        int force_val = 256 * forceQuotient + forceRemainder;
+
+        long ts_ms = new Date().getTime();
+        mForce = force_val;
+
+        mCallbacks.onEmgPwrReceived(device, ts_ms, mForce * 10);
+
+        // logging to firebase db
+        if (mLogging && streamLogger != null) {
+            double [] data = {(double) mForce};
+            streamLogger.addForceSample(ts_ms, data);
+        }
+    }
 
     public interface CalibrationListener
     {
@@ -805,7 +846,6 @@ public class EmgImuManager extends BleManager {
     private static final int EXPONENT_SHIFT = 24;
     private static final int MANTISSA_MASK = 0x00ffffff;
     private static final int MANTISSA_SHIFT = 0;
-//    private static final int CONST_ONE = MutableData.floatToInt(1.0f);
 
     private void writeImuCalibration(FirebaseMagCalibration cal, CalibrationListener listener) {
         if (mImuCalibrationCharacteristic == null) {
@@ -1138,11 +1178,11 @@ public class EmgImuManager extends BleManager {
 
     // Controls to enable what data we are receiving from the sensor
     public void enableEmgPwrNotifications() {
-        enableNotifications(mEmgPwrCharacteristic)
-                .before(device -> setNotificationCallback(mEmgPwrCharacteristic).with((_device, data) -> parseEmgPwr(_device ,data)))
-                .done(device -> log(Log.INFO, "EMG power notifications enabled successfully"))
-                .fail((device, status) -> log(Log.ERROR, "Unable to enable EMG power notification"))
-                .enqueue();
+    enableNotifications(mEmgPwrCharacteristic)
+            .before(device -> setNotificationCallback(mEmgPwrCharacteristic).with((_device, data) -> parseEmgPwr(_device ,data)))
+            .done(device -> log(Log.INFO, "EMG power notifications enabled successfully"))
+            .fail((device, status) -> log(Log.ERROR, "Unable to enable EMG power notification"))
+            .enqueue();
     }
 
     public void disableEmgPwrNotifications() {
@@ -1209,8 +1249,68 @@ public class EmgImuManager extends BleManager {
         disableNotifications(mImuMagCharacteristic).enqueue();
     }
 
+
     /**** Public API for controlling what we are listening to ****/
     // This is mostly a very thin shim to the above methods
+
+    // Accessors for the raw EMG
+	private int mEmgRaw = -1;
+    int getEmgRaw() { return mEmgRaw; }
+
+    // Accessors for the EMG power
+    private int mEmgPwr = -1;
+    int getEmgPwr() { return mEmgPwr; }
+
+    // Accessors for the FORCE power
+    private int mForce = -1;
+    int getForce() {return mForce; }
+
+    // TODO: this should be user calibrate-able, or automatic
+    private double MAX_SCALE = Short.MAX_VALUE * 2;
+    private double MIN_SCALE = 0x0000; // TODO: this should be user calibrate-able, or automatic
+
+    // Scale EMG from 0 to 1.0 using configurable endpoints
+    double getEmgPwrScaled() {
+        double val = (mEmgPwr - MIN_SCALE) / (MAX_SCALE - MIN_SCALE);
+        if (val > 1.0)
+            val = 1.0;
+        else if (val < 0.0)
+            val = 0.0;
+        return val;
+    }
+
+    //! Output true when EMG power goes over threshold
+    private long THRESHOLD_TIME_NS = 500 * (int)1e6; // 500 ms
+    private float max_pwr = 2000;
+    private float min_pwr = 100;
+    private float threshold_low = 200;
+    private float threshold_high = 500;
+    private long mThresholdTime = 0;
+    private boolean overThreshold;
+
+    /**
+     * Check if a click event happened when EMG goes ovre threshold with hysteresis and
+     * refractory period.
+     */
+    private void checkEmgClick(final BluetoothDevice device, int value) {
+        // Have a refractory time to prevent noise making multiple events
+        long eventTime = System.nanoTime();
+        boolean refractory = (eventTime - mThresholdTime) > THRESHOLD_TIME_NS;
+
+        if (value > threshold_high && overThreshold == false && refractory) {
+            mThresholdTime = eventTime; // Store this time
+            overThreshold = true;
+            //mCallbacks.onEmgClick(device);
+        } else if (value < threshold_low && overThreshold == true) {
+            overThreshold = false;
+        }
+    }
+
+    // Accessors for the EMG buffer
+    private double [][] mEmgBuff;
+    double[][] getEmgBuff() {
+        return mEmgBuff;
+    }
 
     public String getAddress() {
         if (getBluetoothDevice() == null)

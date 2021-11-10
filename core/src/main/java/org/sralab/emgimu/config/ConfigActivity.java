@@ -105,11 +105,21 @@ public class ConfigActivity extends EmgImuBaseActivity implements ScannerFragmen
 		return EmgImuManager.EMG_SERVICE_UUID;
 	}
 
+	protected UUID getForceFilterUUID()
+	{
+		return EmgImuManager.FORCE_SERVICE_UUID;
+	}
+
 	/**
 	 * Called when user press ADD DEVICE button. See layout files -> onClick attribute.
 	 */
 	public void onAddDeviceClicked(final View view) {
 		showDeviceScanningDialog(getFilterUUID());
+	}
+
+	/* Called when user presses ADD FORCE DEVICE button */
+	public void onAddForceDeviceClicked(final View view) {
+		showDeviceScanningDialog(getForceFilterUUID());
 	}
 
 	public void onDeviceSelected(final BluetoothDevice device, final String name) {
@@ -136,5 +146,4 @@ public class ConfigActivity extends EmgImuBaseActivity implements ScannerFragmen
 		final ScannerFragment dialog = ScannerFragment.getInstance(filter);
 		dialog.show(getSupportFragmentManager(), "scan_fragment");
 	}
-
 }
