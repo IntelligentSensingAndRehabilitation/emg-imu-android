@@ -19,6 +19,7 @@ import org.sralab.emgimu.service.IEmgImuPwrDataCallback;
 import org.sralab.emgimu.service.IEmgImuServiceBinder;
 import org.sralab.emgimu.service.IEmgImuStreamDataCallback;
 
+import java.util.Arrays;
 import java.util.Date;
 
 public class Bridge extends Application
@@ -31,7 +32,7 @@ public class Bridge extends Application
     private final IEmgImuPwrDataCallback.Stub pwrObserver = new IEmgImuPwrDataCallback.Stub() {
         @Override
         public void handleData(BluetoothDevice device, EmgPwrData data) throws RemoteException {
-            callback.sendMsg("We in bizness!");
+            callback.sendDeviceList(Arrays.toString(service.getManagedDevices().toArray()));
             // stick the code logic here
             if (callback != null) {
                 callback.onSuccess(Integer.toString(data.power[0]));
