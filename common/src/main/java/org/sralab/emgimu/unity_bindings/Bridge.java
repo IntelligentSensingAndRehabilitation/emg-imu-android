@@ -7,6 +7,8 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.nfc.Tag;
+import android.os.Debug;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.util.Log;
@@ -29,6 +31,8 @@ public class Bridge extends Application
     private final IEmgImuPwrDataCallback.Stub pwrObserver = new IEmgImuPwrDataCallback.Stub() {
         @Override
         public void handleData(BluetoothDevice device, EmgPwrData data) throws RemoteException {
+            callback.sendMsg("We in bizness!");
+            // stick the code logic here
             if (callback != null) {
                 callback.onSuccess(Integer.toString(data.power[0]));
             }
@@ -47,8 +51,9 @@ public class Bridge extends Application
         public void onServiceConnected(final ComponentName name, final IBinder binder) {
             service = IEmgImuServiceBinder.Stub.asInterface(binder);
             try {
-                callback.sendDeviceList(service.getManagedDevices().toString());
-                Log.d(TAG, service.getManagedDevices().toString());
+                //callback.sendDeviceList(service.getManagedDevices().toString());
+                Log.d(TAG, "Managed Devices: " + service.getManagedDevices().toString());
+                // stream data from all sensors
                 service.registerEmgPwrObserver(pwrObserver);
                 service.registerEmgStreamObserver(streamObserver);
             } catch (RemoteException e) {
