@@ -106,4 +106,9 @@ public class Bridge extends Application
         service = null;
         callback = null;
     }
+
+    public void selectDeviceForUnityStreaming(String deviceMac) {
+        // sending device mac from unity for streaming
+        Log.d(TAG, "unity selected device" + deviceMac);
+    }
 }
