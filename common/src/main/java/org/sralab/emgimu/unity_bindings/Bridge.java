@@ -32,10 +32,14 @@ public class Bridge extends Application
     private final IEmgImuPwrDataCallback.Stub pwrObserver = new IEmgImuPwrDataCallback.Stub() {
         @Override
         public void handleData(BluetoothDevice device, EmgPwrData data) throws RemoteException {
-            callback.sendDeviceList(Arrays.toString(service.getManagedDevices().toArray()));
+
             // stick the code logic here
             if (callback != null) {
-                callback.onSuccess(Integer.toString(data.power[0]));
+                if (unitySelectedDevice != null) {
+                    Log.d(TAG, "Device was selected --> " + unitySelectedDevice);
+                    Log.d(TAG, "Current Device --> " + device);
+                }
+                //callback.onSuccess(Integer.toString(data.power[0]));
             }
         }
     };
@@ -52,11 +56,12 @@ public class Bridge extends Application
         public void onServiceConnected(final ComponentName name, final IBinder binder) {
             service = IEmgImuServiceBinder.Stub.asInterface(binder);
             try {
-                //callback.sendDeviceList(service.getManagedDevices().toString());
                 Log.d(TAG, "Managed Devices: " + service.getManagedDevices().toString());
+                callback.sendDeviceList(Arrays.toString(service.getManagedDevices().toArray()));
+
                 // stream data from all sensors
                 service.registerEmgPwrObserver(pwrObserver);
-                service.registerEmgStreamObserver(streamObserver);
+                //service.registerEmgStreamObserver(streamObserver);
             } catch (RemoteException e) {
                 throw new RuntimeException(e);
             }
@@ -72,6 +77,7 @@ public class Bridge extends Application
     long startTime;
     String gameName;
     String gameLog;
+    String unitySelectedDevice;
     public void logTrial(String roundInfo) {
         // expects to receive something that can be added to a list, which can
         // be serialized to JSON
@@ -109,6 +115,7 @@ public class Bridge extends Application
 
     public void selectDeviceForUnityStreaming(String deviceMac) {
         // sending device mac from unity for streaming
-        Log.d(TAG, "unity selected device" + deviceMac);
+        unitySelectedDevice = deviceMac;
+        Log.d(TAG, "unity selected device: " + unitySelectedDevice);
     }
 }

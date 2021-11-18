@@ -1227,6 +1227,7 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
 
         for (IEmgImuPwrDataCallback cb : emgPwrCbs) {
             try {
+                Log.d(TAG, "Calling pwr callback for " + device);
                 cb.handleData(device, dataMsg);
             } catch (RemoteException e) {
                 e.printStackTrace();

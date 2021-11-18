@@ -499,6 +499,7 @@ public class EmgImuManager extends BleManager {
 
         long ts_ms = emgPwrResolver.resolveTime(counter, timestamp, 1);
 
+        Log.d(TAG, "Pwr " + device);
         mCallbacks.onEmgPwrReceived(device, ts_ms, pwr_val);
 
         if (mLogging && streamLogger != null) {
@@ -1176,8 +1177,13 @@ public class EmgImuManager extends BleManager {
 
     /****** helper methods to enable and disable notifications *******/
 
+    boolean enabled = false;
+
     // Controls to enable what data we are receiving from the sensor
     public void enableEmgPwrNotifications() {
+        if (enabled)
+            return;
+        enabled = true;
     enableNotifications(mEmgPwrCharacteristic)
             .before(device -> setNotificationCallback(mEmgPwrCharacteristic).with((_device, data) -> parseEmgPwr(_device ,data)))
             .done(device -> log(Log.INFO, "EMG power notifications enabled successfully"))
