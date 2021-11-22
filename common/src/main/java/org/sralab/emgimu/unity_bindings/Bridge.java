@@ -32,12 +32,33 @@ public class Bridge extends Application
     private final IEmgImuPwrDataCallback.Stub pwrObserver = new IEmgImuPwrDataCallback.Stub() {
         @Override
         public void handleData(BluetoothDevice device, EmgPwrData data) throws RemoteException {
+ /*// ########### SPECIAL NOTE ##################################### //
+            // EVERY TIME YOU MAKE CHANGE TO THIS FILE, DO THIS: //
+            // 1. must rebuild the project
+            // 2. drag-and-drop "\emg-imu\android\common\build\outputs\aar\common-debug.aar"
+            //      file "common-debug.aar" into ...
+            // 3. build-and-run unity project
+            // stick the code logic here*/
 
-            // stick the code logic here
+            String device_mac = (String) device.toString();
+            Log.d(TAG, "device_mac = " + device_mac + ", len(str) = " + device_mac.length());
+            Log.d(TAG, "unity_mac = " + unitySelectedDevice + ", len(str) = " + unitySelectedDevice.length());
+            if (device_mac == unitySelectedDevice)
+            {
+                Log.d(TAG, "MATCH!!!! " + device_mac + "=" + unitySelectedDevice);
+            }
+
             if (callback != null) {
                 if (unitySelectedDevice != null) {
                     Log.d(TAG, "Device was selected --> " + unitySelectedDevice);
                     Log.d(TAG, "Current Device --> " + device);
+                    Log.d(TAG, "device.toString()=" + device.toString() + " | unitySelectedDevice=" + unitySelectedDevice);
+                    Log.d(TAG, "BOOOOOOOOOMM!");
+
+/*                    if (device.toString() == unitySelectedDevice)
+                    {
+                        Log.d(TAG, "We have a match! --> " + device.toString() + " = " + unitySelectedDevice);
+                    }*/
                 }
                 //callback.onSuccess(Integer.toString(data.power[0]));
             }
@@ -77,7 +98,7 @@ public class Bridge extends Application
     long startTime;
     String gameName;
     String gameLog;
-    String unitySelectedDevice;
+    public static String unitySelectedDevice;
     public void logTrial(String roundInfo) {
         // expects to receive something that can be added to a list, which can
         // be serialized to JSON

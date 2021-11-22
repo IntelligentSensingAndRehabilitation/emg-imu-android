@@ -81,6 +81,7 @@ import org.sralab.emgimu.logging.EmgLogFetchJobService;
 import org.sralab.emgimu.logging.FirebaseGameLogger;
 import org.sralab.emgimu.logging.GamePlayRecord;
 import org.sralab.emgimu.streaming.NetworkStreaming;
+import org.sralab.emgimu.unity_bindings.Bridge;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -1228,6 +1229,7 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
         for (IEmgImuPwrDataCallback cb : emgPwrCbs) {
             try {
                 Log.d(TAG, "Calling pwr callback for " + device);
+                Log.d(TAG, "unity_selected_device=" + Bridge.unitySelectedDevice);
                 cb.handleData(device, dataMsg);
             } catch (RemoteException e) {
                 e.printStackTrace();
