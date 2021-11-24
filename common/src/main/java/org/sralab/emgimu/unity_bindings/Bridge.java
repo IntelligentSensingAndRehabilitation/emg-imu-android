@@ -32,20 +32,21 @@ public class Bridge extends Application
     private final IEmgImuPwrDataCallback.Stub pwrObserver = new IEmgImuPwrDataCallback.Stub() {
         @Override
         public void handleData(BluetoothDevice device, EmgPwrData data) throws RemoteException {
- /*// ########### SPECIAL NOTE ##################################### //
+            /*// ########### SPECIAL NOTE ##################################### //
             // EVERY TIME YOU MAKE CHANGE TO THIS FILE, DO THIS: //
-            // 1. must rebuild the project
+            // 1. rebuild the project
             // 2. drag-and-drop "\emg-imu\android\common\build\outputs\aar\common-debug.aar"
-            //      file "common-debug.aar" into ...
+            //      file "common-debug.aar" into unity/assets/android
             // 3. build-and-run unity project
             // stick the code logic here*/
 
             String device_mac = (String) device.toString();
             Log.d(TAG, "device_mac = " + device_mac + ", len(str) = " + device_mac.length());
             Log.d(TAG, "unity_mac = " + unitySelectedDevice + ", len(str) = " + unitySelectedDevice.length());
-            if (device_mac == unitySelectedDevice)
+            if (device_mac.equals(unitySelectedDevice))
             {
                 Log.d(TAG, "MATCH!!!! " + device_mac + "=" + unitySelectedDevice);
+                callback.onSuccess(Integer.toString(data.power[0]));
             }
 
             if (callback != null) {
