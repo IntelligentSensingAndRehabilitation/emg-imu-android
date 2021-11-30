@@ -30,8 +30,8 @@ interface IEmgImuServiceBinder  {
     // For receiving EMG data
     void registerEmgStreamObserver(IEmgImuStreamDataCallback callback);
     void unregisterEmgStreamObserver(IEmgImuStreamDataCallback callback);
-    void registerEmgPwrObserver(IEmgImuPwrDataCallback callback);
-    void unregisterEmgPwrObserver(IEmgImuPwrDataCallback callback);
+    void registerEmgPwrObserver(in BluetoothDevice device, IEmgImuPwrDataCallback callback);
+    void unregisterEmgPwrObserver(in BluetoothDevice device, IEmgImuPwrDataCallback callback);
 
     // For receiving IMU data
     void registerImuAccelObserver(IEmgImuSenseCallback callback);

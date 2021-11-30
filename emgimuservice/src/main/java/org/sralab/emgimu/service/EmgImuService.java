@@ -134,7 +134,17 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
     //    void unregisterDevicesObserver(IEmgImuDevicesUpdatedCallback callback);)
     private List <IEmgImuDevicesUpdatedCallback> deviceUpdateCbs = new ArrayList<>();
     private List <IEmgImuStreamDataCallback> emgStreamCbs = new ArrayList<>();
+
+    // TODO: Option 1 is to have a hash map with lists of callbacks for each device, somewhat
+    // analagous to the current implementation. The problem with this design is the service is
+    // going to have to keep repeatedly dealing with uncertainty about what the current list of
+    // devices is. I think this is less prefered.
+    private HashMap<BluetoothDevice, List<IEmgImuPwrDataCallback>> emgPwrCbs_new = new HashMap<>();
+
+    // TODO: Option 2 is to move this list entirely into the manager and have the service
+    // pass the callback to each manager when they are registered or unregistered.
     private List <IEmgImuPwrDataCallback> emgPwrCbs = new ArrayList<>();
+
     private List <IEmgImuSenseCallback> imuAccelCbs = new ArrayList<>();
     private List <IEmgImuSenseCallback> imuGyroCbs = new ArrayList<>();
     private List <IEmgImuSenseCallback> imuMagCbs = new ArrayList<>();
@@ -299,24 +309,28 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
             }
         }
 
-        public void registerEmgPwrObserver(IEmgImuPwrDataCallback callback) {
-            Log.d(TAG, "Power callback received");
-            emgPwrCbs.add(callback);
+        public void registerEmgPwrObserver(BluetoothDevice regDevice, IEmgImuPwrDataCallback callback) {
             for (final BluetoothDevice device : getManagedDevices()) {
-                final EmgImuManager manager = (EmgImuManager) getBleManager(device);
-                if (manager.isReady())
-                    manager.enableEmgPwrNotifications();
+                if ((regDevice == null) || (device == regDevice)) {
+                    final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+                    manager.registerEmgPwrObserver(callback);
+                    if (manager.isReady())
+                        manager.enableEmgPwrNotifications();
+                }
+
             }
         }
 
-        public void unregisterEmgPwrObserver(IEmgImuPwrDataCallback callback) {
-            Log.d(TAG, "Power callback removed");
-            emgPwrCbs.remove(callback);
-            if (emgStreamCbs.size() == 0) {
-                Log.d(TAG, "No callbacks remain. Stopping stream.");
-                for (final BluetoothDevice device : getManagedDevices()) {
-                    final EmgImuManager manager = (EmgImuManager) getBleManager(device);
-                    manager.disableEmgPwrNotifications();
+        public void unregisterEmgPwrObserver(BluetoothDevice regDevice, IEmgImuPwrDataCallback callback) {
+            Log.d(TAG, "Pwr observer unregistered for " + regDevice);
+            if (regDevice == null) {
+                emgPwrCbs.remove(callback);
+                if (emgStreamCbs.size() == 0) {
+                    Log.d(TAG, "No callbacks remain. Stopping stream.");
+                    for (final BluetoothDevice device : getManagedDevices()) {
+                        final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+                        manager.disableEmgPwrNotifications();
+                    }
                 }
             }
         }
@@ -819,6 +833,8 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
             // point this API might need expanding if we want to enable different sensing
             // from different devices
 
+            // TODO: Option 2 part 3. This "delayed enabling notificiations" will have to happen
+            // in teh manager's onReady method now, based on if any callbacks are registered.
             if (!emgPwrCbs.isEmpty()) {
                 getBleManager(device).enableEmgPwrNotifications();
             }
@@ -1214,6 +1230,8 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
         }
     }
 
+    // TODO: Option 2, part 2. This implementation needs to move into the
+    // manager, which will now be calling the callbacks.
     public void onEmgPwrReceived(final BluetoothDevice device, long ts_ms, int value)
     {
         if (networkStreaming != null && networkStreaming.isConnected()) {
