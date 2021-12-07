@@ -190,7 +190,7 @@ public class EmgImuManager extends BleManager {
     // analagous to the current implementation. The problem with this design is the service is
     // going to have to keep repeatedly dealing with uncertainty about what the current list of
     // devices is. I think this is less prefered.
-    private HashMap<BluetoothDevice, List<IEmgImuPwrDataCallback>> emgPwrCbs_new = new HashMap<>();
+    private HashMap<BluetoothDevice, List<IEmgImuPwrDataCallback>> emgPwrCbs_map = new HashMap<>();
 
     // TODO: Option 2 is to move this list entirely into the manager and have the service
     // pass the callback to each manager when they are registered or unregistered.
