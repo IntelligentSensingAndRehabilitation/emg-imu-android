@@ -33,6 +33,7 @@ import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.RemoteException;
 import android.util.Base64;
 import android.util.Log;
 
@@ -50,6 +51,7 @@ import org.sralab.emgimu.logging.FirebaseEmgLogger;
 import org.sralab.emgimu.logging.FirebaseStreamLogger;
 import org.sralab.emgimu.parser.RecordAccessControlPointParser;
 import org.sralab.emgimu.service.firebase.FirebaseMagCalibration;
+import org.sralab.emgimu.unity_bindings.Bridge;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -65,6 +67,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.UUID;
+import java.util.stream.DoubleStream;
+import java.util.stream.Stream;
 
 import no.nordicsemi.android.ble.BleManager;
 import no.nordicsemi.android.ble.ConnectionPriorityRequest;
@@ -1389,5 +1393,236 @@ public class EmgImuManager extends BleManager {
 
     public interface LogFetchFailedCallback {
         void onFetchFailed(@NonNull final BluetoothDevice device, String reason);
+    }
+
+    @Override
+    public void onBatteryReceived(BluetoothDevice device, float battery) {
+        for (IEmgImuBatCallback cb : batCbs) {
+            try {
+                cb.handleData(device, battery);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    // TODO: Option 2, part 2. This implementation needs to move into the
+    // manager, which will now be calling the callbacks.
+    public void onEmgPwrReceived(final BluetoothDevice device, long ts_ms, int value)
+    {
+        if (networkStreaming != null && networkStreaming.isConnected()) {
+            double [] data = {(double) value};
+            networkStreaming.streamEmgPwr(device, new Date().getTime(), data);
+        }
+
+        EmgPwrData dataMsg = new EmgPwrData();
+        dataMsg.channels = 1;
+        dataMsg.power = new int[]{value};
+        dataMsg.ts = ts_ms;
+
+        for (IEmgImuPwrDataCallback cb : emgPwrCbs) {
+            try {
+                Log.d(TAG, "Calling pwr callback for " + device);
+                Log.d(TAG, "unity_selected_device=" + Bridge.unitySelectedDevice);
+                cb.handleData(device, dataMsg);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @Override
+    public void onEmgStreamReceived(BluetoothDevice device, long ts_ms, double[][] data) {
+
+        // TODO: fair bit of semi-redundant data serialization. Should consolidate.
+
+        // First: send data to subscribed callbacks
+        final int CHANNELS = data.length;
+        final int SAMPLES = data[0].length;
+        double [] linearizedData = Stream.of(data).flatMapToDouble(DoubleStream::of).toArray();
+
+        // For reference. Might ultimately make sense to wrapper this in a utility class
+        // double [][] reconstructed = IntStream.range(0, CHANNELS)
+        //        .mapToObj(i -> Arrays.copyOfRange(linearizedData2, i * SAMPLES, (i + 1) * SAMPLES))
+        //        .toArray(double[][]::new);
+
+        EmgStreamData dataMsg = new EmgStreamData();
+        dataMsg.channels = CHANNELS;
+        dataMsg.samples = SAMPLES;
+        dataMsg.voltage = linearizedData;
+        dataMsg.ts = ts_ms;
+        dataMsg.Fs = 2000; // TODO: access real data
+
+        for (IEmgImuStreamDataCallback cb : emgStreamCbs) {
+            try {
+                cb.handleData(device, dataMsg);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+
+        // Second: pass through EMG decoder (Tensorflow Lite) if registered
+        // TODO: improve design pattern, if possible. Likely good for this
+        // to live in service so other objects can subscribe to it, though.
+        // If EMG decoder exists, push data through this
+        if (emgDecoder != null) {
+
+            if (CHANNELS != emgDecoder.getChannels()) {
+                throw new RuntimeException("Incompatible channel sizes between Emg Decoder and received data");
+            }
+            float input_data[] = new float[CHANNELS];
+            float coordinates[] = new float[2];
+
+            for (int i = 0; i < SAMPLES; i++) {
+
+                for (int j = 0; j < CHANNELS; j++) {
+                    input_data[j] = (float) data[j][i];
+                }
+
+                boolean res = emgDecoder.decode(input_data, coordinates);
+                if (res) {
+                    if (emgDecodedCallback != null)
+                        emgDecodedCallback.onEmgDecoded(coordinates);
+                }
+            }
+        }
+
+        // Third: mirror data over stream
+        if (networkStreaming != null && networkStreaming.isConnected()) {
+            networkStreaming.streamEmgBuffer(device, ts_ms, SAMPLES, CHANNELS, data);
+        }
+
+    }
+
+    @Override
+    public void onImuAccelReceived(BluetoothDevice device, float[][] accel) {
+        float [] linearizedData = new float[3 * 3];
+
+        for (int i = 0; i < 3; i++)
+            for (int j = 0; j < 3; j++)
+                linearizedData[i + j * 3] = accel[i][j];
+
+        ImuData dataMsg = new ImuData();
+        dataMsg.samples = accel[0].length;
+        dataMsg.x = accel[0];
+        dataMsg.y = accel[1];
+        dataMsg.z = accel[2];
+        dataMsg.ts = new Date().getTime();
+        for (IEmgImuSenseCallback cb : imuAccelCbs) {
+            try {
+                cb.handleData(device, dataMsg);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+
+        /*
+        if (networkStreaming != null && networkStreaming.isConnected()) {
+            double [] data = {(double) value};
+            networkStreaming.streamImuAttitude(device, 0, data);
+        }
+        */
+    }
+
+    @Override
+    public void onImuGyroReceived(BluetoothDevice device, float[][] gyro) {
+        float [] linearizedData = new float[3 * 3];
+
+        for (int i = 0; i < 3; i++)
+            for (int j = 0; j < 3; j++)
+                linearizedData[i + j * 3] = gyro[i][j];
+
+        ImuData dataMsg = new ImuData();
+        dataMsg.samples = gyro[0].length;
+        dataMsg.x = gyro[0];
+        dataMsg.y = gyro[1];
+        dataMsg.z = gyro[2];
+        dataMsg.ts = new Date().getTime();
+        for (IEmgImuSenseCallback cb : imuGyroCbs) {
+            try {
+                cb.handleData(device, dataMsg);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+
+        /*
+        if (networkStreaming != null && networkStreaming.isConnected()) {
+            double [] data = {(double) value};
+            networkStreaming.streamImuAttitude(device, 0, data);
+        }
+        */
+    }
+
+    @Override
+    public void onImuMagReceived(BluetoothDevice device, float[][] mag) {
+        float [] linearizedData = new float[3 * 3];
+
+        for (int i = 0; i < 3; i++)
+            for (int j = 0; j < 3; j++)
+                linearizedData[i + j * 3] = mag[i][j];
+
+        ImuData dataMsg = new ImuData();
+        dataMsg.samples = mag[0].length;
+        //dataMsg.ts = ts_ms;
+        dataMsg.x = mag[0];
+        dataMsg.y = mag[1];
+        dataMsg.z = mag[2];
+        dataMsg.ts = new Date().getTime();
+        for (IEmgImuSenseCallback cb : imuMagCbs) {
+            try {
+                cb.handleData(device, dataMsg);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @Override
+    public void onImuAttitudeReceived(BluetoothDevice device, float[] quaternion) {
+        ImuQuatData dataMsg = new ImuQuatData();
+        dataMsg.ts = 0; // TODO
+        dataMsg.q0 = quaternion[0];
+        dataMsg.q1 = quaternion[1];
+        dataMsg.q2 = quaternion[2];
+        dataMsg.q3 = quaternion[3];
+        dataMsg.ts = new Date().getTime();
+        for (IEmgImuQuatCallback cb : imuQuatCbs) {
+            try {
+                cb.handleData(device, dataMsg);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+        /*
+        if (networkStreaming != null && networkStreaming.isConnected()) {
+            double [] data = {(double) value};
+            networkStreaming.streamImuAttitude(device, 0, data);
+        }
+        */
+    }
+
+    /******** These callbacks are for managing the EMG logging via RACP ********/
+
+    public void onEmgLogFetchCompleted(BluetoothDevice device) {
+        //mBinder.log(device, LogContract.Log.Level.DEBUG, "onEmgLogFetchCompleted: " + logFetchStartId);
+
+        if (logFetchStartId.get(device.getAddress()) != null) {
+            //mBinder.log(device, LogContract.Log.Level.INFO, "Log retrieval complete");
+            smartStop(device);
+        } else {
+            //mBinder.log(device, LogContract.Log.Level.WARNING, "onEmgLogFetchCompleted without log fetch intent");
+        }
+    }
+
+    public void onEmgLogFetchFailed(final BluetoothDevice device, String reason) {
+        //mBinder.log(device, LogContract.Log.Level.DEBUG, "onEmgLogFetchFailed: " + logFetchStartId);
+
+        if (logFetchStartId.get(device.getAddress()) != null) {
+            //mBinder.log(device, LogContract.Log.Level.INFO, "Log fetch failed");
+            smartStop(device);
+        } else {
+            //mBinder.log(device, LogContract.Log.Level.WARNING, "onEmgLogFetchFailed without log fetch intent");
+        }
     }
 }
