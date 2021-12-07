@@ -134,7 +134,7 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
     //    void unregisterDevicesObserver(IEmgImuDevicesUpdatedCallback callback);)
     private List <IEmgImuDevicesUpdatedCallback> deviceUpdateCbs = new ArrayList<>();
     private List <IEmgImuStreamDataCallback> emgStreamCbs = new ArrayList<>();
-    
+
     public interface OnEmgDecodedListener {
         void onEmgDecoded(float [] decoded);
     }
@@ -815,33 +815,10 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
             // If there is a subscriber for information then enable those services. At some
             // point this API might need expanding if we want to enable different sensing
             // from different devices
-
-            // TODO: Option 2 part 3. This "delayed enabling notificiations" will have to happen
-            // in teh manager's onReady method now, based on if any callbacks are registered.
-            if (!emgPwrCbs.isEmpty()) {
-                getBleManager(device).enableEmgPwrNotifications();
-            }
-
+            
             if (!emgStreamCbs.isEmpty()) {
                 getBleManager(device).enableEmgBuffNotifications();
             }
-
-            if (!imuAccelCbs.isEmpty()) {
-                getBleManager(device).enableAccelNotifications();
-            }
-
-            if (!imuGyroCbs.isEmpty() ) {
-                getBleManager(device).enableGyroNotifications();
-            }
-
-            if (!imuMagCbs.isEmpty()) {
-                getBleManager(device).enableMagNotifications();
-            }
-
-            if (!imuQuatCbs.isEmpty()) {
-                getBleManager(device).enableAttitudeNotifications();
-            }
-
         }
     }
 

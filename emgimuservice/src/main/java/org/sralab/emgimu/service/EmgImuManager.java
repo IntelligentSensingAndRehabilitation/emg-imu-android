@@ -405,6 +405,28 @@ public class EmgImuManager extends BleManager {
 
             connectionState.postValue(getConnectionState());
 
+            // TODO: Option 2 part 3. This "delayed enabling notificiations" will have to happen
+            // in teh manager's onReady method now, based on if any callbacks are registered.
+            if (!emgPwrCbs.isEmpty()) {
+                getBleManager(device).enableEmgPwrNotifications();
+            }
+
+            if (!imuAccelCbs.isEmpty()) {
+                getBleManager(device).enableAccelNotifications();
+            }
+
+            if (!imuGyroCbs.isEmpty() ) {
+                getBleManager(device).enableGyroNotifications();
+            }
+
+            if (!imuMagCbs.isEmpty()) {
+                getBleManager(device).enableMagNotifications();
+            }
+
+            if (!imuQuatCbs.isEmpty()) {
+                getBleManager(device).enableAttitudeNotifications();
+            }
+
             super.onDeviceReady();
         }
 
