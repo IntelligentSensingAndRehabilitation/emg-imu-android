@@ -1447,10 +1447,10 @@ public class EmgImuManager extends BleManager {
     // manager, which will now be calling the callbacks.
     public void onEmgPwrReceived(final BluetoothDevice device, long ts_ms, int value)
     {
-        if (networkStreaming != null && networkStreaming.isConnected()) {
+/*        if (networkStreaming != null && networkStreaming.isConnected()) {
             double [] data = {(double) value};
             networkStreaming.streamEmgPwr(device, new Date().getTime(), data);
-        }
+        }*/
 
         EmgPwrData dataMsg = new EmgPwrData();
         dataMsg.channels = 1;
