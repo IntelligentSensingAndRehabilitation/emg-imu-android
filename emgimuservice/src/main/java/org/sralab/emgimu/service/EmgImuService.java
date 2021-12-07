@@ -134,24 +134,7 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
     //    void unregisterDevicesObserver(IEmgImuDevicesUpdatedCallback callback);)
     private List <IEmgImuDevicesUpdatedCallback> deviceUpdateCbs = new ArrayList<>();
     private List <IEmgImuStreamDataCallback> emgStreamCbs = new ArrayList<>();
-
-    // TODO: Option 1 is to have a hash map with lists of callbacks for each device, somewhat
-    // analagous to the current implementation. The problem with this design is the service is
-    // going to have to keep repeatedly dealing with uncertainty about what the current list of
-    // devices is. I think this is less prefered.
-    private HashMap<BluetoothDevice, List<IEmgImuPwrDataCallback>> emgPwrCbs_new = new HashMap<>();
-
-    // TODO: Option 2 is to move this list entirely into the manager and have the service
-    // pass the callback to each manager when they are registered or unregistered.
-    private List <IEmgImuPwrDataCallback> emgPwrCbs = new ArrayList<>();
-
-    private List <IEmgImuSenseCallback> imuAccelCbs = new ArrayList<>();
-    private List <IEmgImuSenseCallback> imuGyroCbs = new ArrayList<>();
-    private List <IEmgImuSenseCallback> imuMagCbs = new ArrayList<>();
-    private List <IEmgImuQuatCallback> imuQuatCbs = new ArrayList<>();
-    private List <IEmgImuBatCallback> batCbs = new ArrayList<>();
-
-
+    
     public interface OnEmgDecodedListener {
         void onEmgDecoded(float [] decoded);
     }
