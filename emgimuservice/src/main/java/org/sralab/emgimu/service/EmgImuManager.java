@@ -193,7 +193,6 @@ public class EmgImuManager extends BleManager {
 
     // TODO: Option 2 is to move this list entirely into the manager and have the service
     // pass the callback to each manager when they are registered or unregistered.
-    private HashMap<BluetoothDevice, List<IEmgImuPwrDataCallback>> emgPwrCbs_map = new HashMap<>();
     private List <IEmgImuPwrDataCallback> emgPwrCbs = new ArrayList<>();
     private List <IEmgImuSenseCallback> imuAccelCbs = new ArrayList<>();
     private List <IEmgImuSenseCallback> imuGyroCbs = new ArrayList<>();
