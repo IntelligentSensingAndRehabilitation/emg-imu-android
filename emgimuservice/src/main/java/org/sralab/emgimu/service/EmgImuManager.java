@@ -78,9 +78,11 @@ import no.nordicsemi.android.ble.data.Data;
 import no.nordicsemi.android.ble.data.MutableData;
 
 public class EmgImuManager extends BleManager {
-	private final String TAG = "EmgImuManager";
+    private final String TAG = "EmgImuManager";
 
-	/** Device Information UUID **/
+    /**
+     * Device Information UUID
+     **/
     private final static UUID DEVICE_INFORMATION_SERVICE = UUID.fromString("0000180A-0000-1000-8000-00805f9b34fb");
     private final static UUID MANUFACTURER_NAME_CHARACTERISTIC = UUID.fromString("00002A29-0000-1000-8000-00805f9b34fb");
     private final static UUID SERIAL_NUMBER_CHARACTERISTIC = UUID.fromString("00002A25-0000-1000-8000-00805f9b34fb");
@@ -89,17 +91,23 @@ public class EmgImuManager extends BleManager {
 
     private BluetoothGattCharacteristic mManufacturerCharacteristic, mSerialNumberCharacteristic, mHardwareCharacteristic, mFirmwareCharacteristic;
 
-    /** Battery information **/
+    /**
+     * Battery information
+     **/
     private final static UUID BATTERY_SERVICE = UUID.fromString("0000180F-0000-1000-8000-00805f9b34fb");
     private final static UUID BATTERY_LEVEL_CHARACTERISTIC = UUID.fromString("00002A19-0000-1000-8000-00805f9b34fb");
     private BluetoothGattCharacteristic mBatteryCharacteristic;
 
-    /** EMG Service UUID **/
-	public final static UUID EMG_SERVICE_UUID = UUID.fromString("00001234-1212-EFDE-1523-785FEF13D123");
+    /**
+     * EMG Service UUID
+     **/
+    public final static UUID EMG_SERVICE_UUID = UUID.fromString("00001234-1212-EFDE-1523-785FEF13D123");
     public final static UUID EMG_BUFF_CHAR_UUID = UUID.fromString("00001236-1212-EFDE-1523-785FEF13D123");
     public final static UUID EMG_PWR_CHAR_UUID = UUID.fromString("00001237-1212-EFDE-1523-785FEF13D123");
 
-    /** IMU Service UUID **/
+    /**
+     * IMU Service UUID
+     **/
     public final static UUID IMU_SERVICE_UUID = UUID.fromString("00002234-1212-EFDE-1523-785FEF13D123");
     public final static UUID IMU_ACCEL_CHAR_UUID = UUID.fromString("00002235-1212-EFDE-1523-785FEF13D123");
     public final static UUID IMU_GYRO_CHAR_UUID = UUID.fromString("00002236-1212-EFDE-1523-785FEF13D123");
@@ -107,7 +115,9 @@ public class EmgImuManager extends BleManager {
     public final static UUID IMU_ATTITUDE_CHAR_UUID = UUID.fromString("00002238-1212-EFDE-1523-785FEF13D123");
     public final static UUID IMU_CALIBRATION_CHAR_UUID = UUID.fromString("00002239-1212-EFDE-1523-785FEF13D123");
 
-    /** FORCE UUID **/
+    /**
+     * FORCE UUID
+     **/
     public final static UUID FORCE_SERVICE_UUID = UUID.fromString("6E400001-B5A3-F393-E0A9-E50E24DCCA9E");
     public final static UUID FORCE_WRITE_CHAR_UUID = UUID.fromString("6E400003-B5A3-F393-E0A9-E50E24DCCA9E");
 
@@ -144,7 +154,6 @@ public class EmgImuManager extends BleManager {
     //private final static byte OPERATOR_LAST_RECORD = 6;
 
 
-
     /**
      * The filter type is used for range operators ({@link #OPERATOR_LESS_THEN_OR_EQUAL}, {@link #OPERATOR_GREATER_THEN_OR_EQUAL}, {@link #OPERATOR_WITHING_RANGE}.<br/>
      * The syntax of the operand is: [Filter Type][Minimum][Maximum].<br/>
@@ -172,6 +181,7 @@ public class EmgImuManager extends BleManager {
     private List<EmgLogRecord> mRecords = new ArrayList<>();
 
     private EmgImuObserver mCallbacks;
+
     public void setEmgImuObserver(EmgImuObserver cb) {
         mCallbacks = cb;
     }
@@ -193,14 +203,165 @@ public class EmgImuManager extends BleManager {
 
     // TODO: Option 2 is to move this list entirely into the manager and have the service
     // pass the callback to each manager when they are registered or unregistered.
-    private List <IEmgImuPwrDataCallback> emgPwrCbs = new ArrayList<>();
-    private List <IEmgImuSenseCallback> imuAccelCbs = new ArrayList<>();
-    private List <IEmgImuSenseCallback> imuGyroCbs = new ArrayList<>();
-    private List <IEmgImuSenseCallback> imuMagCbs = new ArrayList<>();
-    private List <IEmgImuQuatCallback> imuQuatCbs = new ArrayList<>();
-    private List <IEmgImuBatCallback> batCbs = new ArrayList<>();
-    private List <IEmgImuDevicesUpdatedCallback> deviceUpdateCbs = new ArrayList<>();
-    private List <IEmgImuStreamDataCallback> emgStreamCbs = new ArrayList<>();
+    // List of Callbacks for sensor data processing.
+    private List<IEmgImuPwrDataCallback> emgPwrCbs = new ArrayList<>();
+    private List<IEmgImuSenseCallback> imuAccelCbs = new ArrayList<>();
+    private List<IEmgImuSenseCallback> imuGyroCbs = new ArrayList<>();
+    private List<IEmgImuSenseCallback> imuMagCbs = new ArrayList<>();
+    private List<IEmgImuQuatCallback> imuQuatCbs = new ArrayList<>();
+    private List<IEmgImuBatCallback> batCbs = new ArrayList<>();
+    private List<IEmgImuDevicesUpdatedCallback> deviceUpdateCbs = new ArrayList<>();
+    private List<IEmgImuStreamDataCallback> emgStreamCbs = new ArrayList<>();
+
+    // ############# REGISTER/UNREGISTER CALLBACKS SECTION #########################################
+    // Temp VS notes:
+    // Callbacks:
+    // (1) emgPwrCbs        - complete
+    // (2) imuAccelCbs      - complete
+    // (3) imuGyroCbs       - complete
+    // (4) imuMagCbs        - complete
+    // (5) imuQuatCbs       - complete, Dr. Cotton to clarify assumption
+    // (6) batCbs           - complete
+    // (7) deviceUpdateCbs  - complete, but potential problem - no enable/disable notification methods
+    // (8) emgStreamCbs     - complete, Dr. Cotton to clarify assumption
+
+    // (1) emgPwrCbs
+    public void RegisterEmgPwrCallback(IEmgImuPwrDataCallback callback)
+    {
+        emgPwrCbs.add(callback);
+        if ( isReady() )
+        {
+            enableEmgPwrNotifications();
+        }
+    }
+
+    public void UnregisterEmgPwrCallback(IEmgImuPwrDataCallback callback)
+    {
+        emgPwrCbs.remove(callback);
+        // This may require some flag in the future
+        disableEmgPwrNotifications();
+    }
+
+    // (2) imuAccelCbs
+    public void RegisterImuAccelCallback(IEmgImuSenseCallback callback)
+    {
+        imuAccelCbs.add(callback);
+        if ( isReady() )
+        {
+            enableAccelNotifications();
+        }
+    }
+
+    public void UnregisterImuAccelCallback(IEmgImuSenseCallback callback)
+    {
+        imuAccelCbs.remove(callback);
+        // This may require some flag in the future
+        disableAccelNotifications();
+    }
+
+    // (3) imuGyroCbs
+    public void RegisterImuGyroCallback(IEmgImuSenseCallback callback)
+    {
+        imuGyroCbs.add(callback);
+        if ( isReady() )
+        {
+            enableGyroNotifications();
+        }
+    }
+
+    public void UnregisterImuGyroCallback(IEmgImuSenseCallback callback)
+    {
+        imuGyroCbs.remove(callback);
+        // This may require some flag in the future
+        disableGyroNotifications();
+    }
+
+    // (4) imuMagCbs
+    public void RegisterImuMagCallback(IEmgImuSenseCallback callback)
+    {
+        imuMagCbs.add(callback);
+        if ( isReady() )
+        {
+            enableMagNotifications();
+        }
+    }
+
+    public void UnregisterImuMagCallback(IEmgImuSenseCallback callback)
+    {
+        imuMagCbs.remove(callback);
+        // This may require some flag in the future
+        disableMagNotifications();
+    }
+
+    // (5) imuQuatCbs
+    public void RegisterImuQuatCallback(IEmgImuQuatCallback callback)
+    {
+        imuQuatCbs.add(callback);
+        if ( isReady() )
+        {
+            enableAttitudeNotifications(); // assuming Quaternion pairs with Attitude
+        }
+    }
+
+    public void UnregisterImuQuatCallback(IEmgImuQuatCallback callback)
+    {
+        imuQuatCbs.remove(callback);
+        // This may require some flag in the future
+        disableAttitudeNotifications(); // assuming Quaternion pairs with Attitude
+    }
+
+    // (6) batCbs
+    public void RegisterBatCallback(IEmgImuBatCallback callback)
+    {
+        batCbs.add(callback);
+        if ( isReady() )
+        {
+            enableBatteryLevelNotifications();
+        }
+    }
+
+    public void UnregisterBatCallback(IEmgImuBatCallback callback)
+    {
+        batCbs.remove(callback);
+        // This may require some flag in the future
+        disableBatteryLevelNotifications();
+    }
+
+    // (7) deviceUpdateCbs
+    public void RegisterDeviceUpdateCallback(IEmgImuDevicesUpdatedCallback callback)
+    {
+        deviceUpdateCbs.add(callback);
+        if ( isReady() )
+        {
+            // don't have enableDeviceUpdateNotification()!
+        }
+    }
+
+    public void UnregisterDeviceUpdateCallback(IEmgImuDevicesUpdatedCallback callback)
+    {
+        deviceUpdateCbs.remove(callback);
+        // This may require some flag in the future
+            // don't have enableDeviceUpdateNotification()!
+    }
+
+    // (8) emgStreamCbs
+    public void RegisterEmgStreamCallback(IEmgImuStreamDataCallback callback)
+    {
+        emgStreamCbs.add(callback);
+        if ( isReady() )
+        {
+            enableEmgBuffNotifications(); // assuming that EmgBuff pairs with emgStreamCbs
+        }
+    }
+
+    public void UnregisterEmgStreamCallback(IEmgImuStreamDataCallback callback)
+    {
+        emgStreamCbs.remove(callback);
+        // This may require some flag in the future
+        disableEmgBuffNotifications(); // assuming that EmgBuff pairs with emgStreamCbs
+    }
+
+    // ############# END OF REGISTER/UNREGISTER CALLBACKS SECTION ##################################
 
     public EmgImuManager(final Context context) {
 		super(context);
