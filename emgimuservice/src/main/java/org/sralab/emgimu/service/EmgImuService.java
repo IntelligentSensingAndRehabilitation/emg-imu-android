@@ -180,6 +180,145 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
             return getBleManager(device).getConnectionState();
         }
 
+        // ############# REGISTER/UNREGISTER CALLBACKS SECTION #########################################
+        // Temp VS notes:
+        // Callbacks:
+        // (1) emgPwrCbs        - arranged
+        // (2) imuAccelCbs      - arranged
+        // (3) imuGyroCbs       - arranged
+        // (4) imuMagCbs        - arranged
+        // (5) imuQuatCbs       - arranged
+        // (6) batCbs           - arranged
+        // (7) deviceUpdateCbs  - arranged
+        // (8) emgStreamCbs
+
+        // (1) emgPwrCbs
+        public void registerEmgPwrObserver(BluetoothDevice regDevice, IEmgImuPwrDataCallback callback) {
+            for (final BluetoothDevice device : getManagedDevices()) {
+                if ((regDevice == null) || (device == regDevice)) {
+                    final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+                    manager.registerEmgPwrObserver(callback);
+                    if (manager.isReady())
+                        manager.enableEmgPwrNotifications();
+                }
+
+            }
+        }
+
+        public void unregisterEmgPwrObserver(BluetoothDevice regDevice, IEmgImuPwrDataCallback callback) {
+            Log.d(TAG, "Pwr observer unregistered for " + regDevice);
+            if (regDevice == null) {
+                emgPwrCbs.remove(callback);
+                if (emgStreamCbs.size() == 0) {
+                    Log.d(TAG, "No callbacks remain. Stopping stream.");
+                    for (final BluetoothDevice device : getManagedDevices()) {
+                        final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+                        manager.disableEmgPwrNotifications();
+                    }
+                }
+            }
+        }
+
+        // (2) imuAccelCbs
+        @Override
+        public void registerImuAccelObserver(IEmgImuSenseCallback callback) {
+            imuAccelCbs.add(callback);
+            for (final BluetoothDevice device : getManagedDevices()) {
+                final EmgImuManager manager = getBleManager(device);
+                if (manager.isReady())
+                    manager.enableAccelNotifications();
+            }
+        }
+
+        @Override
+        public void unregisterImuAccelObserver(IEmgImuSenseCallback callback) {
+            imuAccelCbs.remove(callback);
+            if (imuAccelCbs.size() == 0) {
+                for (final BluetoothDevice device : getManagedDevices()) {
+                    final EmgImuManager manager = getBleManager(device);
+                    manager.disableAccelNotifications();
+                }
+            }
+        }
+
+        // (3) imuGyroCbs
+        @Override
+        public void registerImuGyroObserver(IEmgImuSenseCallback callback) {
+            imuGyroCbs.add(callback);
+            for (final BluetoothDevice device : getManagedDevices()) {
+                final EmgImuManager manager = getBleManager(device);
+                if (manager.isReady())
+                    manager.enableGyroNotifications();
+            }
+        }
+
+        @Override
+        public void unregisterImuGyroObserver(IEmgImuSenseCallback callback) {
+            imuGyroCbs.remove(callback);
+            if (imuGyroCbs.size() == 0) {
+                for (final BluetoothDevice device : getManagedDevices()) {
+                    final EmgImuManager manager = getBleManager(device);
+                    manager.disableGyroNotifications();
+                }
+            }
+        }
+
+        // (4) imuMagCbs
+        @Override
+        public void registerImuMagObserver(IEmgImuSenseCallback callback)  {
+            imuMagCbs.add(callback);
+            for (final BluetoothDevice device : getManagedDevices()) {
+                final EmgImuManager manager = getBleManager(device);
+                if (manager.isReady())
+                    manager.enableMagNotifications();
+            }
+        }
+
+        @Override
+        public void unregisterImuMagObserver(IEmgImuSenseCallback callback) {
+            imuMagCbs.remove(callback);
+            if (imuMagCbs.size() == 0) {
+                for (final BluetoothDevice device : getManagedDevices()) {
+                    final EmgImuManager manager = getBleManager(device);
+                    manager.disableMagNotifications();
+                }
+            }
+        }
+
+        // (5) imuQuatCbs
+        @Override
+        public void registerImuQuatObserver(IEmgImuQuatCallback callback) {
+            imuQuatCbs.add(callback);
+            for (final BluetoothDevice device : getManagedDevices()) {
+                final EmgImuManager manager = getBleManager(device);
+                if (manager.isReady())
+                    manager.enableAttitudeNotifications();
+            }
+        }
+
+        @Override
+        public void unregisterImuQuatObserver(IEmgImuQuatCallback callback) {
+            imuQuatCbs.remove(callback);
+            if (imuQuatCbs.size() == 0) {
+                for (final BluetoothDevice device : getManagedDevices()) {
+                    final EmgImuManager manager = getBleManager(device);
+                    manager.disableAttitudeNotifications();
+                }
+            }
+        }
+
+        // (6) batCbs
+        @Override
+        public void registerBatObserver(IEmgImuBatCallback callback) throws RemoteException {
+            batCbs.add(callback);
+        }
+
+        @Override
+        public void unregisterBatObserver(IEmgImuBatCallback callback) throws RemoteException {
+            batCbs.remove(callback);
+        }
+
+        // (7) deviceUpdateCbs
         @Override
         public void registerDevicesObserver(IEmgImuDevicesUpdatedCallback callback) throws RemoteException {
             deviceUpdateCbs.add(callback);
@@ -189,6 +328,31 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
         public void unregisterDevicesObserver(IEmgImuDevicesUpdatedCallback callback) throws RemoteException {
             deviceUpdateCbs.remove(callback);
         }
+
+        // (8) emgStreamCbs
+        public void registerEmgStreamObserver(IEmgImuStreamDataCallback callback) throws RemoteException {
+            Log.d(TAG, "Stream callback received");
+            emgStreamCbs.add(callback);
+            for (final BluetoothDevice device : getManagedDevices()) {
+                final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+                if (manager.isReady())
+                    manager.enableEmgBuffNotifications();
+            }
+        }
+
+        public void unregisterEmgStreamObserver(IEmgImuStreamDataCallback callback) {
+            Log.d(TAG, "Stream callback removed");
+            emgStreamCbs.remove(callback);
+            if (emgStreamCbs.size() == 0) {
+                Log.d(TAG, "No callbacks remain. Stopping stream.");
+                for (final BluetoothDevice device : getManagedDevices()) {
+                    final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+                    manager.disableEmgBuffNotifications();
+                }
+            }
+        }
+        
+        // ############# END OF REGISTER/UNREGISTER CALLBACKS SECTION ##################################
 
         @Override
         public void storeGameplayRecord(String name, long startTime, String details) throws RemoteException {
@@ -268,147 +432,7 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
             //configureLoggingSavedDevices();
         }
 
-        public void registerEmgStreamObserver(IEmgImuStreamDataCallback callback) throws RemoteException {
-            Log.d(TAG, "Stream callback received");
-            emgStreamCbs.add(callback);
-            for (final BluetoothDevice device : getManagedDevices()) {
-                final EmgImuManager manager = (EmgImuManager) getBleManager(device);
-                if (manager.isReady())
-                    manager.enableEmgBuffNotifications();
-            }
-        }
 
-        public void unregisterEmgStreamObserver(IEmgImuStreamDataCallback callback) {
-            Log.d(TAG, "Stream callback removed");
-            emgStreamCbs.remove(callback);
-            if (emgStreamCbs.size() == 0) {
-                Log.d(TAG, "No callbacks remain. Stopping stream.");
-                for (final BluetoothDevice device : getManagedDevices()) {
-                    final EmgImuManager manager = (EmgImuManager) getBleManager(device);
-                    manager.disableEmgBuffNotifications();
-                }
-            }
-        }
-
-        public void registerEmgPwrObserver(BluetoothDevice regDevice, IEmgImuPwrDataCallback callback) {
-            for (final BluetoothDevice device : getManagedDevices()) {
-                if ((regDevice == null) || (device == regDevice)) {
-                    final EmgImuManager manager = (EmgImuManager) getBleManager(device);
-                    manager.registerEmgPwrObserver(callback);
-                    if (manager.isReady())
-                        manager.enableEmgPwrNotifications();
-                }
-
-            }
-        }
-
-        public void unregisterEmgPwrObserver(BluetoothDevice regDevice, IEmgImuPwrDataCallback callback) {
-            Log.d(TAG, "Pwr observer unregistered for " + regDevice);
-            if (regDevice == null) {
-                emgPwrCbs.remove(callback);
-                if (emgStreamCbs.size() == 0) {
-                    Log.d(TAG, "No callbacks remain. Stopping stream.");
-                    for (final BluetoothDevice device : getManagedDevices()) {
-                        final EmgImuManager manager = (EmgImuManager) getBleManager(device);
-                        manager.disableEmgPwrNotifications();
-                    }
-                }
-            }
-        }
-
-        @Override
-        public void registerImuAccelObserver(IEmgImuSenseCallback callback) {
-            imuAccelCbs.add(callback);
-            for (final BluetoothDevice device : getManagedDevices()) {
-                final EmgImuManager manager = getBleManager(device);
-                if (manager.isReady())
-                    manager.enableAccelNotifications();
-            }
-        }
-
-        @Override
-        public void unregisterImuAccelObserver(IEmgImuSenseCallback callback) {
-            imuAccelCbs.remove(callback);
-            if (imuAccelCbs.size() == 0) {
-                for (final BluetoothDevice device : getManagedDevices()) {
-                    final EmgImuManager manager = getBleManager(device);
-                    manager.disableAccelNotifications();
-                }
-            }
-        }
-
-        @Override
-        public void registerImuGyroObserver(IEmgImuSenseCallback callback) {
-            imuGyroCbs.add(callback);
-            for (final BluetoothDevice device : getManagedDevices()) {
-                final EmgImuManager manager = getBleManager(device);
-                if (manager.isReady())
-                    manager.enableGyroNotifications();
-            }
-        }
-
-        @Override
-        public void unregisterImuGyroObserver(IEmgImuSenseCallback callback) {
-            imuGyroCbs.remove(callback);
-            if (imuGyroCbs.size() == 0) {
-                for (final BluetoothDevice device : getManagedDevices()) {
-                    final EmgImuManager manager = getBleManager(device);
-                    manager.disableGyroNotifications();
-                }
-            }
-        }
-
-        @Override
-        public void registerImuMagObserver(IEmgImuSenseCallback callback)  {
-            imuMagCbs.add(callback);
-            for (final BluetoothDevice device : getManagedDevices()) {
-                final EmgImuManager manager = getBleManager(device);
-                if (manager.isReady())
-                    manager.enableMagNotifications();
-            }
-        }
-
-        @Override
-        public void unregisterImuMagObserver(IEmgImuSenseCallback callback) {
-            imuMagCbs.remove(callback);
-            if (imuMagCbs.size() == 0) {
-                for (final BluetoothDevice device : getManagedDevices()) {
-                    final EmgImuManager manager = getBleManager(device);
-                    manager.disableMagNotifications();
-                }
-            }
-        }
-
-        @Override
-        public void registerImuQuatObserver(IEmgImuQuatCallback callback) {
-            imuQuatCbs.add(callback);
-            for (final BluetoothDevice device : getManagedDevices()) {
-                final EmgImuManager manager = getBleManager(device);
-                if (manager.isReady())
-                    manager.enableAttitudeNotifications();
-            }
-        }
-
-        @Override
-        public void unregisterImuQuatObserver(IEmgImuQuatCallback callback) {
-            imuQuatCbs.remove(callback);
-            if (imuQuatCbs.size() == 0) {
-                for (final BluetoothDevice device : getManagedDevices()) {
-                    final EmgImuManager manager = getBleManager(device);
-                    manager.disableAttitudeNotifications();
-                }
-            }
-        }
-
-        @Override
-        public void registerBatObserver(IEmgImuBatCallback callback) throws RemoteException {
-            batCbs.add(callback);
-        }
-
-        @Override
-        public void unregisterBatObserver(IEmgImuBatCallback callback) throws RemoteException {
-            batCbs.remove(callback);
-        }
 
         public String getUser() {
             if (mCurrentUser != null)
