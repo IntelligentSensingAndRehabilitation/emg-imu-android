@@ -222,18 +222,18 @@ public class EmgImuManager extends BleManager {
     public int getSizeOfBatCbs() { return this.batCbs.size(); }
     public int getSizeOfDeviceUpdateCbs() { return this.deviceUpdateCbs.size(); }
     public int getSizeOfEmgStreamCbs() { return this.emgStreamCbs.size(); }
-    
+
     // ############# REGISTER/UNREGISTER CALLBACKS SECTION #########################################
     // Temp VS notes:
     // Callbacks:
-    // (1) emgPwrCbs        - complete
-    // (2) imuAccelCbs      - complete
-    // (3) imuGyroCbs       - complete
-    // (4) imuMagCbs        - complete
-    // (5) imuQuatCbs       - complete, Dr. Cotton to clarify assumption
-    // (6) batCbs           - complete
+    // (1) emgPwrCbs
+    // (2) imuAccelCbs
+    // (3) imuGyroCbs
+    // (4) imuMagCbs
+    // (5) imuQuatCbs
+    // (6) batCbs
     // (7) deviceUpdateCbs  - complete, but potential problem - no enable/disable notification methods
-    // (8) emgStreamCbs     - complete, Dr. Cotton to clarify assumption
+    // (8) emgStreamCbs     
 
     // (1) emgPwrCbs
     public void RegisterEmgPwrCallback(IEmgImuPwrDataCallback callback)
