@@ -132,8 +132,6 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
 
     //    void registerDevicesObserver(IEmgImuDevicesUpdatedCallback callback);
     //    void unregisterDevicesObserver(IEmgImuDevicesUpdatedCallback callback);)
-    private List <IEmgImuDevicesUpdatedCallback> deviceUpdateCbs = new ArrayList<>();
-    private List <IEmgImuStreamDataCallback> emgStreamCbs = new ArrayList<>();
 
     public interface OnEmgDecodedListener {
         void onEmgDecoded(float [] decoded);

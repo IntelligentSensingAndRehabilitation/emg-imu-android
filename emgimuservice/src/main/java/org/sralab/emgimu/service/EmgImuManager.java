@@ -199,6 +199,8 @@ public class EmgImuManager extends BleManager {
     private List <IEmgImuSenseCallback> imuMagCbs = new ArrayList<>();
     private List <IEmgImuQuatCallback> imuQuatCbs = new ArrayList<>();
     private List <IEmgImuBatCallback> batCbs = new ArrayList<>();
+    private List <IEmgImuDevicesUpdatedCallback> deviceUpdateCbs = new ArrayList<>();
+    private List <IEmgImuStreamDataCallback> emgStreamCbs = new ArrayList<>();
 
     public EmgImuManager(final Context context) {
 		super(context);
