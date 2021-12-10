@@ -834,7 +834,7 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
         Log.d(TAG, "onDeviceReady: " + device);
         // See if a log fetch has been requested
         if(logFetchStartId.get(device.getAddress()) != null) {
-            getBleManager(device).fetchLogRecords(device1 -> onEmgLogFetchCompleted(device1), (device12, reason) -> onEmgLogFetchFailed(device12, reason));
+            getBleManager(device).fetchLogRecords(device1 -> callbackManager.onEmgLogFetchCompleted(device1), (device12, reason) -> callbackManager.onEmgLogFetchFailed(device12, reason));
         } else {
             // If there is a subscriber for information then enable those services. At some
             // point this API might need expanding if we want to enable different sensing
