@@ -840,7 +840,7 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
             // point this API might need expanding if we want to enable different sensing
             // from different devices
             
-            if (!emgStreamCbs.isEmpty()) {
+            if (!callbackManager.isEmgStreamCbsEmpty()) {
                 getBleManager(device).enableEmgBuffNotifications();
             }
         }
@@ -895,7 +895,7 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
         liveDevices.postValue(managedDevices);
 
         try {
-            for (IEmgImuDevicesUpdatedCallback cb : deviceUpdateCbs)
+            for (IEmgImuDevicesUpdatedCallback cb : callbackManager.getDeviceUpdateCbs())
                 cb.onDeviceListUpdated();
         } catch (RemoteException e) {
             e.printStackTrace();
