@@ -77,7 +77,7 @@ import no.nordicsemi.android.ble.RequestQueue;
 import no.nordicsemi.android.ble.data.Data;
 import no.nordicsemi.android.ble.data.MutableData;
 
-public class EmgImuManager extends BleManager {
+public class EmgImuManager extends BleManager implements EmgImuObserver {
     private final String TAG = "EmgImuManager";
 
     /**

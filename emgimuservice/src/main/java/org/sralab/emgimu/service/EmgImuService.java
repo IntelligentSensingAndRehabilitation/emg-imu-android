@@ -97,7 +97,7 @@ import no.nordicsemi.android.ble.annotation.DisconnectionReason;
 import no.nordicsemi.android.ble.error.GattError;
 import no.nordicsemi.android.ble.observer.ConnectionObserver;
 
-public class EmgImuService extends Service implements ConnectionObserver, EmgImuObserver {
+public class EmgImuService extends Service implements ConnectionObserver {
 	@SuppressWarnings("unused")
 	private static final String TAG = "EmgImuService";
 
