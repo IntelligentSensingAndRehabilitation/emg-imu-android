@@ -127,7 +127,7 @@ public class EmgImuService extends Service implements ConnectionObserver {
     private Handler handler;
 
     private NetworkStreaming networkStreaming;
-    private IEmgDecoder emgDecoder;
+    // private IEmgDecoder emgDecoder;
     private OnEmgDecodedListener emgDecodedCallback;
 
     private EmgImuManager callbackManager; // for getter access in order to obtain size of callback list
@@ -387,7 +387,7 @@ public class EmgImuService extends Service implements ConnectionObserver {
             try {
                 Class emgDecoderProviderClass = Class.forName("org.sralab.emgimu.controller.EmgDecoderProvider");
                 IEmgDecoderProvider emgDecoderProvider = (IEmgDecoderProvider) emgDecoderProviderClass.newInstance();
-                emgDecoder = emgDecoderProvider.get(getApplicationContext());
+                callbackManager.setEmgDecoder(emgDecoderProvider.get(getApplicationContext()));
             } catch (ClassNotFoundException e) {
                 e.printStackTrace();
                 return;

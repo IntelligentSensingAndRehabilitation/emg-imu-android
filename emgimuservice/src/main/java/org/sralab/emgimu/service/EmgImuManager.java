@@ -47,6 +47,7 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 
+import org.sralab.emgimu.controller.IEmgDecoder;
 import org.sralab.emgimu.logging.FirebaseEmgLogger;
 import org.sralab.emgimu.logging.FirebaseStreamLogger;
 import org.sralab.emgimu.parser.RecordAccessControlPointParser;
@@ -228,6 +229,12 @@ public class EmgImuManager extends BleManager implements EmgImuObserver {
 
     // getter for the deviceUpdateCbs
     public List<IEmgImuDevicesUpdatedCallback> getDeviceUpdateCbs() { return this.deviceUpdateCbs; }
+
+    // Relocating variables from service to remove bugs
+    private IEmgDecoder emgDecoder;
+
+    // setter for emgDecoder to be used in service
+    public void setEmgDecoder(IEmgDecoder decoder) { this.emgDecoder = decoder; }
 
     // ############# REGISTER/UNREGISTER CALLBACKS SECTION #########################################
     // Temp VS notes:
