@@ -469,7 +469,7 @@ public class EmgImuService extends Service implements ConnectionObserver {
 
 	protected EmgImuManager initializeManager() {
         EmgImuManager manager = new EmgImuManager(this);
-	    manager.setEmgImuObserver(this);
+	    manager.setEmgImuObserver((EmgImuObserver) this);
 		return manager;
 	}
 
