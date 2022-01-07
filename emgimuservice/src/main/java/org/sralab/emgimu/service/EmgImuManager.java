@@ -1759,28 +1759,4 @@ public class EmgImuManager extends BleManager implements EmgImuObserver {
             }
         }
     }
-
-    /******** These callbacks are for managing the EMG logging via RACP ********/
-
-    public void onEmgLogFetchCompleted(BluetoothDevice device) {
-        //mBinder.log(device, LogContract.Log.Level.DEBUG, "onEmgLogFetchCompleted: " + logFetchStartId);
-
-        if (logFetchStartId.get(device.getAddress()) != null) {
-            //mBinder.log(device, LogContract.Log.Level.INFO, "Log retrieval complete");
-            smartStop(device);
-        } else {
-            //mBinder.log(device, LogContract.Log.Level.WARNING, "onEmgLogFetchCompleted without log fetch intent");
-        }
-    }
-
-    public void onEmgLogFetchFailed(final BluetoothDevice device, String reason) {
-        //mBinder.log(device, LogContract.Log.Level.DEBUG, "onEmgLogFetchFailed: " + logFetchStartId);
-
-        if (logFetchStartId.get(device.getAddress()) != null) {
-            //mBinder.log(device, LogContract.Log.Level.INFO, "Log fetch failed");
-            smartStop(device);
-        } else {
-            //mBinder.log(device, LogContract.Log.Level.WARNING, "onEmgLogFetchFailed without log fetch intent");
-        }
-    }
 }

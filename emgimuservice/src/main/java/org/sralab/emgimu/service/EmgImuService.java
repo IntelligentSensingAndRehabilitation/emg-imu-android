@@ -509,8 +509,6 @@ public class EmgImuService extends Service implements ConnectionObserver {
         data.put("updated", Timestamp.now());
         doc.set(data);
     }
-    
-    private final SimpleArrayMap<String, Pair<Runnable, Integer>> logFetchStartId = new SimpleArrayMap<>();
 
     @Override
     public int onStartCommand(final Intent intent, final int flags, final int startId) {
@@ -556,27 +554,6 @@ public class EmgImuService extends Service implements ConnectionObserver {
                 }
             }
 
-            synchronized (logFetchStartId) {
-                if (logFetchStartId.containsKey(device_mac)) {
-                    // This really shouldn't happen as prior fetches should complete or clear up
-                    Log.e(TAG, "Log fetching running for " + device_mac);
-                    return START_NOT_STICKY;
-                }
-
-
-                Runnable connectionTimeout = () -> {
-                    Log.i(TAG, "Unable to connect to " + device_mac + " in one second");
-                    smartStop(device);
-                };
-                // Note if we were showing the notification based on connecting, then
-                // this would need to be shorter. However, we show the notification
-                // regardless so can keep this longer to make sure we don't fail on
-                // slower devices.
-                getHandler().postDelayed(connectionTimeout, 5000);
-
-                logFetchStartId.put(device_mac, new Pair<>(connectionTimeout, startId));
-            }
-
             try {
                 mBinder.connectDevice(device); //,  getLogger(device));
             } catch (RemoteException e) {
@@ -586,66 +563,6 @@ public class EmgImuService extends Service implements ConnectionObserver {
 
         return START_STICKY;
     }
-
-    /**
-     * Handles stopping service based on the thread ID. This is a bit complicated because
-     * it will stopSelf(threadId) will stop if it is the most recent (greatest) thread ID
-     * but we want to only stop when it is the last one.
-     */
-    private void smartStop(BluetoothDevice device) {
-        synchronized(logFetchStartId) {
-            Integer startThreadId = logFetchStartId.get(device.getAddress()).second;
-
-            // To avoid this being double called remove the timer
-            Log.i(TAG, "Removing connection timeout runnable from " + device.getAddress());
-            getHandler().removeCallbacks(logFetchStartId.get(device.getAddress()).first);
-
-            // If there is only one thread remaining, then appropriate to stop it
-            if (logFetchStartId.size() == 1) {
-
-                logFetchStartId.remove(device.getAddress());
-
-                /* TODO if (mBinded) {
-                    //mBinder.log(device, LogContract.Log.Level.DEBUG, "Last log retrieval thread completed. Not stopped service as service also bound");
-                } else {
-                    //mBinder.log(device, LogContract.Log.Level.DEBUG, "One thread found so stopping service: " + logFetchStartId);
-                    stopSelf(startThreadId);
-                } */
-                stopSelf(startThreadId);
-
-                return;
-            }
-
-            // Work out the maximum thread Id
-            Integer maxThreadId = 0;
-            for (int i = 0; i < logFetchStartId.size(); i++) {
-                if (logFetchStartId.valueAt(i).second > maxThreadId) {
-                    maxThreadId = logFetchStartId.valueAt(i).second;
-                }
-            }
-
-            if (startThreadId >= maxThreadId) {
-                //mBinder.log(device, LogContract.Log.Level.DEBUG, "Multiple threads and this is the greatest. Just removing element " + startThreadId +
-                //        " " + logFetchStartId);
-
-                // If there are multiple threads and this one is the highest number we should
-                // only remove its ID
-                logFetchStartId.remove(device.getAddress());
-
-                // However later stop needs to use this maxThreadId which we removed. Arbitrarily
-                // assign to the first device..
-                logFetchStartId.setValueAt(0, new Pair<>(logFetchStartId.valueAt(0).first, maxThreadId));
-            } else {
-                //mBinder.log(device, LogContract.Log.Level.DEBUG, "This is not the lowest thread. Service should not stop after " + startThreadId + " "
-                //        + logFetchStartId);
-
-                // This call to stopSelf should make no functional difference
-                stopSelf(startThreadId);
-                logFetchStartId.remove(device.getAddress());
-            }
-        }
-    }
-
 
     private void ensureBLESupported() {
         if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
@@ -743,20 +660,6 @@ public class EmgImuService extends Service implements ConnectionObserver {
     @Override
 	public void onDeviceConnected(final BluetoothDevice device) {
         Log.d(TAG, "onDeviceConnected: " + device);
-
-        // See if a log fetch has been requested
-        Pair<Runnable, Integer> p = logFetchStartId.get(device.getAddress());
-        if (p != null) {
-            Log.i(TAG, "Removing connection timeout runnable from " + device.getAddress());
-            getHandler().removeCallbacks(p.first);
-        }
-
-        /* TODO
-        if (!mBinded) {
-			createBackgroundNotification();
-		}
-		*/
-
         Bundle bundle = new Bundle();
         bundle.putString(FirebaseAnalytics.Param.ITEM_ID, "EMG_IMU_SERVICE_CONNECTED");
         bundle.putString(FirebaseAnalytics.Param.ITEM_NAME, device.getName());
@@ -784,17 +687,12 @@ public class EmgImuService extends Service implements ConnectionObserver {
     @Override
     public void onDeviceReady(BluetoothDevice device) {
         Log.d(TAG, "onDeviceReady: " + device);
-        // See if a log fetch has been requested
-        if(logFetchStartId.get(device.getAddress()) != null) {
-            getBleManager(device).fetchLogRecords(device1 -> callbackManager.onEmgLogFetchCompleted(device1), (device12, reason) -> callbackManager.onEmgLogFetchFailed(device12, reason));
-        } else {
-            // If there is a subscriber for information then enable those services. At some
-            // point this API might need expanding if we want to enable different sensing
-            // from different devices
-            
-            if (!callbackManager.isEmgStreamCbsEmpty()) {
-                getBleManager(device).enableEmgBuffNotifications();
-            }
+
+        // If there is a subscriber for information then enable those services. At some
+        // point this API might need expanding if we want to enable different sensing
+        // from different devices
+        if (!callbackManager.isEmgStreamCbsEmpty()) {
+            getBleManager(device).enableEmgBuffNotifications();
         }
     }
 
