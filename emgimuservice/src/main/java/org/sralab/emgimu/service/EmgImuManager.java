@@ -47,7 +47,6 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 
-import org.sralab.emgimu.controller.IEmgDecoder;
 import org.sralab.emgimu.logging.FirebaseEmgLogger;
 import org.sralab.emgimu.logging.FirebaseStreamLogger;
 import org.sralab.emgimu.parser.RecordAccessControlPointParser;
@@ -229,12 +228,6 @@ public class EmgImuManager extends BleManager implements EmgImuObserver {
 
     // getter for the deviceUpdateCbs
     public List<IEmgImuDevicesUpdatedCallback> getDeviceUpdateCbs() { return this.deviceUpdateCbs; }
-
-    // Relocating variables from service to remove bugs
-    private IEmgDecoder emgDecoder;
-
-    // setter for emgDecoder to be used in service
-    public void setEmgDecoder(IEmgDecoder decoder) { this.emgDecoder = decoder; }
 
     // ############# REGISTER/UNREGISTER CALLBACKS SECTION #########################################
     // Temp VS notes:
@@ -1632,11 +1625,6 @@ public class EmgImuManager extends BleManager implements EmgImuObserver {
     // manager, which will now be calling the callbacks.
     public void onEmgPwrReceived(final BluetoothDevice device, long ts_ms, int value)
     {
-/*        if (networkStreaming != null && networkStreaming.isConnected()) {
-            double [] data = {(double) value};
-            networkStreaming.streamEmgPwr(device, new Date().getTime(), data);
-        }*/
-
         EmgPwrData dataMsg = new EmgPwrData();
         dataMsg.channels = 1;
         dataMsg.power = new int[]{value};
@@ -1682,38 +1670,6 @@ public class EmgImuManager extends BleManager implements EmgImuObserver {
                 e.printStackTrace();
             }
         }
-
-        // Second: pass through EMG decoder (Tensorflow Lite) if registered
-        // TODO: improve design pattern, if possible. Likely good for this
-        // to live in service so other objects can subscribe to it, though.
-        // If EMG decoder exists, push data through this
-        if (emgDecoder != null) {
-
-            if (CHANNELS != emgDecoder.getChannels()) {
-                throw new RuntimeException("Incompatible channel sizes between Emg Decoder and received data");
-            }
-            float input_data[] = new float[CHANNELS];
-            float coordinates[] = new float[2];
-
-            for (int i = 0; i < SAMPLES; i++) {
-
-                for (int j = 0; j < CHANNELS; j++) {
-                    input_data[j] = (float) data[j][i];
-                }
-
-                boolean res = emgDecoder.decode(input_data, coordinates);
-                if (res) {
-                    if (emgDecodedCallback != null)
-                        emgDecodedCallback.onEmgDecoded(coordinates);
-                }
-            }
-        }
-
-        // Third: mirror data over stream
-        if (networkStreaming != null && networkStreaming.isConnected()) {
-            networkStreaming.streamEmgBuffer(device, ts_ms, SAMPLES, CHANNELS, data);
-        }
-
     }
 
     @Override
@@ -1737,13 +1693,6 @@ public class EmgImuManager extends BleManager implements EmgImuObserver {
                 e.printStackTrace();
             }
         }
-
-        /*
-        if (networkStreaming != null && networkStreaming.isConnected()) {
-            double [] data = {(double) value};
-            networkStreaming.streamImuAttitude(device, 0, data);
-        }
-        */
     }
 
     @Override
@@ -1767,13 +1716,6 @@ public class EmgImuManager extends BleManager implements EmgImuObserver {
                 e.printStackTrace();
             }
         }
-
-        /*
-        if (networkStreaming != null && networkStreaming.isConnected()) {
-            double [] data = {(double) value};
-            networkStreaming.streamImuAttitude(device, 0, data);
-        }
-        */
     }
 
     @Override
@@ -1816,12 +1758,6 @@ public class EmgImuManager extends BleManager implements EmgImuObserver {
                 e.printStackTrace();
             }
         }
-        /*
-        if (networkStreaming != null && networkStreaming.isConnected()) {
-            double [] data = {(double) value};
-            networkStreaming.streamImuAttitude(device, 0, data);
-        }
-        */
     }
 
     /******** These callbacks are for managing the EMG logging via RACP ********/

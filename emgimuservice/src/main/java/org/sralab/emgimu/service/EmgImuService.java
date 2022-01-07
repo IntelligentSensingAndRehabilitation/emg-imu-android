@@ -75,12 +75,10 @@ import com.google.firebase.installations.FirebaseInstallations;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONException;
-import org.sralab.emgimu.controller.IEmgDecoder;
 import org.sralab.emgimu.controller.IEmgDecoderProvider;
 import org.sralab.emgimu.logging.EmgLogFetchJobService;
 import org.sralab.emgimu.logging.FirebaseGameLogger;
 import org.sralab.emgimu.logging.GamePlayRecord;
-import org.sralab.emgimu.streaming.NetworkStreaming;
 import org.sralab.emgimu.unity_bindings.Bridge;
 
 import java.util.ArrayList;
@@ -125,10 +123,6 @@ public class EmgImuService extends Service implements ConnectionObserver {
     private String mToken;
 
     private Handler handler;
-
-    private NetworkStreaming networkStreaming;
-    // private IEmgDecoder emgDecoder;
-    private OnEmgDecodedListener emgDecodedCallback;
 
     private EmgImuManager callbackManager; // for getter access in order to obtain size of callback list
 
@@ -379,37 +373,6 @@ public class EmgImuService extends Service implements ConnectionObserver {
             return liveDevices;
         }
 
-        /**
-         * Configure service to run an EMG decoder if DFM is available
-         */
-        public void enableDecoder(OnEmgDecodedListener listener) {
-            Log.d(TAG, "Enabling EMG decoder");
-            try {
-                Class emgDecoderProviderClass = Class.forName("org.sralab.emgimu.controller.EmgDecoderProvider");
-                IEmgDecoderProvider emgDecoderProvider = (IEmgDecoderProvider) emgDecoderProviderClass.newInstance();
-                callbackManager.setEmgDecoder(emgDecoderProvider.get(getApplicationContext()));
-            } catch (ClassNotFoundException e) {
-                e.printStackTrace();
-                return;
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
-                return;
-            } catch (InstantiationException e) {
-                e.printStackTrace();
-                return;
-            }
-
-            // If successful, install listener
-            emgDecodedCallback = listener;
-
-            // Enable buffered streaming for managed devices
-            for (final BluetoothDevice dev : getManagedDevices()) {
-                final EmgImuManager manager = getBleManager(dev);
-                manager.enableEmgBuffNotifications();
-            }
-
-        }
-
         //! Get battery
         public LiveData<Double> getBattery(final BluetoothDevice device) {
             final EmgImuManager manager = (EmgImuManager) getBleManager(device);
@@ -455,12 +418,6 @@ public class EmgImuService extends Service implements ConnectionObserver {
 
             return references;
         }
-
-        public NetworkStreaming getNetworkStreaming() {
-            //! Return handle to object that can forward data stream
-            return networkStreaming;
-        }
-
 	}
 
 	protected IBinder getBinder() {
@@ -537,8 +494,6 @@ public class EmgImuService extends Service implements ConnectionObserver {
         Bundle bundle = new Bundle();
         bundle.putString(FirebaseAnalytics.Param.ITEM_ID, "EMG_IMU_SERVICE_CREATED");
         mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.SELECT_CONTENT, bundle);
-
-        networkStreaming = new NetworkStreaming();
 	}
 
     private void storeToken()
@@ -759,9 +714,6 @@ public class EmgImuService extends Service implements ConnectionObserver {
         Bundle bundle = new Bundle();
         bundle.putString(FirebaseAnalytics.Param.ITEM_ID, "EMG_IMU_SERVICE_STOPPED");
         mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.SELECT_CONTENT, bundle);
-
-        if (networkStreaming != null && networkStreaming.isConnected())
-            networkStreaming.stop();
     }
 
 
