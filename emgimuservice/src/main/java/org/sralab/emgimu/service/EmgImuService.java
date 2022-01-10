@@ -596,7 +596,7 @@ public class EmgImuService extends Service implements ConnectionObserver {
         Log.d(TAG, "About to connect to devices: " + managedDevices);
         for (final BluetoothDevice d : managedDevices) {
             EmgImuManager manager = initializeManager();
-            manager.setConnectionObserver(EmgImuService.this);
+            //manager.setConnectionObserver(EmgImuService.this);
             manager.connect(d).retry(2, 500).useAutoConnect(true)
                     .fail((device, status) -> Log.e(TAG, "Unable to connect to device: " + device + " status: " + status) )
                     .enqueue();
