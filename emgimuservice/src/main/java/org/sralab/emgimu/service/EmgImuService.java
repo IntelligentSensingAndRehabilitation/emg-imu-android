@@ -426,7 +426,6 @@ public class EmgImuService extends Service implements ConnectionObserver {
 
 	protected EmgImuManager initializeManager() {
         EmgImuManager manager = new EmgImuManager(this);
-	    manager.setEmgImuObserver((EmgImuObserver) this);
 		return manager;
 	}
 
@@ -744,12 +743,12 @@ public class EmgImuService extends Service implements ConnectionObserver {
     void onDeviceListUpdated() {
         liveDevices.postValue(managedDevices);
 
-        try {
+/*        try {
             for (IEmgImuDevicesUpdatedCallback cb : callbackManager.getDeviceUpdateCbs())
                 cb.onDeviceListUpdated();
         } catch (RemoteException e) {
             e.printStackTrace();
-        }
+        }*/
     }
 
     protected List<BluetoothDevice> getManagedDevices() {

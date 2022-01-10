@@ -180,12 +180,6 @@ public class EmgImuManager extends BleManager implements EmgImuObserver {
     private FirebaseStreamLogger streamLogger;
     private List<EmgLogRecord> mRecords = new ArrayList<>();
 
-    private EmgImuObserver mCallbacks;
-
-    public void setEmgImuObserver(EmgImuObserver cb) {
-        mCallbacks = cb;
-    }
-
     private BluetoothGattCharacteristic mRecordAccessControlPointCharacteristic, mEmgLogCharacteristic;
 
     //! Data relating to logging to FireBase
@@ -226,8 +220,8 @@ public class EmgImuManager extends BleManager implements EmgImuObserver {
     // getter to check if emgStreamCbs is empty
     public boolean isEmgStreamCbsEmpty() { return this.emgStreamCbs.isEmpty(); }
 
-    // getter for the deviceUpdateCbs
-    public List<IEmgImuDevicesUpdatedCallback> getDeviceUpdateCbs() { return this.deviceUpdateCbs; }
+/*    // getter for the deviceUpdateCbs
+    public List<IEmgImuDevicesUpdatedCallback> getDeviceUpdateCbs() { return this.deviceUpdateCbs; }*/
 
     // ############# REGISTER/UNREGISTER CALLBACKS SECTION #########################################
     // Temp VS notes:
@@ -719,7 +713,7 @@ public class EmgImuManager extends BleManager implements EmgImuObserver {
         long ts_ms = emgPwrResolver.resolveTime(counter, timestamp, 1);
 
         Log.d(TAG, "Pwr " + device);
-        mCallbacks.onEmgPwrReceived(device, ts_ms, pwr_val);
+        onEmgPwrReceived(device, ts_ms, pwr_val);
 
         if (mLogging && streamLogger != null) {
             double [] data = {(double) pwr_val};
@@ -811,7 +805,7 @@ public class EmgImuManager extends BleManager implements EmgImuObserver {
             throw new RuntimeException("Channel count seemed to change between calls");
         }
 
-        mCallbacks.onEmgStreamReceived(device, buf_ts_ms, data);
+        onEmgStreamReceived(device, buf_ts_ms, data);
 
         if (mLogging && streamLogger != null) {
             streamLogger.addStreamSample(new Date().getTime(), timestamp, counter, channels, samples, data);
@@ -840,7 +834,7 @@ public class EmgImuManager extends BleManager implements EmgImuObserver {
             for (int chan = 0; chan < 3; chan++)
                 accel[chan][idx] = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT16, (chan + idx * 3) * 2 + 6) * ACCEL_SCALE;
 
-        mCallbacks.onImuAccelReceived(device, accel);
+        onImuAccelReceived(device, accel);
 
         if (mLogging && streamLogger != null) {
             // long sensor_timestamp, int sensor_counter
@@ -864,7 +858,7 @@ public class EmgImuManager extends BleManager implements EmgImuObserver {
             for (int chan = 0; chan < 3; chan++)
                 gyro[chan][idx] = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT16, (chan + idx * 3) * 2 + 6) * GYRO_SCALE;
 
-        mCallbacks.onImuGyroReceived(device, gyro);
+        onImuGyroReceived(device, gyro);
 
         if (mLogging && streamLogger != null) {
             streamLogger.addGyroSample(new Date().getTime(), timestamp, counter, gyro);
@@ -886,7 +880,7 @@ public class EmgImuManager extends BleManager implements EmgImuObserver {
             for (int chan = 0; chan < 3; chan++)
                 mag[chan][idx] = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT16, (chan + idx * 3) * 2 + 6);
 
-        mCallbacks.onImuMagReceived(device, mag);
+        onImuMagReceived(device, mag);
 
         if (mLogging && streamLogger != null) {
             streamLogger.addMagSample(new Date().getTime(), timestamp, counter, mag);
@@ -904,7 +898,7 @@ public class EmgImuManager extends BleManager implements EmgImuObserver {
         float quat[] = new float[4];
         for (int i = 0; i < 4; i++)
             quat[i] = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT16, i * 2 + 6) * scale;
-        mCallbacks.onImuAttitudeReceived(device, quat);
+        onImuAttitudeReceived(device, quat);
 
         if (mLogging && streamLogger != null) {
             streamLogger.addAttitudeSample(new Date().getTime(), timestamp, counter, quat);
@@ -930,7 +924,7 @@ public class EmgImuManager extends BleManager implements EmgImuObserver {
         long ts_ms = new Date().getTime();
         mForce = force_val;
 
-        mCallbacks.onEmgPwrReceived(device, ts_ms, mForce * 10);
+        onEmgPwrReceived(device, ts_ms, mForce * 10);
 
         // logging to firebase db
         if (mLogging && streamLogger != null) {
@@ -1525,7 +1519,6 @@ public class EmgImuManager extends BleManager implements EmgImuObserver {
         if (value > threshold_high && overThreshold == false && refractory) {
             mThresholdTime = eventTime; // Store this time
             overThreshold = true;
-            //mCallbacks.onEmgClick(device);
         } else if (value < threshold_low && overThreshold == true) {
             overThreshold = false;
         }
@@ -1554,7 +1547,7 @@ public class EmgImuManager extends BleManager implements EmgImuObserver {
         double voltage = 3.0 + 1.35 * (batteryLevel / 100.0);
         batteryVoltage.setValue(voltage);
 
-        mCallbacks.onBatteryReceived(device, (float) voltage);
+        onBatteryReceived(device, (float) voltage);
         log(Log.DEBUG, "Received battery level: " + batteryLevel);
     }
 
