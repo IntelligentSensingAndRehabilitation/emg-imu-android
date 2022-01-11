@@ -142,6 +142,7 @@ public class EmgImuService extends Service implements ConnectionObserver {
          * Returns an unmodifiable list of devices managed by the service.
          * The returned devices do not need to be connected at tha moment. Each of them was however created
          * using {@link #connect(BluetoothDevice)} method so they might have been connected before and disconnected.
+         *
          * @return unmodifiable list of devices managed by the service
          */
         public final List<BluetoothDevice> getManagedDevices() {
@@ -249,7 +250,7 @@ public class EmgImuService extends Service implements ConnectionObserver {
 
         // (4) imuMagCbs
         @Override
-        public void registerImuMagObserver(IEmgImuSenseCallback callback)  {
+        public void registerImuMagObserver(IEmgImuSenseCallback callback) {
             for (final BluetoothDevice device : getManagedDevices()) {
                 final EmgImuManager manager = getBleManager(device);
                 if (manager.isReady())
@@ -299,14 +300,14 @@ public class EmgImuService extends Service implements ConnectionObserver {
 
         @Override
         public void unregisterBatObserver(IEmgImuBatCallback callback) throws RemoteException {
-                for (final BluetoothDevice device : getManagedDevices()) {
-                    final EmgImuManager manager = getBleManager(device);
-                    if (manager.getSizeOfBatCbs() == 0) {
-                        manager.UnregisterBatCallback(callback);
-                    }
+            for (final BluetoothDevice device : getManagedDevices()) {
+                final EmgImuManager manager = getBleManager(device);
+                if (manager.getSizeOfBatCbs() == 0) {
+                    manager.UnregisterBatCallback(callback);
                 }
             }
         }
+
 
         // (7) deviceUpdateCbs
         @Override
@@ -397,7 +398,6 @@ public class EmgImuService extends Service implements ConnectionObserver {
         }
 
 
-
         public String getUser() {
             if (mCurrentUser != null)
                 return mCurrentUser.getUid();
@@ -417,7 +417,7 @@ public class EmgImuService extends Service implements ConnectionObserver {
 
             return references;
         }
-	}
+    }
 
 	protected IBinder getBinder() {
 		return mBinder;
@@ -689,9 +689,10 @@ public class EmgImuService extends Service implements ConnectionObserver {
         // If there is a subscriber for information then enable those services. At some
         // point this API might need expanding if we want to enable different sensing
         // from different devices
-        if (!callbackManager.isEmgStreamCbsEmpty()) {
-            getBleManager(device).enableEmgBuffNotifications();
-        }
+            final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+            if (manager.isEmgStreamCbsEmpty()) {
+                getBleManager(device).enableEmgBuffNotifications();
+            }
     }
 
     @Override
