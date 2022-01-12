@@ -82,7 +82,7 @@ public class Bridge extends Application
                 callback.sendDeviceList(Arrays.toString(service.getManagedDevices().toArray()));
 
                 // stream data from all sensors
-                service.registerEmgPwrObserver(null, pwrObserver);
+                service.registerEmgPwrObserver(pwrObserver);
                 //service.registerEmgStreamObserver(streamObserver);
             } catch (RemoteException e) {
                 throw new RuntimeException(e);

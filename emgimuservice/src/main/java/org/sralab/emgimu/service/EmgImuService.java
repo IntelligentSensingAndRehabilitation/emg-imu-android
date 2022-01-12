@@ -188,25 +188,23 @@ public class EmgImuService extends Service implements ConnectionObserver {
         // (8) emgStreamCbs
 
         // (1) emgPwrCbs
-        public void registerEmgPwrObserver(BluetoothDevice regDevice, IEmgImuPwrDataCallback callback) {
+        public void registerEmgPwrObserver(IEmgImuPwrDataCallback callback) {
             for (final BluetoothDevice device : getManagedDevices()) {
                 final EmgImuManager manager = (EmgImuManager) getBleManager(device);
                 manager.RegisterEmgPwrCallback(callback);
             }
         }
 
-        public void unregisterEmgPwrObserver(BluetoothDevice regDevice, IEmgImuPwrDataCallback callback) {
-            Log.d(TAG, "Pwr observer unregistered for " + regDevice);
-            if (regDevice == null) {
-                Log.d(TAG, "No callbacks remain. Stopping stream.");
-                for (final BluetoothDevice device : getManagedDevices()) {
-                    final EmgImuManager manager = (EmgImuManager) getBleManager(device);
-                    if (manager.getSizeOfEmgStreamCbs() == 0) {
-                        manager.disableEmgPwrNotifications();
-                    }
+        public void unregisterEmgPwrObserver(IEmgImuPwrDataCallback callback) {
+            Log.d(TAG, "No callbacks remain. Stopping stream.");
+            for (final BluetoothDevice device : getManagedDevices()) {
+                final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+                if (manager.getSizeOfEmgStreamCbs() == 0) {
+                    manager.disableEmgPwrNotifications();
                 }
             }
         }
+
 
         // (2) imuAccelCbs
         @Override
@@ -1051,8 +1049,6 @@ public class EmgImuService extends Service implements ConnectionObserver {
 		nm.cancel(device.getAddress(), NOTIFICATION_ID);
 		*/
 	}
-
-
 
     /********* End EMG Logging RACP callbacks ********/
 
