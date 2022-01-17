@@ -307,6 +307,7 @@ public class EmgImuManager extends BleManager implements EmgImuObserver {
     public void RegisterImuQuatCallback(IEmgImuQuatCallback callback)
     {
         imuQuatCbs.add(callback);
+        Log.e(TAG, "IMU Registered HERE!!!");
         if ( isReady() )
         {
             enableAttitudeNotifications(); // assuming Quaternion pairs with Attitude
@@ -582,6 +583,10 @@ public class EmgImuManager extends BleManager implements EmgImuObserver {
                 enableEmgPwrNotifications();
             }
 
+            if(!emgStreamCbs.isEmpty()) {
+                enableEmgBuffNotifications();
+            }
+
             if (!imuAccelCbs.isEmpty()) {
                 enableAccelNotifications();
             }
@@ -595,8 +600,10 @@ public class EmgImuManager extends BleManager implements EmgImuObserver {
             }
 
             if (!imuQuatCbs.isEmpty()) {
+                Log.d(TAG, "HERE Enabling");
                 enableAttitudeNotifications();
-            }
+            } else
+                Log.d(TAG, "HERE Not Enabling");
 
             super.onDeviceReady();
         }

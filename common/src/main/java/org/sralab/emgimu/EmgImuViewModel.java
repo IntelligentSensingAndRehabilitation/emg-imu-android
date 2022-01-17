@@ -127,7 +127,10 @@ public abstract class EmgImuViewModel <T> extends AndroidViewModel {
                 service.registerDevicesObserver(deviceListObserver);
 
                 if (getObservePwr()) service.registerEmgPwrObserver(pwrObserver);
-                if (getObserveStream()) service.registerEmgStreamObserver(streamObserver);
+                if (getObserveStream()) {
+                    Log.d(TAG, "PREHERE!!");
+                    service.registerEmgStreamObserver(streamObserver);
+                }
                 if (getObserveAccel()) service.registerImuAccelObserver(accelObserver);
                 if (getObserveGyro()) service.registerImuGyroObserver(gyroObserver);
                 if (getObserveMag()) service.registerImuMagObserver(magObserver);

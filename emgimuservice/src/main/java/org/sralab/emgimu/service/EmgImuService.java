@@ -211,8 +211,7 @@ public class EmgImuService extends Service implements ConnectionObserver {
         public void registerImuAccelObserver(IEmgImuSenseCallback callback) {
             for (final BluetoothDevice device : getManagedDevices()) {
                 final EmgImuManager manager = getBleManager(device);
-                if (manager.isReady())
-                    manager.RegisterImuAccelCallback(callback);
+                manager.RegisterImuAccelCallback(callback);
             }
         }
 
@@ -231,8 +230,7 @@ public class EmgImuService extends Service implements ConnectionObserver {
         public void registerImuGyroObserver(IEmgImuSenseCallback callback) {
             for (final BluetoothDevice device : getManagedDevices()) {
                 final EmgImuManager manager = getBleManager(device);
-                if (manager.isReady())
-                    manager.RegisterImuGyroCallback(callback);
+                manager.RegisterImuGyroCallback(callback);
             }
         }
 
@@ -271,8 +269,7 @@ public class EmgImuService extends Service implements ConnectionObserver {
         public void registerImuQuatObserver(IEmgImuQuatCallback callback) {
             for (final BluetoothDevice device : getManagedDevices()) {
                 final EmgImuManager manager = getBleManager(device);
-                if (manager.isReady())
-                    manager.RegisterImuQuatCallback(callback);
+                manager.RegisterImuQuatCallback(callback);
             }
         }
 
@@ -280,9 +277,7 @@ public class EmgImuService extends Service implements ConnectionObserver {
         public void unregisterImuQuatObserver(IEmgImuQuatCallback callback) {
             for (final BluetoothDevice device : getManagedDevices()) {
                 final EmgImuManager manager = getBleManager(device);
-                if (manager.getSizeOfImuQuatCbs() == 0) {
-                    manager.UnregisterImuQuatCallback(callback);
-                }
+                manager.UnregisterImuQuatCallback(callback);
             }
         }
 
@@ -291,8 +286,7 @@ public class EmgImuService extends Service implements ConnectionObserver {
         public void registerBatObserver(IEmgImuBatCallback callback) throws RemoteException {
             for (final BluetoothDevice device : getManagedDevices()) {
                 final EmgImuManager manager = getBleManager(device);
-                if (manager.isReady())
-                    manager.RegisterBatCallback(callback);
+                manager.RegisterBatCallback(callback);
             }
         }
 
@@ -300,9 +294,7 @@ public class EmgImuService extends Service implements ConnectionObserver {
         public void unregisterBatObserver(IEmgImuBatCallback callback) throws RemoteException {
             for (final BluetoothDevice device : getManagedDevices()) {
                 final EmgImuManager manager = getBleManager(device);
-                if (manager.getSizeOfBatCbs() == 0) {
-                    manager.UnregisterBatCallback(callback);
-                }
+                manager.UnregisterBatCallback(callback);
             }
         }
 
@@ -331,8 +323,7 @@ public class EmgImuService extends Service implements ConnectionObserver {
         public void registerEmgStreamObserver(IEmgImuStreamDataCallback callback) throws RemoteException {
             for (final BluetoothDevice device : getManagedDevices()) {
                 final EmgImuManager manager = (EmgImuManager) getBleManager(device);
-                if (manager.isReady())
-                    manager.RegisterEmgStreamCallback(callback);
+                manager.RegisterEmgStreamCallback(callback);
             }
         }
 
@@ -683,14 +674,6 @@ public class EmgImuService extends Service implements ConnectionObserver {
     @Override
     public void onDeviceReady(BluetoothDevice device) {
         Log.d(TAG, "onDeviceReady: " + device);
-
-        // If there is a subscriber for information then enable those services. At some
-        // point this API might need expanding if we want to enable different sensing
-        // from different devices
-            final EmgImuManager manager = (EmgImuManager) getBleManager(device);
-            if (manager.isEmgStreamCbsEmpty()) {
-                getBleManager(device).enableEmgBuffNotifications();
-            }
     }
 
     @Override
