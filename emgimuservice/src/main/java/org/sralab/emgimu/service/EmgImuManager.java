@@ -208,23 +208,6 @@ public class EmgImuManager extends BleManager {
     private List<IEmgImuDevicesUpdatedCallback> deviceUpdateCbs = new ArrayList<>();
     private List<IEmgImuStreamDataCallback> emgStreamCbs = new ArrayList<>();
 
-    // Getters for size of callback lists
-    public int getSizeOfEmgPwrCbs() { return this.emgPwrCbs.size(); }
-    public int getSizeOfImuAccelCbs() { return this.imuAccelCbs.size(); }
-    public int getSizeOfImuGyroCbs() { return this.imuGyroCbs.size(); }
-    public int getSizeOfImuMagCbs() { return this.imuMagCbs.size(); }
-    public int getSizeOfImuQuatCbs() { return this.imuQuatCbs.size(); }
-    public int getSizeOfBatCbs() { return this.batCbs.size(); }
-    public int getSizeOfDeviceUpdateCbs() { return this.deviceUpdateCbs.size(); }
-    public int getSizeOfEmgStreamCbs() { return this.emgStreamCbs.size(); }
-
-    // getter to check if emgStreamCbs is empty
-    public boolean isEmgStreamCbsEmpty() { return this.emgStreamCbs.isEmpty(); }
-
-
-/*    // getter for the deviceUpdateCbs
-    public List<IEmgImuDevicesUpdatedCallback> getDeviceUpdateCbs() { return this.deviceUpdateCbs; }*/
-
     // ############# REGISTER/UNREGISTER CALLBACKS SECTION #########################################
     // Temp VS notes:
     // Callbacks:
