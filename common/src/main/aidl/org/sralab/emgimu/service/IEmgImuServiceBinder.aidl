@@ -25,7 +25,6 @@ interface IEmgImuServiceBinder  {
     List<String> getLoggingReferences();
     String getAuthToken();
     // boolean isConnected(in BluetoothDevice device);
-    // boolean isReady(in BluetoothDevice device);
 
     // For receiving EMG data
     void registerEmgStreamObserver(IEmgImuStreamDataCallback callback);
