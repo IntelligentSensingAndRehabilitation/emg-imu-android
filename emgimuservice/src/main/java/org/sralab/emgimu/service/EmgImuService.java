@@ -127,10 +127,6 @@ public class EmgImuService extends Service implements ConnectionObserver {
     //    void registerDevicesObserver(IEmgImuDevicesUpdatedCallback callback);
     //    void unregisterDevicesObserver(IEmgImuDevicesUpdatedCallback callback);)
 
-    public interface OnEmgDecodedListener {
-        void onEmgDecoded(float [] decoded);
-    }
-
     Handler getHandler() { return handler; }
 
     /**
@@ -198,7 +194,7 @@ public class EmgImuService extends Service implements ConnectionObserver {
                 manager.disableEmgPwrNotifications();
             }
         }
-        
+
         // (2) imuAccelCbs
         @Override
         public void registerImuAccelObserver(IEmgImuSenseCallback callback) {
