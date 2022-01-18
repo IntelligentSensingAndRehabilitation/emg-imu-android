@@ -195,13 +195,10 @@ public class EmgImuService extends Service implements ConnectionObserver {
             Log.d(TAG, "No callbacks remain. Stopping stream.");
             for (final BluetoothDevice device : getManagedDevices()) {
                 final EmgImuManager manager = (EmgImuManager) getBleManager(device);
-                if (manager.getSizeOfEmgStreamCbs() == 0) {
-                    manager.disableEmgPwrNotifications();
-                }
+                manager.disableEmgPwrNotifications();
             }
         }
-
-
+        
         // (2) imuAccelCbs
         @Override
         public void registerImuAccelObserver(IEmgImuSenseCallback callback) {
@@ -215,9 +212,7 @@ public class EmgImuService extends Service implements ConnectionObserver {
         public void unregisterImuAccelObserver(IEmgImuSenseCallback callback) {
             for (final BluetoothDevice device : getManagedDevices()) {
                 final EmgImuManager manager = getBleManager(device);
-                if (manager.getSizeOfImuAccelCbs() == 0) {
-                    manager.unregisterImuAccelCallback(callback);
-                }
+                manager.unregisterImuAccelCallback(callback);
             }
         }
 
@@ -234,9 +229,7 @@ public class EmgImuService extends Service implements ConnectionObserver {
         public void unregisterImuGyroObserver(IEmgImuSenseCallback callback) {
             for (final BluetoothDevice device : getManagedDevices()) {
                 final EmgImuManager manager = getBleManager(device);
-                if (manager.getSizeOfImuGyroCbs() == 0) {
-                    manager.unregisterImuGyroCallback(callback);
-                }
+                manager.unregisterImuGyroCallback(callback);
             }
         }
 
@@ -253,9 +246,7 @@ public class EmgImuService extends Service implements ConnectionObserver {
         public void unregisterImuMagObserver(IEmgImuSenseCallback callback) {
             for (final BluetoothDevice device : getManagedDevices()) {
                 final EmgImuManager manager = getBleManager(device);
-                if (manager.getSizeOfImuMagCbs() == 0) {
-                    manager.unregisterImuMagCallback(callback);
-                }
+                manager.unregisterImuMagCallback(callback);
             }
         }
 
@@ -307,9 +298,7 @@ public class EmgImuService extends Service implements ConnectionObserver {
         public void unregisterDevicesObserver(IEmgImuDevicesUpdatedCallback callback) throws RemoteException {
             for (final BluetoothDevice device : getManagedDevices()) {
                 final EmgImuManager manager = getBleManager(device);
-                if (manager.getSizeOfDeviceUpdateCbs() == 0) {
-                    manager.unregisterDeviceUpdateCallback(callback);
-                }
+                manager.unregisterDeviceUpdateCallback(callback);
             }
         }
 
@@ -325,9 +314,7 @@ public class EmgImuService extends Service implements ConnectionObserver {
             Log.d(TAG, "No callbacks remain. Stopping stream.");
             for (final BluetoothDevice device : getManagedDevices()) {
                 final EmgImuManager manager = (EmgImuManager) getBleManager(device);
-                if (manager.getSizeOfEmgStreamCbs() == 0) {
-                    manager.unregisterEmgStreamCallback(callback);
-                }
+                manager.unregisterEmgStreamCallback(callback);
             }
         }
 
