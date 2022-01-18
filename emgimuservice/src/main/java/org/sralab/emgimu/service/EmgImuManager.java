@@ -236,7 +236,7 @@ public class EmgImuManager extends BleManager implements EmgImuObserver {
     // (8) emgStreamCbs
 
     // (1) emgPwrCbs
-    public void RegisterEmgPwrCallback(IEmgImuPwrDataCallback callback)
+    public void registerEmgPwrCallback(IEmgImuPwrDataCallback callback)
     {
         emgPwrCbs.add(callback);
         if ( isReady() )
@@ -245,7 +245,7 @@ public class EmgImuManager extends BleManager implements EmgImuObserver {
         }
     }
 
-    public void UnregisterEmgPwrCallback(IEmgImuPwrDataCallback callback)
+    public void unregisterEmgPwrCallback(IEmgImuPwrDataCallback callback)
     {
         emgPwrCbs.remove(callback);
         // This may require some flag in the future
@@ -253,7 +253,7 @@ public class EmgImuManager extends BleManager implements EmgImuObserver {
     }
 
     // (2) imuAccelCbs
-    public void RegisterImuAccelCallback(IEmgImuSenseCallback callback)
+    public void registerImuAccelCallback(IEmgImuSenseCallback callback)
     {
         imuAccelCbs.add(callback);
         if ( isReady() )
@@ -262,7 +262,7 @@ public class EmgImuManager extends BleManager implements EmgImuObserver {
         }
     }
 
-    public void UnregisterImuAccelCallback(IEmgImuSenseCallback callback)
+    public void unregisterImuAccelCallback(IEmgImuSenseCallback callback)
     {
         imuAccelCbs.remove(callback);
         // This may require some flag in the future
@@ -270,7 +270,7 @@ public class EmgImuManager extends BleManager implements EmgImuObserver {
     }
 
     // (3) imuGyroCbs
-    public void RegisterImuGyroCallback(IEmgImuSenseCallback callback)
+    public void registerImuGyroCallback(IEmgImuSenseCallback callback)
     {
         imuGyroCbs.add(callback);
         if ( isReady() )
@@ -279,7 +279,7 @@ public class EmgImuManager extends BleManager implements EmgImuObserver {
         }
     }
 
-    public void UnregisterImuGyroCallback(IEmgImuSenseCallback callback)
+    public void unregisterImuGyroCallback(IEmgImuSenseCallback callback)
     {
         imuGyroCbs.remove(callback);
         // This may require some flag in the future
@@ -287,7 +287,7 @@ public class EmgImuManager extends BleManager implements EmgImuObserver {
     }
 
     // (4) imuMagCbs
-    public void RegisterImuMagCallback(IEmgImuSenseCallback callback)
+    public void registerImuMagCallback(IEmgImuSenseCallback callback)
     {
         imuMagCbs.add(callback);
         if ( isReady() )
@@ -296,7 +296,7 @@ public class EmgImuManager extends BleManager implements EmgImuObserver {
         }
     }
 
-    public void UnregisterImuMagCallback(IEmgImuSenseCallback callback)
+    public void unregisterImuMagCallback(IEmgImuSenseCallback callback)
     {
         imuMagCbs.remove(callback);
         // This may require some flag in the future
@@ -304,7 +304,7 @@ public class EmgImuManager extends BleManager implements EmgImuObserver {
     }
 
     // (5) imuQuatCbs
-    public void RegisterImuQuatCallback(IEmgImuQuatCallback callback)
+    public void registerImuQuatCallback(IEmgImuQuatCallback callback)
     {
         imuQuatCbs.add(callback);
         Log.e(TAG, "IMU Registered HERE!!!");
@@ -314,7 +314,7 @@ public class EmgImuManager extends BleManager implements EmgImuObserver {
         }
     }
 
-    public void UnregisterImuQuatCallback(IEmgImuQuatCallback callback)
+    public void unregisterImuQuatCallback(IEmgImuQuatCallback callback)
     {
         imuQuatCbs.remove(callback);
         // This may require some flag in the future
@@ -322,7 +322,7 @@ public class EmgImuManager extends BleManager implements EmgImuObserver {
     }
 
     // (6) batCbs
-    public void RegisterBatCallback(IEmgImuBatCallback callback)
+    public void registerBatCallback(IEmgImuBatCallback callback)
     {
         batCbs.add(callback);
         if ( isReady() )
@@ -331,7 +331,7 @@ public class EmgImuManager extends BleManager implements EmgImuObserver {
         }
     }
 
-    public void UnregisterBatCallback(IEmgImuBatCallback callback)
+    public void unregisterBatCallback(IEmgImuBatCallback callback)
     {
         batCbs.remove(callback);
         // This may require some flag in the future
@@ -339,7 +339,7 @@ public class EmgImuManager extends BleManager implements EmgImuObserver {
     }
 
     // (7) deviceUpdateCbs
-    public void RegisterDeviceUpdateCallback(IEmgImuDevicesUpdatedCallback callback)
+    public void registerDeviceUpdateCallback(IEmgImuDevicesUpdatedCallback callback)
     {
         deviceUpdateCbs.add(callback);
         if ( isReady() )
@@ -348,7 +348,7 @@ public class EmgImuManager extends BleManager implements EmgImuObserver {
         }
     }
 
-    public void UnregisterDeviceUpdateCallback(IEmgImuDevicesUpdatedCallback callback)
+    public void unregisterDeviceUpdateCallback(IEmgImuDevicesUpdatedCallback callback)
     {
         deviceUpdateCbs.remove(callback);
         // This may require some flag in the future
@@ -356,7 +356,7 @@ public class EmgImuManager extends BleManager implements EmgImuObserver {
     }
 
     // (8) emgStreamCbs
-    public void RegisterEmgStreamCallback(IEmgImuStreamDataCallback callback)
+    public void registerEmgStreamCallback(IEmgImuStreamDataCallback callback)
     {
         emgStreamCbs.add(callback);
         if ( isReady() )
@@ -365,7 +365,7 @@ public class EmgImuManager extends BleManager implements EmgImuObserver {
         }
     }
 
-    public void UnregisterEmgStreamCallback(IEmgImuStreamDataCallback callback)
+    public void unregisterEmgStreamCallback(IEmgImuStreamDataCallback callback)
     {
         emgStreamCbs.remove(callback);
         // This may require some flag in the future
