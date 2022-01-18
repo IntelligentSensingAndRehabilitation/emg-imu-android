@@ -312,15 +312,14 @@ public class EmgImuManager extends BleManager {
         batCbs.add(callback);
         if ( isReady() )
         {
-            enableBatteryLevelNotifications();
+            setNotificationCallback(mBatteryCharacteristic);
         }
     }
 
     public void unregisterBatCallback(IEmgImuBatCallback callback)
     {
         batCbs.remove(callback);
-        // This may require some flag in the future
-        disableBatteryLevelNotifications();
+        disableNotifications(mBatteryCharacteristic);
     }
 
     // (7) deviceUpdateCbs
