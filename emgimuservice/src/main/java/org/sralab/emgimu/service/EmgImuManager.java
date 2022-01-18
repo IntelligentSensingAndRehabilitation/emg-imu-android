@@ -47,6 +47,7 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 
+import org.jetbrains.annotations.NotNull;
 import org.sralab.emgimu.logging.FirebaseEmgLogger;
 import org.sralab.emgimu.logging.FirebaseStreamLogger;
 import org.sralab.emgimu.parser.RecordAccessControlPointParser;
@@ -219,6 +220,7 @@ public class EmgImuManager extends BleManager {
 
     // getter to check if emgStreamCbs is empty
     public boolean isEmgStreamCbsEmpty() { return this.emgStreamCbs.isEmpty(); }
+
 
 /*    // getter for the deviceUpdateCbs
     public List<IEmgImuDevicesUpdatedCallback> getDeviceUpdateCbs() { return this.deviceUpdateCbs; }*/

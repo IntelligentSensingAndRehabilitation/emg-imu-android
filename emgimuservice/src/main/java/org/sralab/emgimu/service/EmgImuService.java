@@ -167,10 +167,6 @@ public class EmgImuService extends Service implements ConnectionObserver {
             return getBleManager(device).isConnected();
         }
 
-        public boolean isReady(@NotNull final BluetoothDevice device) throws RemoteException {
-            return getBleManager(device).isReady();
-        }
-
         public int getConnectionState(@NotNull final BluetoothDevice device) throws RemoteException {
             return getBleManager(device).getConnectionState();
         }
@@ -249,8 +245,7 @@ public class EmgImuService extends Service implements ConnectionObserver {
         public void registerImuMagObserver(IEmgImuSenseCallback callback) {
             for (final BluetoothDevice device : getManagedDevices()) {
                 final EmgImuManager manager = getBleManager(device);
-                if (manager.isReady())
-                    manager.registerImuMagCallback(callback);
+                manager.registerImuMagCallback(callback);
             }
         }
 
@@ -304,8 +299,7 @@ public class EmgImuService extends Service implements ConnectionObserver {
         public void registerDevicesObserver(IEmgImuDevicesUpdatedCallback callback) throws RemoteException {
             for (final BluetoothDevice device : getManagedDevices()) {
                 final EmgImuManager manager = getBleManager(device);
-                if (manager.isReady())
-                    manager.registerDeviceUpdateCallback(callback);
+                manager.registerDeviceUpdateCallback(callback);
             }
         }
 
