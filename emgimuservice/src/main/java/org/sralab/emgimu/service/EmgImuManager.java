@@ -77,7 +77,7 @@ import no.nordicsemi.android.ble.RequestQueue;
 import no.nordicsemi.android.ble.data.Data;
 import no.nordicsemi.android.ble.data.MutableData;
 
-public class EmgImuManager extends BleManager implements EmgImuObserver {
+public class EmgImuManager extends BleManager {
     private final String TAG = "EmgImuManager";
 
     /**
@@ -1610,7 +1610,6 @@ public class EmgImuManager extends BleManager implements EmgImuObserver {
         void onFetchFailed(@NonNull final BluetoothDevice device, String reason);
     }
 
-    @Override
     public void onBatteryReceived(BluetoothDevice device, float battery) {
         for (IEmgImuBatCallback cb : batCbs) {
             try {
@@ -1641,7 +1640,6 @@ public class EmgImuManager extends BleManager implements EmgImuObserver {
         }
     }
 
-    @Override
     public void onEmgStreamReceived(BluetoothDevice device, long ts_ms, double[][] data) {
 
         // TODO: fair bit of semi-redundant data serialization. Should consolidate.
@@ -1672,7 +1670,6 @@ public class EmgImuManager extends BleManager implements EmgImuObserver {
         }
     }
 
-    @Override
     public void onImuAccelReceived(BluetoothDevice device, float[][] accel) {
         float [] linearizedData = new float[3 * 3];
 
@@ -1695,7 +1692,6 @@ public class EmgImuManager extends BleManager implements EmgImuObserver {
         }
     }
 
-    @Override
     public void onImuGyroReceived(BluetoothDevice device, float[][] gyro) {
         float [] linearizedData = new float[3 * 3];
 
@@ -1718,7 +1714,6 @@ public class EmgImuManager extends BleManager implements EmgImuObserver {
         }
     }
 
-    @Override
     public void onImuMagReceived(BluetoothDevice device, float[][] mag) {
         float [] linearizedData = new float[3 * 3];
 
@@ -1742,7 +1737,6 @@ public class EmgImuManager extends BleManager implements EmgImuObserver {
         }
     }
 
-    @Override
     public void onImuAttitudeReceived(BluetoothDevice device, float[] quaternion) {
         ImuQuatData dataMsg = new ImuQuatData();
         dataMsg.ts = 0; // TODO
