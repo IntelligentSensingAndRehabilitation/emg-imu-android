@@ -205,7 +205,6 @@ public class EmgImuManager extends BleManager {
     private List<IEmgImuSenseCallback> imuMagCbs = new ArrayList<>();
     private List<IEmgImuQuatCallback> imuQuatCbs = new ArrayList<>();
     private List<IEmgImuBatCallback> batCbs = new ArrayList<>();
-    private List<IEmgImuDevicesUpdatedCallback> deviceUpdateCbs = new ArrayList<>();
     private List<IEmgImuStreamDataCallback> emgStreamCbs = new ArrayList<>();
 
     // ############# REGISTER/UNREGISTER CALLBACKS SECTION #########################################
@@ -322,7 +321,7 @@ public class EmgImuManager extends BleManager {
         disableNotifications(mBatteryCharacteristic);
     }
 
-    // (7) deviceUpdateCbs
+/*    // (7) deviceUpdateCbs
     public void registerDeviceUpdateCallback(IEmgImuDevicesUpdatedCallback callback)
     {
         deviceUpdateCbs.add(callback);
@@ -337,7 +336,7 @@ public class EmgImuManager extends BleManager {
         deviceUpdateCbs.remove(callback);
         // This may require some flag in the future
             // don't have enableDeviceUpdateNotification()!
-    }
+    }*/
 
     // (8) emgStreamCbs
     public void registerEmgStreamCallback(IEmgImuStreamDataCallback callback)

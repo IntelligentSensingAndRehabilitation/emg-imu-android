@@ -124,10 +124,9 @@ public class EmgImuService extends Service implements ConnectionObserver {
 
     private Handler handler;
 
-    //    void registerDevicesObserver(IEmgImuDevicesUpdatedCallback callback);
-    //    void unregisterDevicesObserver(IEmgImuDevicesUpdatedCallback callback);)
-
     Handler getHandler() { return handler; }
+
+    private List<IEmgImuDevicesUpdatedCallback> deviceUpdateCbs = new ArrayList<>();
 
     /**
 	 * This local binder is an interface for the bonded activity to operate with the proximity sensor
@@ -284,18 +283,12 @@ public class EmgImuService extends Service implements ConnectionObserver {
         // (7) deviceUpdateCbs
         @Override
         public void registerDevicesObserver(IEmgImuDevicesUpdatedCallback callback) throws RemoteException {
-            for (final BluetoothDevice device : getManagedDevices()) {
-                final EmgImuManager manager = getBleManager(device);
-                manager.registerDeviceUpdateCallback(callback);
-            }
+            deviceUpdateCbs.add(callback);
         }
 
         @Override
         public void unregisterDevicesObserver(IEmgImuDevicesUpdatedCallback callback) throws RemoteException {
-            for (final BluetoothDevice device : getManagedDevices()) {
-                final EmgImuManager manager = getBleManager(device);
-                manager.unregisterDeviceUpdateCallback(callback);
-            }
+            deviceUpdateCbs.remove(callback);
         }
 
         // (8) emgStreamCbs
@@ -700,13 +693,12 @@ public class EmgImuService extends Service implements ConnectionObserver {
 
     void onDeviceListUpdated() {
         liveDevices.postValue(managedDevices);
-
-/*        try {
-            for (IEmgImuDevicesUpdatedCallback cb : callbackManager.getDeviceUpdateCbs())
+        try {
+            for (IEmgImuDevicesUpdatedCallback cb : deviceUpdateCbs)
                 cb.onDeviceListUpdated();
         } catch (RemoteException e) {
             e.printStackTrace();
-        }*/
+        }
     }
 
     protected List<BluetoothDevice> getManagedDevices() {
