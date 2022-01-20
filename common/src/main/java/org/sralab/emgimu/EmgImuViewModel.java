@@ -61,6 +61,7 @@ public abstract class EmgImuViewModel <T> extends AndroidViewModel {
         final Intent service = new Intent();
         service.setComponent(new ComponentName("org.sralab.emgimu", "org.sralab.emgimu.service.EmgImuService"));
         app.getApplicationContext().bindService(service, serviceConnection, Context.BIND_AUTO_CREATE);
+        Log.d(TAG, "emgPwr - EmgImuViewModel object created!");
         this.app = app;
     }
 
@@ -99,9 +100,29 @@ public abstract class EmgImuViewModel <T> extends AndroidViewModel {
 
     public void onDeviceListUpdated() {
         Log.d(TAG, "onDeviceListUpdated fired");
+
         try {
+            if (getObservePwr()) {
+                //Log.d(TAG, "emgPwr from EmgImuViewModel --> getObserverPwr() = " + getObservePwr());
+                service.registerEmgPwrObserver(pwrObserver);
+                Log.d(TAG, "emgPwr - onServiceConnected called registerEmgPwrObserver | pwrObserver_object=" + pwrObserver.toString());
+            }
+            if (getObserveStream()) {
+                Log.d(TAG, "PREHERE!!");
+                service.registerEmgStreamObserver(streamObserver);
+            }
+            if (getObserveAccel()) service.registerImuAccelObserver(accelObserver);
+            if (getObserveGyro()) service.registerImuGyroObserver(gyroObserver);
+            if (getObserveMag()) service.registerImuMagObserver(magObserver);
+            if (getObserveQuat()) service.registerImuQuatObserver(quatObserver);
+            if (getObserveBat()) service.registerBatObserver(batObserver);
+
             List<BluetoothDevice> devices = service.getManagedDevices();
             devicesLiveData.setValue(mapDev(devices));
+            Log.d(TAG, "emgPwr - onDeviceListUpdated() fired! | getObservePwr() = " + getObservePwr());
+
+
+
          } catch (RemoteException e) {
             throw new RuntimeException(e);
         }
@@ -122,11 +143,17 @@ public abstract class EmgImuViewModel <T> extends AndroidViewModel {
         @Override
         public void onServiceConnected(final ComponentName name, final IBinder binder) {
             service = IEmgImuServiceBinder.Stub.asInterface(binder);
+            //Log.d(TAG, "emgPwr called onServiceConnected() in EmgImuModel");
 
             try {
                 service.registerDevicesObserver(deviceListObserver);
+                //Log.d(TAG, "emgPwr Connected to device" );
 
-                if (getObservePwr()) service.registerEmgPwrObserver(pwrObserver);
+ /*               if (getObservePwr()) {
+                    //Log.d(TAG, "emgPwr from EmgImuViewModel --> getObserverPwr() = " + getObservePwr());
+                    service.registerEmgPwrObserver(pwrObserver);
+                    Log.d(TAG, "emgPwr - onServiceConnected called registerEmgPwrObserver | pwrObserver_object=" + pwrObserver.toString());
+                }
                 if (getObserveStream()) {
                     Log.d(TAG, "PREHERE!!");
                     service.registerEmgStreamObserver(streamObserver);
@@ -135,7 +162,7 @@ public abstract class EmgImuViewModel <T> extends AndroidViewModel {
                 if (getObserveGyro()) service.registerImuGyroObserver(gyroObserver);
                 if (getObserveMag()) service.registerImuMagObserver(magObserver);
                 if (getObserveQuat()) service.registerImuQuatObserver(quatObserver);
-                if (getObserveBat()) service.registerBatObserver(batObserver);
+                if (getObserveBat()) service.registerBatObserver(batObserver);*/
             } catch (RemoteException e) {
                 throw new RuntimeException(e);
             }
@@ -174,6 +201,7 @@ public abstract class EmgImuViewModel <T> extends AndroidViewModel {
                 return;
             }
             emgPwrUpdated(dev, data);
+            //Log.d(TAG, "emgPwr (-1) pwrObserver callback exists" + pwrObserver.toString());
         }
     };
 
@@ -252,6 +280,7 @@ public abstract class EmgImuViewModel <T> extends AndroidViewModel {
                 return;
             }
             batUpdated(dev, bat);
+            Log.d(TAG, "emgPwr - getting batUpdated() - bat = " + bat);
         }
     };
 }
