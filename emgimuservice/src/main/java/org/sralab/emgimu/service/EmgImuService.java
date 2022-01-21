@@ -192,7 +192,7 @@ public class EmgImuService extends Service implements ConnectionObserver {
             Log.d(TAG, "No callbacks remain. Stopping stream.");
             for (final BluetoothDevice device : getManagedDevices()) {
                 final EmgImuManager manager = (EmgImuManager) getBleManager(device);
-                manager.disableEmgPwrNotifications();
+                manager.unregisterEmgPwrCallback(callback);
             }
         }
 
@@ -634,6 +634,7 @@ public class EmgImuService extends Service implements ConnectionObserver {
     @Override
     public void onDeviceDisconnected(@NonNull final BluetoothDevice device, @DisconnectionReason final int reason) {
         Log.d(TAG, "onDeviceDisconnected: " + device);
+
         /*
         // TODO
 		if (!mBinded) {
