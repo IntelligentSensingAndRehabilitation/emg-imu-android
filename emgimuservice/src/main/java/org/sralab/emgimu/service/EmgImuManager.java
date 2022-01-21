@@ -225,27 +225,21 @@ public class EmgImuManager extends BleManager {
     // (1) emgPwrCbs
     public void registerEmgPwrCallback(IEmgImuPwrDataCallback callback)
     {
-        //emgPwrCbsTest = callback;
-        // we'll check the list and if any elements exist, we'll remove them
-        if(emgPwrCbs.isEmpty()) {
-            emgPwrCbs.add(callback);
+        // Check if the callback list larger than 1, is so empty it
+        if(!emgPwrCbs.isEmpty()) {
+            for (int i = 0; i < emgPwrCbs.size(); i++) {
+                Log.d(TAG, "emgPwr | emgPwrCbs.removedAt = " + emgPwrCbs.get(i).toString());
+                emgPwrCbs.remove(i);
+            }
         }
-
-
-        //emgPwrCbs.add(callback);
-        //Log.d(TAG, "emgPwr | emgPwrCbs.length = " + emgPwrCbs.size());
-        //Log.d(TAG, "emgPwr enabled from registerEmgPwrCallback --> before isReady() (1)");
-        //enableEmgPwrNotifications();
-/*        if ( isReady() )
-        {
-            enableEmgPwrNotifications();
-            Log.d(TAG, "emgPwr enabled from registerEmgPwrCallback after isReady()");
-        }*/
+        emgPwrCbs.add(callback);
+        Log.d(TAG, "emgPwr | emgPwrCbs.length = " + emgPwrCbs.size() + " | callbacks = " + callback.toString());
     }
 
     public void unregisterEmgPwrCallback(IEmgImuPwrDataCallback callback)
     {
         emgPwrCbs.remove(callback);
+        Log.d(TAG, "emgPwr - called unregisterEmgPwrCallback");
         // This may require some flag in the future
         disableEmgPwrNotifications();
     }
