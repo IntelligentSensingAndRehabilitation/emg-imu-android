@@ -17,7 +17,10 @@ public class DeviceViewModel extends EmgImuViewModel<Device> {
         super(app);
     }
 
-    public boolean getObservePwr() { return true; }
+    public boolean getObservePwr() {
+        //Log.d(TAG, " emgPwr -- > getObservePwr() got called | getObservePwr() = ");
+        return true;
+    }
 
     @Override
     public Device getDev(BluetoothDevice d) {
@@ -27,13 +30,21 @@ public class DeviceViewModel extends EmgImuViewModel<Device> {
         dev.setAddress(d.getAddress());
         dev.setBattery(fullBinding.getBattery(d));
         dev.setConnectionState(fullBinding.getConnectionLiveState(d));
-
+/*        if(getObservePwr()) {
+            Log.d(TAG, "emgPwr - got getObservePwr()!");
+        }*/
+        //Log.d(TAG, "emgPwr --> getObservePwr()=" + getObservePwr());
         return dev;
     }
 
+    public int counter = 0;
     @Override
     public void emgPwrUpdated(Device dev, EmgPwrData data) {
         dev.addPower(data.ts, data.power[0]);
+        while (counter < 1) {
+            //Log.d(TAG, "emgPwrCbs enabled (4) | data.ts=" + data.ts + " | data.power[0]=" + data.power[0] );
+            counter++;
+        }
     }
 
     public void removeDeviceFromService(final Device device) {

@@ -61,7 +61,7 @@ public abstract class EmgImuViewModel <T> extends AndroidViewModel {
         final Intent service = new Intent();
         service.setComponent(new ComponentName("org.sralab.emgimu", "org.sralab.emgimu.service.EmgImuService"));
         app.getApplicationContext().bindService(service, serviceConnection, Context.BIND_AUTO_CREATE);
-        Log.d(TAG, "emgPwr - EmgImuViewModel object created!");
+/*        Log.d(TAG, "emgPwr - EmgImuViewModel object created!");*/
         this.app = app;
     }
 
@@ -99,30 +99,28 @@ public abstract class EmgImuViewModel <T> extends AndroidViewModel {
     }
 
     public void onDeviceListUpdated() {
-        Log.d(TAG, "onDeviceListUpdated fired");
-
+/*        Log.d(TAG, "emgPwr onDeviceListUpdated fired");*/
         try {
-            if (getObservePwr()) {
-                //Log.d(TAG, "emgPwr from EmgImuViewModel --> getObserverPwr() = " + getObservePwr());
-                service.registerEmgPwrObserver(pwrObserver);
-                Log.d(TAG, "emgPwr - onServiceConnected called registerEmgPwrObserver | pwrObserver_object=" + pwrObserver.toString());
-            }
-            if (getObserveStream()) {
-                Log.d(TAG, "PREHERE!!");
-                service.registerEmgStreamObserver(streamObserver);
-            }
-            if (getObserveAccel()) service.registerImuAccelObserver(accelObserver);
-            if (getObserveGyro()) service.registerImuGyroObserver(gyroObserver);
-            if (getObserveMag()) service.registerImuMagObserver(magObserver);
-            if (getObserveQuat()) service.registerImuQuatObserver(quatObserver);
-            if (getObserveBat()) service.registerBatObserver(batObserver);
-
+            // Check to see if we have any connected devices
             List<BluetoothDevice> devices = service.getManagedDevices();
             devicesLiveData.setValue(mapDev(devices));
-            Log.d(TAG, "emgPwr - onDeviceListUpdated() fired! | getObservePwr() = " + getObservePwr());
-
-
-
+            Log.d(TAG, "emgPwr deviceMap.keys = " + deviceMap.keySet().toString());
+            if (!deviceMap.isEmpty()) {
+                if (getObservePwr()) {
+                    //Log.d(TAG, "emgPwr from EmgImuViewModel --> getObserverPwr() = " + getObservePwr());
+                    service.registerEmgPwrObserver(pwrObserver);
+                    Log.d(TAG, "emgPwr - onServiceConnected called registerEmgPwrObserver | pwrObserver_object=" + pwrObserver.toString());
+                }
+                if (getObserveStream()) {
+                    Log.d(TAG, "emgPwr - PREHERE!!");
+                    service.registerEmgStreamObserver(streamObserver);
+                }
+                if (getObserveAccel()) service.registerImuAccelObserver(accelObserver);
+                if (getObserveGyro()) service.registerImuGyroObserver(gyroObserver);
+                if (getObserveMag()) service.registerImuMagObserver(magObserver);
+                if (getObserveQuat()) service.registerImuQuatObserver(quatObserver);
+                if (getObserveBat()) service.registerBatObserver(batObserver);
+            }
          } catch (RemoteException e) {
             throw new RuntimeException(e);
         }
@@ -174,6 +172,8 @@ public abstract class EmgImuViewModel <T> extends AndroidViewModel {
         @Override
         public void onServiceDisconnected(final ComponentName name) {
             EmgImuViewModel.this.onServiceDisconnected();
+            Log.d(TAG, "emgPwr - hit onServiceDisconnected");
+            //onCleared();
             service = null;
         }
     };

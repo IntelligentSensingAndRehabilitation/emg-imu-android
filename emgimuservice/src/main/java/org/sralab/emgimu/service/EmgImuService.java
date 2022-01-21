@@ -183,6 +183,8 @@ public class EmgImuService extends Service implements ConnectionObserver {
             for (final BluetoothDevice device : getManagedDevices()) {
                 final EmgImuManager manager = (EmgImuManager) getBleManager(device);
                 manager.registerEmgPwrCallback(callback);
+                //Log.d(TAG, "emgPwrCbs enabled! from registerEmgPwrObserver (2)");
+                Log.d(TAG, "emgPwr - registerEmgPwrObserver() called! | pwrObserver_object=" + callback.toString());
             }
         }
 
@@ -284,6 +286,7 @@ public class EmgImuService extends Service implements ConnectionObserver {
         @Override
         public void registerDevicesObserver(IEmgImuDevicesUpdatedCallback callback) throws RemoteException {
             deviceUpdateCbs.add(callback);
+            //Log.d(TAG, "emgPwr (0++) registerDevicesObserver triggered!");
         }
 
         @Override

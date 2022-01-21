@@ -207,6 +207,9 @@ public class EmgImuManager extends BleManager {
     private List<IEmgImuBatCallback> batCbs = new ArrayList<>();
     private List<IEmgImuStreamDataCallback> emgStreamCbs = new ArrayList<>();
 
+    // testing for the workaround
+    private IEmgImuPwrDataCallback emgPwrCbsTest;
+
     // ############# REGISTER/UNREGISTER CALLBACKS SECTION #########################################
     // Temp VS notes:
     // Callbacks:
@@ -222,11 +225,22 @@ public class EmgImuManager extends BleManager {
     // (1) emgPwrCbs
     public void registerEmgPwrCallback(IEmgImuPwrDataCallback callback)
     {
-        emgPwrCbs.add(callback);
-        if ( isReady() )
+        //emgPwrCbsTest = callback;
+        // we'll check the list and if any elements exist, we'll remove them
+        if(emgPwrCbs.isEmpty()) {
+            emgPwrCbs.add(callback);
+        }
+
+
+        //emgPwrCbs.add(callback);
+        //Log.d(TAG, "emgPwr | emgPwrCbs.length = " + emgPwrCbs.size());
+        //Log.d(TAG, "emgPwr enabled from registerEmgPwrCallback --> before isReady() (1)");
+        //enableEmgPwrNotifications();
+/*        if ( isReady() )
         {
             enableEmgPwrNotifications();
-        }
+            Log.d(TAG, "emgPwr enabled from registerEmgPwrCallback after isReady()");
+        }*/
     }
 
     public void unregisterEmgPwrCallback(IEmgImuPwrDataCallback callback)
@@ -550,6 +564,7 @@ public class EmgImuManager extends BleManager {
 
         @Override
         public void onDeviceReady() {
+            //Log.d(TAG, "emgPwr onDeviceReady() got called");
 		    // Complete some of our initialization once we have a device connected
             fireLogger = new FirebaseEmgLogger(EmgImuManager.this);
 
@@ -562,8 +577,15 @@ public class EmgImuManager extends BleManager {
 
             // TODO: Option 2 part 3. This "delayed enabling notificiations" will have to happen
             // in teh manager's onReady method now, based on if any callbacks are registered.
+            //Log.d(TAG, "emgPwr - !emgPwrCbs.isEmpty() = " +!emgPwrCbs.isEmpty() );
+            // enableEmgPwrNotifications(); // calling it like this does not work
+/*            if(emgPwrCbsTest != null) {
+                Log.d(TAG, "emgPwr | emgPwrCbsTest != null!");
+                enableEmgPwrNotifications();
+            }*/
             if (!emgPwrCbs.isEmpty()) {
                 enableEmgPwrNotifications();
+                Log.d(TAG, "emgPwrCbs  notifications from onDeviceReady() | size = " + emgPwrCbs.size() + " address = " + emgPwrCbs.get(0).toString());
             }
 
             if(!emgStreamCbs.isEmpty()) {
@@ -1392,10 +1414,12 @@ public class EmgImuManager extends BleManager {
             .done(device -> log(Log.INFO, "EMG power notifications enabled successfully"))
             .fail((device, status) -> log(Log.ERROR, "Unable to enable EMG power notification"))
             .enqueue();
+    //Log.d(TAG, "emgPwr - enableEmgPwrNotifications() called to parseEmgPwr");
     }
 
     public void disableEmgPwrNotifications() {
         disableNotifications(mEmgPwrCharacteristic).enqueue();
+        Log.d(TAG,"emgPwr - called disableEmgPwrNotifications()");
     }
 
     public void enableEmgBuffNotifications() {
