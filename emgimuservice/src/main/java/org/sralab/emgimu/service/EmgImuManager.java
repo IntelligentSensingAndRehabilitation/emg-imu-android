@@ -21,6 +21,9 @@
  */
 package org.sralab.emgimu.service;
 
+import static android.bluetooth.BluetoothGattCharacteristic.FORMAT_UINT8;
+
+import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
@@ -739,8 +742,11 @@ public class EmgImuManager extends BleManager {
      *   - Byte 9: channel 1 MSB
      */
     private void parseEmgPwr(BluetoothDevice device,  Data characteristic) {
+        int formatUINT8 = BluetoothGattCharacteristic.FORMAT_UINT8;
+        int formatUINT32 = BluetoothGattCharacteristic.FORMAT_UINT32;
         // Check if the number of channels matches the amount of data expected
-        int expectedNumberOfChannels = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0) >> 4;
+        @SuppressLint("WrongConstant")
+        int expectedNumberOfChannels = characteristic.getIntValue(formatUINT8, 0) >> 4;
         int calculatedNumberOfChannels = (characteristic.size() - BLE_MSG_HEADER_SIZE) / 2;
         if (expectedNumberOfChannels == calculatedNumberOfChannels) {
             Log.d(TAG, "parseEmgPwr - we're in business! --> " + expectedNumberOfChannels);
@@ -748,8 +754,10 @@ public class EmgImuManager extends BleManager {
         }
         List<Integer> pwrList = new ArrayList<Integer>();
         for(int i = BLE_MSG_HEADER_SIZE; i < characteristic.size(); i = i +2) {
-            final int remainder = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, i);
-            final int quotient = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, i + 1);
+            @SuppressLint("WrongConstant")
+            final int remainder = characteristic.getIntValue(formatUINT8, i);
+            @SuppressLint("WrongConstant")
+            final int quotient = characteristic.getIntValue(formatUINT8, i + 1);
             final int pwrVal = quotient * 256 + remainder;
             pwrList.add(pwrVal);
         }
@@ -757,8 +765,10 @@ public class EmgImuManager extends BleManager {
             Log.d(TAG, "parseEmgPwr -->  ch-" + j + "_pwr = " + pwrList.get(j));
         }
 
-        int counter = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1);
-        long timestamp = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 2);
+        @SuppressLint("WrongConstant")
+        int counter = characteristic.getIntValue(formatUINT8, 1);
+        @SuppressLint("WrongConstant")
+        long timestamp = characteristic.getIntValue(formatUINT32, 2);
         timestamp = timestampToReal(timestamp);
 
         long ts_ms = emgPwrResolver.resolveTime(counter, timestamp, 1);
@@ -780,7 +790,7 @@ public class EmgImuManager extends BleManager {
 
         double microvolts_per_lsb;
 
-        int counter = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1);
+        int counter = characteristic.getIntValue(FORMAT_UINT8, 1);
         long timestamp = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 2);
         timestamp = timestampToReal(timestamp);
 
@@ -1185,7 +1195,7 @@ public class EmgImuManager extends BleManager {
 
         // Record Access Control Point characteristic
         int offset = 0;
-        final int opCode = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, offset);
+        final int opCode = characteristic.getIntValue(FORMAT_UINT8, offset);
         offset += 2; // skip the operator
 
          if (opCode == OP_CODE_SET_TIMESTAMP_COMPLETE) {
@@ -1232,8 +1242,8 @@ public class EmgImuManager extends BleManager {
                      successCallback.onFetchSucceeded(getBluetoothDevice());
              }
          } else if (opCode == OP_CODE_RESPONSE_CODE) {
-            final int requestedOpCode = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, offset);
-            final int responseCode = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, offset + 1);
+            final int requestedOpCode = characteristic.getIntValue(FORMAT_UINT8, offset);
+            final int responseCode = characteristic.getIntValue(FORMAT_UINT8, offset + 1);
             log(Log.VERBOSE, "Response result for: " + requestedOpCode + " is: " + responseCode);
 
             switch (responseCode) {
