@@ -30,6 +30,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.nfc.Tag;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -209,6 +210,8 @@ public class EmgImuManager extends BleManager {
 
     // testing for the workaround
     private IEmgImuPwrDataCallback emgPwrCbsTest;
+
+    private final int BLE_MSG_HEADER_SIZE = 6;
 
     // ############# REGISTER/UNREGISTER CALLBACKS SECTION #########################################
     // Temp VS notes:
@@ -704,25 +707,67 @@ public class EmgImuManager extends BleManager {
     TimestampResolved emgPwrResolver = new TimestampResolved(EMG_FS / 20, "EmgPwr").setAlias(256);
     TimestampResolved emgStreamResolver = new TimestampResolved(EMG_FS, "EmgStream").setAlias(256);
 
+    /**
+     * This method parses the EMG power value from a Bluetooth LE message
+     * sent from wearable sensors.
+     * This method enables several other methods, which are responsible for the following:
+     *  - plotting the power curve in the Config
+     *  - sending the data to the database
+     * @param device - Specific sensor connected via Bluetooth LE, recognized by it's MAC address.
+     * @param characteristic - Bluetooth LE message received from the wearable sensor.
+     *                       - The structure of the message (format) is as follows:
+     *                          -  Byte 0-5: header
+     *                              - Byte 0: format
+     *                                  - bit 0-3: reserved
+     *                                  - bit 4-7: number of channels
+     *                              - Byte 1: packet counter
+     *                              - Byte 2-5: timestamp
+     *                          - Byte 6-onwards: power data for each channel,
+     *                                            each channel takes 2-bytes of data,
+     *                                            16-bit resolution
+     *                                            starting with LSB in it's first byte
+     * Example 1, when the sensor sends 1 channel of data, the total message will contain:
+     *   - Byte 0-5: header
+     *   - Byte 6: channel 0 LSB
+     *   - Byte 7: channel 0 MSB
+     *
+     * Example 2, when the sensor sends 2 channels of data, the total message will contain:
+     *   - Byte 0-5: header
+     *   - Byte 6: channel 0 LSB
+     *   - Byte 7: channel 0 MSB
+     *   - Byte 8: channel 1 LSB
+     *   - Byte 9: channel 1 MSB
+     */
     private void parseEmgPwr(BluetoothDevice device,  Data characteristic) {
-        final byte [] buffer = characteristic.getValue();
-        byte format = buffer[0];
-        assert(format == 16);
+        // Check if the number of channels matches the amount of data expected
+        int expectedNumberOfChannels = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0) >> 4;
+        int calculatedNumberOfChannels = (characteristic.size() - BLE_MSG_HEADER_SIZE) / 2;
+        if (expectedNumberOfChannels == calculatedNumberOfChannels) {
+            Log.d(TAG, "parseEmgPwr - we're in business! --> " + expectedNumberOfChannels);
+            // Maybe do some error handling in the future, nothing for now
+        }
+        List<Integer> pwrList = new ArrayList<Integer>();
+        for(int i = BLE_MSG_HEADER_SIZE; i < characteristic.size(); i = i +2) {
+            final int remainder = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, i);
+            final int quotient = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, i + 1);
+            final int pwrVal = quotient * 256 + remainder;
+            pwrList.add(pwrVal);
+        }
+        for (int j = 0; j < pwrList.size(); j++) {
+            Log.d(TAG, "parseEmgPwr -->  ch-" + j + "_pwr = " + pwrList.get(j));
+        }
 
         int counter = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1);
         long timestamp = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 2);
         timestamp = timestampToReal(timestamp);
 
-        int pwr_val = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 6) +
-            characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 7) * 256;
-
         long ts_ms = emgPwrResolver.resolveTime(counter, timestamp, 1);
 
         Log.d(TAG, "Pwr " + device);
-        onEmgPwrReceived(device, ts_ms, pwr_val);
+        onEmgPwrReceived(device, ts_ms, pwrList.get(0));
 
         if (mLogging && streamLogger != null) {
-            double [] data = {(double) pwr_val};
+            double [] data = {(double) pwrList.get(0)};
             streamLogger.addPwrSample(new Date().getTime(), timestamp, counter, data);
         }
     }
