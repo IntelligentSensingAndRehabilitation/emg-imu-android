@@ -753,7 +753,7 @@ public class EmgImuManager extends BleManager {
             // Maybe do some error handling in the future, nothing for now
         }
         List<Integer> pwrList = new ArrayList<Integer>();
-        for(int i = BLE_MSG_HEADER_SIZE; i < characteristic.size(); i = i +2) {
+        for(int i = BLE_MSG_HEADER_SIZE; i < characteristic.size(); i = i + 2) {
             @SuppressLint("WrongConstant")
             final int remainder = characteristic.getIntValue(formatUINT8, i);
             @SuppressLint("WrongConstant")
@@ -777,8 +777,12 @@ public class EmgImuManager extends BleManager {
         onEmgPwrReceived(device, ts_ms, pwrList.get(0));
 
         if (mLogging && streamLogger != null) {
-            double [] data = {(double) pwrList.get(0)};
+            double[] data = new double[pwrList.size()];
+            for(int i = 0; i < pwrList.size(); i++) {
+                data[i] = (double) pwrList.get(i);
+            }
             streamLogger.addPwrSample(new Date().getTime(), timestamp, counter, data);
+            Log.d(TAG, "parse mLogging data.size = " + data.length);
         }
     }
 
