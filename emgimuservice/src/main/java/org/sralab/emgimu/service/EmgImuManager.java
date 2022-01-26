@@ -777,9 +777,9 @@ public class EmgImuManager extends BleManager {
         onEmgPwrReceived(device, ts_ms, pwrList.get(0));
 
         if (mLogging && streamLogger != null) {
-            double[] data = new double[pwrList.size()];
+            int[] data = new int[pwrList.size()];
             for(int i = 0; i < pwrList.size(); i++) {
-                data[i] = (double) pwrList.get(i);
+                data[i] = pwrList.get(i);
             }
             streamLogger.addPwrSample(new Date().getTime(), timestamp, counter, data);
             Log.d(TAG, "parse mLogging data.size = " + data.length);
