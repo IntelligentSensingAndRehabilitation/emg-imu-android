@@ -744,45 +744,37 @@ public class EmgImuManager extends BleManager {
     private void parseEmgPwr(BluetoothDevice device,  Data characteristic) {
         int formatUINT8 = BluetoothGattCharacteristic.FORMAT_UINT8;
         int formatUINT32 = BluetoothGattCharacteristic.FORMAT_UINT32;
-        // Check if the number of channels matches the amount of data expected
         @SuppressLint("WrongConstant")
         int expectedNumberOfChannels = characteristic.getIntValue(formatUINT8, 0) >> 4;
         int calculatedNumberOfChannels = (characteristic.size() - BLE_MSG_HEADER_SIZE) / 2;
-        if (expectedNumberOfChannels == calculatedNumberOfChannels) {
-            Log.d(TAG, "parseEmgPwr - we're in business! --> " + expectedNumberOfChannels);
-            // Maybe do some error handling in the future, nothing for now
-        }
-        List<Integer> pwrList = new ArrayList<Integer>();
+        @SuppressLint("WrongConstant")
+        int counter = characteristic.getIntValue(formatUINT8, 1);
+        @SuppressLint("WrongConstant")
+        long timestamp = characteristic.getIntValue(formatUINT32, 2);
+        timestamp = timestampToReal(timestamp);
+        long ts_ms = emgPwrResolver.resolveTime(counter, timestamp, 1);
+        int[] pwrArray = new int[expectedNumberOfChannels];
+
+        // Parses the characteristic array for the emgPwr and packes it into n-dim array.
         for(int i = BLE_MSG_HEADER_SIZE; i < characteristic.size(); i = i + 2) {
             @SuppressLint("WrongConstant")
             final int remainder = characteristic.getIntValue(formatUINT8, i);
             @SuppressLint("WrongConstant")
             final int quotient = characteristic.getIntValue(formatUINT8, i + 1);
             final int pwrVal = quotient * 256 + remainder;
-            pwrList.add(pwrVal);
-        }
-        for (int j = 0; j < pwrList.size(); j++) {
-            Log.d(TAG, "parseEmgPwr -->  ch-" + j + "_pwr = " + pwrList.get(j));
+            pwrArray[(i - BLE_MSG_HEADER_SIZE) / 2 ] = pwrVal;
         }
 
-        @SuppressLint("WrongConstant")
-        int counter = characteristic.getIntValue(formatUINT8, 1);
-        @SuppressLint("WrongConstant")
-        long timestamp = characteristic.getIntValue(formatUINT32, 2);
-        timestamp = timestampToReal(timestamp);
+        // Sends the data to the rest of the application.
+        onEmgPwrReceived(device, ts_ms, expectedNumberOfChannels, pwrArray);
 
-        long ts_ms = emgPwrResolver.resolveTime(counter, timestamp, 1);
+        for (int j = 0; j < pwrArray.length; j++) {
+            Log.d(TAG, "parseEmgPwr -->  ch-" + j + "_pwr = " + pwrArray[j]);
+        }
 
-        Log.d(TAG, "Pwr " + device);
-        onEmgPwrReceived(device, ts_ms, pwrList.get(0));
-
+        // Saves data to a .json log file locally on device & transmits the data to the cloud.
         if (mLogging && streamLogger != null) {
-            int[] data = new int[pwrList.size()];
-            for(int i = 0; i < pwrList.size(); i++) {
-                data[i] = pwrList.get(i);
-            }
-            streamLogger.addPwrSample(new Date().getTime(), timestamp, counter, data);
-            Log.d(TAG, "parse mLogging data.size = " + data.length);
+            streamLogger.addPwrSample(new Date().getTime(), timestamp, counter, pwrArray);
         }
     }
 
