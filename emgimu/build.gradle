@@ -25,10 +25,12 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
         sourceCompatibility JavaVersion.VERSION_1_8
     }
-
     packagingOptions {
-        exclude 'META-INF/proguard/androidx-annotations.pro'
+        resources {
+            excludes += ['META-INF/proguard/androidx-annotations.pro']
+        }
     }
+
 
     //dynamicFeatures = [ ":controller"]
 
@@ -48,7 +50,7 @@ android {
 }
 
 dependencies {
-    api 'androidx.constraintlayout:constraintlayout:2.1.0'
+    api 'androidx.constraintlayout:constraintlayout:2.1.3'
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
     implementation project(':emgimuservice')
@@ -61,7 +63,7 @@ dependencies {
     api 'androidx.multidex:multidex:2.0.1'
 
     // Required to prevent google-services pulling in arbitrary versions
-    api 'androidx.appcompat:appcompat:1.3.1'
+    api 'androidx.appcompat:appcompat:1.4.1'
     api 'androidx.legacy:legacy-support-v4:1.0.0'
 
     implementation "com.google.firebase:firebase-crashlytics:$firebaseCrashlyticsVer"

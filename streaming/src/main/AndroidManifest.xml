@@ -14,6 +14,7 @@
             android:name="org.sralab.emgimu.streaming.StreamingActivity"
             android:icon="@drawable/ic_streaming"
             android:label="@string/streaming_title"
+            android:exported="true"
             android:launchMode="singleTask" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -24,7 +25,8 @@
 
         <activity
             android:name="org.sralab.emgimu.imu_streaming.ImuStreamingActivity"
-            android:label="IMU Streaming">
+            android:label="IMU Streaming"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="org.sralab.emgimu.LAUNCHER" />

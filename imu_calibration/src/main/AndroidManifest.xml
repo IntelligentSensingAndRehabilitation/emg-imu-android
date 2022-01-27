@@ -13,7 +13,8 @@
     <application>
         <activity
             android:name=".ImuCalibration"
-            android:label="@string/title_activity_imu_calibration">
+            android:label="@string/title_activity_imu_calibration"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="org.sralab.emgimu.LAUNCHER" />
