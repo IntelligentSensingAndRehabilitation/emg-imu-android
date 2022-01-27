@@ -981,7 +981,7 @@ public class EmgImuManager extends BleManager {
         long ts_ms = new Date().getTime();
         mForce = force_val;
 
-        onEmgPwrReceived(device, ts_ms, mForce * 10);
+        //onEmgPwrReceived(device, ts_ms, mForce * 10);
 
         // logging to firebase db
         if (mLogging && streamLogger != null) {
