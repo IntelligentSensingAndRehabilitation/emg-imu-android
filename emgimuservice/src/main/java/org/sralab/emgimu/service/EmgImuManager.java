@@ -1680,13 +1680,26 @@ public class EmgImuManager extends BleManager {
         }
     }
 
-    // TODO: Option 2, part 2. This implementation needs to move into the
-    // manager, which will now be calling the callbacks.
-    public void onEmgPwrReceived(final BluetoothDevice device, long ts_ms, int value)
+    /**
+     * This method packages the emgPwr from each sensor channel into a single data structure
+     * called EmgPwrData, which is defined in the EmgPwrData.aidl as a parcelable, which is
+     * consumed by the IEmgImuPwrDataCallback.aidl as an "in" parameter, indicating that
+     * the data flow is from the client to the server. Primarily, this method calls handleData()
+     * method implemented in the EmgImuViewModel.
+     * @param device - MAC address of the sensor.
+     * @param ts_ms - timestamp in milliseconds of the data packet.
+     * @param channelCount - the total number of channels of the emgPwr value.
+     * @param values - an array, zero indexed, of emgPwr value in millivolts, corresponding to
+     *               each channel.
+     */
+    public void onEmgPwrReceived(final BluetoothDevice device, long ts_ms, int channelCount, int[] values)
     {
         EmgPwrData dataMsg = new EmgPwrData();
-        dataMsg.channels = 1;
-        dataMsg.power = new int[]{value};
+        dataMsg.channels = channelCount;
+        dataMsg.power = new int[channelCount];
+        for (int i = 0; i < channelCount; i++) {
+            dataMsg.power[i] = values[i];
+        }
         dataMsg.ts = ts_ms;
 
         for (IEmgImuPwrDataCallback cb : emgPwrCbs) {
