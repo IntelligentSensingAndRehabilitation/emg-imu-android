@@ -179,25 +179,40 @@ public class EmgImuService extends Service implements ConnectionObserver {
         // (8) emgStreamCbs
 
         // (1) emgPwrCbs
-        public void registerEmgPwrObserver(IEmgImuPwrDataCallback callback) {
+        public void registerEmgPwrObserver(String regDevice, IEmgImuPwrDataCallback callback) {
+            int i = 0;
             for (final BluetoothDevice device : getManagedDevices()) {
-                final EmgImuManager manager = (EmgImuManager) getBleManager(device);
-                manager.registerEmgPwrCallback(callback);
-                //Log.d(TAG, "emgPwrCbs enabled! from registerEmgPwrObserver (2)");
-                Log.d(TAG, "emgPwr - registerEmgPwrObserver() called! | pwrObserver_object=" + callback.toString());
-            }
-        }
-
-        public void registerGameEmgPwrObserver(String deviceMac, IEmgImuPwrDataCallback callback) {
-            Log.d(TAG, "Bridge, in Service, registerGameEmgPwrObser() called");
-            for (final BluetoothDevice device : getManagedDevices()) {
-                if (device.getName().equals(deviceMac)) {
-                    Log.d(TAG, "Bridge, from service - MAC match");
-                    Log.d(TAG, "Bridge, gameMac = " + deviceMac);
-                    Log.d(TAG, "Bridge, getManagedDevices() ,mac = " + device.getName());
+                /*
+                When the user connects to the sensor from the Config, the regDevice argument
+                will be null; therefore, create a manager for each sensor. Otherwise, if
+                the user is connecting to the sensor from the game, then Bridge will pass
+                a string argument corresponding to the Mac address of the sensor; therefore,
+                in that case, connect only to the sensor whose Mac address matches that string.
+                 */
+                if (regDevice == null) {
+                    final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+                    manager.registerEmgPwrCallback(callback);
+                    Log.d(TAG, "Service.registerEmgPwrObserver (regDevice == null), manager for device[" + i + "] = " + device.toString());
+                    i++;
+                } else if (device.toString().equals(regDevice)) {
+                    final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+                    manager.registerEmgPwrCallback(callback);
+                    Log.d(TAG, "Service.registerEmgPwrObserver, (device.getName().equals(regDevice)) manager for device[" + i + "] = " + device.toString());
+                    i++;
                 }
             }
         }
+
+//        public void registerGameEmgPwrObserver(String deviceMac, IEmgImuPwrDataCallback callback) {
+//            Log.d(TAG, "Bridge, in Service, registerGameEmgPwrObser() called");
+//            for (final BluetoothDevice device : getManagedDevices()) {
+//                if (device.getName().equals(deviceMac)) {
+//                    Log.d(TAG, "Bridge, from service - MAC match");
+//                    Log.d(TAG, "Bridge, gameMac = " + deviceMac);
+//                    Log.d(TAG, "Bridge, getManagedDevices() ,mac = " + device.getName());
+//                }
+//            }
+//        }
 
         public void unregisterEmgPwrObserver(IEmgImuPwrDataCallback callback) {
             Log.d(TAG, "No callbacks remain. Stopping stream.");

@@ -108,7 +108,7 @@ public abstract class EmgImuViewModel <T> extends AndroidViewModel {
             if (!deviceMap.isEmpty()) {
                 if (getObservePwr()) {
                     //Log.d(TAG, "emgPwr from EmgImuViewModel --> getObserverPwr() = " + getObservePwr());
-                    service.registerEmgPwrObserver(pwrObserver);
+                    service.registerEmgPwrObserver(null, pwrObserver);
                     Log.d(TAG, "emgPwr - onServiceConnected called registerEmgPwrObserver | pwrObserver_object=" + pwrObserver.toString());
                 }
                 if (getObserveStream()) {

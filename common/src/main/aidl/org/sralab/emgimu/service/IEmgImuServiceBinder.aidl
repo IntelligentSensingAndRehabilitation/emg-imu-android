@@ -29,8 +29,7 @@ interface IEmgImuServiceBinder  {
     // For receiving EMG data
     void registerEmgStreamObserver(IEmgImuStreamDataCallback callback);
     void unregisterEmgStreamObserver(IEmgImuStreamDataCallback callback);
-    void registerEmgPwrObserver(IEmgImuPwrDataCallback callback);
-    void registerGameEmgPwrObserver(in String deviceMac, IEmgImuPwrDataCallback callback);
+    void registerEmgPwrObserver(String regDevice, IEmgImuPwrDataCallback callback);
     void unregisterEmgPwrObserver(IEmgImuPwrDataCallback callback);
 
     // For receiving IMU data
