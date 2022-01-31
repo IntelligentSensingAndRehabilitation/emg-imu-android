@@ -172,10 +172,10 @@ public class Bridge extends Application
         /*
         Register the power observer for the emg power callback to stream the emg power data.
          */
-//        try {
-//            service.registerEmgPwrObserver(pwrObserver);
-//        } catch (RemoteException e) {
-//            e.printStackTrace();
-//        }
+        try {
+            service.registerGameEmgPwrObserver(gameSelectedDeviceMac, pwrObserver);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
     }
 }

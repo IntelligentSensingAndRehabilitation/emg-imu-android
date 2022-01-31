@@ -1698,7 +1698,7 @@ public class EmgImuManager extends BleManager {
         for (IEmgImuPwrDataCallback cb : emgPwrCbs) {
             try {
                 Log.d(TAG, "Calling pwr callback for " + device);
-                Log.d(TAG, "unity_selected_device=" + Bridge.unitySelectedDevice);
+                //Log.d(TAG, "unity_selected_device=" + Bridge.unitySelectedDevice);
                 cb.handleData(device, dataMsg);
             } catch (RemoteException e) {
                 e.printStackTrace();

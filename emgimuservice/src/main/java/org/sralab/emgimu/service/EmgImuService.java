@@ -188,6 +188,17 @@ public class EmgImuService extends Service implements ConnectionObserver {
             }
         }
 
+        public void registerGameEmgPwrObserver(String deviceMac, IEmgImuPwrDataCallback callback) {
+            Log.d(TAG, "Bridge, in Service, registerGameEmgPwrObser() called");
+            for (final BluetoothDevice device : getManagedDevices()) {
+                if (device.getName().equals(deviceMac)) {
+                    Log.d(TAG, "Bridge, from service - MAC match");
+                    Log.d(TAG, "Bridge, gameMac = " + deviceMac);
+                    Log.d(TAG, "Bridge, getManagedDevices() ,mac = " + device.getName());
+                }
+            }
+        }
+
         public void unregisterEmgPwrObserver(IEmgImuPwrDataCallback callback) {
             Log.d(TAG, "No callbacks remain. Stopping stream.");
             for (final BluetoothDevice device : getManagedDevices()) {
