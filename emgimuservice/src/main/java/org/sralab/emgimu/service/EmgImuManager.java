@@ -217,37 +217,25 @@ public class EmgImuManager extends BleManager {
     private final int BLE_MSG_HEADER_SIZE = 6;
 
     // ############# REGISTER/UNREGISTER CALLBACKS SECTION #########################################
-    // Temp VS notes:
-    // Callbacks:
-    // (1) emgPwrCbs
-    // (2) imuAccelCbs
-    // (3) imuGyroCbs
-    // (4) imuMagCbs
-    // (5) imuQuatCbs
-    // (6) batCbs
-    // (7) deviceUpdateCbs  - complete, but potential problem - no enable/disable notification methods
-    // (8) emgStreamCbs
 
-    // (1) emgPwrCbs
     public void registerEmgPwrCallback(IEmgImuPwrDataCallback callback)
     {
-        // Check if the callback list larger than 1, is so empty it
-        if(!emgPwrCbs.isEmpty()) {
-            for (int i = 0; i < emgPwrCbs.size(); i++) {
-                Log.d(TAG, "emgPwr | emgPwrCbs.removedAt = " + emgPwrCbs.get(i).toString());
-                emgPwrCbs.remove(i);
-            }
+        if (emgPwrCbs.contains(callback)) {
+            Log.d(TAG, "Duplicate callback registered. Exiting");
+            return;
         }
         emgPwrCbs.add(callback);
-        Log.d(TAG, "emgPwr | emgPwrCbs.length = " + emgPwrCbs.size() + " | callbacks = " + callback.toString());
+        if (isReady()) {
+            enableEmgPwrNotifications();
+        }
     }
 
     public void unregisterEmgPwrCallback(IEmgImuPwrDataCallback callback)
     {
-        emgPwrCbs.remove(callback);
-        Log.d(TAG, "emgPwr - called unregisterEmgPwrCallback");
-        // This may require some flag in the future
         disableEmgPwrNotifications();
+        if (!emgPwrCbs.isEmpty()) {
+            emgPwrCbs.remove(callback);
+        }
     }
 
     // (2) imuAccelCbs
