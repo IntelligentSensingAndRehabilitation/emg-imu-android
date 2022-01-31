@@ -73,13 +73,13 @@ public abstract class EmgImuViewModel <T> extends AndroidViewModel {
                 throw new RuntimeException("Service disconnected before unregistering.");
             }
             service.unregisterDevicesObserver(deviceListObserver);
-            if (getObservePwr()) service.unregisterEmgPwrObserver(pwrObserver);
-            if (getObserveStream()) service.unregisterEmgStreamObserver(streamObserver);
-            if (getObserveAccel()) service.unregisterImuAccelObserver(accelObserver);
-            if (getObserveGyro()) service.unregisterImuGyroObserver(gyroObserver);
-            if (getObserveMag()) service.unregisterImuMagObserver(magObserver);
-            if (getObserveQuat()) service.unregisterImuQuatObserver(quatObserver);
-            if (getObserveBat()) service.unregisterBatObserver(batObserver);
+            if (getObservePwr()) service.unregisterEmgPwrObserver(null, pwrObserver);
+            if (getObserveStream()) service.unregisterEmgStreamObserver(null, streamObserver);
+            if (getObserveAccel()) service.unregisterImuAccelObserver(null, accelObserver);
+            if (getObserveGyro()) service.unregisterImuGyroObserver(null, gyroObserver);
+            if (getObserveMag()) service.unregisterImuMagObserver(null, magObserver);
+            if (getObserveQuat()) service.unregisterImuQuatObserver(null, quatObserver);
+            if (getObserveBat()) service.unregisterBatObserver(null, batObserver);
         } catch (RemoteException e) {
             throw new RuntimeException(e);
         }
@@ -113,13 +113,13 @@ public abstract class EmgImuViewModel <T> extends AndroidViewModel {
                 }
                 if (getObserveStream()) {
                     Log.d(TAG, "emgPwr - PREHERE!!");
-                    service.registerEmgStreamObserver(streamObserver);
+                    service.registerEmgStreamObserver(null, streamObserver);
                 }
-                if (getObserveAccel()) service.registerImuAccelObserver(accelObserver);
-                if (getObserveGyro()) service.registerImuGyroObserver(gyroObserver);
-                if (getObserveMag()) service.registerImuMagObserver(magObserver);
-                if (getObserveQuat()) service.registerImuQuatObserver(quatObserver);
-                if (getObserveBat()) service.registerBatObserver(batObserver);
+                if (getObserveAccel()) service.registerImuAccelObserver(null, accelObserver);
+                if (getObserveGyro()) service.registerImuGyroObserver(null, gyroObserver);
+                if (getObserveMag()) service.registerImuMagObserver(null, magObserver);
+                if (getObserveQuat()) service.registerImuQuatObserver(null, quatObserver);
+                if (getObserveBat()) service.registerBatObserver(null, batObserver);
             }
          } catch (RemoteException e) {
             throw new RuntimeException(e);
