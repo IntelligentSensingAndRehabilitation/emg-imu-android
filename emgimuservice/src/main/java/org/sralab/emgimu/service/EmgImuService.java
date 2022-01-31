@@ -212,7 +212,7 @@ public class EmgImuService extends Service implements ConnectionObserver {
                 } else if (device.toString().equals(regDevice)) {
                     final EmgImuManager manager = (EmgImuManager) getBleManager(device);
                     manager.registerEmgPwrCallback(callback);
-                    Log.d(TAG, "Service.registerEmgPwrObserver, (device.getName().equals(regDevice)) manager for device[" + i + "] = " + device.toString());
+                    Log.d(TAG, "Bridge, inside Service.registerEmgPwrObserver, (device.getName().equals(regDevice)) manager for device[" + i + "] = " + device.toString());
                     i++;
                 }
             }

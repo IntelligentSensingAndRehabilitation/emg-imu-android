@@ -22,86 +22,82 @@ import org.sralab.emgimu.service.IEmgImuStreamDataCallback;
 import java.util.Arrays;
 import java.util.Date;
 
+/**
+ * Special Note:
+ * Each time you make a change to this file, do the following (~10 min cycle):
+ * 1. rebuild the project
+ * 2. drag-and-drop "\emg-imu\android\common\build\outputs\aar\common-debug.aar"
+ *      into unity/Assets/Android
+ * 3. build-and-run unity project
+ */
 public class Bridge extends Application
 {
     public static final String TAG = Bridge.class.getSimpleName();
-
-    /** Unity registers the callback to receive messages from android */
-    private PluginCallback callback;
-
-    private final IEmgImuPwrDataCallback.Stub pwrObserver = new IEmgImuPwrDataCallback.Stub() {
-        @Override
-        public void handleData(BluetoothDevice device, EmgPwrData data) throws RemoteException {
-            /*// ########### SPECIAL NOTE ##################################### //
-            // EVERY TIME YOU MAKE CHANGE TO THIS FILE, DO THIS: //
-            // 1. rebuild the project
-            // 2. drag-and-drop "\emg-imu\android\common\build\outputs\aar\common-debug.aar"
-            //      file "common-debug.aar" into unity/assets/android
-            // 3. build-and-run unity project
-            // stick the code logic here*/
-
-            String device_mac = (String) device.toString();
-            Log.d(TAG, "device_mac = " + device_mac + ", len(str) = " + device_mac.length());
-            //Log.d(TAG, "unity_mac = " + unitySelectedDevice + ", len(str) = " + unitySelectedDevice.length());
-
-
-//            if (callback != null) {
-//                if (unitySelectedDevice != null) {
-//                    Log.d(TAG, "Device was selected --> " + unitySelectedDevice);
-//                    Log.d(TAG, "Current Device --> " + device);
-//                    Log.d(TAG, "device.toString()=" + device.toString() + " | unitySelectedDevice=" + unitySelectedDevice);
-//                    Log.d(TAG, "BOOOOOOOOOMM!");
-//                    if (device_mac.equals(unitySelectedDevice))
-//                    {
-//                        Log.d(TAG, "MATCH!!!! " + device_mac + "=" + unitySelectedDevice);
-//                        callback.onSuccess(Integer.toString(data.power[0]));
-//                    }
-///*                    if (device.toString() == unitySelectedDevice)
-//                    {
-//                        Log.d(TAG, "We have a match! --> " + device.toString() + " = " + unitySelectedDevice);
-//                    }*/
-//                }
-//                //callback.onSuccess(Integer.toString(data.power[0]));
-//            }
-        }
-    };
-
-    private final IEmgImuStreamDataCallback.Stub streamObserver  = new IEmgImuStreamDataCallback.Stub() {
-        @Override
-        public void handleData(BluetoothDevice device, EmgStreamData data) {}
-    };
-
+    private PluginCallback callback; // methods accessed through unity games
     private IEmgImuServiceBinder service;
-    private ServiceConnection mServiceConnection = new ServiceConnection() {
-        @SuppressWarnings("unchecked")
-        @Override
-        public void onServiceConnected(final ComponentName name, final IBinder binder) {
-            service = IEmgImuServiceBinder.Stub.asInterface(binder);
-            try {
-                Log.d(TAG, "Managed Devices: " + service.getManagedDevices().toString());
-                callback.sendDeviceList(Arrays.toString(service.getManagedDevices().toArray()));
-
-                // stream data from all sensors
-//                service.registerEmgPwrObserver(pwrObserver);
-                //service.registerEmgStreamObserver(streamObserver);
-            } catch (RemoteException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        @Override
-        public void onServiceDisconnected(final ComponentName name) {
-            service = null;
-        }
-    };
-
-    // These methods get called from Unity
     long startTime;
     String gameName;
     String gameLog;
     private static String gameSelectedDeviceMac;
     private static int gameSelectedDeviceChannel;
 
+    private final IEmgImuPwrDataCallback.Stub pwrObserver = new IEmgImuPwrDataCallback.Stub() {
+        @Override
+        public void handleData(BluetoothDevice device, EmgPwrData data) throws RemoteException {
+            if (callback != null) {
+                Log.d(TAG, "Bridge, callbacks is not null.");
+                if (gameSelectedDeviceMac != null) {
+                    Log.d(TAG, "Bridge, gameSelectedDeviceMac is not null");
+                    callback.onSuccess(Integer.toString(data.power[gameSelectedDeviceChannel]));
+                    Log.d(TAG, "Bridge, device=" +device.toString()
+                            + " | power = " + Integer.toString(data.power[gameSelectedDeviceChannel])
+                            + " | channel = " + gameSelectedDeviceChannel);
+                }
+            }
+//            if(device.toString().equals(gameSelectedDeviceMac)) {
+//                callback.onSuccess(Integer.toString(data.power[gameSelectedDeviceChannel]));
+//                Log.d(TAG, "Bridge, device=" +device.toString()
+//                        + " | power = " + Integer.toString(data.power[gameSelectedDeviceChannel])
+//                        + " | channel = " + gameSelectedDeviceChannel);
+//            }
+        }
+    };
+
+    /**
+     * This field represents the service connection between the game (Unity) and the
+     * Biofeedback App. The important thing to note here is that when the service
+     * connection has been established, the Biofeedback app send to the game (Unity)
+     * a list of sensors, which it maintains. The Config nested application inside
+     * Biofeedback app (first app on the left), contains the list of sensors; new sensors
+     * can be added here or existing sensors can be deleted inside that menu.
+     * If these devices are in proximity the mobile device (phone/tablet), when the game
+     * starts, these sensors automatically will connect to the device - characterized by
+     * the solid-green LED state. When the data is transmitting, there should be both -
+     * a solid-green & a flashing-red LEDs.
+     */
+    private ServiceConnection mServiceConnection = new ServiceConnection() {
+        @SuppressWarnings("unchecked")
+        @Override
+        public void onServiceConnected(final ComponentName name, final IBinder binder) {
+            service = IEmgImuServiceBinder.Stub.asInterface(binder);
+            try {
+                /* Sends the list of devices to the game (unity). */
+                callback.sendDeviceList(Arrays.toString(service.getManagedDevices().toArray()));
+            } catch (RemoteException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        @Override
+        public void onServiceDisconnected(final ComponentName name) {
+            service = null;
+        }
+    };
+
+    /**
+     * This method is called from the game (Unity) to log the data from each trial. Each trial
+     * is characterized by a single pass of the curve on the screen.
+     * @param roundInfo
+     */
     public void logTrial(String roundInfo) {
         // expects to receive something that can be added to a list, which can
         // be serialized to JSON
@@ -118,6 +114,13 @@ public class Bridge extends Application
         }
     }
 
+    /**
+     * This method is called from the game (Unity). When the game first starts, it connects to the
+     * Biofeedback app using the Inter-Process Communication (IPC), through it's AndroidBindings
+     * object.
+     * @param ctx
+     * @param callback
+     */
     public void connectService(final Context ctx, final PluginCallback callback) {
         // This method gets called from Unity, which created the connection
         Log.d(TAG, "connectService");
@@ -155,10 +158,10 @@ public class Bridge extends Application
         Results in [XX:XX:XX:XX:XX:XX, ch-y].
          */
         String[] temp = deviceMacAndChannel.split(" - ");
-        Log.d(TAG, "Bridge, temp.length = " + temp.length);
-        for(int i = 0; i < temp.length; i++) {
-            Log.d(TAG, "Bridge, before: temp[" + i + "]=" + temp[i] + ", length=" + temp[i].length());
-        }
+//        Log.d(TAG, "Bridge, temp.length = " + temp.length);
+//        for(int i = 0; i < temp.length; i++) {
+//            Log.d(TAG, "Bridge, before: temp[" + i + "]=" + temp[i] + ", length=" + temp[i].length());
+//        }
 
         gameSelectedDeviceMac = temp[0];
         /*
@@ -166,15 +169,15 @@ public class Bridge extends Application
         Start with "ch-y", then split it into [ch, y], then take the second element.
          */
         gameSelectedDeviceChannel = Integer.parseInt((temp[1].split("-"))[1]);
-        Log.d(TAG, "Bridge, after: Mac=" + gameSelectedDeviceMac + ", length=" + gameSelectedDeviceMac.length());
-        Log.d(TAG, "Bridge, after: ch=" + gameSelectedDeviceChannel);
+//        Log.d(TAG, "Bridge, after: Mac=" + gameSelectedDeviceMac + ", length=" + gameSelectedDeviceMac.length());
+//        Log.d(TAG, "Bridge, after: ch=" + gameSelectedDeviceChannel);
 
         /*
         Register the power observer for the emg power callback to stream the emg power data.
          */
         try {
             service.registerEmgPwrObserver(gameSelectedDeviceMac, pwrObserver); // pass this to service
-            //service.registerEmgPwrObserver(pwrObserver);
+            Log.d(TAG, "Bridge, called service.registerEmgPwrObserver(mac=" + gameSelectedDeviceMac + ")");
         } catch (RemoteException e) {
             e.printStackTrace();
         }
