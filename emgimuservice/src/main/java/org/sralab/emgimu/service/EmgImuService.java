@@ -166,12 +166,9 @@ public class EmgImuService extends Service implements ConnectionObserver {
             return getBleManager(device).getConnectionState();
         }
 
-        // ############# REGISTER/UNREGISTER CALLBACKS SECTION #########################################
-
-        // (0) deviceUpdateCbs
+        // region Register/Unregister Observers Section
         public void registerDevicesObserver(IEmgImuDevicesUpdatedCallback callback) throws RemoteException {
             deviceUpdateCbs.add(callback);
-            //Log.d(TAG, "emgPwr (0++) registerDevicesObserver triggered!");
         }
 
         @Override
@@ -231,7 +228,6 @@ public class EmgImuService extends Service implements ConnectionObserver {
             }
         }
 
-        // (8) emgStreamCbs
         public void registerEmgStreamObserver(String regDevice, IEmgImuStreamDataCallback callback) throws RemoteException {
             for (final BluetoothDevice device : getManagedDevices()) {
                 if (regDevice == null) {
@@ -257,7 +253,6 @@ public class EmgImuService extends Service implements ConnectionObserver {
             }
         }
 
-        // (2) imuAccelCbs
         @Override
         public void registerImuAccelObserver(String regDevice, IEmgImuSenseCallback callback) {
             for (final BluetoothDevice device : getManagedDevices()) {
@@ -284,7 +279,6 @@ public class EmgImuService extends Service implements ConnectionObserver {
             }
         }
 
-        // (3) imuGyroCbs
         @Override
         public void registerImuGyroObserver(String regDevice, IEmgImuSenseCallback callback) {
             for (final BluetoothDevice device : getManagedDevices()) {
@@ -311,7 +305,6 @@ public class EmgImuService extends Service implements ConnectionObserver {
             }
         }
 
-        // (4) imuMagCbs
         @Override
         public void registerImuMagObserver(String regDevice, IEmgImuSenseCallback callback) {
             for (final BluetoothDevice device : getManagedDevices()) {
@@ -338,7 +331,6 @@ public class EmgImuService extends Service implements ConnectionObserver {
             }
         }
 
-        // (5) imuQuatCbs
         @Override
         public void registerImuQuatObserver(String regDevice, IEmgImuQuatCallback callback) {
             for (final BluetoothDevice device : getManagedDevices()) {
@@ -365,7 +357,6 @@ public class EmgImuService extends Service implements ConnectionObserver {
             }
         }
 
-        // (6) batCbs
         @Override
         public void registerBatObserver(String regDevice, IEmgImuBatCallback callback) throws RemoteException {
             for (final BluetoothDevice device : getManagedDevices()) {
@@ -391,8 +382,7 @@ public class EmgImuService extends Service implements ConnectionObserver {
                 }
             }
         }
-
-        // ############# END OF REGISTER/UNREGISTER CALLBACKS SECTION ##################################
+        // endregion
 
         @Override
         public void storeGameplayRecord(String name, long startTime, String details) throws RemoteException {
@@ -402,9 +392,7 @@ public class EmgImuService extends Service implements ConnectionObserver {
             record.setLogReference(getLoggingReferences());
             record.setStartTime(startTime);
             record.setStopTime(new Date().getTime());
-
             Log.d(TAG, "Storing game play record");
-
             FirebaseGameLogger logger = new FirebaseGameLogger(mBinder);
             logger.writeRecord(record);
         }
@@ -417,7 +405,6 @@ public class EmgImuService extends Service implements ConnectionObserver {
             return liveDevices;
         }
 
-        //! Get battery
         public LiveData<Double> getBattery(final BluetoothDevice device) {
             final EmgImuManager manager = (EmgImuManager) getBleManager(device);
             return manager.getBatteryVoltage();
@@ -441,7 +428,6 @@ public class EmgImuService extends Service implements ConnectionObserver {
             //configureLoggingSavedDevices();
         }
 
-
         public String getUser() {
             if (mCurrentUser != null)
                 return mCurrentUser.getUid();
@@ -458,7 +444,6 @@ public class EmgImuService extends Service implements ConnectionObserver {
                 final EmgImuManager manager = (EmgImuManager) getBleManager(device);
                 references.add(manager.getLoggingRef());
             }
-
             return references;
         }
     }
@@ -716,16 +701,7 @@ public class EmgImuService extends Service implements ConnectionObserver {
     @Override
     public void onDeviceDisconnected(@NonNull final BluetoothDevice device, @DisconnectionReason final int reason) {
         Log.d(TAG, "onDeviceDisconnected: " + device);
-
-        /*
-        // TODO
-		if (!mBinded) {
-			cancelNotification(device);
-			createBackgroundNotification();
-		}
-		*/
 	}
-
 
     @Override
     public void onDeviceReady(BluetoothDevice device) {
@@ -736,7 +712,6 @@ public class EmgImuService extends Service implements ConnectionObserver {
     public void onDeviceDisconnecting(@NonNull BluetoothDevice device) {
         Log.d(TAG, "onDeviceDisconnecting: " + device);
     }
-
 
     /** Connections and device management **/
     private List<BluetoothDevice> managedDevices = new ArrayList<>();
@@ -847,60 +822,6 @@ public class EmgImuService extends Service implements ConnectionObserver {
         return Collections.unmodifiableList(devices);
     }
 
-    /*
-	private void configureLoggingSavedDevices() {
-
-        // Create a new dispatcher using the Google Play driver.
-        FirebaseJobDispatcher dispatcher = new FirebaseJobDispatcher(new GooglePlayDriver(this));
-
-        Log.d(TAG, "Canceling log fetching jobs");
-        dispatcher.cancelAll();
-
-        // Need to access context this way so all apps using service (and with the sharedUserId)
-        // have the same preferences and connect to the same devices
-        Context mContext = null;
-        try {
-            mContext = this.createPackageContext("org.sralab.emgimu", Context.CONTEXT_RESTRICTED);
-        } catch (PackageManager.NameNotFoundException e) {
-            e.printStackTrace();
-        }
-        SharedPreferences sharedPref = mContext.getSharedPreferences(SERVICE_PREFERENCES, Context.MODE_PRIVATE);
-        String deviceList_s = sharedPref.getString(DEVICE_PREFERENCE, "[]");
-
-        try {
-            JSONArray names = new JSONArray(deviceList_s);
-            for (int i = 0; i < names.length(); i++) {
-                Bundle jobInfo = new Bundle();
-                jobInfo.putString("device_mac", names.getString(i));
-
-                Log.d(TAG, "Scheduling log fetching jobs for " + names.getString(i));
-
-                Job myJob = dispatcher.newJobBuilder()
-                        .setService(EmgLogFetchJobService.class)             // the JobService that will be called
-                        .setTag(EmgLogFetchJobService.JOB_TAG + "_" + names.getString(i))               // uniquely identifies the job
-                        .setTrigger(Trigger.executionWindow(LOG_FETCH_PERIOD_MIN_S, LOG_FETCH_PERIOD_MAX_S))
-                        .setLifetime(Lifetime.FOREVER)                       // run after boot
-                        .setRecurring(true)                                  // tasks reoccurs
-                        .setRetryStrategy(RetryStrategy.DEFAULT_LINEAR) // default strategy
-                        .setExtras(jobInfo)                                  // store the mac address
-                        .setReplaceCurrent(true)
-                        .build();
-                int result = dispatcher.schedule(myJob);
-                if (result != FirebaseJobDispatcher.SCHEDULE_RESULT_SUCCESS) {
-                    Log.e(TAG, "Scheduling log fetch failed");
-                    showToast("Unable to schedule log fetching.");
-                    if (BuildConfig.DEBUG)
-                        throw new RuntimeException("Unable to schedule job fetching");
-                } else {
-                    Log.d(TAG, "Job scheduled successfully");
-                }
-            }
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-    }
-    */
-
     /** Core service components **/
     private final BroadcastReceiver bluetoothStateBroadcastReceiver = new BroadcastReceiver() {
         @Override
@@ -923,7 +844,6 @@ public class EmgImuService extends Service implements ConnectionObserver {
             }
         }
     };
-
 
     /**
      * Method called when Bluetooth Adapter has been disabled.
@@ -1096,5 +1016,4 @@ public class EmgImuService extends Service implements ConnectionObserver {
 			name = getString(R.string.emgimu_default_device_name);
 		return name;
 	}
-
 }
