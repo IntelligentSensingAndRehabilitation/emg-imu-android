@@ -158,6 +158,7 @@ public class EmgImuManager extends BleManager {
     //private final static byte OPERATOR_FIRST_RECORD = 5;
     //private final static byte OPERATOR_LAST_RECORD = 6;
 
+    private final int BLE_MSG_HEADER_SIZE = 6; // Used for 2-channel power parsing.
 
     /**
      * The filter type is used for range operators ({@link #OPERATOR_LESS_THEN_OR_EQUAL}, {@link #OPERATOR_GREATER_THEN_OR_EQUAL}, {@link #OPERATOR_WITHING_RANGE}.<br/>
@@ -195,14 +196,7 @@ public class EmgImuManager extends BleManager {
     private String mFirmwareRevision;
     private int mChannels;
 
-    // TODO: Option 1 is to have a hash map with lists of callbacks for each device, somewhat
-    // analagous to the current implementation. The problem with this design is the service is
-    // going to have to keep repeatedly dealing with uncertainty about what the current list of
-    // devices is. I think this is less prefered.
-
-    // TODO: Option 2 is to move this list entirely into the manager and have the service
-    // pass the callback to each manager when they are registered or unregistered.
-    // List of Callbacks for sensor data processing.
+    // region Fields for Callback Section
     private List<IEmgImuPwrDataCallback> emgPwrCbs = new ArrayList<>();
     private List<IEmgImuSenseCallback> imuAccelCbs = new ArrayList<>();
     private List<IEmgImuSenseCallback> imuGyroCbs = new ArrayList<>();
@@ -210,21 +204,23 @@ public class EmgImuManager extends BleManager {
     private List<IEmgImuQuatCallback> imuQuatCbs = new ArrayList<>();
     private List<IEmgImuBatCallback> batCbs = new ArrayList<>();
     private List<IEmgImuStreamDataCallback> emgStreamCbs = new ArrayList<>();
+    // endregion
 
-    // testing for the workaround
-    private IEmgImuPwrDataCallback emgPwrCbsTest;
-
-    private final int BLE_MSG_HEADER_SIZE = 6;
-
-    // ############# REGISTER/UNREGISTER CALLBACKS SECTION #########################################
-
+    // region Register/Unregister Callbacks Section
     public void registerEmgPwrCallback(IEmgImuPwrDataCallback callback)
     {
+        /* Do not duplicate the callback. */
         if (emgPwrCbs.contains(callback)) {
-            Log.d(TAG, "Duplicate callback registered. Exiting");
             return;
         }
         emgPwrCbs.add(callback);
+        /*
+        *  Wait until the sensor is ready, then enable the notification.
+        *  The notification allows the sensor to actual start streaming the data.
+        *  There are 2 pathways to enable the notifications:
+        *   (1) through the game: Bridge-->Service-->Manager (here)
+        *   (2) through the Config app: ViewModel-->Manager & Service
+        */
         if (isReady()) {
             enableEmgPwrNotifications();
         }
@@ -232,132 +228,127 @@ public class EmgImuManager extends BleManager {
 
     public void unregisterEmgPwrCallback(IEmgImuPwrDataCallback callback)
     {
+        /* Order here is important: disable the notification first, then remove it from the list. */
         disableEmgPwrNotifications();
         if (!emgPwrCbs.isEmpty()) {
             emgPwrCbs.remove(callback);
         }
     }
 
-    // (2) imuAccelCbs
-    public void registerImuAccelCallback(IEmgImuSenseCallback callback)
-    {
-        imuAccelCbs.add(callback);
-        if ( isReady() )
-        {
-            enableAccelNotifications();
-        }
-    }
-
-    public void unregisterImuAccelCallback(IEmgImuSenseCallback callback)
-    {
-        imuAccelCbs.remove(callback);
-        // This may require some flag in the future
-        disableAccelNotifications();
-    }
-
-    // (3) imuGyroCbs
-    public void registerImuGyroCallback(IEmgImuSenseCallback callback)
-    {
-        imuGyroCbs.add(callback);
-        if ( isReady() )
-        {
-            enableGyroNotifications();
-        }
-    }
-
-    public void unregisterImuGyroCallback(IEmgImuSenseCallback callback)
-    {
-        imuGyroCbs.remove(callback);
-        // This may require some flag in the future
-        disableGyroNotifications();
-    }
-
-    // (4) imuMagCbs
-    public void registerImuMagCallback(IEmgImuSenseCallback callback)
-    {
-        imuMagCbs.add(callback);
-        if ( isReady() )
-        {
-            enableMagNotifications();
-        }
-    }
-
-    public void unregisterImuMagCallback(IEmgImuSenseCallback callback)
-    {
-        imuMagCbs.remove(callback);
-        // This may require some flag in the future
-        disableMagNotifications();
-    }
-
-    // (5) imuQuatCbs
-    public void registerImuQuatCallback(IEmgImuQuatCallback callback)
-    {
-        imuQuatCbs.add(callback);
-        Log.e(TAG, "IMU Registered HERE!!!");
-        if ( isReady() )
-        {
-            enableAttitudeNotifications(); // assuming Quaternion pairs with Attitude
-        }
-    }
-
-    public void unregisterImuQuatCallback(IEmgImuQuatCallback callback)
-    {
-        imuQuatCbs.remove(callback);
-        // This may require some flag in the future
-        disableAttitudeNotifications(); // assuming Quaternion pairs with Attitude
-    }
-
-    // (6) batCbs
-    public void registerBatCallback(IEmgImuBatCallback callback)
-    {
-        batCbs.add(callback);
-        if ( isReady() )
-        {
-            setNotificationCallback(mBatteryCharacteristic);
-        }
-    }
-
-    public void unregisterBatCallback(IEmgImuBatCallback callback)
-    {
-        batCbs.remove(callback);
-        disableNotifications(mBatteryCharacteristic);
-    }
-
-/*    // (7) deviceUpdateCbs
-    public void registerDeviceUpdateCallback(IEmgImuDevicesUpdatedCallback callback)
-    {
-        deviceUpdateCbs.add(callback);
-        if ( isReady() )
-        {
-            // don't have enableDeviceUpdateNotification()!
-        }
-    }
-
-    public void unregisterDeviceUpdateCallback(IEmgImuDevicesUpdatedCallback callback)
-    {
-        deviceUpdateCbs.remove(callback);
-        // This may require some flag in the future
-            // don't have enableDeviceUpdateNotification()!
-    }*/
-
-    // (8) emgStreamCbs
     public void registerEmgStreamCallback(IEmgImuStreamDataCallback callback)
     {
+        if(emgStreamCbs.contains(callback)) {
+            return;
+        }
         emgStreamCbs.add(callback);
-        if ( isReady() )
-        {
+        if (isReady()) {
             enableEmgBuffNotifications(); // assuming that EmgBuff pairs with emgStreamCbs
         }
     }
 
     public void unregisterEmgStreamCallback(IEmgImuStreamDataCallback callback)
     {
-        emgStreamCbs.remove(callback);
-        // This may require some flag in the future
         disableEmgBuffNotifications(); // assuming that EmgBuff pairs with emgStreamCbs
+        if(!emgStreamCbs.isEmpty()) {
+            emgStreamCbs.remove(callback);
+        }
     }
 
-    // ############# END OF REGISTER/UNREGISTER CALLBACKS SECTION ##################################
+    public void registerImuAccelCallback(IEmgImuSenseCallback callback)
+    {
+        if(imuAccelCbs.contains(callback)) {
+            return;
+        }
+        imuAccelCbs.add(callback);
+        if (isReady()) {
+            enableAccelNotifications();
+        }
+    }
+
+    public void unregisterImuAccelCallback(IEmgImuSenseCallback callback)
+    {
+        disableAccelNotifications();
+        if(!imuAccelCbs.isEmpty()) {
+            imuAccelCbs.remove(callback);
+        }
+    }
+
+    public void registerImuGyroCallback(IEmgImuSenseCallback callback)
+    {
+        if(imuGyroCbs.contains(callback)) {
+            return;
+        }
+        imuGyroCbs.add(callback);
+        if (isReady()) {
+            enableGyroNotifications();
+        }
+    }
+
+    public void unregisterImuGyroCallback(IEmgImuSenseCallback callback)
+    {
+        disableGyroNotifications();
+        if(!imuGyroCbs.isEmpty()) {
+            imuGyroCbs.remove(callback);
+        }
+    }
+
+    public void registerImuMagCallback(IEmgImuSenseCallback callback)
+    {
+        if(imuMagCbs.contains(callback)) {
+            return;
+        }
+        imuMagCbs.add(callback);
+        if (isReady()) {
+            enableMagNotifications();
+        }
+    }
+
+    public void unregisterImuMagCallback(IEmgImuSenseCallback callback)
+    {
+        disableMagNotifications();
+        if(!imuMagCbs.isEmpty()) {
+            imuMagCbs.remove(callback);
+        }
+    }
+
+    public void registerImuQuatCallback(IEmgImuQuatCallback callback)
+    {
+        if(imuQuatCbs.contains(callback)) {
+            return;
+        }
+        imuQuatCbs.add(callback);
+        if (isReady()) {
+            enableAttitudeNotifications(); // assuming Quaternion pairs with Attitude
+        }
+    }
+
+    public void unregisterImuQuatCallback(IEmgImuQuatCallback callback)
+    {
+        disableAttitudeNotifications(); // assuming Quaternion pairs with Attitude
+        if(!imuQuatCbs.isEmpty()) {
+            imuQuatCbs.remove(callback);
+        }
+    }
+
+    public void registerBatCallback(IEmgImuBatCallback callback)
+    {
+        if(batCbs.contains(callback)) {
+            return;
+        }
+        batCbs.add(callback);
+        if (isReady()) {
+            setNotificationCallback(mBatteryCharacteristic);
+        }
+    }
+
+    public void unregisterBatCallback(IEmgImuBatCallback callback)
+    {
+        disableNotifications(mBatteryCharacteristic);
+        if(!batCbs.isEmpty()) {
+            batCbs.remove(callback);
+        }
+    }
+    // endregion
 
     public EmgImuManager(final Context context) {
 		super(context);
