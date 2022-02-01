@@ -35,31 +35,23 @@ public class Bridge extends Application
     public static final String TAG = Bridge.class.getSimpleName();
     private PluginCallback callback; // methods accessed through unity games
     private IEmgImuServiceBinder service;
-    long startTime;
-    String gameName;
-    String gameLog;
-    private static String gameSelectedDeviceMac;
-    private static int gameSelectedDeviceChannel;
+    private long startTime;
+    private String gameName;
+    private String gameLog;
+    private String gameSelectedDeviceMac;
+    private int gameSelectedDeviceChannel;
 
+    /**
+     * Important part to note here is that the parameter data in the Overridden method handleData()
+     * contains an array of emg power, index corresponds to the data channel.
+     * callback.onSuccess() transmits the emgPwr data to the game (Unity).
+     */
     private final IEmgImuPwrDataCallback.Stub pwrObserver = new IEmgImuPwrDataCallback.Stub() {
         @Override
         public void handleData(BluetoothDevice device, EmgPwrData data) throws RemoteException {
-            if (callback != null) {
-                Log.d(TAG, "Bridge, callbacks is not null.");
-                if (gameSelectedDeviceMac != null) {
-                    Log.d(TAG, "Bridge, gameSelectedDeviceMac is not null");
-                    callback.onSuccess(Integer.toString(data.power[gameSelectedDeviceChannel]));
-                    Log.d(TAG, "Bridge, device=" +device.toString()
-                            + " | power = " + Integer.toString(data.power[gameSelectedDeviceChannel])
-                            + " | channel = " + gameSelectedDeviceChannel);
-                }
+            if ((callback != null) && (gameSelectedDeviceMac != null)) {
+                callback.onSuccess(Integer.toString(data.power[gameSelectedDeviceChannel]));
             }
-//            if(device.toString().equals(gameSelectedDeviceMac)) {
-//                callback.onSuccess(Integer.toString(data.power[gameSelectedDeviceChannel]));
-//                Log.d(TAG, "Bridge, device=" +device.toString()
-//                        + " | power = " + Integer.toString(data.power[gameSelectedDeviceChannel])
-//                        + " | channel = " + gameSelectedDeviceChannel);
-//            }
         }
     };
 
@@ -93,6 +85,7 @@ public class Bridge extends Application
         }
     };
 
+    // region Methods Called from the Game (Unity) Section
     /**
      * This method is called from the game (Unity) to log the data from each trial. Each trial
      * is characterized by a single pass of the curve on the screen.
@@ -158,28 +151,18 @@ public class Bridge extends Application
         Results in [XX:XX:XX:XX:XX:XX, ch-y].
          */
         String[] temp = deviceMacAndChannel.split(" - ");
-//        Log.d(TAG, "Bridge, temp.length = " + temp.length);
-//        for(int i = 0; i < temp.length; i++) {
-//            Log.d(TAG, "Bridge, before: temp[" + i + "]=" + temp[i] + ", length=" + temp[i].length());
-//        }
-
         gameSelectedDeviceMac = temp[0];
         /*
         Parsing the channel string and converting it into an integer.
         Start with "ch-y", then split it into [ch, y], then take the second element.
          */
         gameSelectedDeviceChannel = Integer.parseInt((temp[1].split("-"))[1]);
-//        Log.d(TAG, "Bridge, after: Mac=" + gameSelectedDeviceMac + ", length=" + gameSelectedDeviceMac.length());
-//        Log.d(TAG, "Bridge, after: ch=" + gameSelectedDeviceChannel);
-
-        /*
-        Register the power observer for the emg power callback to stream the emg power data.
-         */
+        /* Register the power observer for the emg power callback to stream the emg power data. */
         try {
             service.registerEmgPwrObserver(gameSelectedDeviceMac, pwrObserver); // pass this to service
-            Log.d(TAG, "Bridge, called service.registerEmgPwrObserver(mac=" + gameSelectedDeviceMac + ")");
         } catch (RemoteException e) {
             e.printStackTrace();
         }
     }
+    // endregion
 }
