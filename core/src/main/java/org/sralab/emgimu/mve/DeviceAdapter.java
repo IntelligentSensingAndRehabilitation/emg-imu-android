@@ -22,6 +22,7 @@
 
 package org.sralab.emgimu.mve;
 
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -95,10 +96,21 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
         }
 
 		private void bind(final Device device) {
-            device.getPower().observe(context, value -> power.setCurrentPower(value));
-            device.getMaximum().observe(context, value -> power.setMaxPower(value));
-            device.getMinimum().observe(context, value -> power.setMinPower(value));
+            // Below mtds: the first argument, "context" is the UI activity
+            // Below mtds: the second argument, "value ->..." is the code that updates the UI
+//            device.getPower().observe(context, value -> power.setCurrentPower(value));
+//            device.getMaximum().observe(context, value -> power.setMaxPower(value));
+//            device.getMinimum().observe(context, value -> power.setMinPower(value));
+//            dvm.getRange().observe(context, value -> power.setMaxRange(value));
+
+            // revised methods for 2 channel
+            Log.d(TAG, "DeviceAdapter, device.getPowerList() = " + device.getPowerList().size());
+            device.getPowerList().get(0).observe(context, value -> power.setCurrentPower(value));
+            device.getMaximumList().get(0).observe(context, value -> power.setMaxPower(value));
+            device.getMinimumList().get(0).observe(context, value -> power.setMinPower(value));
             dvm.getRange().observe(context, value -> power.setMaxRange(value));
+//
+
         }
 	}
 }

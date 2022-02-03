@@ -56,9 +56,14 @@ public class DeviceViewModel extends EmgImuViewModel<Device> {
     }
 
     @Override
+//    public void emgPwrUpdated(Device dev, EmgPwrData data) {
+//        dev.setPower(data.power[0]);
+//    }
     public void emgPwrUpdated(Device dev, EmgPwrData data) {
-        dev.setPower(data.power[0]);
+        dev.setPowerList(data.power);
+        Log.d(TAG, "DeviceViewModel, data.power.length=" + data.power.length);
     }
+
 
     @Override
     public Device getDev(BluetoothDevice d) {
