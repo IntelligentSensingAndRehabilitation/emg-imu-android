@@ -30,10 +30,8 @@ import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.nfc.Tag;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -51,12 +49,10 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 
-import org.jetbrains.annotations.NotNull;
 import org.sralab.emgimu.logging.FirebaseEmgLogger;
 import org.sralab.emgimu.logging.FirebaseStreamLogger;
 import org.sralab.emgimu.parser.RecordAccessControlPointParser;
 import org.sralab.emgimu.service.firebase.FirebaseMagCalibration;
-import org.sralab.emgimu.unity_bindings.Bridge;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -440,7 +436,7 @@ public class EmgImuManager extends BleManager {
 
             if(mForceCharacteristic != null) {
                 enableNotifications(mForceCharacteristic)
-                        .before(device -> setNotificationCallback(mForceCharacteristic).with((_device, data) -> parseForce(_device, data)))
+                        .before(device -> setNotificationCallback(mForceCharacteristic).with((_device, data) -> parseForceMeterBLECharacteristic(_device, data)))
                         .done(device -> log(Log.DEBUG, "Force characteristic notification enabled"))
                         .fail((d, status) -> log(Log.DEBUG, "Failed to enable force characteristic notification"))
                         .enqueue();
@@ -690,70 +686,56 @@ public class EmgImuManager extends BleManager {
     TimestampResolved emgStreamResolver = new TimestampResolved(EMG_FS, "EmgStream").setAlias(256);
 
     /**
-     * This method parses the EMG power value from a Bluetooth LE message
-     * sent from wearable sensors.
-     * This method enables several other methods, which are responsible for the following:
-     *  - plotting the power curve in the Config
-     *  - sending the data to the database
-     * @param device - Specific sensor connected via Bluetooth LE, recognized by it's MAC address.
-     * @param characteristic - Bluetooth LE message received from the wearable sensor.
-     *                       - The structure of the message (format) is as follows:
-     *                          -  Byte 0-5: header
-     *                              - Byte 0: format
-     *                                  - bit 0-3: reserved
-     *                                  - bit 4-7: number of channels
-     *                              - Byte 1: packet counter
-     *                              - Byte 2-5: timestamp
-     *                          - Byte 6-onwards: power data for each channel,
-     *                                            each channel takes 2-bytes of data,
-     *                                            16-bit resolution
-     *                                            starting with LSB in it's first byte
-     * Example 1, when the sensor sends 1 channel of data, the total message will contain:
-     *   - Byte 0-5: header
-     *   - Byte 6: channel 0 LSB
-     *   - Byte 7: channel 0 MSB
+     * @brief   This method parses the EMG power value from a Bluetooth LE message
+     *          sent from wearable sensors.
+     * @details This method enables several other methods, which are responsible for the following:
+     *              - Plotting the power curve in the Config.
+     *              - Sending the data to the database.
      *
-     * Example 2, when the sensor sends 2 channels of data, the total message will contain:
-     *   - Byte 0-5: header
-     *   - Byte 6: channel 0 LSB
-     *   - Byte 7: channel 0 MSB
-     *   - Byte 8: channel 1 LSB
-     *   - Byte 9: channel 1 MSB
+     *          The structure of the message (format) is as follows:
+     *              - Byte 0-5: header:
+     *                  - Byte 0: format
+     *                      - bit 0-3: reserved
+     *                      - bit 4-7: number of channels
+     *                  - Byte 1: packet counter
+     *                  - Byte 2-5: timestamp
+     *                  - Byte 6-onward: power data for each channel, each channel takes 2-bytes
+     *                    of data, 16-bit resolution starting with LSB in it's first byte
+     * @implNote The following are 2 examples of data contained in the characteristic parameter.
+     *              Example 1, when the sensor sends 1 channel of data, the total message will contain:
+     *              - Byte 0-5: header
+     *              - Byte 6: channel 0 LSB
+     *              - Byte 7: channel 0 MSB
+     *
+     *              Example 2, when the sensor sends 2 channels of data, the total message will contain:
+     *              - Byte 0-5: header
+     *              - Byte 6: channel 0 LSB
+     *              - Byte 7: channel 0 MSB
+     *              - Byte 8: channel 1 LSB
+     *              - Byte 9: channel 1 MSB
+     * @param device            Specific sensor connected via Bluetooth LE, recognized by it's MAC address.
+     * @param characteristic    Bluetooth LE message received from the wearable sensor. See details
+     *                          for format.
      */
     private void parseEmgPwr(BluetoothDevice device,  Data characteristic) {
-        int formatUINT8 = BluetoothGattCharacteristic.FORMAT_UINT8;
-        int formatUINT32 = BluetoothGattCharacteristic.FORMAT_UINT32;
-        @SuppressLint("WrongConstant")
-        int expectedNumberOfChannels = characteristic.getIntValue(formatUINT8, 0) >> 4;
-        int calculatedNumberOfChannels = (characteristic.size() - BLE_MSG_HEADER_SIZE) / 2;
-        @SuppressLint("WrongConstant")
-        int counter = characteristic.getIntValue(formatUINT8, 1);
-        @SuppressLint("WrongConstant")
-        long timestamp = characteristic.getIntValue(formatUINT32, 2);
+        int expectedNumberOfChannels = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0) >> 4;
+        int counter = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1);
+        long timestamp = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 2);
         timestamp = timestampToReal(timestamp);
-        long ts_ms = emgPwrResolver.resolveTime(counter, timestamp, 1);
-        int[] pwrArray = new int[expectedNumberOfChannels];
+        long timestamp_ms = emgPwrResolver.resolveTime(counter, timestamp, 1);
+        int[] EMGPowerChannels = new int[expectedNumberOfChannels]; // EMGPowerChannels <-- revise
 
-        // Parses the characteristic array for the emgPwr and packes it into n-dim array.
-        for(int i = BLE_MSG_HEADER_SIZE; i < characteristic.size(); i = i + 2) {
-            @SuppressLint("WrongConstant")
-            final int remainder = characteristic.getIntValue(formatUINT8, i);
-            @SuppressLint("WrongConstant")
-            final int quotient = characteristic.getIntValue(formatUINT8, i + 1);
-            final int pwrVal = quotient * 256 + remainder;
-            pwrArray[(i - BLE_MSG_HEADER_SIZE) / 2 ] = pwrVal;
+        // Parses the characteristic array for the emgPwr and packs it into n-dim array.
+        for(int messageIndex=BLE_MSG_HEADER_SIZE, channelIndex=0; messageIndex<characteristic.size(); messageIndex+=2, channelIndex++) {
+            EMGPowerChannels[channelIndex] = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, messageIndex); // break this out, make new loop and index
         }
 
         // Sends the data to the rest of the application.
-        onEmgPwrReceived(device, ts_ms, expectedNumberOfChannels, pwrArray);
-
-        for (int j = 0; j < pwrArray.length; j++) {
-            Log.d(TAG, "parseEmgPwr -->  ch-" + j + "_pwr = " + pwrArray[j]);
-        }
+        onEmgPwrReceived(device, timestamp_ms, expectedNumberOfChannels, EMGPowerChannels);
 
         // Saves data to a .json log file locally on device & transmits the data to the cloud.
         if (mLogging && streamLogger != null) {
-            streamLogger.addPwrSample(new Date().getTime(), timestamp, counter, pwrArray);
+            streamLogger.addPwrSample(new Date().getTime(), timestamp, counter, EMGPowerChannels);
         }
     }
 
@@ -941,31 +923,22 @@ public class EmgImuManager extends BleManager {
         }
     }
 
-    private void parseForce(BluetoothDevice device,  Data characteristic) {
-        final byte [] buffer = characteristic.getValue();
+    /**
+     * This method transformes force meter BLE characteristic into a packaged messaged.
+     * @param device            MAC address of the BLE device (force meter).
+     * @param characteristic    Force measurement value.
+     */
+    private void parseForceMeterBLECharacteristic(BluetoothDevice device, Data characteristic) {
+        long timestamp_ms = new Date().getTime();
+        mForce = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, 3);
 
-        if (buffer.length < 1) {
-            log(Log.INFO, "parseForce is empty!");
-            return;
-
-        }
-        final int counterQuotient = buffer[1] & 0xFF; // byte comes in signed, need it unsigned
-        final int counterRemainder = buffer[2] & 0xFF;
-        final int forceQuotient = buffer[3] & 0xFF;
-        final int forceRemainder = buffer[4] & 0xFF;
-
-        int counter = 256 * counterQuotient + counterRemainder;
-        int force_val = 256 * forceQuotient + forceRemainder;
-
-        long ts_ms = new Date().getTime();
-        mForce = force_val;
-
-        //onEmgPwrReceived(device, ts_ms, mForce * 10);
+        //TODO create separate data handling method for the force meter
+        //onEmgPwrReceived(device, timestamp_ms, mForce * 10);
 
         // logging to firebase db
         if (mLogging && streamLogger != null) {
             double [] data = {(double) mForce};
-            streamLogger.addForceSample(ts_ms, data);
+            streamLogger.addForceSample(timestamp_ms, data);
         }
     }
 
@@ -1652,33 +1625,30 @@ public class EmgImuManager extends BleManager {
     }
 
     /**
-     * This method packages the emgPwr from each sensor channel into a single data structure
-     * called EmgPwrData, which is defined in the EmgPwrData.aidl as a parcelable, which is
-     * consumed by the IEmgImuPwrDataCallback.aidl as an "in" parameter, indicating that
-     * the data flow is from the client to the server. Primarily, this method calls handleData()
-     * method implemented in the EmgImuViewModel.
-     * @param device - MAC address of the sensor.
-     * @param ts_ms - timestamp in milliseconds of the data packet.
-     * @param channelCount - the total number of channels of the emgPwr value.
-     * @param values - an array, zero indexed, of emgPwr value in mV * s, corresponding to
-     *               each channel. Generated by the waveform algorithm in firmware. It is not
-     *               particularly - designed to reasonably fill the UINT16 range.
+     * @brief   This method packages the emgPwr from each sensor channel.
+     * @details The data is packaged int EmgPwrData data structure defined in the EmgPwrData.aidl
+     *          as a parcelable, which is consumed by the IEmgImuPwrDataCallback.aidl as an
+     *          "in" parameter, indicating that the data flow is from the client to the server.
+     *          Primarily, this method calls handleData() method implemented in the EmgImuViewModel.
+     * @param device            MAC address of the sensor.
+     * @param timestamp_ms      timestamp in milliseconds of the data packet.
+     * @param channelCount      the total number of channels of the emgPwr value.
+     * @param EMGPowerValues    an array, zero indexed, of emgPwr value in mV * s, corresponding to
+     *                          each channel. Generated by the waveform algorithm in firmware. It is not
+     *                          particularly - designed to reasonably fill the UINT16 range.
      */
-    public void onEmgPwrReceived(final BluetoothDevice device, long ts_ms, int channelCount, int[] values)
+    public void onEmgPwrReceived(final BluetoothDevice device, long timestamp_ms, int channelCount, int[] EMGPowerValues)
     {
-        EmgPwrData dataMsg = new EmgPwrData();
-        dataMsg.channels = channelCount;
-        dataMsg.power = new int[channelCount];
-        for (int i = 0; i < channelCount; i++) {
-            dataMsg.power[i] = values[i];
+        EmgPwrData dataMessage = new EmgPwrData();
+        dataMessage.channels = channelCount;
+        dataMessage.power = new int[channelCount];
+        for (int channelIndex = 0; channelIndex < channelCount; channelIndex++) {
+            dataMessage.power[channelIndex] = EMGPowerValues[channelIndex];
         }
-        dataMsg.ts = ts_ms;
-
+        dataMessage.ts = timestamp_ms;
         for (IEmgImuPwrDataCallback cb : emgPwrCbs) {
             try {
-                Log.d(TAG, "Calling pwr callback for " + device);
-                //Log.d(TAG, "unity_selected_device=" + Bridge.unitySelectedDevice);
-                cb.handleData(device, dataMsg);
+                cb.handleData(device, dataMessage);
             } catch (RemoteException e) {
                 e.printStackTrace();
             }
