@@ -60,7 +60,7 @@ public class DeviceViewModel extends EmgImuViewModel<Device> {
 //        dev.setPower(data.power[0]);
 //    }
     public void emgPwrUpdated(Device dev, EmgPwrData data) {
-        dev.setPowerList(data.power);
+        dev.setPower(data.power);
         Log.d(TAG, "DeviceViewModel, data.power.length=" + data.power.length);
     }
 

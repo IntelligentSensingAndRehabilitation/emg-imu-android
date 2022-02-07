@@ -30,61 +30,32 @@ public class Device {
         return power;
     }
 
-    private List<MutableLiveData<Double>> powerList = new ArrayList<>();
-    public List<MutableLiveData<Double>> getPowerList() { return powerList; }
-    private List<MutableLiveData<Double>> minimumList = new ArrayList<>();
-    public List<MutableLiveData<Double>> getMinimumList() { return minimumList; }
-    private List<MutableLiveData<Double>> maximumList = new ArrayList<>();
-    public List<MutableLiveData<Double>> getMaximumList() { return maximumList; }
-    private int channelCount;
+    private MutableLiveData<Double>[] minimumTwoChannel = new MutableLiveData[] {new MutableLiveData(Double.MAX_VALUE), new MutableLiveData(Double.MAX_VALUE)};
+    public LiveData<Double>[] getMinimumTwoChannel() { return minimumTwoChannel; }
+    private MutableLiveData<Double>[] maximumTwoChannel = new MutableLiveData[] {new MutableLiveData(Double.MIN_VALUE), new MutableLiveData(Double.MIN_VALUE)};
+    public LiveData<Double>[] getMaximumTwoChannel() { return maximumTwoChannel; }
+    private MutableLiveData<Double>[] powerTwoChannel = new MutableLiveData[] {new MutableLiveData(0.0), new MutableLiveData(0.0)};
+    public LiveData<Double>[] getPowerTwoChannel() { return powerTwoChannel; }
 
-    public void setPowerList(int[] powerData) {
-        // initial conditions
-        powerList.clear();
-        minimumList.clear();
-        maximumList.clear();
-        for (int i = 0; i < powerData.length; i++) {
-            powerList.add(power);
-            minimumList.add(minimum);
-            maximumList.add(maximum);
-        }
-        Log.d(TAG, "Device powerList.size() = " + powerList.size());
-        // Smooth inputs
-        final double LPF_ALPHA = 0.025;
-        channelCount = powerData.length;
-        Log.d(TAG, "Device powerData.length = " + powerData.length);
-        for (int i = 0; i < powerData.length; i++) {
-            double smooth_power = this.powerList.get(i).getValue() * (1-LPF_ALPHA) + ((double) powerData[i]) * LPF_ALPHA;
-            this.powerList.get(i).postValue(smooth_power);
-            if (smooth_power > maximumList.get(i).getValue())
-                maximumList.get(i).postValue(smooth_power);
-            if (smooth_power < minimumList.get(i).getValue())
-                minimumList.get(i).postValue(smooth_power);
-        }
-    }
-
-    public void resetList(int channelCount) {
-        for (int i = 0; i < channelCount; i++) {
-            minimumList.get(i).postValue(Double.MAX_VALUE);
-            maximumList.get(i).postValue(Double.MIN_VALUE);
-        }
-    }
-
-    public void setPower(int power)
+    public void setPower(int[] power)
     {
-        // Smooth inputs
         final double LPF_ALPHA = 0.025;
-        double smooth_power = this.power.getValue() * (1-LPF_ALPHA) + ((double) power) * LPF_ALPHA;
+        for (int channelIndex=0; channelIndex<power.length; channelIndex++) {
+            // Smooth inputs
+            double smooth_power = this.powerTwoChannel[channelIndex].getValue() * (1-LPF_ALPHA) + ((double) power[channelIndex]) * LPF_ALPHA;
 
-        this.power.postValue(smooth_power);
-        if (smooth_power > maximum.getValue())
-            maximum.postValue(smooth_power);
-        if (smooth_power < minimum.getValue())
-            minimum.postValue(smooth_power);
+            this.powerTwoChannel[channelIndex].postValue(smooth_power);
+            if (smooth_power > maximumTwoChannel[channelIndex].getValue())
+                maximumTwoChannel[channelIndex].postValue(smooth_power);
+            if (smooth_power < minimumTwoChannel[channelIndex].getValue())
+                minimumTwoChannel[channelIndex].postValue(smooth_power);
+        }
     }
 
     public void reset() {
-        minimum.postValue(Double.MAX_VALUE);
-        maximum.postValue(Double.MIN_VALUE);
+        for (int channelIndex=0; channelIndex<minimumTwoChannel.length; channelIndex++) {
+            minimumTwoChannel[channelIndex].postValue(Double.MAX_VALUE);
+            maximumTwoChannel[channelIndex].postValue(Double.MIN_VALUE);
+        }
     }
 }

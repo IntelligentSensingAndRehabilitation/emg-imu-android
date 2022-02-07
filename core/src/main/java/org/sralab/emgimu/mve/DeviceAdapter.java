@@ -74,14 +74,32 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
         recyclerView.setItemAnimator(new DefaultItemAnimatorNoChange());
     }
 
+    /**
+     * @brief   This method binds each channel of each device to the View.
+     * @details When the user first opens the Max Activity menu,
+     *          This method will show, device 0, channel 0; thus, only a single view is created.
+     *          When the user swipes right-to-left, each subsequent View is created.
+     * from left-to-right, device
+     * @param holder
+     * @param position
+     */
 	@Override
 	public void onBindViewHolder(final ViewHolder holder, final int position) {
-	    holder.bind(devices.getValue().get(position));
+	    holder.bind(devices.getValue().get(position / 2), position % 2);
+	    Log.d(TAG, "DeviceAdapter: (position / 2) =" +(position / 2));
+        Log.d(TAG, "DeviceAdapter: (position % 2) =" +(position % 2));
 	}
 
+    /**
+     * @brief       This method tells the RecyclerView how many items it should be able to display.
+     * @details     This method is required for RecyclerView to function properly. How many potential
+     *              items it should display, but it may make less ViewHolders then that number.
+     * @return      Number of devices times number of channels, connected to the app.
+     */
     @Override
 	public int getItemCount() {
-		return devices.getValue().size();
+        int numberOfChannels = 2;
+		return devices.getValue().size() * numberOfChannels;
 	}
 
 
@@ -95,22 +113,19 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
 
         }
 
-		private void bind(final Device device) {
+        /**
+         * This method is responsible for displaying the actual data for each RecyclerView
+         * @param device    Class that represents the BLE device.
+         * @param channel   Represents the channel of the EMG power data streaming.
+         */
+		private void bind(final Device device, int channel) {
             // Below mtds: the first argument, "context" is the UI activity
             // Below mtds: the second argument, "value ->..." is the code that updates the UI
-//            device.getPower().observe(context, value -> power.setCurrentPower(value));
-//            device.getMaximum().observe(context, value -> power.setMaxPower(value));
-//            device.getMinimum().observe(context, value -> power.setMinPower(value));
-//            dvm.getRange().observe(context, value -> power.setMaxRange(value));
-
-            // revised methods for 2 channel
-            Log.d(TAG, "DeviceAdapter, device.getPowerList() = " + device.getPowerList().size());
-            device.getPowerList().get(0).observe(context, value -> power.setCurrentPower(value));
-            device.getMaximumList().get(0).observe(context, value -> power.setMaxPower(value));
-            device.getMinimumList().get(0).observe(context, value -> power.setMinPower(value));
+            device.getPowerTwoChannel()[channel].observe(context, value -> power.setCurrentPower(value));
+            device.getMaximumTwoChannel()[channel].observe(context, value -> power.setMaxPower(value));
+            device.getMinimumTwoChannel()[channel].observe(context, value -> power.setMinPower(value));
             dvm.getRange().observe(context, value -> power.setMaxRange(value));
-//
-
+            Log.d(TAG, "DeviceAdapter, calling bind method for device = " + device.getAddress() + ", channel = " +channel);
         }
 	}
 }
