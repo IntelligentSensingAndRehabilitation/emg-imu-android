@@ -26,6 +26,8 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.LifecycleOwner;
@@ -34,6 +36,7 @@ import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.RecyclerView;
 
 import org.sralab.emgimu.config.R;
+import org.w3c.dom.Text;
 
 import java.util.List;
 
@@ -44,8 +47,14 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
     private LifecycleOwner context;
 	private final LiveData<List<Device>> devices;
 	private DeviceViewModel dvm;
+	TextView deviceTextView;
+	private String deviceAndChannelName = new String();
+    public String getDeviceAndChannelName() {
+        return deviceAndChannelName;
+    }
+    public void setDeviceAndChannelName(String name) { this.deviceAndChannelName = name;}
 
-	public DeviceAdapter(LifecycleOwner context, DeviceViewModel dvm) {
+    public DeviceAdapter(LifecycleOwner context, DeviceViewModel dvm) {
 	    this.dvm = dvm;
         dvm.getDevicesLiveData().observe(context, devices -> notifyDataSetChanged());
 
@@ -86,8 +95,9 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
 	@Override
 	public void onBindViewHolder(final ViewHolder holder, final int position) {
 	    holder.bind(devices.getValue().get(position / 2), position % 2);
-	    Log.d(TAG, "DeviceAdapter: (position / 2) =" +(position / 2));
+/*	    Log.d(TAG, "DeviceAdapter: (position / 2) =" +(position / 2));
         Log.d(TAG, "DeviceAdapter: (position % 2) =" +(position % 2));
+        //deviceAndChannelName =*/
 	}
 
     /**
@@ -106,11 +116,12 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
 	public class ViewHolder extends RecyclerView.ViewHolder {
 
 	    EmgPowerView power;
+	    EditText channelName;
 
         public ViewHolder(final View itemView) {
 			super(itemView);
 			power = itemView.findViewById(R.id.emg_power_view);
-
+			channelName = itemView.findViewById(R.id.emg_sensor_name);
         }
 
         /**
@@ -125,6 +136,7 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
             device.getMaximumTwoChannel()[channel].observe(context, value -> power.setMaxPower(value));
             device.getMinimumTwoChannel()[channel].observe(context, value -> power.setMinPower(value));
             dvm.getRange().observe(context, value -> power.setMaxRange(value));
+            channelName.setText(device.getAddress() + " " + channel);
             Log.d(TAG, "DeviceAdapter, calling bind method for device = " + device.getAddress() + ", channel = " +channel);
         }
 	}
