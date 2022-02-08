@@ -1,5 +1,7 @@
 package org.sralab.emgimu.streaming;
 
+import android.util.Log;
+
 import androidx.lifecycle.LiveData;
 
 import org.sralab.emgimu.visualization.GraphData;
@@ -84,6 +86,9 @@ public class Device {
                     filteredVoltage[ch][s] = filter.get(ch).update(voltage[ch][s]);
                 }
             }
+            Log.d(TAG, "streaming, Device, noChannels = " + channels +
+                    " | filteredVoltage[0] = " + (int)filteredVoltage[0][0] +
+                    " | filteredVoltage[1] = " + (int)filteredVoltage[1][0]);
 
             for (int s = 0; s < samples; s++) {
                 timestamp[s] = timestamp[s] - t0;

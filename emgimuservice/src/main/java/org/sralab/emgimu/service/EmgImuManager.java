@@ -730,6 +730,12 @@ public class EmgImuManager extends BleManager {
             EMGPowerChannels[channelIndex] = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, messageIndex); // break this out, make new loop and index
         }
 
+        int tempPower0 = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 6) +
+                characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 7) * 256;
+        int tempPower1 = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 8) +
+                characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 9) * 256;
+        Log.d(TAG, "parseEmgPwr, characteristic.size() = " + characteristic.size() + " - ch[0] = " + tempPower0 + " | ch[1] = " + tempPower1);
+
         // Sends the data to the rest of the application.
         onEmgPwrReceived(device, timestamp_ms, expectedNumberOfChannels, EMGPowerChannels);
 
