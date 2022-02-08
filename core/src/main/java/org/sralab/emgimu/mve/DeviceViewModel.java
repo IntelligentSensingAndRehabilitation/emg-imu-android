@@ -61,6 +61,8 @@ public class DeviceViewModel extends EmgImuViewModel<Device> {
 //    }
     public void emgPwrUpdated(Device dev, EmgPwrData data) {
         dev.setPower(data.power);
+        Log.d(TAG, "DeviceViewModel, emgPwrUpdated --> data.power[0] = " + data.power[0]
+                + "| data.power[1] = " + data.power[1]);
         Log.d(TAG, "DeviceViewModel, data.power.length=" + data.power.length);
     }
 

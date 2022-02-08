@@ -39,6 +39,7 @@ public class Device {
 
     public void setPower(int[] power)
     {
+        Log.d(TAG, "Device, power[0] = " + power[0] + "| power[1] = " + power[1]);
         final double LPF_ALPHA = 0.025;
         for (int channelIndex=0; channelIndex<power.length; channelIndex++) {
             // Smooth inputs
@@ -49,6 +50,8 @@ public class Device {
                 maximumTwoChannel[channelIndex].postValue(smooth_power);
             if (smooth_power < minimumTwoChannel[channelIndex].getValue())
                 minimumTwoChannel[channelIndex].postValue(smooth_power);
+            Log.d(TAG, "Device, setPower(), ch-" + channelIndex + "= "
+                    + powerTwoChannel[channelIndex].getValue());
         }
     }
 

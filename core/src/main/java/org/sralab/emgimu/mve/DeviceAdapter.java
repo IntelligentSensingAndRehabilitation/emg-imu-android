@@ -36,7 +36,6 @@ import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.RecyclerView;
 
 import org.sralab.emgimu.config.R;
-import org.w3c.dom.Text;
 
 import java.util.List;
 
@@ -116,12 +115,12 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
 	public class ViewHolder extends RecyclerView.ViewHolder {
 
 	    EmgPowerView power;
-	    EditText channelName;
+	    EditText deviceAndChannelNameWidget;
 
         public ViewHolder(final View itemView) {
 			super(itemView);
 			power = itemView.findViewById(R.id.emg_power_view);
-			channelName = itemView.findViewById(R.id.emg_sensor_name);
+			deviceAndChannelNameWidget = itemView.findViewById(R.id.emg_sensor_name);
         }
 
         /**
@@ -130,13 +129,32 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
          * @param channel   Represents the channel of the EMG power data streaming.
          */
 		private void bind(final Device device, int channel) {
+		    String deviceAddress = device.getAddress();
+		    String deviceAbbreviatedAddress = "sensor-" + deviceAddress.substring(0, 2);
+		    String deviceAndChannelName = deviceAbbreviatedAddress + " - ch-" + channel;
+
             // Below mtds: the first argument, "context" is the UI activity
             // Below mtds: the second argument, "value ->..." is the code that updates the UI
+
+            // Notes on lambda expression:
+            // before -> operator: "value", in this case, is the parameter
+            // after  -> operator: "power.setCurrentPower(value), in this case, is the action
+            // So, instead of sending in the object with some action, we're sending in
+            // the action itself. Single action can be on just one line.
+            // We're using the lambda to pass in the implementation.
+            // Gives you the ability to make lambda implementations into objects like any other,
+            // that can be saved into variables and passed into methods as parameters.
+
+            // We call observe on the live data and pass in the UI (1st arg), lambda exp to update UI
+
             device.getPowerTwoChannel()[channel].observe(context, value -> power.setCurrentPower(value));
             device.getMaximumTwoChannel()[channel].observe(context, value -> power.setMaxPower(value));
             device.getMinimumTwoChannel()[channel].observe(context, value -> power.setMinPower(value));
             dvm.getRange().observe(context, value -> power.setMaxRange(value));
-            channelName.setText(device.getAddress() + " " + channel);
+            deviceAndChannelNameWidget.setText(deviceAndChannelName);
+            Log.d(TAG, "DeviceAdapter, device: " + device.getAddress()
+                    + " | ch0:" + device.getPowerTwoChannel()[0].getValue()
+                    + " | ch1:" + device.getPowerTwoChannel()[1].getValue());
             Log.d(TAG, "DeviceAdapter, calling bind method for device = " + device.getAddress() + ", channel = " +channel);
         }
 	}

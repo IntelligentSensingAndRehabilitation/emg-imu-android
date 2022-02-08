@@ -165,6 +165,8 @@ public abstract class EmgImuViewModel <T> extends AndroidViewModel {
                 return;
             }
             emgPwrUpdated(dev, data);
+            Log.d(TAG, "EmgImuViewModel, pwrObserver --> data.power[0] = " + data.power[0] +
+                    " | data.power[1] = " + data.power[1]);
         }
     };
 

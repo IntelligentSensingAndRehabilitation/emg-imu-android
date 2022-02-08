@@ -728,6 +728,7 @@ public class EmgImuManager extends BleManager {
         // Parses the characteristic array for the emgPwr and packs it into n-dim array.
         for(int messageIndex=BLE_MSG_HEADER_SIZE, channelIndex=0; messageIndex<characteristic.size(); messageIndex+=2, channelIndex++) {
             EMGPowerChannels[channelIndex] = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, messageIndex); // break this out, make new loop and index
+            Log.d(TAG, "EmgImuManager, parseEmgPwr, power[" + channelIndex + "] = " + EMGPowerChannels[channelIndex]);
         }
 
         int tempPower0 = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 6) +
