@@ -701,7 +701,7 @@ public class EmgImuManager extends BleManager {
      *                  - Byte 2-5: timestamp
      *                  - Byte 6-onward: power data for each channel, each channel takes 2-bytes
      *                    of data, 16-bit resolution starting with LSB in it's first byte
-     * @implNote The following are 2 examples of data contained in the characteristic parameter.
+     * @note    The following are 2 examples of data contained in the characteristic parameter.
      *              Example 1, when the sensor sends 1 channel of data, the total message will contain:
      *              - Byte 0-5: header
      *              - Byte 6: channel 0 LSB
