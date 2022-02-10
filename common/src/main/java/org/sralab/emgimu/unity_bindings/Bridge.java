@@ -96,6 +96,7 @@ public class Bridge extends Application
         // be serialized to JSON
         if (gameLog == null || gameLog.length() == 0) {
             gameLog = "[" + roundInfo + "]";
+            Log.d(TAG, "Bridge, Unity roundInfo = " + roundInfo);
         } else {
             gameLog = gameLog.substring(0, gameLog.length() - 1) + ", " + roundInfo + "]";
         }
