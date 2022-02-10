@@ -21,6 +21,7 @@
  */
 package org.sralab.emgimu.config;
 
+import android.Manifest;
 import android.bluetooth.BluetoothDevice;
 import android.content.Intent;
 import android.net.Uri;
@@ -33,6 +34,9 @@ import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.core.app.ActivityCompat;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -60,18 +64,13 @@ public class ConfigActivity extends EmgImuBaseActivity implements ScannerFragmen
 		setContentView(R.layout.activity_config_emgimu);
 		setGUI();
 
-		// TODO: this may need to be reverted but testing for now.
-		if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-			Intent intent = new Intent();
-			String packageName = getPackageName();
-			PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);
-			if (!pm.isIgnoringBatteryOptimizations(packageName)) {
-				intent.setAction(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
-				intent.setData(Uri.parse("package:" + packageName));
-				startActivity(intent);
-			}
-		}
+		final ActivityResultLauncher<String[]> requestPermissions =
+				registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), null);
 
+		requestPermissions.launch(new String[] {
+				Manifest.permission.BLUETOOTH_SCAN,
+				Manifest.permission.BLUETOOTH_CONNECT,
+		});
 
 		dvm = new ViewModelProvider(this, ViewModelProvider.AndroidViewModelFactory.getInstance(getApplication())).get(DeviceViewModel.class);
 		mDevicesView.setAdapter(mAdapter = new DeviceAdapter(this, dvm));
