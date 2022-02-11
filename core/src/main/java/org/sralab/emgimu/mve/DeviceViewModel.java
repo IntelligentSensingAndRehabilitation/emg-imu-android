@@ -36,6 +36,7 @@ public class DeviceViewModel extends EmgImuViewModel<Device> {
 
     private class MvcSensor {
         String address;
+        int channel;
         float maximum;
         float minimum;
     }
@@ -86,9 +87,13 @@ public class DeviceViewModel extends EmgImuViewModel<Device> {
 
         for (final Device d: getDevicesLiveData().getValue()) {
             MvcSensor sensor = new MvcSensor();
+
             sensor.address = d.getAddress();
-            sensor.maximum = d.getMaximum().getValue().floatValue();
-            sensor.minimum = d.getMinimum().getValue().floatValue();
+            for (int i = 0; i < 2; i++) {
+                sensor.channel = i;
+                sensor.maximum = d.getMaximumTwoChannel()[i].getValue().floatValue();
+                sensor.minimum = d.getMinimumTwoChannel()[i].getValue().floatValue();
+            }
             trial.sensors.add(sensor);
         }
 
