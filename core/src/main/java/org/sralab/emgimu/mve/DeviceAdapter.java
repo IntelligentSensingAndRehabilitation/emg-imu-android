@@ -152,6 +152,7 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
             device.getMinimumTwoChannel()[channel].observe(context, value -> power.setMinPower(value));
             dvm.getRange().observe(context, value -> power.setMaxRange(value));
             deviceAndChannelNameWidget.setText(deviceAndChannelName);
+            dvm.setChannelNumber(channel);
             Log.d(TAG, "DeviceAdapter, device: " + device.getAddress()
                     + " | ch0:" + device.getPowerTwoChannel()[0].getValue()
                     + " | ch1:" + device.getPowerTwoChannel()[1].getValue());
