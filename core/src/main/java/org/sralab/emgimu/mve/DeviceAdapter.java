@@ -26,6 +26,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
@@ -120,6 +121,16 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
 			super(itemView);
 			power = itemView.findViewById(R.id.emg_power_view);
 			deviceAndChannelNameWidget = itemView.findViewById(R.id.sensorNameAndChannel);
+
+			Button mClearMaxButton = itemView.findViewById(R.id.clear_max_button);
+            mClearMaxButton.setOnClickListener(view -> dvm.reset());
+
+            Button mSaveMaxButton = itemView.findViewById(R.id.save_max_button);
+            mSaveMaxButton.setOnClickListener(view -> {
+                dvm.saveMvc();
+                dvm.reset();
+            });
+
         }
 
         /**

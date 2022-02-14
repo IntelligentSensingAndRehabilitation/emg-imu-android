@@ -82,6 +82,7 @@ public class DeviceViewModel extends EmgImuViewModel<Device> {
 
     public void saveMvc() {
 
+        Log.d(TAG, "dvm, Save MVC button was pressed");
         MvcTrial trial = new MvcTrial();
         trial.timestamp = new Date().getTime();
         trial.sensors = new ArrayList<>();
