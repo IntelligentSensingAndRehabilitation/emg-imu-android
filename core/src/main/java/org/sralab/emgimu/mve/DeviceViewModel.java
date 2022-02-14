@@ -33,8 +33,6 @@ public class DeviceViewModel extends EmgImuViewModel<Device> {
     MutableLiveData<Integer> range = new MutableLiveData<>(20000);
     public void setRange(Integer range) { this.range.postValue(range); }
     public LiveData<Integer> getRange() { return range; }
-    private int channelNumber;
-    public void setChannelNumber(int channel) {  this.channelNumber = channel; }
     private class MvcSensor {
         String address;
         int channel;
@@ -80,22 +78,26 @@ public class DeviceViewModel extends EmgImuViewModel<Device> {
         for (final Device d : getDevicesLiveData().getValue()) { d.reset(); }
     }
 
-    public void saveMvc() {
+    public void saveMvc(Device d, int channel) {
 
         Log.d(TAG, "dvm, Save MVC button was pressed");
+        Log.d(TAG, "dvm, called saveMvc() | channelNumber =  " + channel);
+        Log.d(TAG, "dvm, called saveMvc() | device =  " + d.getAddress());
         MvcTrial trial = new MvcTrial();
         trial.timestamp = new Date().getTime();
         trial.sensors = new ArrayList<>();
 
-        for (final Device d: getDevicesLiveData().getValue()) {
+        // used to handle multiple devices -- now need a single device only
+/*        for (final Device d: getDevicesLiveData().getValue()) {
             MvcSensor sensor = new MvcSensor();
 
             sensor.address = d.getAddress();
+            Log.d(TAG, "dvm, sensor.address = " + sensor.address);
             sensor.channel = channelNumber;
             sensor.maximum = d.getMaximumTwoChannel()[channelNumber].getValue().floatValue();
             sensor.minimum = d.getMinimumTwoChannel()[channelNumber].getValue().floatValue();
             trial.sensors.add(sensor);
-        }
+        }*/
 
         trials.add(trial);
         Gson gson = new Gson();
