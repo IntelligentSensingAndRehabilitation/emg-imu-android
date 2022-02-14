@@ -80,24 +80,26 @@ public class DeviceViewModel extends EmgImuViewModel<Device> {
 
     public void saveMvc(Device d, int channel) {
 
-        Log.d(TAG, "dvm, Save MVC button was pressed");
+/*        Log.d(TAG, "dvm, Save MVC button was pressed");
         Log.d(TAG, "dvm, called saveMvc() | channelNumber =  " + channel);
-        Log.d(TAG, "dvm, called saveMvc() | device =  " + d.getAddress());
+        Log.d(TAG, "dvm, called saveMvc() | device =  " + d.getAddress());*/
         MvcTrial trial = new MvcTrial();
         trial.timestamp = new Date().getTime();
         trial.sensors = new ArrayList<>();
 
-        // used to handle multiple devices -- now need a single device only
-/*        for (final Device d: getDevicesLiveData().getValue()) {
-            MvcSensor sensor = new MvcSensor();
+        MvcSensor sensor = new MvcSensor();
 
-            sensor.address = d.getAddress();
-            Log.d(TAG, "dvm, sensor.address = " + sensor.address);
-            sensor.channel = channelNumber;
-            sensor.maximum = d.getMaximumTwoChannel()[channelNumber].getValue().floatValue();
-            sensor.minimum = d.getMinimumTwoChannel()[channelNumber].getValue().floatValue();
-            trial.sensors.add(sensor);
-        }*/
+        sensor.address = d.getAddress();
+/*        Log.d(TAG, "dvm, sensor.address = " + sensor.address);*/
+        sensor.channel = channel;
+        sensor.maximum = d.getMaximumTwoChannel()[channel].getValue().floatValue();
+        sensor.minimum = d.getMinimumTwoChannel()[channel].getValue().floatValue();
+        trial.sensors.add(sensor);
+        Log.d(TAG, "dvm, MVC Trial Data -->"
+                                    + " address=" + sensor.address
+                                    + " | channel=" + sensor.channel
+                                    + " | max=" + sensor.maximum
+                                    + " | min=" + sensor.maximum);
 
         trials.add(trial);
         Gson gson = new Gson();
