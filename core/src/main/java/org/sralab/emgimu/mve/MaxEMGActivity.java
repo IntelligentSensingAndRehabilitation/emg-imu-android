@@ -39,14 +39,14 @@ public class MaxEMGActivity extends AppCompatActivity {
 
         recyclerView.setAdapter(deviceAdapter = new DeviceAdapter(this, dvm));
 
-        Button mClearMaxButton = findViewById(R.id.clear_max_button);
+        /*Button mClearMaxButton = findViewById(R.id.clear_max_button);
         mClearMaxButton.setOnClickListener(view -> dvm.reset());
 
         Button mSaveMaxButton = findViewById(R.id.save_max_button);
         mSaveMaxButton.setOnClickListener(view -> {
             dvm.saveMvc();
             dvm.reset();
-        });
+        });*/
     }
 
 }

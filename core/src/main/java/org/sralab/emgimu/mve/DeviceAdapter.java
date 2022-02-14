@@ -46,7 +46,6 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
     private LifecycleOwner context;
 	private final LiveData<List<Device>> devices;
 	private DeviceViewModel dvm;
-	TextView deviceTextView;
 	private String deviceAndChannelName = new String();
     public String getDeviceAndChannelName() {
         return deviceAndChannelName;
@@ -115,12 +114,12 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
 	public class ViewHolder extends RecyclerView.ViewHolder {
 
 	    EmgPowerView power;
-	    EditText deviceAndChannelNameWidget;
+	    TextView deviceAndChannelNameWidget;
 
         public ViewHolder(final View itemView) {
 			super(itemView);
 			power = itemView.findViewById(R.id.emg_power_view);
-			deviceAndChannelNameWidget = itemView.findViewById(R.id.emg_sensor_name);
+			deviceAndChannelNameWidget = itemView.findViewById(R.id.sensorNameAndChannel);
         }
 
         /**
@@ -130,8 +129,8 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
          */
 		private void bind(final Device device, int channel) {
 		    String deviceAddress = device.getAddress();
-		    String deviceAbbreviatedAddress = "sensor-" + deviceAddress.substring(0, 2);
-		    String deviceAndChannelName = deviceAbbreviatedAddress + " - ch-" + channel;
+		    String deviceAbbreviatedAddress = deviceAddress.substring(0, 2);
+		    String deviceAndChannelName = deviceAbbreviatedAddress + " ch-" + (channel + 1);
 
             // Below mtds: the first argument, "context" is the UI activity
             // Below mtds: the second argument, "value ->..." is the code that updates the UI
