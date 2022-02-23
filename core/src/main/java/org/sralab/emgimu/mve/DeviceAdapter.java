@@ -26,6 +26,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
@@ -46,8 +47,8 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
     private LifecycleOwner context;
 	private final LiveData<List<Device>> devices;
 	private DeviceViewModel dvm;
-	TextView deviceTextView;
 	private String deviceAndChannelName = new String();
+	private int channelNumber;
     public String getDeviceAndChannelName() {
         return deviceAndChannelName;
     }
@@ -94,9 +95,6 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
 	@Override
 	public void onBindViewHolder(final ViewHolder holder, final int position) {
 	    holder.bind(devices.getValue().get(position / 2), position % 2);
-/*	    Log.d(TAG, "DeviceAdapter: (position / 2) =" +(position / 2));
-        Log.d(TAG, "DeviceAdapter: (position % 2) =" +(position % 2));
-        //deviceAndChannelName =*/
 	}
 
     /**
@@ -115,12 +113,27 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
 	public class ViewHolder extends RecyclerView.ViewHolder {
 
 	    EmgPowerView power;
-	    EditText deviceAndChannelNameWidget;
+	    TextView deviceAndChannelNameWidget;
 
         public ViewHolder(final View itemView) {
 			super(itemView);
 			power = itemView.findViewById(R.id.emg_power_view);
-			deviceAndChannelNameWidget = itemView.findViewById(R.id.emg_sensor_name);
+			deviceAndChannelNameWidget = itemView.findViewById(R.id.sensorNameAndChannel);
+
+			Button mClearMaxButton = itemView.findViewById(R.id.clear_max_button);
+            mClearMaxButton.setOnClickListener(view -> dvm.reset());
+
+            Button mSaveMaxButton = itemView.findViewById(R.id.save_max_button);
+            mSaveMaxButton.setOnClickListener(view -> {
+                final Device device = devices.getValue().get(getAdapterPosition() / 2);
+                final int channelNumber = getAdapterPosition() % 2; // uses number of devices in the list
+
+                Log.d(TAG, "adapter, called saveMvc() | channelNumber =  " + channelNumber);
+                Log.d(TAG, "adapter, called saveMvc() | device =  " + device.getAddress());
+                dvm.saveMvc(device, channelNumber);
+                dvm.reset();
+            });
+
         }
 
         /**
@@ -130,8 +143,8 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
          */
 		private void bind(final Device device, int channel) {
 		    String deviceAddress = device.getAddress();
-		    String deviceAbbreviatedAddress = "sensor-" + deviceAddress.substring(0, 2);
-		    String deviceAndChannelName = deviceAbbreviatedAddress + " - ch-" + channel;
+		    String deviceAbbreviatedAddress = deviceAddress.substring(0, 2);
+		    String deviceAndChannelName = deviceAbbreviatedAddress + " ch-" + channel;
 
             // Below mtds: the first argument, "context" is the UI activity
             // Below mtds: the second argument, "value ->..." is the code that updates the UI
@@ -152,11 +165,11 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
             device.getMinimumTwoChannel()[channel].observe(context, value -> power.setMinPower(value));
             dvm.getRange().observe(context, value -> power.setMaxRange(value));
             deviceAndChannelNameWidget.setText(deviceAndChannelName);
-            dvm.setChannelNumber(channel);
-            Log.d(TAG, "DeviceAdapter, device: " + device.getAddress()
+/*            Log.d(TAG, "DeviceAdapter, device: " + device.getAddress()
                     + " | ch0:" + device.getPowerTwoChannel()[0].getValue()
                     + " | ch1:" + device.getPowerTwoChannel()[1].getValue());
-            Log.d(TAG, "DeviceAdapter, calling bind method for device = " + device.getAddress() + ", channel = " +channel);
+            Log.d(TAG, "DeviceAdapter, calling bind method for device = " + device.getAddress() + ", channel = " +channel);*/
+            channelNumber = channel;
         }
 	}
 }
