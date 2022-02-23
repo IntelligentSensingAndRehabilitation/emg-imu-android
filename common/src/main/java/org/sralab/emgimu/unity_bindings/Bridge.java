@@ -75,6 +75,7 @@ public class Bridge extends Application
             try {
                 /* Sends the list of devices to the game (unity). */
                 callback.sendDeviceList(Arrays.toString(service.getManagedDevices().toArray()));
+                Log.d(TAG, "Sent device list to game" + service.getManagedDevices().toString());
             } catch (RemoteException e) {
                 throw new RuntimeException(e);
             }
