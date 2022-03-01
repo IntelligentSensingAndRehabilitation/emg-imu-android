@@ -57,8 +57,8 @@ public class Device implements EmgImuManager.CalibrationListener{
     }
 
     public void finishCalibration() {
-        service.unregisterImuAccelObserver(accelHandler);
-        service.unregisterImuMagObserver(magHandler);
+        service.unregisterImuAccelObserver(null, accelHandler);
+        service.unregisterImuMagObserver(null, magHandler);
         calibrationStatus.postValue(CalibrationStatus.FINISHED);
         service.finishCalibration(dev, this);
     }
@@ -104,8 +104,8 @@ public class Device implements EmgImuManager.CalibrationListener{
         // Zeroed calibration sent to device. Proceed with calibration.
         if (calibrationStatus.getValue() == CalibrationStatus.STARTED) {
             setStatus("Collecting. Please rotate sensor.");
-            service.registerImuAccelObserver(accelHandler);
-            service.registerImuMagObserver(magHandler);
+            service.registerImuAccelObserver(null, accelHandler);
+            service.registerImuMagObserver(null, magHandler);
         }
     }
 

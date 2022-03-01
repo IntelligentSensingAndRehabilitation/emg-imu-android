@@ -33,9 +33,9 @@ public class DeviceViewModel extends EmgImuViewModel<Device> {
     MutableLiveData<Integer> range = new MutableLiveData<>(20000);
     public void setRange(Integer range) { this.range.postValue(range); }
     public LiveData<Integer> getRange() { return range; }
-
     private class MvcSensor {
         String address;
+        int channel;
         float maximum;
         float minimum;
     }
@@ -56,9 +56,16 @@ public class DeviceViewModel extends EmgImuViewModel<Device> {
     }
 
     @Override
+//    public void emgPwrUpdated(Device dev, EmgPwrData data) {
+//        dev.setPower(data.power[0]);
+//    }
     public void emgPwrUpdated(Device dev, EmgPwrData data) {
-        dev.setPower(data.power[0]);
+        dev.setPower(data.power);
+        Log.d(TAG, "DeviceViewModel, emgPwrUpdated --> data.power[0] = " + data.power[0]
+                + "| data.power[1] = " + data.power[1]);
+        Log.d(TAG, "DeviceViewModel, data.power.length=" + data.power.length);
     }
+
 
     @Override
     public Device getDev(BluetoothDevice d) {
@@ -71,19 +78,28 @@ public class DeviceViewModel extends EmgImuViewModel<Device> {
         for (final Device d : getDevicesLiveData().getValue()) { d.reset(); }
     }
 
-    public void saveMvc() {
+    public void saveMvc(Device d, int channel) {
 
+/*        Log.d(TAG, "dvm, Save MVC button was pressed");
+        Log.d(TAG, "dvm, called saveMvc() | channelNumber =  " + channel);
+        Log.d(TAG, "dvm, called saveMvc() | device =  " + d.getAddress());*/
         MvcTrial trial = new MvcTrial();
         trial.timestamp = new Date().getTime();
         trial.sensors = new ArrayList<>();
 
-        for (final Device d: getDevicesLiveData().getValue()) {
-            MvcSensor sensor = new MvcSensor();
-            sensor.address = d.getAddress();
-            sensor.maximum = d.getMaximum().getValue().floatValue();
-            sensor.minimum = d.getMinimum().getValue().floatValue();
-            trial.sensors.add(sensor);
-        }
+        MvcSensor sensor = new MvcSensor();
+
+        sensor.address = d.getAddress();
+/*        Log.d(TAG, "dvm, sensor.address = " + sensor.address);*/
+        sensor.channel = channel;
+        sensor.maximum = d.getMaximumTwoChannel()[channel].getValue().floatValue();
+        sensor.minimum = d.getMinimumTwoChannel()[channel].getValue().floatValue();
+        trial.sensors.add(sensor);
+        Log.d(TAG, "dvm, MVC Trial Data -->"
+                                    + " address=" + sensor.address
+                                    + " | channel=" + sensor.channel
+                                    + " | max=" + sensor.maximum
+                                    + " | min=" + sensor.maximum);
 
         trials.add(trial);
         Gson gson = new Gson();

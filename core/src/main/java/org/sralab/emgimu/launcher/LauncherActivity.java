@@ -21,6 +21,8 @@
  */
 package org.sralab.emgimu.launcher;
 
+import static android.content.ContentValues.TAG;
+
 import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
 import android.content.Intent;
@@ -37,6 +39,9 @@ import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+
+import android.os.Debug;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -55,7 +60,9 @@ import no.nordicsemi.android.nrftoolbox.AppHelpFragment;
 
 import org.sralab.emgimu.config.R;
 import org.sralab.emgimu.service.BuildConfig;
-
+/* This class is responsible for the main activity that the user sees when they first open the app
+ * Includes buttons, like 'CONFIG', IMU CALIBRATION', and etc.
+ */
 public class LauncherActivity extends AppCompatActivity {
 	private static final String NRF_CONNECT_CATEGORY = "no.nordicsemi.android.nrftoolbox.LAUNCHER";
 	private static final String UTILS_CATEGORY = "no.nordicsemi.android.nrftoolbox.UTILS";
@@ -98,14 +105,16 @@ public class LauncherActivity extends AppCompatActivity {
 		// setup plug-ins in the drawer
 		setupPluginsInDrawer((ViewGroup) drawer.findViewById(R.id.plugin_container));
 
+		/** This populated the icons/buttons such as 'Config', 'IMU CALIBRATION' */
 		// configure the app grid
 		final GridView grid = (GridView) findViewById(R.id.grid);
-		grid.setAdapter(new AppAdapter(this));
+		grid.setAdapter(new AppAdapter(this)); // this creates the icons/buttons
 		grid.setEmptyView(findViewById(android.R.id.empty));
 
 		getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 	}
 
+	/** Creates the dotted-button on the top-right*/
 	@Override
 	public boolean onCreateOptionsMenu(final Menu menu) {
 		getMenuInflater().inflate(R.menu.help, menu);
@@ -125,6 +134,7 @@ public class LauncherActivity extends AppCompatActivity {
 		mDrawerToggle.onConfigurationChanged(newConfig);
 	}
 
+/** This handles the burger bar (top-left) functionality */
 	@Override
 	public boolean onOptionsItemSelected(final MenuItem item) {
 		// Pass the event to ActionBarDrawerToggle, if it returns
@@ -140,6 +150,7 @@ public class LauncherActivity extends AppCompatActivity {
 		return true;
 	}
 
+/** This handles the functionality of the nRF connect button inside the burger bar */
 	private void setupPluginsInDrawer(final ViewGroup container) {
 		final LayoutInflater inflater = LayoutInflater.from(this);
 		final PackageManager pm = getPackageManager();

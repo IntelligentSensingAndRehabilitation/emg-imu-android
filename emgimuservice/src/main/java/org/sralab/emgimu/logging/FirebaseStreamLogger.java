@@ -199,7 +199,7 @@ public class FirebaseStreamLogger extends Observable {
         addJson(gson.toJson(msg));
     }
 
-    public void addPwrSample(long time, long sensor_timestamp, int sensor_counter, double [] data) {
+    public void addPwrSample(long time, long sensor_timestamp, int sensor_counter, int [] data) {
         Gson gson = new Gson();
         EmgPwrMessage msg = new EmgPwrMessage(mDeviceMac, time, sensor_timestamp, sensor_counter, data);
         addJson(gson.toJson(msg));
@@ -233,5 +233,6 @@ public class FirebaseStreamLogger extends Observable {
         Gson gson = new Gson();
         ForceMessage msg = new ForceMessage(mDeviceMac, time, data);
         addJson(gson.toJson(msg));
+        Log.d(TAG, gson.toJson(msg));
     }
 }
