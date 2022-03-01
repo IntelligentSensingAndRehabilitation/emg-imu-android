@@ -1396,26 +1396,18 @@ public class EmgImuManager extends BleManager {
     }
 
 
-    /****** helper methods to enable and disable notifications *******/
-
-    boolean enabled = false;
-
+    // region Helper Methods to Enable and Disable Bluetooth Notifications
     // Controls to enable what data we are receiving from the sensor
     public void enableEmgPwrNotifications() {
-        if (enabled)
-            return;
-        enabled = true;
-    enableNotifications(mEmgPwrCharacteristic)
-            .before(device -> setNotificationCallback(mEmgPwrCharacteristic).with((_device, data) -> parseEmgPwr(_device ,data)))
-            .done(device -> log(Log.INFO, "EMG power notifications enabled successfully"))
-            .fail((device, status) -> log(Log.ERROR, "Unable to enable EMG power notification"))
-            .enqueue();
-    //Log.d(TAG, "emgPwr - enableEmgPwrNotifications() called to parseEmgPwr");
+        enableNotifications(mEmgPwrCharacteristic)
+                .before(device -> setNotificationCallback(mEmgPwrCharacteristic).with((_device, data) -> parseEmgPwr(_device ,data)))
+                .done(device -> log(Log.INFO, "EMG power notifications enabled successfully"))
+                .fail((device, status) -> log(Log.ERROR, "Unable to enable EMG power notification"))
+                .enqueue();
     }
 
     public void disableEmgPwrNotifications() {
         disableNotifications(mEmgPwrCharacteristic).enqueue();
-        Log.d(TAG,"emgPwr - called disableEmgPwrNotifications()");
     }
 
     public void enableEmgBuffNotifications() {
@@ -1450,12 +1442,20 @@ public class EmgImuManager extends BleManager {
                 .enqueue();
     }
 
+    public void disableAccelNotifications() {
+        disableNotifications(mImuAccelCharacteristic).enqueue();
+    }
+
     public void enableGyroNotifications() {
         enableNotifications(mImuGyroCharacteristic)
                 .before(device -> setNotificationCallback(mImuGyroCharacteristic).with((_device, data) -> parseImuGyro(_device, data)))
                 .done(device -> log(Log.INFO, "Gyro notifications enabled successfully"))
                 .fail((device, status) -> log(Log.ERROR, "Unable to enable Gyro notification: " + status))
                 .enqueue();
+    }
+
+    public void disableGyroNotifications() {
+        disableNotifications(mImuGyroCharacteristic).enqueue();
     }
 
     public void enableMagNotifications() {
@@ -1465,19 +1465,11 @@ public class EmgImuManager extends BleManager {
                 .fail((device, status) -> log(Log.ERROR, "Unable to enable Mag notification: " + status))
                 .enqueue();
     }
-
-    public void disableAccelNotifications() {
-        disableNotifications(mImuAccelCharacteristic).enqueue();
-    }
-
-    public void disableGyroNotifications() {
-        disableNotifications(mImuGyroCharacteristic).enqueue();
-    }
-
+    
     public void disableMagNotifications() {
         disableNotifications(mImuMagCharacteristic).enqueue();
     }
-
+    // endregion
 
     /**** Public API for controlling what we are listening to ****/
     // This is mostly a very thin shim to the above methods
@@ -1518,7 +1510,7 @@ public class EmgImuManager extends BleManager {
     private boolean overThreshold;
 
     /**
-     * Check if a click event happened when EMG goes ovre threshold with hysteresis and
+     * Check if a click event happened when EMG goes over threshold with hysteresis and
      * refractory period.
      */
     private void checkEmgClick(final BluetoothDevice device, int value) {
