@@ -211,7 +211,7 @@ public class EmgImuManager extends BleManager {
         emgPwrCbs.add(callback);
         /*
         *  Wait until the sensor is ready, then enable the notification.
-        *  The notification allows the sensor to actual start streaming the data.
+        *  The notification allows the sensor to actually start streaming the data.
         *  There are 2 pathways to enable the notifications:
         *   (1) through the game: Bridge-->Service-->Manager (here)
         *   (2) through the Config app: ViewModel-->Manager & Service
@@ -349,8 +349,6 @@ public class EmgImuManager extends BleManager {
 		super(context);
         mSynced = false;
         mFetchRecords = false;
-
-        log(Log.INFO, "EmgImuManager created!");
 	}
 
     @NonNull
@@ -549,17 +547,8 @@ public class EmgImuManager extends BleManager {
 
             connectionState.postValue(getConnectionState());
 
-            // TODO: Option 2 part 3. This "delayed enabling notificiations" will have to happen
-            // in teh manager's onReady method now, based on if any callbacks are registered.
-            //Log.d(TAG, "emgPwr - !emgPwrCbs.isEmpty() = " +!emgPwrCbs.isEmpty() );
-            // enableEmgPwrNotifications(); // calling it like this does not work
-/*            if(emgPwrCbsTest != null) {
-                Log.d(TAG, "emgPwr | emgPwrCbsTest != null!");
-                enableEmgPwrNotifications();
-            }*/
             if (!emgPwrCbs.isEmpty()) {
                 enableEmgPwrNotifications();
-                Log.d(TAG, "emgPwrCbs  notifications from onDeviceReady() | size = " + emgPwrCbs.size() + " address = " + emgPwrCbs.get(0).toString());
             }
 
             if(!emgStreamCbs.isEmpty()) {
@@ -579,10 +568,8 @@ public class EmgImuManager extends BleManager {
             }
 
             if (!imuQuatCbs.isEmpty()) {
-                Log.d(TAG, "HERE Enabling");
                 enableAttitudeNotifications();
             } else
-                Log.d(TAG, "HERE Not Enabling");
 
             super.onDeviceReady();
         }
@@ -1465,7 +1452,7 @@ public class EmgImuManager extends BleManager {
                 .fail((device, status) -> log(Log.ERROR, "Unable to enable Mag notification: " + status))
                 .enqueue();
     }
-    
+
     public void disableMagNotifications() {
         disableNotifications(mImuMagCharacteristic).enqueue();
     }
@@ -1498,32 +1485,6 @@ public class EmgImuManager extends BleManager {
         else if (val < 0.0)
             val = 0.0;
         return val;
-    }
-
-    //! Output true when EMG power goes over threshold
-    private long THRESHOLD_TIME_NS = 500 * (int)1e6; // 500 ms
-    private float max_pwr = 2000;
-    private float min_pwr = 100;
-    private float threshold_low = 200;
-    private float threshold_high = 500;
-    private long mThresholdTime = 0;
-    private boolean overThreshold;
-
-    /**
-     * Check if a click event happened when EMG goes over threshold with hysteresis and
-     * refractory period.
-     */
-    private void checkEmgClick(final BluetoothDevice device, int value) {
-        // Have a refractory time to prevent noise making multiple events
-        long eventTime = System.nanoTime();
-        boolean refractory = (eventTime - mThresholdTime) > THRESHOLD_TIME_NS;
-
-        if (value > threshold_high && overThreshold == false && refractory) {
-            mThresholdTime = eventTime; // Store this time
-            overThreshold = true;
-        } else if (value < threshold_low && overThreshold == true) {
-            overThreshold = false;
-        }
     }
 
     // Accessors for the EMG buffer
