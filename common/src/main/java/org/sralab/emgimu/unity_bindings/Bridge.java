@@ -7,8 +7,6 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.nfc.Tag;
-import android.os.Debug;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.util.Log;
@@ -75,7 +73,7 @@ public class Bridge extends Application
             try {
                 /* Sends the list of devices to the game (unity). */
                 callback.sendDeviceList(Arrays.toString(service.getManagedDevices().toArray()));
-                Log.d(TAG, "Sent device list to game" + service.getManagedDevices().toString());
+                Log.d(TAG, "Sent device list to the game" + service.getManagedDevices().toString());
             } catch (RemoteException e) {
                 throw new RuntimeException(e);
             }
@@ -86,7 +84,7 @@ public class Bridge extends Application
         }
     };
 
-    // region Methods Called from the Game (Unity) Section
+    // region Methods Called from the Game (Unity)
     /**
      * This method is called from the game (Unity) to log the data from each trial. Each trial
      * is characterized by a single pass of the curve on the screen.

@@ -32,10 +32,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * This class is used for the Config menu.
- * @param <T>
- */
 public abstract class EmgImuViewModel <T> extends AndroidViewModel {
 
     private final static String TAG = EmgImuViewModel.class.getSimpleName();
@@ -137,8 +133,6 @@ public abstract class EmgImuViewModel <T> extends AndroidViewModel {
         @Override
         public void onServiceDisconnected(final ComponentName name) {
             EmgImuViewModel.this.onServiceDisconnected();
-            Log.d(TAG, "emgPwr - hit onServiceDisconnected");
-            //onCleared();
             service = null;
         }
     };
@@ -165,8 +159,6 @@ public abstract class EmgImuViewModel <T> extends AndroidViewModel {
                 return;
             }
             emgPwrUpdated(dev, data);
-            Log.d(TAG, "EmgImuViewModel, pwrObserver --> data.power[0] = " + data.power[0] +
-                    " | data.power[1] = " + data.power[1]);
         }
     };
 
@@ -245,7 +237,6 @@ public abstract class EmgImuViewModel <T> extends AndroidViewModel {
                 return;
             }
             batUpdated(dev, bat);
-            Log.d(TAG, "emgPwr - getting batUpdated() - bat = " + bat);
         }
     };
 }
