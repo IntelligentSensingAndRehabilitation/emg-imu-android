@@ -159,7 +159,12 @@ public class Bridge extends Application
         gameSelectedDeviceChannel = Integer.parseInt((temp[1].split("-"))[1]);
         /* Register the power observer for the emg power callback to stream the emg power data. */
         try {
-            service.registerEmgPwrObserver(gameSelectedDeviceMac, pwrObserver); // pass this to service
+            for (BluetoothDevice device : service.getManagedDevices())
+            {
+                if (device.getAddress().equals(gameSelectedDeviceMac)) {
+                    service.registerEmgPwrObserver(device, pwrObserver); // pass this to service
+                }
+            }
         } catch (RemoteException e) {
             e.printStackTrace();
         }
