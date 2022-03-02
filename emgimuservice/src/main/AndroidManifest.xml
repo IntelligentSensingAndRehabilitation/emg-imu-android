@@ -12,10 +12,14 @@
 
     <!-- Include "neverForLocation" only if you can strongly assert that
      your app never derives physical location from Bluetooth scan results. -->
-    <!-- android:usesPermissionFlags="neverForLocation" but this requires SDK 31-->
     <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+
+    <!-- Despite the fact the above flag should make this unnecessary when
+    targeting Android 12 (as we do), for some reason it is required when
+    running on devices using anything prior to 12 -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
 
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
