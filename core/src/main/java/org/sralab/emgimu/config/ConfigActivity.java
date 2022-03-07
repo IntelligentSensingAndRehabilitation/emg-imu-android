@@ -114,6 +114,7 @@ public class ConfigActivity extends EmgImuBaseActivity implements ScannerFragmen
 	 */
 	public void onAddDeviceClicked(final View view) {
 		showDeviceScanningDialog(getFilterUUID());
+
 	}
 
 	/* Called when user presses ADD FORCE DEVICE button */

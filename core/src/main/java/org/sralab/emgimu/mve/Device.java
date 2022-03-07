@@ -1,7 +1,12 @@
 package org.sralab.emgimu.mve;
 
+import android.util.Log;
+
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class Device {
 
@@ -24,21 +29,36 @@ public class Device {
     public LiveData<Double> getPower() {
         return power;
     }
-    public void setPower(int power)
-    {
-        // Smooth inputs
-        final double LPF_ALPHA = 0.025;
-        double smooth_power = this.power.getValue() * (1-LPF_ALPHA) + ((double) power) * LPF_ALPHA;
 
-        this.power.postValue(smooth_power);
-        if (smooth_power > maximum.getValue())
-            maximum.postValue(smooth_power);
-        if (smooth_power < minimum.getValue())
-            minimum.postValue(smooth_power);
+    private MutableLiveData<Double>[] minimumTwoChannel = new MutableLiveData[] {new MutableLiveData(Double.MAX_VALUE), new MutableLiveData(Double.MAX_VALUE)};
+    public LiveData<Double>[] getMinimumTwoChannel() { return minimumTwoChannel; }
+    private MutableLiveData<Double>[] maximumTwoChannel = new MutableLiveData[] {new MutableLiveData(Double.MIN_VALUE), new MutableLiveData(Double.MIN_VALUE)};
+    public LiveData<Double>[] getMaximumTwoChannel() { return maximumTwoChannel; }
+    private MutableLiveData<Double>[] powerTwoChannel = new MutableLiveData[] {new MutableLiveData(0.0), new MutableLiveData(0.0)};
+    public LiveData<Double>[] getPowerTwoChannel() { return powerTwoChannel; }
+
+    public void setPower(int[] power)
+    {
+        Log.d(TAG, "Device, power[0] = " + power[0] + "| power[1] = " + power[1]);
+        final double LPF_ALPHA = 0.025;
+        for (int channelIndex=0; channelIndex<power.length; channelIndex++) {
+            // Smooth inputs
+            double smooth_power = this.powerTwoChannel[channelIndex].getValue() * (1-LPF_ALPHA) + ((double) power[channelIndex]) * LPF_ALPHA;
+
+            this.powerTwoChannel[channelIndex].postValue(smooth_power);
+            if (smooth_power > maximumTwoChannel[channelIndex].getValue())
+                maximumTwoChannel[channelIndex].postValue(smooth_power);
+            if (smooth_power < minimumTwoChannel[channelIndex].getValue())
+                minimumTwoChannel[channelIndex].postValue(smooth_power);
+            Log.d(TAG, "Device, setPower(), ch-" + channelIndex + "= "
+                    + powerTwoChannel[channelIndex].getValue());
+        }
     }
 
     public void reset() {
-        minimum.postValue(Double.MAX_VALUE);
-        maximum.postValue(Double.MIN_VALUE);
+        for (int channelIndex=0; channelIndex<minimumTwoChannel.length; channelIndex++) {
+            minimumTwoChannel[channelIndex].postValue(Double.MAX_VALUE);
+            maximumTwoChannel[channelIndex].postValue(Double.MIN_VALUE);
+        }
     }
 }

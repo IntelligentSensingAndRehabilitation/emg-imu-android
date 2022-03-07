@@ -12,6 +12,7 @@ import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.TextView;
 
 import org.sralab.emgimu.config.R;
 
@@ -65,6 +66,7 @@ public class EmgPowerView extends View {
     public void setCurrentPower(Double p)
     {
         mPwr = p.floatValue();
+        Log.d(TAG, "power = " + mPwr);
         invalidate();
     }
     public float getThreshold() { return mThresh; }
@@ -151,6 +153,7 @@ public class EmgPowerView extends View {
         invalidateTextPaintAndMeasurements();
 
         mDetector = new GestureDetector(this.getContext(), new mListener());
+
     }
 
     private String maxDescribeString() {

@@ -75,12 +75,11 @@ import com.google.firebase.installations.FirebaseInstallations;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONException;
-import org.sralab.emgimu.controller.IEmgDecoder;
 import org.sralab.emgimu.controller.IEmgDecoderProvider;
 import org.sralab.emgimu.logging.EmgLogFetchJobService;
 import org.sralab.emgimu.logging.FirebaseGameLogger;
 import org.sralab.emgimu.logging.GamePlayRecord;
-import org.sralab.emgimu.streaming.NetworkStreaming;
+import org.sralab.emgimu.unity_bindings.Bridge;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -96,7 +95,7 @@ import no.nordicsemi.android.ble.annotation.DisconnectionReason;
 import no.nordicsemi.android.ble.error.GattError;
 import no.nordicsemi.android.ble.observer.ConnectionObserver;
 
-public class EmgImuService extends Service implements ConnectionObserver, EmgImuObserver {
+public class EmgImuService extends Service implements ConnectionObserver {
 	@SuppressWarnings("unused")
 	private static final String TAG = "EmgImuService";
 
@@ -121,30 +120,13 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
 	private FirebaseAuth mAuth;
     private FirebaseAnalytics mFirebaseAnalytics;
     private FirebaseUser mCurrentUser;
+    private String mToken;
 
     private Handler handler;
 
-    private NetworkStreaming networkStreaming;
-    private IEmgDecoder emgDecoder;
-    private OnEmgDecodedListener emgDecodedCallback;
-
-    //    void registerDevicesObserver(IEmgImuDevicesUpdatedCallback callback);
-    //    void unregisterDevicesObserver(IEmgImuDevicesUpdatedCallback callback);)
-    private List <IEmgImuDevicesUpdatedCallback> deviceUpdateCbs = new ArrayList<>();
-    private List <IEmgImuStreamDataCallback> emgStreamCbs = new ArrayList<>();
-    private List <IEmgImuPwrDataCallback> emgPwrCbs = new ArrayList<>();
-    private List <IEmgImuSenseCallback> imuAccelCbs = new ArrayList<>();
-    private List <IEmgImuSenseCallback> imuGyroCbs = new ArrayList<>();
-    private List <IEmgImuSenseCallback> imuMagCbs = new ArrayList<>();
-    private List <IEmgImuQuatCallback> imuQuatCbs = new ArrayList<>();
-    private List <IEmgImuBatCallback> batCbs = new ArrayList<>();
-
-
-    public interface OnEmgDecodedListener {
-        void onEmgDecoded(float [] decoded);
-    }
-
     Handler getHandler() { return handler; }
+
+    private List<IEmgImuDevicesUpdatedCallback> deviceUpdateCbs = new ArrayList<>();
 
     /**
 	 * This local binder is an interface for the bonded activity to operate with the proximity sensor
@@ -155,6 +137,7 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
          * Returns an unmodifiable list of devices managed by the service.
          * The returned devices do not need to be connected at tha moment. Each of them was however created
          * using {@link #connect(BluetoothDevice)} method so they might have been connected before and disconnected.
+         *
          * @return unmodifiable list of devices managed by the service
          */
         public final List<BluetoothDevice> getManagedDevices() {
@@ -179,15 +162,11 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
             return getBleManager(device).isConnected();
         }
 
-        public boolean isReady(@NotNull final BluetoothDevice device) throws RemoteException {
-            return getBleManager(device).isReady();
-        }
-
         public int getConnectionState(@NotNull final BluetoothDevice device) throws RemoteException {
             return getBleManager(device).getConnectionState();
         }
 
-        @Override
+        // region Register/Unregister Observers Section
         public void registerDevicesObserver(IEmgImuDevicesUpdatedCallback callback) throws RemoteException {
             deviceUpdateCbs.add(callback);
         }
@@ -197,6 +176,214 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
             deviceUpdateCbs.remove(callback);
         }
 
+        /**
+         * This method is responsible for registering Emg power observer with the respective
+         * manager, so the power data can be streamed. In doing so, the method will pass the
+         * callback object to the manager.
+         * @param regDevice either a null object or a string containing a Mac address of the
+         *                  sensor with which the user wants to connect with. If the argument is
+         *                  null, then the method will register each sensor with the manager and
+         *                  power will be streamed from each said sensor.
+         *                  However, if the argument contains a Mac address, then the method will
+         *                  register the sensor with that Mac address only.
+         * @param callback the callback object that contains the data structure to hold the
+         *                 emg power and the method to handle that data. Reference the following:
+         *                 - IEmgImuPwrDataCallback.aidl
+         *                 - EmgPwrData.aidl
+         */
+        public void registerEmgPwrObserver(BluetoothDevice regDevice, IEmgImuPwrDataCallback callback) {
+            int i = 0;
+            for (final BluetoothDevice device : getManagedDevices()) {
+                /*
+                When the user connects to the sensor from the Config, the regDevice argument
+                will be null; therefore, create a manager for each sensor. Otherwise, if
+                the user is connecting to the sensor from the game, then Bridge will pass
+                a string argument corresponding to the Mac address of the sensor; therefore,
+                in that case, connect only to the sensor whose Mac address matches that string.
+                 */
+                if (regDevice == null) {
+                    final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+                    manager.registerEmgPwrCallback(callback);
+                    Log.d(TAG, "Service.registerEmgPwrObserver (regDevice == null), manager for device[" + i + "] = " + device.toString());
+                    i++;
+                } else if (device.toString().equals(regDevice.getAddress())) {
+                    final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+                    manager.registerEmgPwrCallback(callback);
+                    Log.d(TAG, "Bridge, inside Service.registerEmgPwrObserver, (device.getName().equals(regDevice)) manager for device[" + i + "] = " + device.toString());
+                    i++;
+                }
+            }
+        }
+
+        public void unregisterEmgPwrObserver(BluetoothDevice unregDevice, IEmgImuPwrDataCallback callback) {
+            Log.d(TAG, "No callbacks remain. Stopping stream.");
+            for (final BluetoothDevice device : getManagedDevices()) {
+                if(unregDevice == null) {
+                    final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+                    manager.unregisterEmgPwrCallback(callback);
+                } else if(device.toString().equals(unregDevice.getAddress())) {
+                    final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+                    manager.unregisterEmgPwrCallback(callback);
+                }
+            }
+        }
+
+        public void registerEmgStreamObserver(BluetoothDevice regDevice, IEmgImuStreamDataCallback callback) throws RemoteException {
+            for (final BluetoothDevice device : getManagedDevices()) {
+                if (regDevice == null) {
+                    final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+                    manager.registerEmgStreamCallback(callback);
+                } else if (device.toString().equals(regDevice.getAddress())) {
+                    final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+                    manager.registerEmgStreamCallback(callback);
+                }
+            }
+        }
+
+        public void unregisterEmgStreamObserver(BluetoothDevice unregDevice, IEmgImuStreamDataCallback callback) {
+            Log.d(TAG, "No callbacks remain. Stopping stream.");
+            for (final BluetoothDevice device : getManagedDevices()) {
+                if(unregDevice == null) {
+                    final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+                    manager.unregisterEmgStreamCallback(callback);
+                } else if(device.toString().equals(unregDevice.getAddress())) {
+                    final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+                    manager.unregisterEmgStreamCallback(callback);
+                }
+            }
+        }
+
+        @Override
+        public void registerImuAccelObserver(BluetoothDevice regDevice, IEmgImuSenseCallback callback) {
+            for (final BluetoothDevice device : getManagedDevices()) {
+                if (regDevice == null) {
+                    final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+                    manager.registerImuAccelCallback(callback);
+                } else if (device.toString().equals(regDevice.getAddress())) {
+                    final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+                    manager.registerImuAccelCallback(callback);
+                }
+            }
+        }
+
+        @Override
+        public void unregisterImuAccelObserver(BluetoothDevice unregDevice, IEmgImuSenseCallback callback) {
+            for (final BluetoothDevice device : getManagedDevices()) {
+                if(unregDevice == null) {
+                    final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+                    manager.unregisterImuAccelCallback(callback);
+                } else if(device.toString().equals(unregDevice.getAddress())) {
+                    final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+                    manager.unregisterImuAccelCallback(callback);
+                }
+            }
+        }
+
+        @Override
+        public void registerImuGyroObserver(BluetoothDevice regDevice, IEmgImuSenseCallback callback) {
+            for (final BluetoothDevice device : getManagedDevices()) {
+                if (regDevice == null) {
+                    final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+                    manager.registerImuGyroCallback(callback);
+                } else if (device.toString().equals(regDevice.getAddress())) {
+                    final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+                    manager.registerImuGyroCallback(callback);
+                }
+            }
+        }
+
+        @Override
+        public void unregisterImuGyroObserver(BluetoothDevice unregDevice, IEmgImuSenseCallback callback) {
+            for (final BluetoothDevice device : getManagedDevices()) {
+                if(unregDevice == null) {
+                    final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+                    manager.unregisterImuGyroCallback(callback);
+                } else if(device.toString().equals(unregDevice.getAddress())) {
+                    final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+                    manager.unregisterImuGyroCallback(callback);
+                }
+            }
+        }
+
+        @Override
+        public void registerImuMagObserver(BluetoothDevice regDevice, IEmgImuSenseCallback callback) {
+            for (final BluetoothDevice device : getManagedDevices()) {
+                if (regDevice == null) {
+                    final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+                    manager.registerImuMagCallback(callback);
+                } else if (device.toString().equals(regDevice.getAddress())) {
+                    final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+                    manager.registerImuMagCallback(callback);
+                }
+            }
+        }
+
+        @Override
+        public void unregisterImuMagObserver(BluetoothDevice unregDevice, IEmgImuSenseCallback callback) {
+            for (final BluetoothDevice device : getManagedDevices()) {
+                if(unregDevice == null) {
+                    final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+                    manager.unregisterImuMagCallback(callback);
+                } else if(device.toString().equals(unregDevice.getAddress())) {
+                    final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+                    manager.unregisterImuMagCallback(callback);
+                }
+            }
+        }
+
+        @Override
+        public void registerImuQuatObserver(BluetoothDevice regDevice, IEmgImuQuatCallback callback) {
+            for (final BluetoothDevice device : getManagedDevices()) {
+                if (regDevice == null) {
+                    final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+                    manager.registerImuQuatCallback(callback);
+                } else if (device.toString().equals(regDevice.getAddress())) {
+                    final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+                    manager.registerImuQuatCallback(callback);
+                }
+            }
+        }
+
+        @Override
+        public void unregisterImuQuatObserver(BluetoothDevice unregDevice, IEmgImuQuatCallback callback) {
+            for (final BluetoothDevice device : getManagedDevices()) {
+                if(unregDevice == null) {
+                    final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+                    manager.unregisterImuQuatCallback(callback);
+                } else if(device.toString().equals(unregDevice.getAddress())) {
+                    final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+                    manager.unregisterImuQuatCallback(callback);
+                }
+            }
+        }
+
+        @Override
+        public void registerBatObserver(BluetoothDevice regDevice, IEmgImuBatCallback callback) throws RemoteException {
+            for (final BluetoothDevice device : getManagedDevices()) {
+                if (regDevice == null) {
+                    final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+                    manager.registerBatCallback(callback);
+                } else if (device.toString().equals(regDevice.getAddress())) {
+                    final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+                    manager.registerBatCallback(callback);
+                }
+            }
+        }
+
+        @Override
+        public void unregisterBatObserver(BluetoothDevice unregDevice, IEmgImuBatCallback callback) throws RemoteException {
+            for (final BluetoothDevice device : getManagedDevices()) {
+                if(unregDevice == null) {
+                    final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+                    manager.unregisterBatCallback(callback);
+                } else if(device.toString().equals(unregDevice.getAddress())) {
+                    final EmgImuManager manager = (EmgImuManager) getBleManager(device);
+                    manager.unregisterBatCallback(callback);
+                }
+            }
+        }
+        // endregion
+
         @Override
         public void storeGameplayRecord(String name, long startTime, String details) throws RemoteException {
             GamePlayRecord record = new GamePlayRecord();
@@ -205,9 +392,7 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
             record.setLogReference(getLoggingReferences());
             record.setStartTime(startTime);
             record.setStopTime(new Date().getTime());
-
             Log.d(TAG, "Storing game play record");
-
             FirebaseGameLogger logger = new FirebaseGameLogger(mBinder);
             logger.writeRecord(record);
         }
@@ -220,38 +405,6 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
             return liveDevices;
         }
 
-        /**
-         * Configure service to run an EMG decoder if DFM is available
-         */
-        public void enableDecoder(OnEmgDecodedListener listener) {
-            Log.d(TAG, "Enabling EMG decoder");
-            try {
-                Class emgDecoderProviderClass = Class.forName("org.sralab.emgimu.controller.EmgDecoderProvider");
-                IEmgDecoderProvider emgDecoderProvider = (IEmgDecoderProvider) emgDecoderProviderClass.newInstance();
-                emgDecoder = emgDecoderProvider.get(getApplicationContext());
-            } catch (ClassNotFoundException e) {
-                e.printStackTrace();
-                return;
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
-                return;
-            } catch (InstantiationException e) {
-                e.printStackTrace();
-                return;
-            }
-
-            // If successful, install listener
-            emgDecodedCallback = listener;
-
-            // Enable buffered streaming for managed devices
-            for (final BluetoothDevice dev : getManagedDevices()) {
-                final EmgImuManager manager = getBleManager(dev);
-                manager.enableEmgBuffNotifications();
-            }
-
-        }
-
-        //! Get battery
         public LiveData<Double> getBattery(final BluetoothDevice device) {
             final EmgImuManager manager = (EmgImuManager) getBleManager(device);
             return manager.getBatteryVoltage();
@@ -275,148 +428,14 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
             //configureLoggingSavedDevices();
         }
 
-        public void registerEmgStreamObserver(IEmgImuStreamDataCallback callback) throws RemoteException {
-            Log.d(TAG, "Stream callback received");
-            emgStreamCbs.add(callback);
-            for (final BluetoothDevice device : getManagedDevices()) {
-                final EmgImuManager manager = (EmgImuManager) getBleManager(device);
-                if (manager.isReady())
-                    manager.enableEmgBuffNotifications();
-            }
-        }
-
-        public void unregisterEmgStreamObserver(IEmgImuStreamDataCallback callback) {
-            Log.d(TAG, "Stream callback removed");
-            emgStreamCbs.remove(callback);
-            if (emgStreamCbs.size() == 0) {
-                Log.d(TAG, "No callbacks remain. Stopping stream.");
-                for (final BluetoothDevice device : getManagedDevices()) {
-                    final EmgImuManager manager = (EmgImuManager) getBleManager(device);
-                    manager.disableEmgBuffNotifications();
-                }
-            }
-        }
-
-        public void registerEmgPwrObserver(IEmgImuPwrDataCallback callback) {
-            Log.d(TAG, "Power callback received");
-            emgPwrCbs.add(callback);
-            for (final BluetoothDevice device : getManagedDevices()) {
-                final EmgImuManager manager = (EmgImuManager) getBleManager(device);
-                if (manager.isReady())
-                    manager.enableEmgPwrNotifications();
-            }
-        }
-
-        public void unregisterEmgPwrObserver(IEmgImuPwrDataCallback callback) {
-            Log.d(TAG, "Power callback removed");
-            emgPwrCbs.remove(callback);
-            if (emgStreamCbs.size() == 0) {
-                Log.d(TAG, "No callbacks remain. Stopping stream.");
-                for (final BluetoothDevice device : getManagedDevices()) {
-                    final EmgImuManager manager = (EmgImuManager) getBleManager(device);
-                    manager.disableEmgPwrNotifications();
-                }
-            }
-        }
-
-        @Override
-        public void registerImuAccelObserver(IEmgImuSenseCallback callback) {
-            imuAccelCbs.add(callback);
-            for (final BluetoothDevice device : getManagedDevices()) {
-                final EmgImuManager manager = getBleManager(device);
-                if (manager.isReady())
-                    manager.enableAccelNotifications();
-            }
-        }
-
-        @Override
-        public void unregisterImuAccelObserver(IEmgImuSenseCallback callback) {
-            imuAccelCbs.remove(callback);
-            if (imuAccelCbs.size() == 0) {
-                for (final BluetoothDevice device : getManagedDevices()) {
-                    final EmgImuManager manager = getBleManager(device);
-                    manager.disableAccelNotifications();
-                }
-            }
-        }
-
-        @Override
-        public void registerImuGyroObserver(IEmgImuSenseCallback callback) {
-            imuGyroCbs.add(callback);
-            for (final BluetoothDevice device : getManagedDevices()) {
-                final EmgImuManager manager = getBleManager(device);
-                if (manager.isReady())
-                    manager.enableGyroNotifications();
-            }
-        }
-
-        @Override
-        public void unregisterImuGyroObserver(IEmgImuSenseCallback callback) {
-            imuGyroCbs.remove(callback);
-            if (imuGyroCbs.size() == 0) {
-                for (final BluetoothDevice device : getManagedDevices()) {
-                    final EmgImuManager manager = getBleManager(device);
-                    manager.disableGyroNotifications();
-                }
-            }
-        }
-
-        @Override
-        public void registerImuMagObserver(IEmgImuSenseCallback callback)  {
-            imuMagCbs.add(callback);
-            for (final BluetoothDevice device : getManagedDevices()) {
-                final EmgImuManager manager = getBleManager(device);
-                if (manager.isReady())
-                    manager.enableMagNotifications();
-            }
-        }
-
-        @Override
-        public void unregisterImuMagObserver(IEmgImuSenseCallback callback) {
-            imuMagCbs.remove(callback);
-            if (imuMagCbs.size() == 0) {
-                for (final BluetoothDevice device : getManagedDevices()) {
-                    final EmgImuManager manager = getBleManager(device);
-                    manager.disableMagNotifications();
-                }
-            }
-        }
-
-        @Override
-        public void registerImuQuatObserver(IEmgImuQuatCallback callback) {
-            imuQuatCbs.add(callback);
-            for (final BluetoothDevice device : getManagedDevices()) {
-                final EmgImuManager manager = getBleManager(device);
-                if (manager.isReady())
-                    manager.enableAttitudeNotifications();
-            }
-        }
-
-        @Override
-        public void unregisterImuQuatObserver(IEmgImuQuatCallback callback) {
-            imuQuatCbs.remove(callback);
-            if (imuQuatCbs.size() == 0) {
-                for (final BluetoothDevice device : getManagedDevices()) {
-                    final EmgImuManager manager = getBleManager(device);
-                    manager.disableAttitudeNotifications();
-                }
-            }
-        }
-
-        @Override
-        public void registerBatObserver(IEmgImuBatCallback callback) throws RemoteException {
-            batCbs.add(callback);
-        }
-
-        @Override
-        public void unregisterBatObserver(IEmgImuBatCallback callback) throws RemoteException {
-            batCbs.remove(callback);
-        }
-
         public String getUser() {
             if (mCurrentUser != null)
                 return mCurrentUser.getUid();
             return "";
+        }
+
+        public String getAuthToken() {
+            return mToken;
         }
 
         public List<String> getLoggingReferences() {
@@ -425,16 +444,9 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
                 final EmgImuManager manager = (EmgImuManager) getBleManager(device);
                 references.add(manager.getLoggingRef());
             }
-
             return references;
         }
-
-        public NetworkStreaming getNetworkStreaming() {
-            //! Return handle to object that can forward data stream
-            return networkStreaming;
-        }
-
-	}
+    }
 
 	protected IBinder getBinder() {
 		return mBinder;
@@ -442,7 +454,6 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
 
 	protected EmgImuManager initializeManager() {
         EmgImuManager manager = new EmgImuManager(this);
-	    manager.setEmgImuObserver(this);
 		return manager;
 	}
 
@@ -471,6 +482,7 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
         Log.d(TAG, "onServiceCreated");
 
         mAuth = FirebaseAuth.getInstance();
+        mToken = null;
 
         // Check if user is signed in (non-null) and update UI accordingly.
         mCurrentUser = mAuth.getCurrentUser();
@@ -483,7 +495,9 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
                             mCurrentUser = mAuth.getCurrentUser();
 
                             Log.d(TAG, "signInAnonymously:success. UID:" + mCurrentUser.getUid());
-
+                            // It can happen that either one is set first
+                            if (mToken != null && mCurrentUser != null)
+                                storeToken();
                         } else {
                             // If sign in fails, display a message to the user.
                             Log.d(TAG, "signInAnonymously:failure" + task.getException());
@@ -492,6 +506,14 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
         } else {
             Log.d(TAG, "User ID: " + mCurrentUser.getUid());
         }
+        FirebaseInstallations.getInstance().getId().addOnSuccessListener(mToken -> {
+            Log.d(TAG, "Received token: " + mToken);
+
+            // It can happen that either one is set first
+            if (mToken != null && mCurrentUser != null)
+                storeToken();
+
+        });
 
         // Obtain the FirebaseAnalytics instance.
         mFirebaseAnalytics = FirebaseAnalytics.getInstance(this);
@@ -499,11 +521,21 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
         Bundle bundle = new Bundle();
         bundle.putString(FirebaseAnalytics.Param.ITEM_ID, "EMG_IMU_SERVICE_CREATED");
         mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.SELECT_CONTENT, bundle);
-
-        networkStreaming = new NetworkStreaming();
 	}
 
-    private final SimpleArrayMap<String, Pair<Runnable, Integer>> logFetchStartId = new SimpleArrayMap<>();
+    private void storeToken()
+    {
+        Log.d(TAG, "Updating token for user in firestore");
+        FirebaseFirestore mDb = FirebaseFirestore.getInstance();
+        FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder().build();
+        mDb.setFirestoreSettings(settings);
+        DocumentReference doc = mDb.collection("fcmTokens").document(mCurrentUser.getUid());
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("token", mToken);
+        data.put("updated", Timestamp.now());
+        doc.set(data);
+    }
 
     @Override
     public int onStartCommand(final Intent intent, final int flags, final int startId) {
@@ -549,27 +581,6 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
                 }
             }
 
-            synchronized (logFetchStartId) {
-                if (logFetchStartId.containsKey(device_mac)) {
-                    // This really shouldn't happen as prior fetches should complete or clear up
-                    Log.e(TAG, "Log fetching running for " + device_mac);
-                    return START_NOT_STICKY;
-                }
-
-
-                Runnable connectionTimeout = () -> {
-                    Log.i(TAG, "Unable to connect to " + device_mac + " in one second");
-                    smartStop(device);
-                };
-                // Note if we were showing the notification based on connecting, then
-                // this would need to be shorter. However, we show the notification
-                // regardless so can keep this longer to make sure we don't fail on
-                // slower devices.
-                getHandler().postDelayed(connectionTimeout, 5000);
-
-                logFetchStartId.put(device_mac, new Pair<>(connectionTimeout, startId));
-            }
-
             try {
                 mBinder.connectDevice(device); //,  getLogger(device));
             } catch (RemoteException e) {
@@ -579,66 +590,6 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
 
         return START_STICKY;
     }
-
-    /**
-     * Handles stopping service based on the thread ID. This is a bit complicated because
-     * it will stopSelf(threadId) will stop if it is the most recent (greatest) thread ID
-     * but we want to only stop when it is the last one.
-     */
-    private void smartStop(BluetoothDevice device) {
-        synchronized(logFetchStartId) {
-            Integer startThreadId = logFetchStartId.get(device.getAddress()).second;
-
-            // To avoid this being double called remove the timer
-            Log.i(TAG, "Removing connection timeout runnable from " + device.getAddress());
-            getHandler().removeCallbacks(logFetchStartId.get(device.getAddress()).first);
-
-            // If there is only one thread remaining, then appropriate to stop it
-            if (logFetchStartId.size() == 1) {
-
-                logFetchStartId.remove(device.getAddress());
-
-                /* TODO if (mBinded) {
-                    //mBinder.log(device, LogContract.Log.Level.DEBUG, "Last log retrieval thread completed. Not stopped service as service also bound");
-                } else {
-                    //mBinder.log(device, LogContract.Log.Level.DEBUG, "One thread found so stopping service: " + logFetchStartId);
-                    stopSelf(startThreadId);
-                } */
-                stopSelf(startThreadId);
-
-                return;
-            }
-
-            // Work out the maximum thread Id
-            Integer maxThreadId = 0;
-            for (int i = 0; i < logFetchStartId.size(); i++) {
-                if (logFetchStartId.valueAt(i).second > maxThreadId) {
-                    maxThreadId = logFetchStartId.valueAt(i).second;
-                }
-            }
-
-            if (startThreadId >= maxThreadId) {
-                //mBinder.log(device, LogContract.Log.Level.DEBUG, "Multiple threads and this is the greatest. Just removing element " + startThreadId +
-                //        " " + logFetchStartId);
-
-                // If there are multiple threads and this one is the highest number we should
-                // only remove its ID
-                logFetchStartId.remove(device.getAddress());
-
-                // However later stop needs to use this maxThreadId which we removed. Arbitrarily
-                // assign to the first device..
-                logFetchStartId.setValueAt(0, new Pair<>(logFetchStartId.valueAt(0).first, maxThreadId));
-            } else {
-                //mBinder.log(device, LogContract.Log.Level.DEBUG, "This is not the lowest thread. Service should not stop after " + startThreadId + " "
-                //        + logFetchStartId);
-
-                // This call to stopSelf should make no functional difference
-                stopSelf(startThreadId);
-                logFetchStartId.remove(device.getAddress());
-            }
-        }
-    }
-
 
     private void ensureBLESupported() {
         if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
@@ -707,9 +658,6 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
         Bundle bundle = new Bundle();
         bundle.putString(FirebaseAnalytics.Param.ITEM_ID, "EMG_IMU_SERVICE_STOPPED");
         mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.SELECT_CONTENT, bundle);
-
-        if (networkStreaming != null && networkStreaming.isConnected())
-            networkStreaming.stop();
     }
 
 
@@ -739,20 +687,6 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
     @Override
 	public void onDeviceConnected(final BluetoothDevice device) {
         Log.d(TAG, "onDeviceConnected: " + device);
-
-        // See if a log fetch has been requested
-        Pair<Runnable, Integer> p = logFetchStartId.get(device.getAddress());
-        if (p != null) {
-            Log.i(TAG, "Removing connection timeout runnable from " + device.getAddress());
-            getHandler().removeCallbacks(p.first);
-        }
-
-        /* TODO
-        if (!mBinded) {
-			createBackgroundNotification();
-		}
-		*/
-
         Bundle bundle = new Bundle();
         bundle.putString(FirebaseAnalytics.Param.ITEM_ID, "EMG_IMU_SERVICE_CONNECTED");
         bundle.putString(FirebaseAnalytics.Param.ITEM_NAME, device.getName());
@@ -767,59 +701,17 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
     @Override
     public void onDeviceDisconnected(@NonNull final BluetoothDevice device, @DisconnectionReason final int reason) {
         Log.d(TAG, "onDeviceDisconnected: " + device);
-        /*
-        // TODO
-		if (!mBinded) {
-			cancelNotification(device);
-			createBackgroundNotification();
-		}
-		*/
 	}
-
 
     @Override
     public void onDeviceReady(BluetoothDevice device) {
         Log.d(TAG, "onDeviceReady: " + device);
-        // See if a log fetch has been requested
-        if(logFetchStartId.get(device.getAddress()) != null) {
-            getBleManager(device).fetchLogRecords(device1 -> onEmgLogFetchCompleted(device1), (device12, reason) -> onEmgLogFetchFailed(device12, reason));
-        } else {
-            // If there is a subscriber for information then enable those services. At some
-            // point this API might need expanding if we want to enable different sensing
-            // from different devices
-
-            if (!emgPwrCbs.isEmpty()) {
-                getBleManager(device).enableEmgPwrNotifications();
-            }
-
-            if (!emgStreamCbs.isEmpty()) {
-                getBleManager(device).enableEmgBuffNotifications();
-            }
-
-            if (!imuAccelCbs.isEmpty()) {
-                getBleManager(device).enableAccelNotifications();
-            }
-
-            if (!imuGyroCbs.isEmpty() ) {
-                getBleManager(device).enableGyroNotifications();
-            }
-
-            if (!imuMagCbs.isEmpty()) {
-                getBleManager(device).enableMagNotifications();
-            }
-
-            if (!imuQuatCbs.isEmpty()) {
-                getBleManager(device).enableAttitudeNotifications();
-            }
-
-        }
     }
 
     @Override
     public void onDeviceDisconnecting(@NonNull BluetoothDevice device) {
         Log.d(TAG, "onDeviceDisconnecting: " + device);
     }
-
 
     /** Connections and device management **/
     private List<BluetoothDevice> managedDevices = new ArrayList<>();
@@ -862,7 +754,6 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
 
     void onDeviceListUpdated() {
         liveDevices.postValue(managedDevices);
-
         try {
             for (IEmgImuDevicesUpdatedCallback cb : deviceUpdateCbs)
                 cb.onDeviceListUpdated();
@@ -931,60 +822,6 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
         return Collections.unmodifiableList(devices);
     }
 
-    /*
-	private void configureLoggingSavedDevices() {
-
-        // Create a new dispatcher using the Google Play driver.
-        FirebaseJobDispatcher dispatcher = new FirebaseJobDispatcher(new GooglePlayDriver(this));
-
-        Log.d(TAG, "Canceling log fetching jobs");
-        dispatcher.cancelAll();
-
-        // Need to access context this way so all apps using service (and with the sharedUserId)
-        // have the same preferences and connect to the same devices
-        Context mContext = null;
-        try {
-            mContext = this.createPackageContext("org.sralab.emgimu", Context.CONTEXT_RESTRICTED);
-        } catch (PackageManager.NameNotFoundException e) {
-            e.printStackTrace();
-        }
-        SharedPreferences sharedPref = mContext.getSharedPreferences(SERVICE_PREFERENCES, Context.MODE_PRIVATE);
-        String deviceList_s = sharedPref.getString(DEVICE_PREFERENCE, "[]");
-
-        try {
-            JSONArray names = new JSONArray(deviceList_s);
-            for (int i = 0; i < names.length(); i++) {
-                Bundle jobInfo = new Bundle();
-                jobInfo.putString("device_mac", names.getString(i));
-
-                Log.d(TAG, "Scheduling log fetching jobs for " + names.getString(i));
-
-                Job myJob = dispatcher.newJobBuilder()
-                        .setService(EmgLogFetchJobService.class)             // the JobService that will be called
-                        .setTag(EmgLogFetchJobService.JOB_TAG + "_" + names.getString(i))               // uniquely identifies the job
-                        .setTrigger(Trigger.executionWindow(LOG_FETCH_PERIOD_MIN_S, LOG_FETCH_PERIOD_MAX_S))
-                        .setLifetime(Lifetime.FOREVER)                       // run after boot
-                        .setRecurring(true)                                  // tasks reoccurs
-                        .setRetryStrategy(RetryStrategy.DEFAULT_LINEAR) // default strategy
-                        .setExtras(jobInfo)                                  // store the mac address
-                        .setReplaceCurrent(true)
-                        .build();
-                int result = dispatcher.schedule(myJob);
-                if (result != FirebaseJobDispatcher.SCHEDULE_RESULT_SUCCESS) {
-                    Log.e(TAG, "Scheduling log fetch failed");
-                    showToast("Unable to schedule log fetching.");
-                    if (BuildConfig.DEBUG)
-                        throw new RuntimeException("Unable to schedule job fetching");
-                } else {
-                    Log.d(TAG, "Job scheduled successfully");
-                }
-            }
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-    }
-    */
-
     /** Core service components **/
     private final BroadcastReceiver bluetoothStateBroadcastReceiver = new BroadcastReceiver() {
         @Override
@@ -1007,7 +844,6 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
             }
         }
     };
-
 
     /**
      * Method called when Bluetooth Adapter has been disabled.
@@ -1172,233 +1008,6 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
 		*/
 	}
 
-    @Override
-    public void onBatteryReceived(BluetoothDevice device, float battery) {
-	    for (IEmgImuBatCallback cb : batCbs) {
-            try {
-                cb.handleData(device, battery);
-            } catch (RemoteException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    public void onEmgPwrReceived(final BluetoothDevice device, long ts_ms, int value)
-    {
-        if (networkStreaming != null && networkStreaming.isConnected()) {
-            double [] data = {(double) value};
-            networkStreaming.streamEmgPwr(device, new Date().getTime(), data);
-        }
-
-        EmgPwrData dataMsg = new EmgPwrData();
-        dataMsg.channels = 1;
-        dataMsg.power = new int[]{value};
-        dataMsg.ts = ts_ms;
-
-        for (IEmgImuPwrDataCallback cb : emgPwrCbs) {
-            try {
-                cb.handleData(device, dataMsg);
-            } catch (RemoteException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    @Override
-    public void onEmgStreamReceived(BluetoothDevice device, long ts_ms, double[][] data) {
-
-	    // TODO: fair bit of semi-redundant data serialization. Should consolidate.
-
-	    // First: send data to subscribed callbacks
-        final int CHANNELS = data.length;
-        final int SAMPLES = data[0].length;
-	    double [] linearizedData = Stream.of(data).flatMapToDouble(DoubleStream::of).toArray();
-
-	    // For reference. Might ultimately make sense to wrapper this in a utility class
-        // double [][] reconstructed = IntStream.range(0, CHANNELS)
-        //        .mapToObj(i -> Arrays.copyOfRange(linearizedData2, i * SAMPLES, (i + 1) * SAMPLES))
-        //        .toArray(double[][]::new);
-
-        EmgStreamData dataMsg = new EmgStreamData();
-        dataMsg.channels = CHANNELS;
-        dataMsg.samples = SAMPLES;
-        dataMsg.voltage = linearizedData;
-        dataMsg.ts = ts_ms;
-        dataMsg.Fs = 2000; // TODO: access real data
-
-        for (IEmgImuStreamDataCallback cb : emgStreamCbs) {
-            try {
-                cb.handleData(device, dataMsg);
-            } catch (RemoteException e) {
-                e.printStackTrace();
-            }
-        }
-
-        // Second: pass through EMG decoder (Tensorflow Lite) if registered
-        // TODO: improve design pattern, if possible. Likely good for this
-        // to live in service so other objects can subscribe to it, though.
-        // If EMG decoder exists, push data through this
-        if (emgDecoder != null) {
-
-            if (CHANNELS != emgDecoder.getChannels()) {
-                throw new RuntimeException("Incompatible channel sizes between Emg Decoder and received data");
-            }
-            float input_data[] = new float[CHANNELS];
-            float coordinates[] = new float[2];
-
-            for (int i = 0; i < SAMPLES; i++) {
-
-                for (int j = 0; j < CHANNELS; j++) {
-                    input_data[j] = (float) data[j][i];
-                }
-
-                boolean res = emgDecoder.decode(input_data, coordinates);
-                if (res) {
-                    if (emgDecodedCallback != null)
-                        emgDecodedCallback.onEmgDecoded(coordinates);
-                }
-            }
-        }
-
-        // Third: mirror data over stream
-        if (networkStreaming != null && networkStreaming.isConnected()) {
-            networkStreaming.streamEmgBuffer(device, ts_ms, SAMPLES, CHANNELS, data);
-        }
-
-    }
-
-    @Override
-    public void onImuAccelReceived(BluetoothDevice device, float[][] accel) {
-        float [] linearizedData = new float[3 * 3];
-
-        for (int i = 0; i < 3; i++)
-            for (int j = 0; j < 3; j++)
-                linearizedData[i + j * 3] = accel[i][j];
-
-        ImuData dataMsg = new ImuData();
-        dataMsg.samples = accel[0].length;
-        dataMsg.x = accel[0];
-        dataMsg.y = accel[1];
-        dataMsg.z = accel[2];
-        dataMsg.ts = new Date().getTime();
-        for (IEmgImuSenseCallback cb : imuAccelCbs) {
-            try {
-                cb.handleData(device, dataMsg);
-            } catch (RemoteException e) {
-                e.printStackTrace();
-            }
-        }
-
-        /*
-        if (networkStreaming != null && networkStreaming.isConnected()) {
-            double [] data = {(double) value};
-            networkStreaming.streamImuAttitude(device, 0, data);
-        }
-        */
-    }
-
-    @Override
-    public void onImuGyroReceived(BluetoothDevice device, float[][] gyro) {
-        float [] linearizedData = new float[3 * 3];
-
-        for (int i = 0; i < 3; i++)
-            for (int j = 0; j < 3; j++)
-                linearizedData[i + j * 3] = gyro[i][j];
-
-        ImuData dataMsg = new ImuData();
-        dataMsg.samples = gyro[0].length;
-        dataMsg.x = gyro[0];
-        dataMsg.y = gyro[1];
-        dataMsg.z = gyro[2];
-        dataMsg.ts = new Date().getTime();
-        for (IEmgImuSenseCallback cb : imuGyroCbs) {
-            try {
-                cb.handleData(device, dataMsg);
-            } catch (RemoteException e) {
-                e.printStackTrace();
-            }
-        }
-
-        /*
-        if (networkStreaming != null && networkStreaming.isConnected()) {
-            double [] data = {(double) value};
-            networkStreaming.streamImuAttitude(device, 0, data);
-        }
-        */
-    }
-
-    @Override
-    public void onImuMagReceived(BluetoothDevice device, float[][] mag) {
-        float [] linearizedData = new float[3 * 3];
-
-        for (int i = 0; i < 3; i++)
-            for (int j = 0; j < 3; j++)
-                linearizedData[i + j * 3] = mag[i][j];
-
-        ImuData dataMsg = new ImuData();
-        dataMsg.samples = mag[0].length;
-        //dataMsg.ts = ts_ms;
-        dataMsg.x = mag[0];
-        dataMsg.y = mag[1];
-        dataMsg.z = mag[2];
-        dataMsg.ts = new Date().getTime();
-        for (IEmgImuSenseCallback cb : imuMagCbs) {
-            try {
-                cb.handleData(device, dataMsg);
-            } catch (RemoteException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    @Override
-    public void onImuAttitudeReceived(BluetoothDevice device, float[] quaternion) {
-	    ImuQuatData dataMsg = new ImuQuatData();
-	    dataMsg.ts = 0; // TODO
-        dataMsg.q0 = quaternion[0];
-        dataMsg.q1 = quaternion[1];
-        dataMsg.q2 = quaternion[2];
-        dataMsg.q3 = quaternion[3];
-        dataMsg.ts = new Date().getTime();
-        for (IEmgImuQuatCallback cb : imuQuatCbs) {
-            try {
-                cb.handleData(device, dataMsg);
-            } catch (RemoteException e) {
-                e.printStackTrace();
-            }
-        }
-        /*
-        if (networkStreaming != null && networkStreaming.isConnected()) {
-            double [] data = {(double) value};
-            networkStreaming.streamImuAttitude(device, 0, data);
-        }
-        */
-    }
-
-    /******** These callbacks are for managing the EMG logging via RACP ********/
-
-    public void onEmgLogFetchCompleted(BluetoothDevice device) {
-        //mBinder.log(device, LogContract.Log.Level.DEBUG, "onEmgLogFetchCompleted: " + logFetchStartId);
-
-        if (logFetchStartId.get(device.getAddress()) != null) {
-            //mBinder.log(device, LogContract.Log.Level.INFO, "Log retrieval complete");
-            smartStop(device);
-        } else {
-            //mBinder.log(device, LogContract.Log.Level.WARNING, "onEmgLogFetchCompleted without log fetch intent");
-        }
-    }
-
-    public void onEmgLogFetchFailed(final BluetoothDevice device, String reason) {
-        //mBinder.log(device, LogContract.Log.Level.DEBUG, "onEmgLogFetchFailed: " + logFetchStartId);
-
-        if (logFetchStartId.get(device.getAddress()) != null) {
-            //mBinder.log(device, LogContract.Log.Level.INFO, "Log fetch failed");
-            smartStop(device);
-        } else {
-            //mBinder.log(device, LogContract.Log.Level.WARNING, "onEmgLogFetchFailed without log fetch intent");
-        }
-    }
-
     /********* End EMG Logging RACP callbacks ********/
 
     private String getDeviceName(final BluetoothDevice device) {
@@ -1407,5 +1016,4 @@ public class EmgImuService extends Service implements ConnectionObserver, EmgImu
 			name = getString(R.string.emgimu_default_device_name);
 		return name;
 	}
-
 }

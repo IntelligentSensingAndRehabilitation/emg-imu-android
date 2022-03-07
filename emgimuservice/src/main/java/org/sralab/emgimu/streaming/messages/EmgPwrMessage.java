@@ -8,10 +8,10 @@ public class EmgPwrMessage {
     public long timestamp;
     public long sensor_timestamp;
     public int sensor_counter;
-    public double [] data;
+    public int [] data;
 
     public EmgPwrMessage(String bluetoothMac, long timestamp,
-                         long sensor_timestamp, int sensor_counter, double [] data) {
+                         long sensor_timestamp, int sensor_counter, int [] data) {
         this.bluetoothMac = bluetoothMac;
         this.timestamp = timestamp;
         this.data = data;

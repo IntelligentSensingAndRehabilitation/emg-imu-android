@@ -23,26 +23,26 @@ interface IEmgImuServiceBinder  {
     void unregisterDevicesObserver(IEmgImuDevicesUpdatedCallback callback);
     void storeGameplayRecord(String name, long startTime, in String details);
     List<String> getLoggingReferences();
+    String getAuthToken();
     // boolean isConnected(in BluetoothDevice device);
-    // boolean isReady(in BluetoothDevice device);
 
     // For receiving EMG data
-    void registerEmgStreamObserver(IEmgImuStreamDataCallback callback);
-    void unregisterEmgStreamObserver(IEmgImuStreamDataCallback callback);
-    void registerEmgPwrObserver(IEmgImuPwrDataCallback callback);
-    void unregisterEmgPwrObserver(IEmgImuPwrDataCallback callback);
+    void registerEmgStreamObserver(in BluetoothDevice regDevice, IEmgImuStreamDataCallback callback);
+    void unregisterEmgStreamObserver(in BluetoothDevice regDevice, IEmgImuStreamDataCallback callback);
+    void registerEmgPwrObserver(in BluetoothDevice regDevice, IEmgImuPwrDataCallback callback);
+    void unregisterEmgPwrObserver(in BluetoothDevice regDevice, IEmgImuPwrDataCallback callback);
 
     // For receiving IMU data
-    void registerImuAccelObserver(IEmgImuSenseCallback callback);
-    void unregisterImuAccelObserver(IEmgImuSenseCallback callback);
-    void registerImuGyroObserver(IEmgImuSenseCallback callback);
-    void unregisterImuGyroObserver(IEmgImuSenseCallback callback);
-    void registerImuMagObserver(IEmgImuSenseCallback callback);
-    void unregisterImuMagObserver(IEmgImuSenseCallback callback);
-    void registerImuQuatObserver(IEmgImuQuatCallback callback);
-    void unregisterImuQuatObserver(IEmgImuQuatCallback callback);
+    void registerImuAccelObserver(in BluetoothDevice regDevice, IEmgImuSenseCallback callback);
+    void unregisterImuAccelObserver(in BluetoothDevice regDevice, IEmgImuSenseCallback callback);
+    void registerImuGyroObserver(in BluetoothDevice regDevice, IEmgImuSenseCallback callback);
+    void unregisterImuGyroObserver(in BluetoothDevice regDevice, IEmgImuSenseCallback callback);
+    void registerImuMagObserver(in BluetoothDevice regDevice, IEmgImuSenseCallback callback);
+    void unregisterImuMagObserver(in BluetoothDevice regDevice, IEmgImuSenseCallback callback);
+    void registerImuQuatObserver(in BluetoothDevice regDevice, IEmgImuQuatCallback callback);
+    void unregisterImuQuatObserver(in BluetoothDevice regDevice, IEmgImuQuatCallback callback);
 
     // For receiving battery data
-    void registerBatObserver(IEmgImuBatCallback callback);
-    void unregisterBatObserver(IEmgImuBatCallback callback);
+    void registerBatObserver(in BluetoothDevice regDevice, IEmgImuBatCallback callback);
+    void unregisterBatObserver(in BluetoothDevice regDevice, IEmgImuBatCallback callback);
 }

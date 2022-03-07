@@ -35,9 +35,7 @@ import java.util.Map;
 public abstract class EmgImuViewModel <T> extends AndroidViewModel {
 
     private final static String TAG = EmgImuViewModel.class.getSimpleName();
-
     Application app;
-
     IEmgImuServiceBinder service;
 
     public boolean getObservePwr() { return false; }
@@ -72,17 +70,16 @@ public abstract class EmgImuViewModel <T> extends AndroidViewModel {
                 throw new RuntimeException("Service disconnected before unregistering.");
             }
             service.unregisterDevicesObserver(deviceListObserver);
-            if (getObservePwr()) service.unregisterEmgPwrObserver(pwrObserver);
-            if (getObserveStream()) service.unregisterEmgStreamObserver(streamObserver);
-            if (getObserveAccel()) service.unregisterImuAccelObserver(accelObserver);
-            if (getObserveGyro()) service.unregisterImuGyroObserver(gyroObserver);
-            if (getObserveMag()) service.unregisterImuMagObserver(magObserver);
-            if (getObserveQuat()) service.unregisterImuQuatObserver(quatObserver);
-            if (getObserveBat()) service.unregisterBatObserver(batObserver);
+            if (getObservePwr()) service.unregisterEmgPwrObserver(null, pwrObserver);
+            if (getObserveStream()) service.unregisterEmgStreamObserver(null, streamObserver);
+            if (getObserveAccel()) service.unregisterImuAccelObserver(null, accelObserver);
+            if (getObserveGyro()) service.unregisterImuGyroObserver(null, gyroObserver);
+            if (getObserveMag()) service.unregisterImuMagObserver(null, magObserver);
+            if (getObserveQuat()) service.unregisterImuQuatObserver(null, quatObserver);
+            if (getObserveBat()) service.unregisterBatObserver(null, batObserver);
         } catch (RemoteException e) {
             throw new RuntimeException(e);
         }
-
         this.app.getApplicationContext().unbindService(serviceConnection);
     }
 
@@ -98,45 +95,37 @@ public abstract class EmgImuViewModel <T> extends AndroidViewModel {
     }
 
     public void onDeviceListUpdated() {
-        Log.d(TAG, "onDeviceListUpdated fired");
         try {
+            // Check to see if we have any connected devices
             List<BluetoothDevice> devices = service.getManagedDevices();
             devicesLiveData.setValue(mapDev(devices));
+            if (!deviceMap.isEmpty()) {
+                if (getObservePwr()) { service.registerEmgPwrObserver(null, pwrObserver); }
+                if (getObserveStream()) { service.registerEmgStreamObserver(null, streamObserver); }
+                if (getObserveAccel()) service.registerImuAccelObserver(null, accelObserver);
+                if (getObserveGyro()) service.registerImuGyroObserver(null, gyroObserver);
+                if (getObserveMag()) service.registerImuMagObserver(null, magObserver);
+                if (getObserveQuat()) service.registerImuQuatObserver(null, quatObserver);
+                if (getObserveBat()) service.registerBatObserver(null, batObserver);
+            }
          } catch (RemoteException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public void onServiceConnected()
-    {
+    public void onServiceConnected() { }
 
-    }
-
-    public void onServiceDisconnected()
-    {
-
-    }
+    public void onServiceDisconnected() { }
 
     private ServiceConnection serviceConnection = new ServiceConnection() {
-
         @Override
         public void onServiceConnected(final ComponentName name, final IBinder binder) {
             service = IEmgImuServiceBinder.Stub.asInterface(binder);
-
             try {
                 service.registerDevicesObserver(deviceListObserver);
-
-                if (getObservePwr()) service.registerEmgPwrObserver(pwrObserver);
-                if (getObserveStream()) service.registerEmgStreamObserver(streamObserver);
-                if (getObserveAccel()) service.registerImuAccelObserver(accelObserver);
-                if (getObserveGyro()) service.registerImuGyroObserver(gyroObserver);
-                if (getObserveMag()) service.registerImuMagObserver(magObserver);
-                if (getObserveQuat()) service.registerImuQuatObserver(quatObserver);
-                if (getObserveBat()) service.registerBatObserver(batObserver);
             } catch (RemoteException e) {
                 throw new RuntimeException(e);
             }
-
             onDeviceListUpdated();
             EmgImuViewModel.this.onServiceConnected();
         }
@@ -160,7 +149,6 @@ public abstract class EmgImuViewModel <T> extends AndroidViewModel {
         public void onDeviceListUpdated() { EmgImuViewModel.this.onDeviceListUpdated(); }
     };
 
-    // Set of callbacks that can easily be used
     public void emgPwrUpdated(T dev, EmgPwrData data) { }
     private final IEmgImuPwrDataCallback.Stub pwrObserver = new IEmgImuPwrDataCallback.Stub() {
         @Override

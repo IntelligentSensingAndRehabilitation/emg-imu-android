@@ -21,18 +21,20 @@
  */
 package org.sralab.emgimu.service;
 
+import static android.bluetooth.BluetoothGattCharacteristic.FORMAT_UINT8;
+
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.RemoteException;
 import android.util.Base64;
 import android.util.Log;
 
@@ -65,6 +67,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.UUID;
+import java.util.stream.DoubleStream;
+import java.util.stream.Stream;
 
 import no.nordicsemi.android.ble.BleManager;
 import no.nordicsemi.android.ble.ConnectionPriorityRequest;
@@ -74,9 +78,11 @@ import no.nordicsemi.android.ble.data.Data;
 import no.nordicsemi.android.ble.data.MutableData;
 
 public class EmgImuManager extends BleManager {
-	private final String TAG = "EmgImuManager";
+    private final String TAG = "EmgImuManager";
 
-	/** Device Information UUID **/
+    /**
+     * Device Information UUID
+     **/
     private final static UUID DEVICE_INFORMATION_SERVICE = UUID.fromString("0000180A-0000-1000-8000-00805f9b34fb");
     private final static UUID MANUFACTURER_NAME_CHARACTERISTIC = UUID.fromString("00002A29-0000-1000-8000-00805f9b34fb");
     private final static UUID SERIAL_NUMBER_CHARACTERISTIC = UUID.fromString("00002A25-0000-1000-8000-00805f9b34fb");
@@ -85,17 +91,23 @@ public class EmgImuManager extends BleManager {
 
     private BluetoothGattCharacteristic mManufacturerCharacteristic, mSerialNumberCharacteristic, mHardwareCharacteristic, mFirmwareCharacteristic;
 
-    /** Battery information **/
+    /**
+     * Battery information
+     **/
     private final static UUID BATTERY_SERVICE = UUID.fromString("0000180F-0000-1000-8000-00805f9b34fb");
     private final static UUID BATTERY_LEVEL_CHARACTERISTIC = UUID.fromString("00002A19-0000-1000-8000-00805f9b34fb");
     private BluetoothGattCharacteristic mBatteryCharacteristic;
 
-    /** EMG Service UUID **/
-	public final static UUID EMG_SERVICE_UUID = UUID.fromString("00001234-1212-EFDE-1523-785FEF13D123");
+    /**
+     * EMG Service UUID
+     **/
+    public final static UUID EMG_SERVICE_UUID = UUID.fromString("00001234-1212-EFDE-1523-785FEF13D123");
     public final static UUID EMG_BUFF_CHAR_UUID = UUID.fromString("00001236-1212-EFDE-1523-785FEF13D123");
     public final static UUID EMG_PWR_CHAR_UUID = UUID.fromString("00001237-1212-EFDE-1523-785FEF13D123");
 
-    /** IMU Service UUID **/
+    /**
+     * IMU Service UUID
+     **/
     public final static UUID IMU_SERVICE_UUID = UUID.fromString("00002234-1212-EFDE-1523-785FEF13D123");
     public final static UUID IMU_ACCEL_CHAR_UUID = UUID.fromString("00002235-1212-EFDE-1523-785FEF13D123");
     public final static UUID IMU_GYRO_CHAR_UUID = UUID.fromString("00002236-1212-EFDE-1523-785FEF13D123");
@@ -103,7 +115,9 @@ public class EmgImuManager extends BleManager {
     public final static UUID IMU_ATTITUDE_CHAR_UUID = UUID.fromString("00002238-1212-EFDE-1523-785FEF13D123");
     public final static UUID IMU_CALIBRATION_CHAR_UUID = UUID.fromString("00002239-1212-EFDE-1523-785FEF13D123");
 
-    /** FORCE UUID **/
+    /**
+     * FORCE UUID
+     **/
     public final static UUID FORCE_SERVICE_UUID = UUID.fromString("6E400001-B5A3-F393-E0A9-E50E24DCCA9E");
     public final static UUID FORCE_WRITE_CHAR_UUID = UUID.fromString("6E400003-B5A3-F393-E0A9-E50E24DCCA9E");
 
@@ -139,7 +153,7 @@ public class EmgImuManager extends BleManager {
     //private final static byte OPERATOR_FIRST_RECORD = 5;
     //private final static byte OPERATOR_LAST_RECORD = 6;
 
-
+    private final int BLE_MSG_HEADER_SIZE = 6; // Used for 2-channel power parsing.
 
     /**
      * The filter type is used for range operators ({@link #OPERATOR_LESS_THEN_OR_EQUAL}, {@link #OPERATOR_GREATER_THEN_OR_EQUAL}, {@link #OPERATOR_WITHING_RANGE}.<br/>
@@ -167,11 +181,6 @@ public class EmgImuManager extends BleManager {
     private FirebaseStreamLogger streamLogger;
     private List<EmgLogRecord> mRecords = new ArrayList<>();
 
-    private EmgImuObserver mCallbacks;
-    public void setEmgImuObserver(EmgImuObserver cb) {
-        mCallbacks = cb;
-    }
-
     private BluetoothGattCharacteristic mRecordAccessControlPointCharacteristic, mEmgLogCharacteristic;
 
     //! Data relating to logging to FireBase
@@ -182,12 +191,164 @@ public class EmgImuManager extends BleManager {
     private String mFirmwareRevision;
     private int mChannels;
 
+    // region Fields for Callback Section
+    private List<IEmgImuPwrDataCallback> emgPwrCbs = new ArrayList<>();
+    private List<IEmgImuSenseCallback> imuAccelCbs = new ArrayList<>();
+    private List<IEmgImuSenseCallback> imuGyroCbs = new ArrayList<>();
+    private List<IEmgImuSenseCallback> imuMagCbs = new ArrayList<>();
+    private List<IEmgImuQuatCallback> imuQuatCbs = new ArrayList<>();
+    private List<IEmgImuBatCallback> batCbs = new ArrayList<>();
+    private List<IEmgImuStreamDataCallback> emgStreamCbs = new ArrayList<>();
+    // endregion
+
+    // region Register/Unregister Callbacks Section
+    public void registerEmgPwrCallback(IEmgImuPwrDataCallback callback)
+    {
+        /* Do not duplicate the callback. */
+        if (emgPwrCbs.contains(callback)) {
+            return;
+        }
+        emgPwrCbs.add(callback);
+        /*
+        *  Wait until the sensor is ready, then enable the notification.
+        *  The notification allows the sensor to actually start streaming the data.
+        *  There are 2 pathways to enable the notifications:
+        *   (1) through the game: Bridge-->Service-->Manager (here)
+        *   (2) through the Config app: ViewModel-->Manager & Service
+        */
+        if (isReady()) {
+            enableEmgPwrNotifications();
+        }
+    }
+
+    public void unregisterEmgPwrCallback(IEmgImuPwrDataCallback callback)
+    {
+        /* Order here is important: disable the notification first, then remove it from the list. */
+        disableEmgPwrNotifications();
+        if (!emgPwrCbs.isEmpty()) {
+            emgPwrCbs.remove(callback);
+        }
+    }
+
+    public void registerEmgStreamCallback(IEmgImuStreamDataCallback callback)
+    {
+        if(emgStreamCbs.contains(callback)) {
+            return;
+        }
+        emgStreamCbs.add(callback);
+        if (isReady()) {
+            enableEmgBuffNotifications(); // assuming that EmgBuff pairs with emgStreamCbs
+        }
+    }
+
+    public void unregisterEmgStreamCallback(IEmgImuStreamDataCallback callback)
+    {
+        disableEmgBuffNotifications(); // assuming that EmgBuff pairs with emgStreamCbs
+        if(!emgStreamCbs.isEmpty()) {
+            emgStreamCbs.remove(callback);
+        }
+    }
+
+    public void registerImuAccelCallback(IEmgImuSenseCallback callback)
+    {
+        if(imuAccelCbs.contains(callback)) {
+            return;
+        }
+        imuAccelCbs.add(callback);
+        if (isReady()) {
+            enableAccelNotifications();
+        }
+    }
+
+    public void unregisterImuAccelCallback(IEmgImuSenseCallback callback)
+    {
+        disableAccelNotifications();
+        if(!imuAccelCbs.isEmpty()) {
+            imuAccelCbs.remove(callback);
+        }
+    }
+
+    public void registerImuGyroCallback(IEmgImuSenseCallback callback)
+    {
+        if(imuGyroCbs.contains(callback)) {
+            return;
+        }
+        imuGyroCbs.add(callback);
+        if (isReady()) {
+            enableGyroNotifications();
+        }
+    }
+
+    public void unregisterImuGyroCallback(IEmgImuSenseCallback callback)
+    {
+        disableGyroNotifications();
+        if(!imuGyroCbs.isEmpty()) {
+            imuGyroCbs.remove(callback);
+        }
+    }
+
+    public void registerImuMagCallback(IEmgImuSenseCallback callback)
+    {
+        if(imuMagCbs.contains(callback)) {
+            return;
+        }
+        imuMagCbs.add(callback);
+        if (isReady()) {
+            enableMagNotifications();
+        }
+    }
+
+    public void unregisterImuMagCallback(IEmgImuSenseCallback callback)
+    {
+        disableMagNotifications();
+        if(!imuMagCbs.isEmpty()) {
+            imuMagCbs.remove(callback);
+        }
+    }
+
+    public void registerImuQuatCallback(IEmgImuQuatCallback callback)
+    {
+        if(imuQuatCbs.contains(callback)) {
+            return;
+        }
+        imuQuatCbs.add(callback);
+        if (isReady()) {
+            enableAttitudeNotifications(); // assuming Quaternion pairs with Attitude
+        }
+    }
+
+    public void unregisterImuQuatCallback(IEmgImuQuatCallback callback)
+    {
+        disableAttitudeNotifications(); // assuming Quaternion pairs with Attitude
+        if(!imuQuatCbs.isEmpty()) {
+            imuQuatCbs.remove(callback);
+        }
+    }
+
+    public void registerBatCallback(IEmgImuBatCallback callback)
+    {
+        if(batCbs.contains(callback)) {
+            return;
+        }
+        batCbs.add(callback);
+        if (isReady()) {
+            setNotificationCallback(mBatteryCharacteristic);
+        }
+    }
+
+    public void unregisterBatCallback(IEmgImuBatCallback callback)
+    {
+        disableNotifications(mBatteryCharacteristic);
+        if(!batCbs.isEmpty()) {
+            batCbs.remove(callback);
+        }
+    }
+    // endregion
+
     public EmgImuManager(final Context context) {
 		super(context);
         mSynced = false;
         mFetchRecords = false;
-
-        log(Log.INFO, "EmgImuManager created!");
 	}
 
     @NonNull
@@ -272,7 +433,7 @@ public class EmgImuManager extends BleManager {
 
             if(mForceCharacteristic != null) {
                 enableNotifications(mForceCharacteristic)
-                        .before(device -> setNotificationCallback(mForceCharacteristic).with((_device, data) -> parseForce(_device, data)))
+                        .before(device -> setNotificationCallback(mForceCharacteristic).with((_device, data) -> parseForceMeterBLECharacteristic(_device, data)))
                         .done(device -> log(Log.DEBUG, "Force characteristic notification enabled"))
                         .fail((d, status) -> log(Log.DEBUG, "Failed to enable force characteristic notification"))
                         .enqueue();
@@ -375,6 +536,7 @@ public class EmgImuManager extends BleManager {
 
         @Override
         public void onDeviceReady() {
+            //Log.d(TAG, "emgPwr onDeviceReady() got called");
 		    // Complete some of our initialization once we have a device connected
             fireLogger = new FirebaseEmgLogger(EmgImuManager.this);
 
@@ -384,6 +546,30 @@ public class EmgImuManager extends BleManager {
             }
 
             connectionState.postValue(getConnectionState());
+
+            if (!emgPwrCbs.isEmpty()) {
+                enableEmgPwrNotifications();
+            }
+
+            if(!emgStreamCbs.isEmpty()) {
+                enableEmgBuffNotifications();
+            }
+
+            if (!imuAccelCbs.isEmpty()) {
+                enableAccelNotifications();
+            }
+
+            if (!imuGyroCbs.isEmpty() ) {
+                enableGyroNotifications();
+            }
+
+            if (!imuMagCbs.isEmpty()) {
+                enableMagNotifications();
+            }
+
+            if (!imuQuatCbs.isEmpty()) {
+                enableAttitudeNotifications();
+            } else
 
             super.onDeviceReady();
         }
@@ -485,25 +671,57 @@ public class EmgImuManager extends BleManager {
     TimestampResolved emgPwrResolver = new TimestampResolved(EMG_FS / 20, "EmgPwr").setAlias(256);
     TimestampResolved emgStreamResolver = new TimestampResolved(EMG_FS, "EmgStream").setAlias(256);
 
+    /**
+     * @brief   This method parses the EMG power value from a Bluetooth LE message
+     *          sent from wearable sensors.
+     * @details This method enables several other methods, which are responsible for the following:
+     *              - Plotting the power curve in the Config.
+     *              - Sending the data to the database.
+     *
+     *          The structure of the message (format) is as follows:
+     *              - Byte 0-5: header:
+     *                  - Byte 0: format
+     *                      - bit 0-3: reserved
+     *                      - bit 4-7: number of channels
+     *                  - Byte 1: packet counter
+     *                  - Byte 2-5: timestamp
+     *                  - Byte 6-onward: power data for each channel, each channel takes 2-bytes
+     *                    of data, 16-bit resolution starting with LSB in it's first byte
+     * @note    The following are 2 examples of data contained in the characteristic parameter.
+     *              Example 1, when the sensor sends 1 channel of data, the total message will contain:
+     *              - Byte 0-5: header
+     *              - Byte 6: channel 0 LSB
+     *              - Byte 7: channel 0 MSB
+     *
+     *              Example 2, when the sensor sends 2 channels of data, the total message will contain:
+     *              - Byte 0-5: header
+     *              - Byte 6: channel 0 LSB
+     *              - Byte 7: channel 0 MSB
+     *              - Byte 8: channel 1 LSB
+     *              - Byte 9: channel 1 MSB
+     * @param device            Specific sensor connected via Bluetooth LE, recognized by it's MAC address.
+     * @param characteristic    Bluetooth LE message received from the wearable sensor. See details
+     *                          for format.
+     */
     private void parseEmgPwr(BluetoothDevice device,  Data characteristic) {
-        final byte [] buffer = characteristic.getValue();
-        byte format = buffer[0];
-        assert(format == 16);
-
+        int expectedNumberOfChannels = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0) >> 4;
         int counter = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1);
         long timestamp = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 2);
         timestamp = timestampToReal(timestamp);
+        long timestamp_ms = emgPwrResolver.resolveTime(counter, timestamp, 1);
+        int[] emgPowerChannels = new int[expectedNumberOfChannels];
 
-        int pwr_val = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 6) +
-            characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 7) * 256;
+        // Parses the characteristic array for the emgPwr and packs it into n-dim array.
+        for(int messageIndex=BLE_MSG_HEADER_SIZE, channelIndex=0; messageIndex<characteristic.size(); messageIndex+=2, channelIndex++) {
+            emgPowerChannels[channelIndex] = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, messageIndex);
+        }
 
-        long ts_ms = emgPwrResolver.resolveTime(counter, timestamp, 1);
+        // Sends the data to the rest of the application.
+        onEmgPwrReceived(device, timestamp_ms, expectedNumberOfChannels, emgPowerChannels);
 
-        mCallbacks.onEmgPwrReceived(device, ts_ms, pwr_val);
-
+        // Saves data to a .json log file locally on device & transmits the data to the cloud.
         if (mLogging && streamLogger != null) {
-            double [] data = {(double) pwr_val};
-            streamLogger.addPwrSample(new Date().getTime(), timestamp, counter, data);
+            streamLogger.addPwrSample(new Date().getTime(), timestamp, counter, emgPowerChannels);
         }
     }
 
@@ -515,7 +733,7 @@ public class EmgImuManager extends BleManager {
 
         double microvolts_per_lsb;
 
-        int counter = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1);
+        int counter = characteristic.getIntValue(FORMAT_UINT8, 1);
         long timestamp = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 2);
         timestamp = timestampToReal(timestamp);
 
@@ -591,7 +809,7 @@ public class EmgImuManager extends BleManager {
             throw new RuntimeException("Channel count seemed to change between calls");
         }
 
-        mCallbacks.onEmgStreamReceived(device, buf_ts_ms, data);
+        onEmgStreamReceived(device, buf_ts_ms, data);
 
         if (mLogging && streamLogger != null) {
             streamLogger.addStreamSample(new Date().getTime(), timestamp, counter, channels, samples, data);
@@ -620,7 +838,7 @@ public class EmgImuManager extends BleManager {
             for (int chan = 0; chan < 3; chan++)
                 accel[chan][idx] = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT16, (chan + idx * 3) * 2 + 6) * ACCEL_SCALE;
 
-        mCallbacks.onImuAccelReceived(device, accel);
+        onImuAccelReceived(device, accel);
 
         if (mLogging && streamLogger != null) {
             // long sensor_timestamp, int sensor_counter
@@ -644,7 +862,7 @@ public class EmgImuManager extends BleManager {
             for (int chan = 0; chan < 3; chan++)
                 gyro[chan][idx] = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT16, (chan + idx * 3) * 2 + 6) * GYRO_SCALE;
 
-        mCallbacks.onImuGyroReceived(device, gyro);
+        onImuGyroReceived(device, gyro);
 
         if (mLogging && streamLogger != null) {
             streamLogger.addGyroSample(new Date().getTime(), timestamp, counter, gyro);
@@ -666,7 +884,7 @@ public class EmgImuManager extends BleManager {
             for (int chan = 0; chan < 3; chan++)
                 mag[chan][idx] = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT16, (chan + idx * 3) * 2 + 6);
 
-        mCallbacks.onImuMagReceived(device, mag);
+        onImuMagReceived(device, mag);
 
         if (mLogging && streamLogger != null) {
             streamLogger.addMagSample(new Date().getTime(), timestamp, counter, mag);
@@ -684,38 +902,29 @@ public class EmgImuManager extends BleManager {
         float quat[] = new float[4];
         for (int i = 0; i < 4; i++)
             quat[i] = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT16, i * 2 + 6) * scale;
-        mCallbacks.onImuAttitudeReceived(device, quat);
+        onImuAttitudeReceived(device, quat);
 
         if (mLogging && streamLogger != null) {
             streamLogger.addAttitudeSample(new Date().getTime(), timestamp, counter, quat);
         }
     }
 
-    private void parseForce(BluetoothDevice device,  Data characteristic) {
-        final byte [] buffer = characteristic.getValue();
+    /**
+     * This method transformes force meter BLE characteristic into a packaged messaged.
+     * @param device            MAC address of the BLE device (force meter).
+     * @param characteristic    Force measurement value.
+     */
+    private void parseForceMeterBLECharacteristic(BluetoothDevice device, Data characteristic) {
+        long timestamp_ms = new Date().getTime();
+        mForce = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, 3);
 
-        if (buffer.length < 1) {
-            log(Log.INFO, "parseForce is empty!");
-            return;
-
-        }
-        final int counterQuotient = buffer[1] & 0xFF; // byte comes in signed, need it unsigned
-        final int counterRemainder = buffer[2] & 0xFF;
-        final int forceQuotient = buffer[3] & 0xFF;
-        final int forceRemainder = buffer[4] & 0xFF;
-
-        int counter = 256 * counterQuotient + counterRemainder;
-        int force_val = 256 * forceQuotient + forceRemainder;
-
-        long ts_ms = new Date().getTime();
-        mForce = force_val;
-
-        mCallbacks.onEmgPwrReceived(device, ts_ms, mForce * 10);
+        //TODO create separate data handling method for the force meter
+        //onEmgPwrReceived(device, timestamp_ms, mForce * 10);
 
         // logging to firebase db
         if (mLogging && streamLogger != null) {
             double [] data = {(double) mForce};
-            streamLogger.addForceSample(ts_ms, data);
+            streamLogger.addForceSample(timestamp_ms, data);
         }
     }
 
@@ -920,7 +1129,7 @@ public class EmgImuManager extends BleManager {
 
         // Record Access Control Point characteristic
         int offset = 0;
-        final int opCode = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, offset);
+        final int opCode = characteristic.getIntValue(FORMAT_UINT8, offset);
         offset += 2; // skip the operator
 
          if (opCode == OP_CODE_SET_TIMESTAMP_COMPLETE) {
@@ -967,8 +1176,8 @@ public class EmgImuManager extends BleManager {
                      successCallback.onFetchSucceeded(getBluetoothDevice());
              }
          } else if (opCode == OP_CODE_RESPONSE_CODE) {
-            final int requestedOpCode = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, offset);
-            final int responseCode = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, offset + 1);
+            final int requestedOpCode = characteristic.getIntValue(FORMAT_UINT8, offset);
+            final int responseCode = characteristic.getIntValue(FORMAT_UINT8, offset + 1);
             log(Log.VERBOSE, "Response result for: " + requestedOpCode + " is: " + responseCode);
 
             switch (responseCode) {
@@ -1174,15 +1383,14 @@ public class EmgImuManager extends BleManager {
     }
 
 
-    /****** helper methods to enable and disable notifications *******/
-
+    // region Helper Methods to Enable and Disable Bluetooth Notifications
     // Controls to enable what data we are receiving from the sensor
     public void enableEmgPwrNotifications() {
-    enableNotifications(mEmgPwrCharacteristic)
-            .before(device -> setNotificationCallback(mEmgPwrCharacteristic).with((_device, data) -> parseEmgPwr(_device ,data)))
-            .done(device -> log(Log.INFO, "EMG power notifications enabled successfully"))
-            .fail((device, status) -> log(Log.ERROR, "Unable to enable EMG power notification"))
-            .enqueue();
+        enableNotifications(mEmgPwrCharacteristic)
+                .before(device -> setNotificationCallback(mEmgPwrCharacteristic).with((_device, data) -> parseEmgPwr(_device ,data)))
+                .done(device -> log(Log.INFO, "EMG power notifications enabled successfully"))
+                .fail((device, status) -> log(Log.ERROR, "Unable to enable EMG power notification"))
+                .enqueue();
     }
 
     public void disableEmgPwrNotifications() {
@@ -1221,12 +1429,20 @@ public class EmgImuManager extends BleManager {
                 .enqueue();
     }
 
+    public void disableAccelNotifications() {
+        disableNotifications(mImuAccelCharacteristic).enqueue();
+    }
+
     public void enableGyroNotifications() {
         enableNotifications(mImuGyroCharacteristic)
                 .before(device -> setNotificationCallback(mImuGyroCharacteristic).with((_device, data) -> parseImuGyro(_device, data)))
                 .done(device -> log(Log.INFO, "Gyro notifications enabled successfully"))
                 .fail((device, status) -> log(Log.ERROR, "Unable to enable Gyro notification: " + status))
                 .enqueue();
+    }
+
+    public void disableGyroNotifications() {
+        disableNotifications(mImuGyroCharacteristic).enqueue();
     }
 
     public void enableMagNotifications() {
@@ -1237,18 +1453,10 @@ public class EmgImuManager extends BleManager {
                 .enqueue();
     }
 
-    public void disableAccelNotifications() {
-        disableNotifications(mImuAccelCharacteristic).enqueue();
-    }
-
-    public void disableGyroNotifications() {
-        disableNotifications(mImuGyroCharacteristic).enqueue();
-    }
-
     public void disableMagNotifications() {
         disableNotifications(mImuMagCharacteristic).enqueue();
     }
-
+    // endregion
 
     /**** Public API for controlling what we are listening to ****/
     // This is mostly a very thin shim to the above methods
@@ -1279,33 +1487,6 @@ public class EmgImuManager extends BleManager {
         return val;
     }
 
-    //! Output true when EMG power goes over threshold
-    private long THRESHOLD_TIME_NS = 500 * (int)1e6; // 500 ms
-    private float max_pwr = 2000;
-    private float min_pwr = 100;
-    private float threshold_low = 200;
-    private float threshold_high = 500;
-    private long mThresholdTime = 0;
-    private boolean overThreshold;
-
-    /**
-     * Check if a click event happened when EMG goes ovre threshold with hysteresis and
-     * refractory period.
-     */
-    private void checkEmgClick(final BluetoothDevice device, int value) {
-        // Have a refractory time to prevent noise making multiple events
-        long eventTime = System.nanoTime();
-        boolean refractory = (eventTime - mThresholdTime) > THRESHOLD_TIME_NS;
-
-        if (value > threshold_high && overThreshold == false && refractory) {
-            mThresholdTime = eventTime; // Store this time
-            overThreshold = true;
-            //mCallbacks.onEmgClick(device);
-        } else if (value < threshold_low && overThreshold == true) {
-            overThreshold = false;
-        }
-    }
-
     // Accessors for the EMG buffer
     private double [][] mEmgBuff;
     double[][] getEmgBuff() {
@@ -1329,7 +1510,7 @@ public class EmgImuManager extends BleManager {
         double voltage = 3.0 + 1.35 * (batteryLevel / 100.0);
         batteryVoltage.setValue(voltage);
 
-        mCallbacks.onBatteryReceived(device, (float) voltage);
+        onBatteryReceived(device, (float) voltage);
         log(Log.DEBUG, "Received battery level: " + batteryLevel);
     }
 
@@ -1383,5 +1564,160 @@ public class EmgImuManager extends BleManager {
 
     public interface LogFetchFailedCallback {
         void onFetchFailed(@NonNull final BluetoothDevice device, String reason);
+    }
+
+    public void onBatteryReceived(BluetoothDevice device, float battery) {
+        for (IEmgImuBatCallback cb : batCbs) {
+            try {
+                cb.handleData(device, battery);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    /**
+     * @brief   This method packages the emgPwr from each sensor channel.
+     * @details The data is packaged int EmgPwrData data structure defined in the EmgPwrData.aidl
+     *          as a parcelable, which is consumed by the IEmgImuPwrDataCallback.aidl as an
+     *          "in" parameter, indicating that the data flow is from the client to the server.
+     *          Primarily, this method calls handleData() method implemented in the EmgImuViewModel.
+     * @param device            MAC address of the sensor.
+     * @param timestamp_ms      timestamp in milliseconds of the data packet.
+     * @param channelCount      the total number of channels of the emgPwr value.
+     * @param emgPowerValues    an array, zero indexed, of emgPwr value in mV * s, corresponding to
+     *                          each channel. Generated by the waveform algorithm in firmware. It is not
+     *                          particularly - designed to reasonably fill the UINT16 range.
+     */
+    public void onEmgPwrReceived(final BluetoothDevice device, long timestamp_ms, int channelCount, int[] emgPowerValues)
+    {
+        EmgPwrData dataMessage = new EmgPwrData();
+        dataMessage.channels = channelCount;
+        dataMessage.power = new int[channelCount];
+        for (int channelIndex = 0; channelIndex < channelCount; channelIndex++) {
+            dataMessage.power[channelIndex] = emgPowerValues[channelIndex];
+        }
+        dataMessage.ts = timestamp_ms;
+        for (IEmgImuPwrDataCallback cb : emgPwrCbs) {
+            try {
+                cb.handleData(device, dataMessage);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public void onEmgStreamReceived(BluetoothDevice device, long ts_ms, double[][] data) {
+
+        // TODO: fair bit of semi-redundant data serialization. Should consolidate.
+
+        // First: send data to subscribed callbacks
+        final int CHANNELS = data.length;
+        final int SAMPLES = data[0].length;
+        double [] linearizedData = Stream.of(data).flatMapToDouble(DoubleStream::of).toArray();
+
+        // For reference. Might ultimately make sense to wrapper this in a utility class
+        // double [][] reconstructed = IntStream.range(0, CHANNELS)
+        //        .mapToObj(i -> Arrays.copyOfRange(linearizedData2, i * SAMPLES, (i + 1) * SAMPLES))
+        //        .toArray(double[][]::new);
+
+        EmgStreamData dataMsg = new EmgStreamData();
+        dataMsg.channels = CHANNELS;
+        dataMsg.samples = SAMPLES;
+        dataMsg.voltage = linearizedData;
+        dataMsg.ts = ts_ms;
+        dataMsg.Fs = 2000; // TODO: access real data
+
+        for (IEmgImuStreamDataCallback cb : emgStreamCbs) {
+            try {
+                cb.handleData(device, dataMsg);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public void onImuAccelReceived(BluetoothDevice device, float[][] accel) {
+        float [] linearizedData = new float[3 * 3];
+
+        for (int i = 0; i < 3; i++)
+            for (int j = 0; j < 3; j++)
+                linearizedData[i + j * 3] = accel[i][j];
+
+        ImuData dataMsg = new ImuData();
+        dataMsg.samples = accel[0].length;
+        dataMsg.x = accel[0];
+        dataMsg.y = accel[1];
+        dataMsg.z = accel[2];
+        dataMsg.ts = new Date().getTime();
+        for (IEmgImuSenseCallback cb : imuAccelCbs) {
+            try {
+                cb.handleData(device, dataMsg);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public void onImuGyroReceived(BluetoothDevice device, float[][] gyro) {
+        float [] linearizedData = new float[3 * 3];
+
+        for (int i = 0; i < 3; i++)
+            for (int j = 0; j < 3; j++)
+                linearizedData[i + j * 3] = gyro[i][j];
+
+        ImuData dataMsg = new ImuData();
+        dataMsg.samples = gyro[0].length;
+        dataMsg.x = gyro[0];
+        dataMsg.y = gyro[1];
+        dataMsg.z = gyro[2];
+        dataMsg.ts = new Date().getTime();
+        for (IEmgImuSenseCallback cb : imuGyroCbs) {
+            try {
+                cb.handleData(device, dataMsg);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public void onImuMagReceived(BluetoothDevice device, float[][] mag) {
+        float [] linearizedData = new float[3 * 3];
+
+        for (int i = 0; i < 3; i++)
+            for (int j = 0; j < 3; j++)
+                linearizedData[i + j * 3] = mag[i][j];
+
+        ImuData dataMsg = new ImuData();
+        dataMsg.samples = mag[0].length;
+        //dataMsg.ts = ts_ms;
+        dataMsg.x = mag[0];
+        dataMsg.y = mag[1];
+        dataMsg.z = mag[2];
+        dataMsg.ts = new Date().getTime();
+        for (IEmgImuSenseCallback cb : imuMagCbs) {
+            try {
+                cb.handleData(device, dataMsg);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public void onImuAttitudeReceived(BluetoothDevice device, float[] quaternion) {
+        ImuQuatData dataMsg = new ImuQuatData();
+        dataMsg.ts = 0; // TODO
+        dataMsg.q0 = quaternion[0];
+        dataMsg.q1 = quaternion[1];
+        dataMsg.q2 = quaternion[2];
+        dataMsg.q3 = quaternion[3];
+        dataMsg.ts = new Date().getTime();
+        for (IEmgImuQuatCallback cb : imuQuatCbs) {
+            try {
+                cb.handleData(device, dataMsg);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }

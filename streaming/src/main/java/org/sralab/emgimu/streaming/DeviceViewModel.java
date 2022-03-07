@@ -18,7 +18,9 @@ public class DeviceViewModel extends EmgImuViewModel<Device> {
     private final static String TAG = DeviceViewModel.class.getSimpleName();
 
     @Override
-    public boolean getObserveStream() { return true; }
+    public boolean getObserveStream() {
+        Log.e(TAG, "GETTING TRUE HERE!!!");
+        return true; }
 
     public DeviceViewModel(Application app) {
         super(app);

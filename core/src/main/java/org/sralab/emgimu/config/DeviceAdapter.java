@@ -129,6 +129,7 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
 
             addressView.setText(device.getAddress());
 
+
             device.getPwr().observe(context, graphData -> graphView.updateGraphData(graphData));
 
             batteryView.setText(String.format("%.2fV", device.getBattery().getValue()));
