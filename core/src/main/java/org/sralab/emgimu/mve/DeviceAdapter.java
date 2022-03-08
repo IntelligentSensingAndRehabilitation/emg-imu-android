@@ -144,7 +144,9 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
 		private void bind(final Device device, int channel) {
 		    String deviceAddress = device.getAddress();
 		    String deviceAbbreviatedAddress = deviceAddress.substring(0, 2);
-		    String deviceAndChannelName = deviceAbbreviatedAddress + " ch-" + channel;
+		    // channel is zero-indexed; however, for the user - it appears at one-indexed to
+            // eliminate confusion and maintain consistency with the wire harness
+		    String deviceAndChannelName = deviceAbbreviatedAddress + " ch-" + (channel + 1);
 
             // Below mtds: the first argument, "context" is the UI activity
             // Below mtds: the second argument, "value ->..." is the code that updates the UI
