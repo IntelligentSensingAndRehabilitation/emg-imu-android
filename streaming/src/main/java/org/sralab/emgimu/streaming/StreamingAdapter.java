@@ -102,7 +102,7 @@ public class StreamingAdapter extends RecyclerView.Adapter<StreamingAdapter.View
         }
 
 		private void bind(final Device device, int channel) {
-            device.getEmg().observe(context, graphData -> graphView.updateGraphData(graphData) );
+            device.getEmg()[channel].observe(context, graphData -> graphView.updateGraphData(graphData) );
             dvm.getRange().observe(context, range -> device.setRange(range) );
 		}
 	}

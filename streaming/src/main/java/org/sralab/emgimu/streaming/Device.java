@@ -20,10 +20,16 @@ public class Device {
         this.filtering = filtering;
     }
 
-    GraphData emg;
-    public LiveData<GraphData.Data> getEmg() { return emg.getData(); }
+    GraphData[] emg;
+    public LiveData<GraphData.Data>[] getEmg() {
+        LiveData<GraphData.Data>[] temp = new LiveData[2];
+        temp[0] = emg[0].getData();
+        temp[1] = emg[1].getData();
+        return temp;
+    }
     public void setRange(float range) {
-        emg.setScale(1.0f / range);
+        emg[0].setScale(1.0f / range);
+        emg[1].setScale(1.0f / range);
     }
 
     List<Filter> filter;
@@ -69,6 +75,8 @@ public class Device {
     }
 
     public void addVoltage(double [] timestamp, double [][] voltage) {
+        final int channels = voltage.length;
+        Log.d(TAG, "Streaming device created, channels = voltage.length -->" + channels);
 
         if (t0 == 0) {
             t0 = (long) timestamp[0];
@@ -76,7 +84,6 @@ public class Device {
 
         if (filtering) {
 
-            final int channels = voltage.length;
             final int samples = voltage[0].length;
             double [][] filteredVoltage = new double[channels][];
 
@@ -86,25 +93,32 @@ public class Device {
                     filteredVoltage[ch][s] = filter.get(ch).update(voltage[ch][s]);
                 }
             }
-            Log.d(TAG, "streaming, Device, noChannels = " + channels +
-                    " | filteredVoltage[0] = " + (int)filteredVoltage[0][0] +
-                    " | filteredVoltage[1] = " + (int)filteredVoltage[1][0]);
 
             for (int s = 0; s < samples; s++) {
                 timestamp[s] = timestamp[s] - t0;
             }
 
-            emg.addSamples(timestamp, filteredVoltage);
+            for (int ch = 0; ch < channels; ch++) {
+                emg[ch].addSamples(timestamp, filteredVoltage);
+            }
+            //emg.addSamples(timestamp, filteredVoltage);
         }
         else
-            emg.addSamples(timestamp, voltage);
+            //emg.addSamples(timestamp, voltage);
+        for (int ch = 0; ch < channels; ch++) {
+            emg[ch].addSamples(timestamp, voltage);
+        }
     }
 
     public Device(int channels) {
-
-        emg = new GraphData(10000, channels);
-        emg.setScale(1.0f/20000.0f);
-
+/*                emg = new GraphData(10000, channels);
+        emg.setScale(1.0f/20000.0f);*/
+        Log.d(TAG, "Streaming device created, with channels = " + channels);
+        for (int channelCounter = 0; channelCounter < channels; channelCounter++) {
+            emg[channelCounter] = new GraphData(10000, 1);
+            Log.d(TAG, "Streaming device created, GraphData Object created!");
+            emg[channelCounter].setScale(1.0f/20000.0f);
+        }
         filter = new ArrayList<>();
         for (int ch = 0; ch < channels; ch++) {
             filter.add(new Filter());
