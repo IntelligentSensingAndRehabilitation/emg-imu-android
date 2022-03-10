@@ -82,11 +82,15 @@ public class StreamingAdapter extends RecyclerView.Adapter<StreamingAdapter.View
 
     @Override
     public void onBindViewHolder(final ViewHolder holder, final int position) {
-        holder.bind(devices.getValue().get(position));
+        //holder.bind(devices.getValue().get(position));
+        holder.bind(devices.getValue().get(position / 2), position % 2);
     }
 
     @Override
-    public int getItemCount() { return devices.getValue().size(); }
+    public int getItemCount() {
+        int numberOfChannels = 2;
+        return devices.getValue().size() * numberOfChannels;
+    }
 
 	class ViewHolder extends RecyclerView.ViewHolder {
 
@@ -97,7 +101,7 @@ public class StreamingAdapter extends RecyclerView.Adapter<StreamingAdapter.View
             graphView = itemView.findViewById(R.id.graph_pwr);
         }
 
-		private void bind(final Device device) {
+		private void bind(final Device device, int channel) {
             device.getEmg().observe(context, graphData -> graphView.updateGraphData(graphData) );
             dvm.getRange().observe(context, range -> device.setRange(range) );
 		}
