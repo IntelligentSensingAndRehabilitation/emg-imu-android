@@ -3,9 +3,16 @@
     android:orientation="vertical" android:layout_width="match_parent"
     android:layout_height="90dp">
 
+    <TextView
+        android:id="@+id/deviceAndChannelNameTextView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:text="Hi Victor" />
+
     <org.sralab.emgimu.visualization.GraphView
         android:id="@+id/graph_pwr"
         android:layout_width="fill_parent"
-        android:layout_height="fill_parent"/>
+        android:layout_height="fill_parent" />
 
 </LinearLayout>

@@ -30,7 +30,7 @@ public class DeviceViewModel extends EmgImuViewModel<Device> {
     @Override
     public boolean getObserveStream() { return true; }
 
-    MutableLiveData<Integer> range = new MutableLiveData<>(20000);
+    MutableLiveData<Integer> range = new MutableLiveData<>(1000);
     public void setRange(Integer range) { this.range.postValue(range); }
     public LiveData<Integer> getRange() { return range; }
     private class MvcSensor {

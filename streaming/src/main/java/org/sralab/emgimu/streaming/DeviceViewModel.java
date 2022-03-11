@@ -17,6 +17,7 @@ public class DeviceViewModel extends EmgImuViewModel<Device> {
 
     private final static String TAG = DeviceViewModel.class.getSimpleName();
 
+
     @Override
     public boolean getObserveStream() {
         Log.e(TAG, "GETTING TRUE HERE!!!");
@@ -60,6 +61,7 @@ public class DeviceViewModel extends EmgImuViewModel<Device> {
     public Device getDev(BluetoothDevice d) {
         Device dev = new Device(2);
         dev.setFiltering(filtering);
+        dev.setAddress(d.getAddress());
         return dev;
     }
 
