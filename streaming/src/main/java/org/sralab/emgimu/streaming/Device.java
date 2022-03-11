@@ -13,6 +13,14 @@ public class Device {
 
     private final static String TAG = Device.class.getSimpleName();
 
+    private String address;
+    public String getAddress() {
+        return address;
+    }
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
     private long t0 = 0;
 
     private boolean filtering;
@@ -99,21 +107,24 @@ public class Device {
             }
 
             for (int ch = 0; ch < channels; ch++) {
-                emg[ch].addSamples(timestamp, filteredVoltage);
+                double [][] channelArray = {filteredVoltage[ch]};
+                emg[ch].addSamples(timestamp, channelArray);
             }
             //emg.addSamples(timestamp, filteredVoltage);
         }
         else
             //emg.addSamples(timestamp, voltage);
-        for (int ch = 0; ch < channels; ch++) {
-            emg[ch].addSamples(timestamp, voltage);
-        }
+            for (int ch = 0; ch < channels; ch++) {
+                double [][] channelArray = {voltage[ch]};
+                emg[ch].addSamples(timestamp, channelArray);
+            }
     }
 
     public Device(int channels) {
 /*                emg = new GraphData(10000, channels);
         emg.setScale(1.0f/20000.0f);*/
         Log.d(TAG, "Streaming device created, with channels = " + channels);
+        emg = new GraphData[channels];
         for (int channelCounter = 0; channelCounter < channels; channelCounter++) {
             emg[channelCounter] = new GraphData(10000, 1);
             Log.d(TAG, "Streaming device created, GraphData Object created!");
