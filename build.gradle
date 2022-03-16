@@ -38,8 +38,8 @@ allprojects {
 }
 
 ext {
-    versionCode = 8
-    versionName = '0.30'
+    versionCode = 9
+    versionName = '0.40'
 
     // can be used for dependency resolution above if required
     //googlePlayServicesVersion   = "15.0.1"
