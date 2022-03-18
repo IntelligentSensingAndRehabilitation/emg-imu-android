@@ -29,6 +29,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.Log;
+import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -55,6 +56,9 @@ import java.util.concurrent.ExecutionException;
 
 import no.nordicsemi.android.nrftoolbox.widget.DividerItemDecoration;
 
+//import org.sralab.emgimu.gaitvideoimu.databinding.ActivityMainBinding;
+import org.sralab.emgimu.gaitvideoimu.databinding.ActivityGaitVideoImuBinding;
+
 public class GaitVideoImu extends AppCompatActivity {
 
     private static String TAG = GaitVideoImu.class.getSimpleName();
@@ -80,10 +84,15 @@ public class GaitVideoImu extends AppCompatActivity {
     private FirebaseUser mUser;
     private FirebaseGameLogger mGameLogger;
 
+    private ActivityGaitVideoImuBinding viewBinding;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_gait_video_imu);
+        //setContentView(R.layout.activity_gait_video_imu);
+        viewBinding = ActivityGaitVideoImuBinding.inflate(getLayoutInflater());
+        View view = viewBinding.getRoot();
+        setContentView(view);
 
         final RecyclerView recyclerView = findViewById(R.id.emg_list);
         recyclerView.setLayoutManager(new LinearLayoutManager(getBaseContext()));
@@ -267,7 +276,7 @@ public class GaitVideoImu extends AppCompatActivity {
     }
 
     // Implements VideoCapture use case, including start and stop capturing.
-    private final void captureVideo() {
+/*    private final void captureVideo() {
         viewBinding.videoCaptureButton.setEnabled(false);
 
         Recording curRecording = recording;
@@ -359,7 +368,7 @@ public class GaitVideoImu extends AppCompatActivity {
                 Log.e(TAG, "Use case binding failed", e);
             }
         }, ContextCompat.getMainExecutor(getBaseContext()));
-    }
+    }*/
 
     private final boolean allPermissionsGranted() {
         return (ContextCompat.checkSelfPermission(getBaseContext(), Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED ||
