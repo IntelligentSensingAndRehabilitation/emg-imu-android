@@ -6,7 +6,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.camera.core.Camera;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.Preview;
-import androidx.camera.core.VideoCapture;
+import androidx.camera.video.VideoCapture;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.video.MediaStoreOutputOptions;
 import androidx.camera.video.Quality;
@@ -72,7 +72,7 @@ public class GaitVideoImu extends AppCompatActivity {
 
     private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
     private PreviewView previewView;
-    private VideoCapture videoCapture;
+    //private VideoCapture videoCapture;
 
     class GaitTrial {
         public String fileName;
@@ -97,6 +97,8 @@ public class GaitVideoImu extends AppCompatActivity {
             Manifest.permission.WRITE_EXTERNAL_STORAGE};
     //private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
     private ExecutorService cameraExecutor;
+    @Nullable
+    private VideoCapture<Recorder> videoCapture;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -127,7 +129,7 @@ public class GaitVideoImu extends AppCompatActivity {
 
         // Request camera permissions
         if (allPermissionsGranted()) {
-            //startCamera();
+            startCamera();
             Log.d(TAG, "Gait, allPermissionsGranted() = true");
         } else {
             ActivityCompat.requestPermissions(
@@ -136,8 +138,8 @@ public class GaitVideoImu extends AppCompatActivity {
         }
 
         // Set up the listeners for take photo and video capture buttons
-        viewBinding.startButton.setOnClickListener(v -> captureVideo());
-        viewBinding.stopButton.setOnClickListener(v -> captureVideo());
+/*        viewBinding.startButton.setOnClickListener(v -> captureVideo());
+        viewBinding.stopButton.setOnClickListener(v -> captureVideo());*/
 
         cameraExecutor = Executors.newSingleThreadExecutor();
 
@@ -244,7 +246,7 @@ public class GaitVideoImu extends AppCompatActivity {
         super.onStop();
     }
 
-    void bindPreview(@NonNull ProcessCameraProvider cameraProvider) {
+    /*void bindPreview(@NonNull ProcessCameraProvider cameraProvider) {
         Log.d(TAG, "bindPreview");
         Preview preview = new Preview.Builder()
                 .build();
@@ -258,7 +260,7 @@ public class GaitVideoImu extends AppCompatActivity {
         preview.setSurfaceProvider(previewView.getSurfaceProvider());
 
         Camera camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, videoCapture);
-    }
+    }*/
 
     void showUser() {
         TextView text = findViewById(R.id.userId);
@@ -364,7 +366,7 @@ public class GaitVideoImu extends AppCompatActivity {
 
                 });
     }
-
+*/
     private final void startCamera() {
         cameraProviderFuture = ProcessCameraProvider.getInstance(getBaseContext());
         // Used to bind the lifecycle of cameras to the lifecycle owner
@@ -372,7 +374,7 @@ public class GaitVideoImu extends AppCompatActivity {
             // Preview
             Preview preview = new Preview.Builder()
                     .build();
-            preview.setSurfaceProvider(viewBinding.viewFinder.getSurfaceProvider());
+            preview.setSurfaceProvider(viewBinding.cameraView.getSurfaceProvider());
 
             // VideoCapture
             Recorder recorder = new Recorder.Builder()
@@ -396,7 +398,7 @@ public class GaitVideoImu extends AppCompatActivity {
                 Log.e(TAG, "Use case binding failed", e);
             }
         }, ContextCompat.getMainExecutor(getBaseContext()));
-    }*/
+    }
 
     private final boolean allPermissionsGranted() {
         return (ContextCompat.checkSelfPermission(getBaseContext(), Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED ||
