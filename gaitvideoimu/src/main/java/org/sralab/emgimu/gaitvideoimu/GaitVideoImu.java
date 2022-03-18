@@ -55,6 +55,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import no.nordicsemi.android.nrftoolbox.widget.DividerItemDecoration;
 
@@ -94,6 +96,7 @@ public class GaitVideoImu extends AppCompatActivity {
             Manifest.permission.RECORD_AUDIO,
             Manifest.permission.WRITE_EXTERNAL_STORAGE};
     //private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
+    private ExecutorService cameraExecutor;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -131,6 +134,13 @@ public class GaitVideoImu extends AppCompatActivity {
                     this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS);
             Log.d(TAG, "Gait, allPermissionsGranted() = true");
         }
+
+        // Set up the listeners for take photo and video capture buttons
+        viewBinding.startButton.setOnClickListener(v -> captureVideo());
+        viewBinding.stopButton.setOnClickListener(v -> captureVideo());
+
+        cameraExecutor = Executors.newSingleThreadExecutor();
+
         /*if (ContextCompat.checkSelfPermission(getBaseContext(), Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED ||
                 ContextCompat.checkSelfPermission(getBaseContext(), Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED ||
                 ContextCompat.checkSelfPermission(getBaseContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
