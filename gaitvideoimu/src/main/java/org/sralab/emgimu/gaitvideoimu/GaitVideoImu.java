@@ -16,6 +16,7 @@ import androidx.camera.video.Recording;
 import androidx.camera.video.RecordingStats;
 import androidx.camera.video.VideoRecordEvent;
 import androidx.camera.view.PreviewView;
+import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -43,6 +44,7 @@ import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.gson.Gson;
 
+import org.jetbrains.annotations.NotNull;
 import org.sralab.emgimu.gaitvideoimu.stream_visualization.DeviceViewModel;
 import org.sralab.emgimu.gaitvideoimu.stream_visualization.StreamingAdapter;
 import org.sralab.emgimu.logging.FirebaseGameLogger;
@@ -85,6 +87,13 @@ public class GaitVideoImu extends AppCompatActivity {
     private FirebaseGameLogger mGameLogger;
 
     private ActivityGaitVideoImuBinding viewBinding;
+    private static final int REQUEST_CODE_PERMISSIONS = 10;
+    @NotNull
+    private static final String[] REQUIRED_PERMISSIONS = new String[] {
+            Manifest.permission.CAMERA,
+            Manifest.permission.RECORD_AUDIO,
+            Manifest.permission.WRITE_EXTERNAL_STORAGE};
+    //private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -113,7 +122,16 @@ public class GaitVideoImu extends AppCompatActivity {
             }
         });
 
-        if (ContextCompat.checkSelfPermission(getBaseContext(), Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED ||
+        // Request camera permissions
+        if (allPermissionsGranted()) {
+            //startCamera();
+            Log.d(TAG, "Gait, allPermissionsGranted() = true");
+        } else {
+            ActivityCompat.requestPermissions(
+                    this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS);
+            Log.d(TAG, "Gait, allPermissionsGranted() = true");
+        }
+        /*if (ContextCompat.checkSelfPermission(getBaseContext(), Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED ||
                 ContextCompat.checkSelfPermission(getBaseContext(), Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED ||
                 ContextCompat.checkSelfPermission(getBaseContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
             // Request camera-related permissions
@@ -200,7 +218,7 @@ public class GaitVideoImu extends AppCompatActivity {
             videoCapture.stopRecording();
             curTrial.endTime = new Date().getTime();
             updateLogger();
-        });
+        });*/
     }
 
     public void updateLogger() {
