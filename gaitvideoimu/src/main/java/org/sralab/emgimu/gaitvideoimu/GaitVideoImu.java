@@ -8,9 +8,13 @@ import androidx.camera.core.CameraSelector;
 import androidx.camera.core.Preview;
 import androidx.camera.core.VideoCapture;
 import androidx.camera.lifecycle.ProcessCameraProvider;
+import androidx.camera.video.MediaStoreOutputOptions;
 import androidx.camera.video.Quality;
 import androidx.camera.video.QualitySelector;
 import androidx.camera.video.Recorder;
+import androidx.camera.video.Recording;
+import androidx.camera.video.RecordingStats;
+import androidx.camera.video.VideoRecordEvent;
 import androidx.camera.view.PreviewView;
 import androidx.core.content.ContextCompat;
 import androidx.lifecycle.ViewModelProvider;
@@ -21,11 +25,13 @@ import android.Manifest;
 import android.content.ContentValues;
 import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.firebase.FirebaseApp;
@@ -44,6 +50,7 @@ import java.security.InvalidParameterException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Locale;
 import java.util.concurrent.ExecutionException;
 
 import no.nordicsemi.android.nrftoolbox.widget.DividerItemDecoration;
@@ -257,6 +264,68 @@ public class GaitVideoImu extends AppCompatActivity {
 
         storage = FirebaseStorage.getInstance();
 
+    }
+
+    // Implements VideoCapture use case, including start and stop capturing.
+    private final void captureVideo() {
+        viewBinding.videoCaptureButton.setEnabled(false);
+
+        Recording curRecording = recording;
+        if (curRecording != null) {
+            // Stop the current recording session.
+            curRecording.stop();
+            recording = null;
+            return;
+        }
+
+        // create and start a new recording session
+        String name = new SimpleDateFormat(FILENAME_FORMAT, Locale.US).format(System.currentTimeMillis());
+        ContentValues contentValues = new ContentValues();
+        contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, name);
+        contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "video/mp4");
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
+            contentValues.put(MediaStore.Video.Media.RELATIVE_PATH, "Movies/CameraX-Video");
+        }
+
+        MediaStoreOutputOptions mediaStoreOutputOptions = new MediaStoreOutputOptions
+                .Builder(getContentResolver(), MediaStore.Video.Media.EXTERNAL_CONTENT_URI)
+                .setContentValues(contentValues)
+                .build();
+
+        recording = videoCapture.getOutput().
+                prepareRecording(this, mediaStoreOutputOptions)
+                .start(ContextCompat.getMainExecutor(this), videoRecordEvent -> {
+                    if (videoRecordEvent instanceof VideoRecordEvent.Start) {
+                        // Handle the start of a new active recording
+                        viewBinding.videoCaptureButton.setText(R.string.stop_capture);
+                        viewBinding.videoCaptureButton.setEnabled(true);
+                    }
+                    else if (videoRecordEvent instanceof VideoRecordEvent.Pause) {
+                        // Handle the case where the active recording is paused
+
+                    } else if (videoRecordEvent instanceof VideoRecordEvent.Resume) {
+                        // Handles the case where the active recording is resumed
+
+                    } else if (videoRecordEvent instanceof VideoRecordEvent.Finalize) {
+                        VideoRecordEvent.Finalize finalizeEvent =
+                                (VideoRecordEvent.Finalize) videoRecordEvent;
+                        // Handles a finalize event for the active recording, checking Finalize.getError()
+                        int error = finalizeEvent.getError();
+                        if (error == VideoRecordEvent.Finalize.ERROR_NONE) {
+                            String msg = "Video capture succeeded: " +
+                                    ((VideoRecordEvent.Finalize) videoRecordEvent).getOutputResults().getOutputUri();
+                            Toast.makeText(getBaseContext(), msg, Toast.LENGTH_SHORT).show();
+                            Log.d(TAG, msg);
+                        }
+                        viewBinding.videoCaptureButton.setText(R.string.start_capture);
+                        viewBinding.videoCaptureButton.setEnabled(true);
+                    }
+
+                    // All events, including VideoRecordEvent.Status, contain RecordingStats.
+                    // This can be used to update the UI or track the recording duration.
+                    RecordingStats recordingStats = videoRecordEvent.getRecordingStats();
+
+                });
     }
 
     private final void startCamera() {
