@@ -8,6 +8,9 @@ import androidx.camera.core.CameraSelector;
 import androidx.camera.core.Preview;
 import androidx.camera.core.VideoCapture;
 import androidx.camera.lifecycle.ProcessCameraProvider;
+import androidx.camera.video.Quality;
+import androidx.camera.video.QualitySelector;
+import androidx.camera.video.Recorder;
 import androidx.camera.view.PreviewView;
 import androidx.core.content.ContextCompat;
 import androidx.lifecycle.ViewModelProvider;
@@ -255,6 +258,40 @@ public class GaitVideoImu extends AppCompatActivity {
         storage = FirebaseStorage.getInstance();
 
     }
+
+    private final void startCamera() {
+        cameraProviderFuture = ProcessCameraProvider.getInstance(getBaseContext());
+        // Used to bind the lifecycle of cameras to the lifecycle owner
+        cameraProviderFuture.addListener(() -> {
+            // Preview
+            Preview preview = new Preview.Builder()
+                    .build();
+            preview.setSurfaceProvider(viewBinding.viewFinder.getSurfaceProvider());
+
+            // VideoCapture
+            Recorder recorder = new Recorder.Builder()
+                    .setQualitySelector(QualitySelector.from(Quality.HIGHEST))
+                    .build();
+            videoCapture = androidx.camera.video.VideoCapture.withOutput(recorder);
+
+            // Select back camera as a default
+            CameraSelector cameraSelector = new CameraSelector.Builder()
+                    .requireLensFacing(CameraSelector.LENS_FACING_BACK)
+                    .build();
+            try {
+                ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
+                // Unbind use cases before rebinding
+                cameraProvider.unbindAll();
+
+                // Bind use cases to camera
+                cameraProvider.bindToLifecycle(
+                        this, cameraSelector, preview, videoCapture);
+            } catch (ExecutionException | InterruptedException e) {
+                Log.e(TAG, "Use case binding failed", e);
+            }
+        }, ContextCompat.getMainExecutor(getBaseContext()));
+    }
+
     private final boolean allPermissionsGranted() {
         return (ContextCompat.checkSelfPermission(getBaseContext(), Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED ||
                 ContextCompat.checkSelfPermission(getBaseContext(), Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED ||
