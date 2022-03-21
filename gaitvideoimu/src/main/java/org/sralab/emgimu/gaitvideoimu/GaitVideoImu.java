@@ -73,6 +73,10 @@ public class GaitVideoImu extends AppCompatActivity {
     private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
     private PreviewView previewView;
     //private VideoCapture videoCapture;
+    @Nullable
+    private Recording recording;
+    @NotNull
+    private static final String FILENAME_FORMAT = "yyyy-MM-dd-HH-mm-ss-SSS";
 
     class GaitTrial {
         public String fileName;
@@ -138,8 +142,8 @@ public class GaitVideoImu extends AppCompatActivity {
         }
 
         // Set up the listeners for take photo and video capture buttons
-/*        viewBinding.startButton.setOnClickListener(v -> captureVideo());
-        viewBinding.stopButton.setOnClickListener(v -> captureVideo());*/
+        viewBinding.startButton.setOnClickListener(v -> captureVideo());
+        viewBinding.stopButton.setOnClickListener(v -> captureVideo());
 
         cameraExecutor = Executors.newSingleThreadExecutor();
 
@@ -306,8 +310,8 @@ public class GaitVideoImu extends AppCompatActivity {
     }
 
     // Implements VideoCapture use case, including start and stop capturing.
-/*    private final void captureVideo() {
-        viewBinding.videoCaptureButton.setEnabled(false);
+    private final void captureVideo() {
+        viewBinding.startButton.setEnabled(false);
 
         Recording curRecording = recording;
         if (curRecording != null) {
@@ -336,8 +340,14 @@ public class GaitVideoImu extends AppCompatActivity {
                 .start(ContextCompat.getMainExecutor(this), videoRecordEvent -> {
                     if (videoRecordEvent instanceof VideoRecordEvent.Start) {
                         // Handle the start of a new active recording
-                        viewBinding.videoCaptureButton.setText(R.string.stop_capture);
-                        viewBinding.videoCaptureButton.setEnabled(true);
+                        // Leaving this for now, when we want to use stop/pause button
+                        // then we can save UI space by reusing the buttons
+/*                        viewBinding.videoCaptureButton.setText(R.string.stop_capture);
+                        viewBinding.videoCaptureButton.setEnabled(true);*/
+                        // Once the recording has started, we disable the start button and
+                        // enable the stop button
+                        viewBinding.startButton.setEnabled(false);
+                        viewBinding.stopButton.setEnabled(true);
                     }
                     else if (videoRecordEvent instanceof VideoRecordEvent.Pause) {
                         // Handle the case where the active recording is paused
@@ -356,8 +366,11 @@ public class GaitVideoImu extends AppCompatActivity {
                             Toast.makeText(getBaseContext(), msg, Toast.LENGTH_SHORT).show();
                             Log.d(TAG, msg);
                         }
-                        viewBinding.videoCaptureButton.setText(R.string.start_capture);
-                        viewBinding.videoCaptureButton.setEnabled(true);
+/*                        viewBinding.videoCaptureButton.setText(R.string.start_capture);
+                        viewBinding.videoCaptureButton.setEnabled(true);*/
+                        // we can start video capture at any time
+                        viewBinding.startButton.setEnabled(true);
+                        viewBinding.stopButton.setEnabled(false);
                     }
 
                     // All events, including VideoRecordEvent.Status, contain RecordingStats.
@@ -366,7 +379,6 @@ public class GaitVideoImu extends AppCompatActivity {
 
                 });
     }
-*/
     private final void startCamera() {
         cameraProviderFuture = ProcessCameraProvider.getInstance(getBaseContext());
         // Used to bind the lifecycle of cameras to the lifecycle owner
