@@ -61,7 +61,6 @@ import java.util.concurrent.Executors;
 import kotlin.jvm.internal.Intrinsics;
 import no.nordicsemi.android.nrftoolbox.widget.DividerItemDecoration;
 
-//import org.sralab.emgimu.gaitvideoimu.databinding.ActivityMainBinding;
 import org.sralab.emgimu.gaitvideoimu.databinding.ActivityGaitVideoImuBinding;
 
 public class GaitVideoImu extends AppCompatActivity {
@@ -135,17 +134,15 @@ public class GaitVideoImu extends AppCompatActivity {
         // Request camera permissions
         if (allPermissionsGranted()) {
             startCamera();
-            Log.d(TAG, "Gait, allPermissionsGranted() = true");
         } else {
             ActivityCompat.requestPermissions(
                     this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS);
-            Log.d(TAG, "Gait, allPermissionsGranted() = true");
         }
 
-        // Set up the listeners for take photo and video capture buttons
+        // Set up the listener for video capture button
         viewBinding.startButton.setOnClickListener(v -> captureVideo());
         viewBinding.stopButton.setOnClickListener(v -> captureVideo());
-
+        viewBinding.stopButton.setEnabled(false); // disable btn initially
         cameraExecutor = Executors.newSingleThreadExecutor();
 
         /*if (ContextCompat.checkSelfPermission(getBaseContext(), Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED ||
@@ -418,7 +415,7 @@ public class GaitVideoImu extends AppCompatActivity {
                 ContextCompat.checkSelfPermission(getBaseContext(), Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED ||
                 ContextCompat.checkSelfPermission(getBaseContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED);
     }
-    
+
     @Override
     protected void onDestroy() {
         super.onDestroy();
