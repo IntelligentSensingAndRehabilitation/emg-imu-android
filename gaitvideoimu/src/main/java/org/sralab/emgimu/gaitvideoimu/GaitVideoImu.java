@@ -58,6 +58,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import kotlin.jvm.internal.Intrinsics;
 import no.nordicsemi.android.nrftoolbox.widget.DividerItemDecoration;
 
 //import org.sralab.emgimu.gaitvideoimu.databinding.ActivityMainBinding;
@@ -416,5 +417,16 @@ public class GaitVideoImu extends AppCompatActivity {
         return (ContextCompat.checkSelfPermission(getBaseContext(), Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED ||
                 ContextCompat.checkSelfPermission(getBaseContext(), Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED ||
                 ContextCompat.checkSelfPermission(getBaseContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED);
+    }
+    
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        ExecutorService executorService = this.cameraExecutor;
+        if (executorService == null) {
+            Intrinsics.throwUninitializedPropertyAccessException((String)"cameraExecutor");
+            executorService = null;
+        }
+        executorService.shutdown();
     }
 }
