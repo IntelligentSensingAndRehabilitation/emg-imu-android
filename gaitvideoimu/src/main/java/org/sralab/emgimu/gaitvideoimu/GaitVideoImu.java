@@ -82,7 +82,8 @@ public class GaitVideoImu extends AppCompatActivity {
         public String fileName;
         public long startTime;
         public long endTime;
-
+        public long videoRecordEventStartTimestamp;
+        public long phoneInternalStorageFilenameTimestamp;
     }
     ArrayList<GaitTrial> trials = new ArrayList<>();
     private GaitTrial curTrial;
@@ -132,12 +133,11 @@ public class GaitVideoImu extends AppCompatActivity {
         });
 
         // Request camera permissions
-        if (allPermissionsGranted()) {
-            startCamera();
-        } else {
+        if (!allPermissionsGranted()) {
             ActivityCompat.requestPermissions(
                     this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS);
         }
+        startCamera();
 
         // Set up the listener for video capture button
         viewBinding.startButton.setOnClickListener(v -> captureVideo());
@@ -321,7 +321,7 @@ public class GaitVideoImu extends AppCompatActivity {
         contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, name);
         contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "video/mp4");
         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
-            contentValues.put(MediaStore.Video.Media.RELATIVE_PATH, "Movies/CameraX-Video");
+            contentValues.put(MediaStore.Video.Media.RELATIVE_PATH, "Movies/GaitVideoApp-Video");
         }
 
         MediaStoreOutputOptions mediaStoreOutputOptions = new MediaStoreOutputOptions
@@ -351,9 +351,10 @@ public class GaitVideoImu extends AppCompatActivity {
                         Long timestampDifference_ms = startTime_ms2 - startTime_ms1;
                         Long startTime_us2 = System.nanoTime();
                         Long timestampDifference_us = startTime_us2 - startTime_us1;
-                        Log.d(TAG, "timestampDifference = time2 - time1, where time2 is from VideoRecordEvent.Start and time1 first field in onCLickListener for btn");
+                        Log.d(TAG, "timestamp Intent = " + startTime_ms1);
+                        Log.d(TAG, "timestamp inside VideoRecordEvent = " + startTime_ms2);
                         Log.d(TAG, "timestampDifference_ms = " + timestampDifference_ms + " ms. Note: using Date class, millisecond precision");
-                        Log.d(TAG, "timestampDifference_us = " + timestampDifference_us + " ms. Note: using System class, nanosecond precision");
+                        Log.d(TAG, "timestampDifference_us = " + timestampDifference_us + " us. Note: using System class, nanosecond precision");
 
                     }
                     else if (videoRecordEvent instanceof VideoRecordEvent.Pause) {
@@ -376,12 +377,17 @@ public class GaitVideoImu extends AppCompatActivity {
                             // logging code here
                             showVideoStatus("Recording " + fileName);
                             Uri file = ((VideoRecordEvent.Finalize) videoRecordEvent).getOutputResults().getOutputUri();
+                            Log.d(TAG, "Filterforme: " + file.getPath() + " " + file.toString());
+                            Log.d(TAG, "Filterforme: " + ((VideoRecordEvent.Finalize) videoRecordEvent).getOutputResults());
                             StorageReference storageRef = storage.getReference().child(uploadFileName);
                             storageRef.putFile(file)
                                     .addOnFailureListener(e -> showVideoStatus("Upload "  + fileName + " failed"))
                                     .addOnSuccessListener(taskSnapshot -> showVideoStatus("Upload "  + fileName + " succeeded"));
                             curTrial.endTime = new Date().getTime();
                             updateLogger();
+                        } else {
+                            Log.d(TAG, "Video error");
+                            showVideoStatus("Video Error!");
                         }
 /*                        viewBinding.videoCaptureButton.setText(R.string.start_capture);
                         viewBinding.videoCaptureButton.setEnabled(true);*/
