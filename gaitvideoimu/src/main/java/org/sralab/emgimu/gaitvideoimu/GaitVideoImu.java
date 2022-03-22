@@ -71,8 +71,6 @@ public class GaitVideoImu extends AppCompatActivity {
     //private VideoCapture videoCapture;
     @Nullable
     private Recording recording;
-    @NotNull
-    private static final String FILENAME_FORMAT = "yyyy-MM-dd-HH-mm-ss-SSS";
 
     class GaitTrial {
         public String fileName;
@@ -104,7 +102,6 @@ public class GaitVideoImu extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        //setContentView(R.layout.activity_gait_video_imu);
         viewBinding = ActivityGaitVideoImuBinding.inflate(getLayoutInflater());
         View view = viewBinding.getRoot();
         setContentView(view);
@@ -212,23 +209,19 @@ public class GaitVideoImu extends AppCompatActivity {
     private final void captureVideo() {
         viewBinding.startButton.setEnabled(false);
 
-/*        Recording curRecording = recording;
+        Recording curRecording = recording;
         if (curRecording != null) {
             // Stop the current recording session.
             curRecording.stop();
             recording = null;
             return;
-        }*/
+        }
 
         // James' logging code
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd-HHmmss'Z'");
         Date now = new Date();
 
-        // timestamping code for comparison
-        Long startTime_ms1 = now.getTime();
-        Long startTime_us1 = System.nanoTime();
 
-        // end timestamping code for comparison
         String fileName = formatter.format(now) + ".mp4";
 
         String uploadFileName =  "videos/" + mUser.getUid() + "/" + fileName;
@@ -237,18 +230,16 @@ public class GaitVideoImu extends AppCompatActivity {
         curTrial.fileName = uploadFileName;
         curTrial.startTime = now.getTime(); //new Timestamp(now);
         trials.add(curTrial);
+        showVideoStatus("Recording " + fileName);
 
         ContentValues contentValues = new ContentValues();
         contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, fileName);
         contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "video/mp4");
 
         // end James logging code
-
-        // create and start a new recording session
-        String name = new SimpleDateFormat(FILENAME_FORMAT, Locale.US).format(System.currentTimeMillis());
-        //ContentValues contentValues = new ContentValues(); // commented out to allow James code to run
-        contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, name);
-        contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "video/mp4");
+        // timestamping code for comparison
+        Long startTime_ms1 = now.getTime();
+        Long startTime_us1 = System.nanoTime();
 
         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
             contentValues.put(MediaStore.Video.Media.RELATIVE_PATH, "Movies/GaitVideoApp-Video");
@@ -258,7 +249,6 @@ public class GaitVideoImu extends AppCompatActivity {
                 .Builder(getContentResolver(), MediaStore.Video.Media.EXTERNAL_CONTENT_URI)
                 .setContentValues(contentValues)
                 .build();
-
 
         recording = videoCapture.getOutput().
                 prepareRecording(this, mediaStoreOutputOptions)
@@ -273,7 +263,6 @@ public class GaitVideoImu extends AppCompatActivity {
                         // enable the stop button
                         viewBinding.startButton.setEnabled(false);
                         viewBinding.stopButton.setEnabled(true);
-                        showVideoStatus("Recording " + fileName);
 
                         // code for timestamp comparison
                         Date time_ms2 = new Date();
@@ -323,19 +312,15 @@ public class GaitVideoImu extends AppCompatActivity {
                             Log.d(TAG, "Video error");
                             showVideoStatus("Video Error!");
                         }
-/*                        viewBinding.videoCaptureButton.setText(R.string.start_capture);
-                        viewBinding.videoCaptureButton.setEnabled(true);*/
+
                         // we can start video capture at any time
                         viewBinding.startButton.setEnabled(true);
                         viewBinding.stopButton.setEnabled(false);
-
-
                     }
 
                     // All events, including VideoRecordEvent.Status, contain RecordingStats.
                     // This can be used to update the UI or track the recording duration.
                     RecordingStats recordingStats = videoRecordEvent.getRecordingStats();
-
                 });
     }
     private final void startCamera() {
