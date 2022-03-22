@@ -1,9 +1,7 @@
 package org.sralab.emgimu.gaitvideoimu;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.camera.core.Camera;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.Preview;
 import androidx.camera.video.VideoCapture;
@@ -31,7 +29,6 @@ import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
-import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -49,7 +46,6 @@ import org.sralab.emgimu.gaitvideoimu.stream_visualization.DeviceViewModel;
 import org.sralab.emgimu.gaitvideoimu.stream_visualization.StreamingAdapter;
 import org.sralab.emgimu.logging.FirebaseGameLogger;
 
-import java.security.InvalidParameterException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -82,8 +78,8 @@ public class GaitVideoImu extends AppCompatActivity {
         public String fileName;
         public long startTime;
         public long endTime;
-        public long videoRecordEventStartTimestamp;
-        public long phoneInternalStorageFilenameTimestamp;
+        public long videoRecordEventStartTime;
+        public long phoneInternalStorageFilename;
     }
     ArrayList<GaitTrial> trials = new ArrayList<>();
     private GaitTrial curTrial;
@@ -145,18 +141,7 @@ public class GaitVideoImu extends AppCompatActivity {
         viewBinding.stopButton.setEnabled(false); // disable btn initially
         cameraExecutor = Executors.newSingleThreadExecutor();
 
-        /*if (ContextCompat.checkSelfPermission(getBaseContext(), Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED ||
-                ContextCompat.checkSelfPermission(getBaseContext(), Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED ||
-                ContextCompat.checkSelfPermission(getBaseContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-            // Request camera-related permissions
-            requestPermissions(new String[] {Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO, Manifest.permission.WRITE_EXTERNAL_STORAGE}, 10);
-        }
-
-        Button startButton = findViewById(R.id.startButton);
-        Button stopButton = findViewById(R.id.stopButton);
-        startButton.setEnabled(true);
-        stopButton.setEnabled(false);
-
+        /*
         startButton.setOnClickListener(v ->
                 {
                     startButton.setEnabled(false);
@@ -356,6 +341,8 @@ public class GaitVideoImu extends AppCompatActivity {
                         Log.d(TAG, "timestampDifference_ms = " + timestampDifference_ms + " ms. Note: using Date class, millisecond precision");
                         Log.d(TAG, "timestampDifference_us = " + timestampDifference_us + " us. Note: using System class, nanosecond precision");
 
+                        Date tsFromVideoRecordEvent = new Date();
+                        curTrial.videoRecordEventStartTime = tsFromVideoRecordEvent.getTime();
                     }
                     else if (videoRecordEvent instanceof VideoRecordEvent.Pause) {
                         // Handle the case where the active recording is paused
