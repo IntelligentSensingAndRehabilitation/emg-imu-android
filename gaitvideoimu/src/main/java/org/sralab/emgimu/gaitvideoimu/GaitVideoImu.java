@@ -137,75 +137,9 @@ public class GaitVideoImu extends AppCompatActivity {
 
         // Set up the listener for video capture button
         viewBinding.startButton.setOnClickListener(v -> captureVideo());
-        viewBinding.stopButton.setOnClickListener(v -> captureVideo());
+        viewBinding.stopButton.setOnClickListener(v -> stopCaptureVideo());
         viewBinding.stopButton.setEnabled(false); // disable btn initially
         cameraExecutor = Executors.newSingleThreadExecutor();
-
-        /*
-        startButton.setOnClickListener(v ->
-                {
-                    startButton.setEnabled(false);
-                    stopButton.setEnabled(true);
-
-                    SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd-HHmmss'Z'");
-                    Date now = new Date();
-                    String fileName = formatter.format(now) + ".mp4";
-
-                    String uploadFileName =  "videos/" + mUser.getUid() + "/" + fileName;
-
-                    curTrial = new GaitTrial();
-                    curTrial.fileName = uploadFileName;
-                    curTrial.startTime = now.getTime(); //new Timestamp(now);
-                    trials.add(curTrial);
-
-                    ContentValues contentValues = new ContentValues();
-                    contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, fileName);
-                    contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "video/mp4");
-
-                    VideoCapture.OutputFileOptions outputFile = new VideoCapture.OutputFileOptions.Builder(
-                            getContentResolver(),
-                            MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
-                            contentValues
-                    ).build();
-
-                    showVideoStatus("Recording " + fileName);
-
-                    videoCapture.startRecording(outputFile,
-                            ContextCompat.getMainExecutor(this),
-                            new VideoCapture.OnVideoSavedCallback() {
-
-                                @Override
-                                public void onVideoSaved(@NonNull VideoCapture.OutputFileResults outputFileResults) {
-                                    Log.d(TAG, "Video saved. Uploading");
-
-                                    startButton.setEnabled(true);
-                                    stopButton.setEnabled(false);
-
-                                    showVideoStatus("Uploading "  + fileName + "...");
-
-                                    Uri file = outputFileResults.getSavedUri();
-
-                                    StorageReference storageRef = storage.getReference().child(uploadFileName);
-
-                                    storageRef.putFile(file)
-                                            .addOnFailureListener(e -> showVideoStatus("Upload "  + fileName + " failed"))
-                                            .addOnSuccessListener(taskSnapshot -> showVideoStatus("Upload "  + fileName + " succeeded"));
-                                }
-
-                                @Override
-                                public void onError(int videoCaptureError, @NonNull String message, @Nullable Throwable cause) {
-                                    Log.d(TAG, "Video error");
-                                    showVideoStatus("Video Error!");
-                                }
-                            });
-                }
-        );
-
-        stopButton.setOnClickListener(v -> {
-            videoCapture.stopRecording();
-            curTrial.endTime = new Date().getTime();
-            updateLogger();
-        });*/
     }
 
     public void updateLogger() {
@@ -264,10 +198,7 @@ public class GaitVideoImu extends AppCompatActivity {
 
     }
 
-    // Implements VideoCapture use case, including start and stop capturing.
-    private final void captureVideo() {
-        viewBinding.startButton.setEnabled(false);
-
+    private final void stopCaptureVideo() {
         Recording curRecording = recording;
         if (curRecording != null) {
             // Stop the current recording session.
@@ -275,6 +206,19 @@ public class GaitVideoImu extends AppCompatActivity {
             recording = null;
             return;
         }
+    }
+
+    // Implements VideoCapture use case, including start and stop capturing.
+    private final void captureVideo() {
+        viewBinding.startButton.setEnabled(false);
+
+/*        Recording curRecording = recording;
+        if (curRecording != null) {
+            // Stop the current recording session.
+            curRecording.stop();
+            recording = null;
+            return;
+        }*/
 
         // James' logging code
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd-HHmmss'Z'");
@@ -305,6 +249,7 @@ public class GaitVideoImu extends AppCompatActivity {
         //ContentValues contentValues = new ContentValues(); // commented out to allow James code to run
         contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, name);
         contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "video/mp4");
+
         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
             contentValues.put(MediaStore.Video.Media.RELATIVE_PATH, "Movies/GaitVideoApp-Video");
         }
@@ -362,8 +307,10 @@ public class GaitVideoImu extends AppCompatActivity {
                             Log.d(TAG, msg);
 
                             // logging code here
-                            showVideoStatus("Recording " + fileName);
+                            showVideoStatus("Uploading " + fileName);
+
                             Uri file = ((VideoRecordEvent.Finalize) videoRecordEvent).getOutputResults().getOutputUri();
+
                             Log.d(TAG, "Filterforme: " + file.getPath() + " " + file.toString());
                             Log.d(TAG, "Filterforme: " + ((VideoRecordEvent.Finalize) videoRecordEvent).getOutputResults());
                             StorageReference storageRef = storage.getReference().child(uploadFileName);
