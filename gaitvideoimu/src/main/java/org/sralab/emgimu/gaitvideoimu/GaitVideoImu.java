@@ -273,8 +273,7 @@ public class GaitVideoImu extends AppCompatActivity {
                         // Handles a finalize event for the active recording, checking Finalize.getError()
                         int error = finalizeEvent.getError();
                         if (error == VideoRecordEvent.Finalize.ERROR_NONE) {
-                            String msg = "Video capture succeeded: " +
-                                    ((VideoRecordEvent.Finalize) videoRecordEvent).getOutputResults().getOutputUri();
+                            String msg = "Saved video filename: " + fileName;
                             Toast.makeText(getBaseContext(), msg, Toast.LENGTH_SHORT).show();
                             Log.d(TAG, msg);
 
