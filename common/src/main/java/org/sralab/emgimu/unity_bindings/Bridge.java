@@ -38,6 +38,9 @@ public class Bridge extends Application
     private String gameLog;
     private String gameSelectedDeviceMac;
     private int gameSelectedDeviceChannel;
+    private String firmwareVersion;
+    private boolean receivedFirmwareVersion = false;
+    private double batteryLife;
 
     /**
      * Important part to note here is that the parameter data in the Overridden method handleData()
@@ -49,6 +52,13 @@ public class Bridge extends Application
         public void handleData(BluetoothDevice device, EmgPwrData data) throws RemoteException {
             if ((callback != null) && (gameSelectedDeviceMac != null)) {
                 callback.onSuccess(Integer.toString(data.power[gameSelectedDeviceChannel]));
+                callback.onBatteryLife(Double.toString(data.batteryVoltage));
+                if (!receivedFirmwareVersion) {
+                    firmwareVersion = data.firmwareVersion;
+                    receivedFirmwareVersion = true;
+                }
+                batteryLife = data.batteryVoltage;
+                Log.d(TAG, "Bridge, firmwareVersion = " + firmwareVersion + "baterryLife = " + batteryLife);
             }
         }
     };
