@@ -49,6 +49,8 @@ public class Bridge extends Application
         public void handleData(BluetoothDevice device, EmgPwrData data) throws RemoteException {
             if ((callback != null) && (gameSelectedDeviceMac != null)) {
                 callback.onSuccess(Integer.toString(data.power[gameSelectedDeviceChannel]));
+                callback.onBatteryLife(Double.toString(data.batteryVoltage));
+                callback.onFirmwareVersion(data.firmwareVersion);
             }
         }
     };
@@ -155,8 +157,11 @@ public class Bridge extends Application
         /*
         Parsing the channel string and converting it into an integer.
         Start with "ch-y", then split it into [ch, y], then take the second element.
+        The game sends channels using 1-index convention, while this app uses 0-index convention;
+        thus, we subtract 1 from the input
          */
-        gameSelectedDeviceChannel = Integer.parseInt((temp[1].split("-"))[1]);
+        gameSelectedDeviceChannel = (Integer.parseInt((temp[1].split("-"))[1])) - 1;
+        Log.d(TAG, "Bridge, gameSelectedDeviceChannel = " + gameSelectedDeviceChannel);
         /* Register the power observer for the emg power callback to stream the emg power data. */
         try {
             for (BluetoothDevice device : service.getManagedDevices())

@@ -1592,6 +1592,11 @@ public class EmgImuManager extends BleManager {
     public void onEmgPwrReceived(final BluetoothDevice device, long timestamp_ms, int channelCount, int[] emgPowerValues)
     {
         EmgPwrData dataMessage = new EmgPwrData();
+        String firm = getFirmwareRevision();
+        LiveData<Double> batteryVoltage = getBatteryVoltage();
+        Log.d(TAG, "manager, firmware v = " + firm + " batteryVoltage = " + batteryVoltage.getValue());
+        dataMessage.firmwareVersion = getFirmwareRevision();
+        dataMessage.batteryVoltage = batteryVoltage.getValue();
         dataMessage.channels = channelCount;
         dataMessage.power = new int[channelCount];
         for (int channelIndex = 0; channelIndex < channelCount; channelIndex++) {
