@@ -55,6 +55,11 @@ public class Bridge extends Application
         }
     };
 
+    private final IEmgImuStreamDataCallback.Stub streamObserver  = new IEmgImuStreamDataCallback.Stub() {
+        @Override
+        public void handleData(BluetoothDevice device, EmgStreamData data) {}
+    };
+
     /**
      * This field represents the service connection between the game (Unity) and the
      * Biofeedback App. The important thing to note here is that when the service
@@ -168,6 +173,7 @@ public class Bridge extends Application
             {
                 if (device.getAddress().equals(gameSelectedDeviceMac)) {
                     service.registerEmgPwrObserver(device, pwrObserver); // pass this to service
+                    service.registerEmgStreamObserver(device, streamObserver);
                 }
             }
         } catch (RemoteException e) {
