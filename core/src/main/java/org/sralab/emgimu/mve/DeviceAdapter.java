@@ -163,14 +163,15 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
             // We call observe on the live data and pass in the UI (1st arg), lambda exp to update UI
 
             device.getPowerTwoChannel()[channel].observe(context, value -> power.setCurrentPower(value));
+            device.getPowerTwoChannel()[channel].observe(context, value -> Log.d(TAG, "DeviceAdapter, device = " + deviceAddress + "| ch = " + channel + "| pwr = " + value));
             device.getMaximumTwoChannel()[channel].observe(context, value -> power.setMaxPower(value));
             device.getMinimumTwoChannel()[channel].observe(context, value -> power.setMinPower(value));
             dvm.getRange().observe(context, value -> power.setMaxRange(value));
             deviceAndChannelNameWidget.setText(deviceAndChannelName);
-/*            Log.d(TAG, "DeviceAdapter, device: " + device.getAddress()
+            Log.d(TAG, "DeviceAdapter, device: " + device.getAddress()
                     + " | ch0:" + device.getPowerTwoChannel()[0].getValue()
                     + " | ch1:" + device.getPowerTwoChannel()[1].getValue());
-            Log.d(TAG, "DeviceAdapter, calling bind method for device = " + device.getAddress() + ", channel = " +channel);*/
+            Log.d(TAG, "DeviceAdapter, calling bind method for device = " + device.getAddress() + ", channel = " +channel);
             channelNumber = channel;
         }
 	}

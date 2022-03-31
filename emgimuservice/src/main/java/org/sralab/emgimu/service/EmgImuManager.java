@@ -1594,7 +1594,7 @@ public class EmgImuManager extends BleManager {
         EmgPwrData dataMessage = new EmgPwrData();
         String firm = getFirmwareRevision();
         LiveData<Double> batteryVoltage = getBatteryVoltage();
-        Log.d(TAG, "manager, firmware v = " + firm + " batteryVoltage = " + batteryVoltage.getValue());
+        //Log.d(TAG, "manager, firmware v = " + firm + " batteryVoltage = " + batteryVoltage.getValue());
         dataMessage.firmwareVersion = getFirmwareRevision();
         dataMessage.batteryVoltage = batteryVoltage.getValue();
         dataMessage.channels = channelCount;
