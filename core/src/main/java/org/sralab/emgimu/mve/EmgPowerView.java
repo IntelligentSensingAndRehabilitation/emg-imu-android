@@ -66,7 +66,7 @@ public class EmgPowerView extends View {
     public void setCurrentPower(Double p)
     {
         mPwr = p.floatValue();
-        Log.d(TAG, "power = " + mPwr);
+        //Log.d(TAG, "power = " + mPwr);
         invalidate();
     }
     public float getThreshold() { return mThresh; }

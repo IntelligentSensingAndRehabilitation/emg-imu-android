@@ -61,9 +61,9 @@ public class DeviceViewModel extends EmgImuViewModel<Device> {
 //    }
     public void emgPwrUpdated(Device dev, EmgPwrData data) {
         dev.setPower(data.power);
-        Log.d(TAG, "DeviceViewModel, emgPwrUpdated --> data.power[0] = " + data.power[0]
+/*        Log.d(TAG, "DeviceViewModel, emgPwrUpdated --> data.power[0] = " + data.power[0]
                 + "| data.power[1] = " + data.power[1]);
-        Log.d(TAG, "DeviceViewModel, data.power.length=" + data.power.length);
+        Log.d(TAG, "DeviceViewModel, data.power.length=" + data.power.length);*/
     }
 
 
@@ -95,11 +95,11 @@ public class DeviceViewModel extends EmgImuViewModel<Device> {
         sensor.maximum = d.getMaximumTwoChannel()[channel].getValue().floatValue();
         sensor.minimum = d.getMinimumTwoChannel()[channel].getValue().floatValue();
         trial.sensors.add(sensor);
-        Log.d(TAG, "dvm, MVC Trial Data -->"
+/*        Log.d(TAG, "dvm, MVC Trial Data -->"
                                     + " address=" + sensor.address
                                     + " | channel=" + sensor.channel
                                     + " | max=" + sensor.maximum
-                                    + " | min=" + sensor.maximum);
+                                    + " | min=" + sensor.maximum);*/
 
         trials.add(trial);
         Gson gson = new Gson();
