@@ -101,7 +101,10 @@ public class StreamingAdapter extends RecyclerView.Adapter<StreamingAdapter.View
             device.getGyro().observe(context, graphData -> graphView.updateGraphData(graphData) );
             device.getQuat().observe(context, q -> gimbalView.updateQuat(q));
             device.getConnected().observe(context, con -> gimbalView.setBackgroundColor(con ? Color.parseColor("#FFFFFF") : Color.parseColor("#999999")));
-            device.getBattery().observe(context, bat -> batteryView.setText(String.format("%.2f", bat)) );
+            device.getBattery().observe(context, bat -> {
+                    batteryView.setText(String.format("%.2f", bat));
+                    Log.d(TAG, "GaitVideo, StreamingAdapter, batter = " + bat);
+            } );
 		}
 	}
 }

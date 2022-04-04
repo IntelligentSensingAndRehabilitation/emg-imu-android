@@ -58,6 +58,11 @@ public class DeviceViewModel extends EmgImuViewModel<Device> {
     }
 
     @Override
+    public void batUpdated(Device dev, float bat) {
+        dev.setBattery(bat);
+    }
+
+    @Override
     public Device getDev(BluetoothDevice d) {
         Device dev = new Device(2);
         dev.setFiltering(filtering);

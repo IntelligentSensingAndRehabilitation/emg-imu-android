@@ -3,6 +3,7 @@ package org.sralab.emgimu.streaming;
 import android.util.Log;
 
 import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MutableLiveData;
 
 import org.sralab.emgimu.visualization.GraphData;
 
@@ -20,6 +21,10 @@ public class Device {
     public void setAddress(String address) {
         this.address = address;
     }
+
+    private MutableLiveData<Float> battery = new MutableLiveData<>();
+    public LiveData<Float> getBattery() { return battery; };
+    public void setBattery(float bat) { battery.postValue(bat); }
 
     private long t0 = 0;
 
@@ -84,7 +89,7 @@ public class Device {
 
     public void addVoltage(double [] timestamp, double [][] voltage) {
         final int channels = voltage.length;
-        Log.d(TAG, "Streaming device created, channels = voltage.length -->" + channels);
+        //Log.d(TAG, "Streaming device created, channels = voltage.length -->" + channels);
 
         if (t0 == 0) {
             t0 = (long) timestamp[0];
@@ -123,11 +128,11 @@ public class Device {
     public Device(int channels) {
 /*                emg = new GraphData(10000, channels);
         emg.setScale(1.0f/20000.0f);*/
-        Log.d(TAG, "Streaming device created, with channels = " + channels);
+        //Log.d(TAG, "Streaming device created, with channels = " + channels);
         emg = new GraphData[channels];
         for (int channelCounter = 0; channelCounter < channels; channelCounter++) {
             emg[channelCounter] = new GraphData(10000, 1);
-            Log.d(TAG, "Streaming device created, GraphData Object created!");
+            //Log.d(TAG, "Streaming device created, GraphData Object created!");
             emg[channelCounter].setScale(1.0f/20000.0f);
         }
         filter = new ArrayList<>();

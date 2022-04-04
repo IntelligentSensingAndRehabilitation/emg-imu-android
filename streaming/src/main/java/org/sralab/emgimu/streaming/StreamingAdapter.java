@@ -22,6 +22,7 @@
 
 package org.sralab.emgimu.streaming;
 
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -97,24 +98,32 @@ public class StreamingAdapter extends RecyclerView.Adapter<StreamingAdapter.View
 
         private GraphView graphView;
         TextView deviceAndChannelNameWidget;
+        private TextView batteryView;
 
 
         ViewHolder(final View itemView) {
 			super(itemView);
             graphView = itemView.findViewById(R.id.graph_pwr);
             deviceAndChannelNameWidget = itemView.findViewById(R.id.deviceAndChannelNameTextView);
+            batteryView = itemView.findViewById(R.id.batteryText);
         }
 
 		private void bind(final Device device, int channel) {
             String deviceAddress = device.getAddress();
             String deviceAbbreviatedAddress = deviceAddress.substring(0, 2);
+
             // channel is zero-indexed; however, for the user - it appears at one-indexed to
             // eliminate confusion and maintain consistency with the wire harness
             String deviceAndChannelName = deviceAbbreviatedAddress + " ch-" + (channel + 1);
 
             device.getEmg()[channel].observe(context, graphData -> graphView.updateGraphData(graphData) );
             dvm.getRange().observe(context, range -> device.setRange(range) );
+            device.getBattery().observe(context, bat -> {
+                batteryView.setText(String.format("%.2f", bat));
+                Log.d(TAG, "Streaming, StreamingAdapter, battery = " + bat);
+            } );
             deviceAndChannelNameWidget.setText(deviceAndChannelName);
+            Log.d(TAG, "Streaming, Hello Victor");
 		}
 	}
 }
