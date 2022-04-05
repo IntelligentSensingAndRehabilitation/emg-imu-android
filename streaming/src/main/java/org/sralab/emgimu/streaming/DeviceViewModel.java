@@ -55,6 +55,7 @@ public class DeviceViewModel extends EmgImuViewModel<Device> {
         //Log.d(TAG, "TS: " + data.ts + " " + Arrays.toString(timestamp));
 
         dev.addVoltage(timestamp, voltage);
+        dev.setBattery((float)data.batteryVoltage);
     }
 
     @Override

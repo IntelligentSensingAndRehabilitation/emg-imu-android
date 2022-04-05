@@ -6,4 +6,5 @@ parcelable EmgStreamData {
     int samples;
     int Fs;
     double [] voltage;
+    double batteryVoltage;
 }

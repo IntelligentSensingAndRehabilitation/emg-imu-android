@@ -105,7 +105,6 @@ public class StreamingAdapter extends RecyclerView.Adapter<StreamingAdapter.View
 			super(itemView);
             graphView = itemView.findViewById(R.id.graph_pwr);
             deviceAndChannelNameWidget = itemView.findViewById(R.id.deviceAndChannelNameTextView);
-            batteryView = itemView.findViewById(R.id.batteryText);
         }
 
 		private void bind(final Device device, int channel) {
@@ -119,11 +118,8 @@ public class StreamingAdapter extends RecyclerView.Adapter<StreamingAdapter.View
             device.getEmg()[channel].observe(context, graphData -> graphView.updateGraphData(graphData) );
             dvm.getRange().observe(context, range -> device.setRange(range) );
             device.getBattery().observe(context, bat -> {
-                batteryView.setText(String.format("%.2f", bat));
-                Log.d(TAG, "Streaming, StreamingAdapter, battery = " + bat);
+                deviceAndChannelNameWidget.setText(deviceAndChannelName + " (" + String.format("%.2f", bat) + "V)");
             } );
-            deviceAndChannelNameWidget.setText(deviceAndChannelName);
-            Log.d(TAG, "Streaming, Hello Victor");
 		}
 	}
 }

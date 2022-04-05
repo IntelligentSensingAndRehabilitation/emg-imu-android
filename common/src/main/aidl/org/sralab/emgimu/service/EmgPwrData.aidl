@@ -6,4 +6,5 @@ parcelable EmgPwrData {
     int [] power;
     String firmwareVersion;
     double batteryVoltage;
+
 }
