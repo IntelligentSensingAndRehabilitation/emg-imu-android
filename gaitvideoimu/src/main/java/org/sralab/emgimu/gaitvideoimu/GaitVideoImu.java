@@ -408,6 +408,14 @@ public class GaitVideoImu extends AppCompatActivity {
         videoDirectory = createDirectory("GaitAnalysis", "Videos");
     }
 
+    @Override
+    protected void onPause() {
+        super.onPause();
+        closeCamera();
+        stopBackgroundThread();
+        super.onPause();
+    }
+
     public void updateLogger() {
         if (mGameLogger != null) {
             Gson gson = new Gson();
