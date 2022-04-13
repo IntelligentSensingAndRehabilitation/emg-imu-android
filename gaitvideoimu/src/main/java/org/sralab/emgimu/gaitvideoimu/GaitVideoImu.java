@@ -6,6 +6,7 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
@@ -46,6 +47,9 @@ import org.sralab.emgimu.gaitvideoimu.stream_visualization.DeviceViewModel;
 import org.sralab.emgimu.gaitvideoimu.stream_visualization.StreamingAdapter;
 import org.sralab.emgimu.logging.FirebaseGameLogger;
 
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -86,6 +90,8 @@ public class GaitVideoImu extends AppCompatActivity {
             Manifest.permission.RECORD_AUDIO,
             Manifest.permission.WRITE_EXTERNAL_STORAGE};
 
+    private File videoDirectory;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -116,6 +122,7 @@ public class GaitVideoImu extends AppCompatActivity {
         //viewBinding.startButton.setOnClickListener(v -> captureVideo());
         //viewBinding.stopButton.setOnClickListener(v -> stopCaptureVideo());
         viewBinding.stopButton.setEnabled(false); // disable btn initially
+        videoDirectory = createDirectory("GaitAnalysis", "Videos");
     }
 
     public void updateLogger() {
@@ -172,5 +179,28 @@ public class GaitVideoImu extends AppCompatActivity {
 
         storage = FirebaseStorage.getInstance();
 
+    }
+
+    /**
+     * @brief                   Creates an empty directory with a nested directory to host the
+     *                          desired app files - local video/picture copy.
+     * @param directoryName     Main application directory.
+     * @param subDirectoryName  Nested directory to contain desired files.
+     * @return                  File object.
+     */
+    private File createDirectory(String directoryName, String subDirectoryName) {
+        File directory = new File(Environment.getExternalStorageDirectory() + "/" + directoryName);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            if (!Files.exists(Paths.get(String.valueOf(directory)))) {
+                directory.mkdir();
+            }
+        }
+        File subDirectory = new File(directory + "/" + subDirectoryName);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            if (!Files.exists(Paths.get(String.valueOf(subDirectory)))) {
+                subDirectory.mkdir();
+            }
+        }
+        return subDirectory;
     }
 }
