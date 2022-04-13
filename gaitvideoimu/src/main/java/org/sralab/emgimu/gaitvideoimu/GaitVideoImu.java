@@ -1,5 +1,7 @@
 package org.sralab.emgimu.gaitvideoimu;
 
+import static android.hardware.camera2.CameraDevice.TEMPLATE_RECORD;
+
 import android.Manifest;
 import android.content.ContentValues;
 import android.content.Context;
@@ -65,12 +67,14 @@ import org.sralab.emgimu.gaitvideoimu.stream_visualization.StreamingAdapter;
 import org.sralab.emgimu.logging.FirebaseGameLogger;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -247,6 +251,42 @@ public class GaitVideoImu extends AppCompatActivity {
         Toast.makeText(GaitVideoImu.this, "Pressed START recording btn!", Toast.LENGTH_SHORT).show();
         viewBinding.startButton.setEnabled(false);
         viewBinding.stopButton.setEnabled(true);
+        closePreview();
+        try {
+            setupMediaRecorder();
+            SurfaceTexture texture = textureView.getSurfaceTexture();
+            assert texture != null;
+            texture.setDefaultBufferSize(imageDimension.getWidth(), imageDimension.getHeight());
+            captureRequestBuilder = cameraDevice.createCaptureRequest(TEMPLATE_RECORD);
+            List<Surface> surfaces = new ArrayList<>();
+
+            Surface previewSurface = new Surface(texture);
+            surfaces.add(previewSurface);
+            captureRequestBuilder.addTarget(previewSurface);
+
+            // MediaRecorder setup for surface
+            Surface recorderSurface = mediaRecorder.getSurface();
+            surfaces.add(recorderSurface);
+            captureRequestBuilder.addTarget(recorderSurface);
+
+            // Start capture session
+            cameraDevice.createCaptureSession(surfaces, new CameraCaptureSession.StateCallback() {
+                @Override
+                public void onConfigured(@NonNull CameraCaptureSession captureSession) {
+                    cameraCaptureSession = captureSession;
+                    updatePreview();
+                    mediaRecorder.start();
+                }
+
+                @Override
+                public void onConfigureFailed(@NonNull CameraCaptureSession captureSession) {
+                    Toast.makeText(GaitVideoImu.this, "Configuration failed", Toast.LENGTH_SHORT).show();
+                }
+            }, backgroundHandler);
+
+        } catch (IOException | CameraAccessException e) {
+            e.printStackTrace();
+        }
     }
 
     private void stopVideoRecording() {
@@ -254,7 +294,7 @@ public class GaitVideoImu extends AppCompatActivity {
         viewBinding.startButton.setEnabled(true);
         viewBinding.stopButton.setEnabled(false);
     }
-    //endregion 
+    //endregion
 
     /**
      * @brief Establishes connection with the camera hardware.
