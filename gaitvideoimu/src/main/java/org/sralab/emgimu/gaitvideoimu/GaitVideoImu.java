@@ -95,7 +95,7 @@ public class GaitVideoImu extends AppCompatActivity {
     private StreamingAdapter streamingAdapter;
     //endregion
 
-    //region Firebase Fields
+    //region Firebase Fields & Nested Class
     class GaitTrial {
         public String fileName;
         public long startTime;
@@ -111,7 +111,7 @@ public class GaitVideoImu extends AppCompatActivity {
     private FirebaseGameLogger mGameLogger;
     //endregion
 
-    //region Camera Fields
+    //region Video Fields
     private static final int REQUEST_CODE_PERMISSIONS = 10;
     @NotNull
     private static final String[] REQUIRED_PERMISSIONS = new String[] {
@@ -135,6 +135,177 @@ public class GaitVideoImu extends AppCompatActivity {
         ORIENTATIONS.append(Surface.ROTATION_90, 0);
         ORIENTATIONS.append(Surface.ROTATION_180, 270);
         ORIENTATIONS.append(Surface.ROTATION_270, 180);
+    }
+    //endregion
+
+    //region Activity Lifecycle Methods
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        viewBinding = ActivityGaitVideoImuBinding.inflate(getLayoutInflater());
+        View view = viewBinding.getRoot();
+        setContentView(view);
+        textureView = (TextureView) findViewById(R.id.texture);
+        assert textureView != null;
+        textureView.setSurfaceTextureListener(textureListener);
+
+        final RecyclerView recyclerView = findViewById(R.id.emg_list);
+        recyclerView.setLayoutManager(new LinearLayoutManager(getBaseContext()));
+        recyclerView.addItemDecoration(new DividerItemDecoration(getBaseContext(), DividerItemDecoration.VERTICAL_LIST));
+
+        enableFirebase();
+
+        dvm = new ViewModelProvider(this, ViewModelProvider.AndroidViewModelFactory.getInstance(getApplication())).get(DeviceViewModel.class);
+        recyclerView.setAdapter(streamingAdapter = new StreamingAdapter(this, dvm));
+
+        dvm.getServiceLiveData().observe(this, binder -> {
+            if (binder != null) {
+                Log.d(TAG, "Service updated.");
+                long startTime = new Date().getTime();
+                mGameLogger = new FirebaseGameLogger(dvm.getService(), getString(R.string.app_name), startTime);
+            } else {
+                mGameLogger = null;
+            }
+        });
+
+        // Set up the listener for video capture buttons
+        viewBinding.startButton.setOnClickListener(v -> startVideoRecording());
+        viewBinding.stopButton.setOnClickListener(v -> stopVideoRecording());
+        viewBinding.stopButton.setEnabled(false); // disable btn initially
+        videoDirectory = createDirectory("GaitAnalysis", "Videos");
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        closeCamera();
+        stopBackgroundThread();
+        super.onPause();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        startBackgroundThread();
+        if (textureView.isAvailable()) {
+            openCamera(textureView.getWidth(), textureView.getHeight());
+        } else {
+            textureView.setSurfaceTextureListener(textureListener);
+        }
+    }
+    //endregion
+
+    //region Video Setup
+    /**
+     * Prepares TextureView
+     * TextureView is the view which renders captured camera image data.
+     * TextureView is prepared at View creation, and this callback gives us a notification
+     * when we are ready to prepare for the camera device initialization.
+     */
+    TextureView.SurfaceTextureListener textureListener = new TextureView.SurfaceTextureListener() {
+        @Override
+        public void onSurfaceTextureAvailable(@NonNull SurfaceTexture surface, int width, int height) {
+            openCamera(width, height);
+        }
+
+        @Override
+        public void onSurfaceTextureSizeChanged(@NonNull SurfaceTexture surface, int width, int height) {
+
+        }
+
+        @Override
+        public boolean onSurfaceTextureDestroyed(@NonNull SurfaceTexture surface) {
+            return false;
+        }
+
+        @Override
+        public void onSurfaceTextureUpdated(@NonNull SurfaceTexture surface) {
+
+        }
+    };
+
+    /**
+     * This is used to check a camera device state (open, close). It is required to open a camera.
+     */
+    private CameraDevice.StateCallback stateCallback = new CameraDevice.StateCallback() {
+        @Override
+        public void onOpened(@NonNull CameraDevice camera) {
+            // This is called when the camera is in the open state
+            cameraDevice = camera;
+            createPreview();
+        }
+
+        @Override
+        public void onDisconnected(@NonNull CameraDevice camera) {
+            cameraDevice.close();
+            cameraDevice = null;
+        }
+
+        @Override
+        public void onError(@NonNull CameraDevice camera, int error) {
+            cameraDevice.close();
+            cameraDevice = null;
+        }
+    };
+
+    protected void startBackgroundThread() {
+        backgroundThread = new HandlerThread("Camera Background Thread");
+        backgroundThread.start();
+        backgroundHandler = new Handler(backgroundThread.getLooper());
+    }
+
+    protected void stopBackgroundThread() {
+        backgroundThread.quitSafely();
+        try {
+            backgroundThread.join();
+            backgroundThread = null;
+            backgroundHandler = null;
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * @brief Establishes connection with the camera hardware.
+     * @param width
+     * @param height
+     */
+    private void openCamera(int width, int height) {
+        CameraManager manager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
+        try {
+            String cameraId = manager.getCameraIdList()[0]; // Camera 0 facing CAMERA_FACING_BACK
+            CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
+            StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+            assert map != null;
+            imageDimension = map.getOutputSizes(SurfaceTexture.class)[0];
+            mediaRecorder = new MediaRecorder();
+            // Explicitly check user permissions
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
+                    != PackageManager.PERMISSION_GRANTED &&
+                    ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                            != PackageManager.PERMISSION_GRANTED &&
+                    ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+                            != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(
+                        this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS);
+                return;
+            }
+            manager.openCamera(cameraId, stateCallback, null);
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void closeCamera() {
+        closePreview();
+        if (null != cameraDevice) {
+            cameraDevice.close();
+            cameraDevice = null;
+        }
+        if (null != mediaRecorder) {
+            mediaRecorder.release();
+            mediaRecorder = null;
+        }
     }
     //endregion
 
@@ -270,177 +441,6 @@ public class GaitVideoImu extends AppCompatActivity {
         mediaRecorder.stop();
         mediaRecorder.reset();
         createPreview();
-    }
-    //endregion
-
-    //region Camera Setup
-    /**
-     * Prepares TextureView
-     * TextureView is the view which renders captured camera image data.
-     * TextureView is prepared at View creation, and this callback gives us a notification
-     * when we are ready to prepare for the camera device initialization.
-     */
-    TextureView.SurfaceTextureListener textureListener = new TextureView.SurfaceTextureListener() {
-        @Override
-        public void onSurfaceTextureAvailable(@NonNull SurfaceTexture surface, int width, int height) {
-            openCamera(width, height);
-        }
-
-        @Override
-        public void onSurfaceTextureSizeChanged(@NonNull SurfaceTexture surface, int width, int height) {
-
-        }
-
-        @Override
-        public boolean onSurfaceTextureDestroyed(@NonNull SurfaceTexture surface) {
-            return false;
-        }
-
-        @Override
-        public void onSurfaceTextureUpdated(@NonNull SurfaceTexture surface) {
-
-        }
-    };
-
-    /**
-     * This is used to check a camera device state (open, close). It is required to open a camera.
-     */
-    private CameraDevice.StateCallback stateCallback = new CameraDevice.StateCallback() {
-        @Override
-        public void onOpened(@NonNull CameraDevice camera) {
-            // This is called when the camera is in the open state
-            cameraDevice = camera;
-            createPreview();
-        }
-
-        @Override
-        public void onDisconnected(@NonNull CameraDevice camera) {
-            cameraDevice.close();
-            cameraDevice = null;
-        }
-
-        @Override
-        public void onError(@NonNull CameraDevice camera, int error) {
-            cameraDevice.close();
-            cameraDevice = null;
-        }
-    };
-
-    protected void startBackgroundThread() {
-        backgroundThread = new HandlerThread("Camera Background Thread");
-        backgroundThread.start();
-        backgroundHandler = new Handler(backgroundThread.getLooper());
-    }
-
-    protected void stopBackgroundThread() {
-        backgroundThread.quitSafely();
-        try {
-            backgroundThread.join();
-            backgroundThread = null;
-            backgroundHandler = null;
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * @brief Establishes connection with the camera hardware.
-     * @param width
-     * @param height
-     */
-    private void openCamera(int width, int height) {
-        CameraManager manager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
-        try {
-            String cameraId = manager.getCameraIdList()[0]; // Camera 0 facing CAMERA_FACING_BACK
-            CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
-            StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
-            assert map != null;
-            imageDimension = map.getOutputSizes(SurfaceTexture.class)[0];
-            mediaRecorder = new MediaRecorder();
-            // Explicitly check user permissions
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
-                    != PackageManager.PERMISSION_GRANTED &&
-                    ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                            != PackageManager.PERMISSION_GRANTED &&
-                    ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
-                            != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(
-                        this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS);
-                return;
-            }
-            manager.openCamera(cameraId, stateCallback, null);
-        } catch (CameraAccessException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void closeCamera() {
-        closePreview();
-        if (null != cameraDevice) {
-            cameraDevice.close();
-            cameraDevice = null;
-        }
-        if (null != mediaRecorder) {
-            mediaRecorder.release();
-            mediaRecorder = null;
-        }
-    }
-    //endregion
-
-    //region Activity Lifecycle
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        viewBinding = ActivityGaitVideoImuBinding.inflate(getLayoutInflater());
-        View view = viewBinding.getRoot();
-        setContentView(view);
-        textureView = (TextureView) findViewById(R.id.texture);
-        assert textureView != null;
-        textureView.setSurfaceTextureListener(textureListener);
-
-        final RecyclerView recyclerView = findViewById(R.id.emg_list);
-        recyclerView.setLayoutManager(new LinearLayoutManager(getBaseContext()));
-        recyclerView.addItemDecoration(new DividerItemDecoration(getBaseContext(), DividerItemDecoration.VERTICAL_LIST));
-
-        enableFirebase();
-
-        dvm = new ViewModelProvider(this, ViewModelProvider.AndroidViewModelFactory.getInstance(getApplication())).get(DeviceViewModel.class);
-        recyclerView.setAdapter(streamingAdapter = new StreamingAdapter(this, dvm));
-
-        dvm.getServiceLiveData().observe(this, binder -> {
-            if (binder != null) {
-                Log.d(TAG, "Service updated.");
-                long startTime = new Date().getTime();
-                mGameLogger = new FirebaseGameLogger(dvm.getService(), getString(R.string.app_name), startTime);
-            } else {
-                mGameLogger = null;
-            }
-        });
-
-        // Set up the listener for video capture buttons
-        viewBinding.startButton.setOnClickListener(v -> startVideoRecording());
-        viewBinding.stopButton.setOnClickListener(v -> stopVideoRecording());
-        viewBinding.stopButton.setEnabled(false); // disable btn initially
-        videoDirectory = createDirectory("GaitAnalysis", "Videos");
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        closeCamera();
-        stopBackgroundThread();
-        super.onPause();
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        startBackgroundThread();
-        if (textureView.isAvailable()) {
-            openCamera(textureView.getWidth(), textureView.getHeight());
-        } else {
-            textureView.setSurfaceTextureListener(textureListener);
-        }
     }
     //endregion
 
