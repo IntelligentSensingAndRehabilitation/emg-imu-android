@@ -242,6 +242,7 @@ public class GaitVideoImu extends AppCompatActivity {
     }
     //endregion
 
+    //region Video Recording
     private void startVideoRecording() {
         Toast.makeText(GaitVideoImu.this, "Pressed START recording btn!", Toast.LENGTH_SHORT).show();
         viewBinding.startButton.setEnabled(false);
@@ -253,6 +254,7 @@ public class GaitVideoImu extends AppCompatActivity {
         viewBinding.startButton.setEnabled(true);
         viewBinding.stopButton.setEnabled(false);
     }
+    //endregion 
 
     /**
      * @brief Establishes connection with the camera hardware.
