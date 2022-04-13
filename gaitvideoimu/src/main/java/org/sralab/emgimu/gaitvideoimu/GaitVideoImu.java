@@ -102,6 +102,7 @@ public class GaitVideoImu extends AppCompatActivity {
             Manifest.permission.WRITE_EXTERNAL_STORAGE};
 
     private File videoDirectory;
+    protected CameraDevice cameraDevice;
 
     /**
      * Prepares TextureView
@@ -131,20 +132,27 @@ public class GaitVideoImu extends AppCompatActivity {
         }
     };
 
+    /**
+     * This is used to check a camera device state (open, close). It is required to open a camera.
+     */
     private CameraDevice.StateCallback stateCallback = new CameraDevice.StateCallback() {
         @Override
         public void onOpened(@NonNull CameraDevice camera) {
-
+            // This is called when the camera is in the open state
+            cameraDevice = camera;
+            createPreview();
         }
 
         @Override
         public void onDisconnected(@NonNull CameraDevice camera) {
-
+            cameraDevice.close();
+            cameraDevice = null;
         }
 
         @Override
         public void onError(@NonNull CameraDevice camera, int error) {
-
+            cameraDevice.close();
+            cameraDevice = null;
         }
     };
 
