@@ -3,6 +3,7 @@ package org.sralab.emgimu.gaitvideoimu;
 import static android.hardware.camera2.CameraDevice.TEMPLATE_RECORD;
 
 import android.Manifest;
+import android.app.Activity;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.pm.PackageManager;
@@ -15,6 +16,7 @@ import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.params.StreamConfigurationMap;
+import android.media.CamcorderProfile;
 import android.media.MediaRecorder;
 import android.net.Uri;
 import android.os.Build;
@@ -115,6 +117,7 @@ public class GaitVideoImu extends AppCompatActivity {
             Manifest.permission.WRITE_EXTERNAL_STORAGE};
 
     private File videoDirectory;
+    private File currentFile;
     private Size imageDimension;
     protected MediaRecorder mediaRecorder;
     protected CameraDevice cameraDevice;
@@ -298,7 +301,23 @@ public class GaitVideoImu extends AppCompatActivity {
         }
     }
 
-    private void setupMediaRecorder() {
+    private void setupMediaRecorder() throws IOException {
+        final Activity activity = this;
+        if (null == activity) {
+            return;
+        }
+        mediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
+        mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+        currentFile = createNewFile(videoDirectory);
+        mediaRecorder.setOutputFile(currentFile.getAbsolutePath());
+        CamcorderProfile profile = CamcorderProfile.get(CamcorderProfile.QUALITY_1080P);
+        mediaRecorder.setVideoFrameRate(profile.videoFrameRate);
+        mediaRecorder.setVideoSize(profile.videoFrameWidth, profile.videoFrameHeight);
+        mediaRecorder.setVideoEncodingBitRate(profile.videoBitRate);
+        mediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
+        int rotation = activity.getWindowManager().getDefaultDisplay().getRotation();
+        mediaRecorder.setOrientationHint(ORIENTATIONS.get(rotation));
+        mediaRecorder.prepare();
     }
 
     private void stopVideoRecording() {
