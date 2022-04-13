@@ -289,6 +289,9 @@ public class GaitVideoImu extends AppCompatActivity {
         }
     }
 
+    private void setupMediaRecorder() {
+    }
+
     private void stopVideoRecording() {
         Toast.makeText(GaitVideoImu.this, "Pressed STOP recording btn!", Toast.LENGTH_SHORT).show();
         viewBinding.startButton.setEnabled(true);
