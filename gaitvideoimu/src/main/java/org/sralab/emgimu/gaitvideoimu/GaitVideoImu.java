@@ -304,8 +304,8 @@ public class GaitVideoImu extends AppCompatActivity {
         });
 
         // Set up the listener for video capture buttons
-        //viewBinding.startButton.setOnClickListener(v -> captureVideo());
-        //viewBinding.stopButton.setOnClickListener(v -> stopCaptureVideo());
+        viewBinding.startButton.setOnClickListener(v -> startVideoRecording());
+        viewBinding.stopButton.setOnClickListener(v -> stopVideoRecording());
         viewBinding.stopButton.setEnabled(false); // disable btn initially
         videoDirectory = createDirectory("GaitAnalysis", "Videos");
     }
