@@ -25,6 +25,7 @@ import android.os.HandlerThread;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.util.Size;
+import android.util.SparseIntArray;
 import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
@@ -121,6 +122,13 @@ public class GaitVideoImu extends AppCompatActivity {
     private Handler backgroundHandler;
     private HandlerThread backgroundThread;
     private TextureView textureView;
+    private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
+    static {
+        ORIENTATIONS.append(Surface.ROTATION_0, 90);
+        ORIENTATIONS.append(Surface.ROTATION_90, 0);
+        ORIENTATIONS.append(Surface.ROTATION_180, 270);
+        ORIENTATIONS.append(Surface.ROTATION_270, 180);
+    }
 
     /**
      * Prepares TextureView
