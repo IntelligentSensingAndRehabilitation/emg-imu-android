@@ -190,7 +190,6 @@ public class GaitVideoImu extends AppCompatActivity {
      * @brief Instantiates video stream for user to view inside the application.
      */
     private void createPreview() {
-        Toast.makeText(GaitVideoImu.this, "createPreview()", Toast.LENGTH_SHORT).show();
         SurfaceTexture texture = textureView.getSurfaceTexture();
         assert texture != null;
         texture.setDefaultBufferSize(imageDimension.getWidth(), imageDimension.getHeight());
@@ -218,6 +217,10 @@ public class GaitVideoImu extends AppCompatActivity {
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
+    }
+
+    private void updatePreview() {
+        Toast.makeText(GaitVideoImu.this, "updatePreview()", Toast.LENGTH_SHORT).show();
     }
 
     /**
