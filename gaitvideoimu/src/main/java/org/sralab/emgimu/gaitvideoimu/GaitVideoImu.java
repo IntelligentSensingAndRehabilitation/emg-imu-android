@@ -169,11 +169,21 @@ public class GaitVideoImu extends AppCompatActivity {
         }
     };
 
-
     protected void startBackgroundThread() {
         backgroundThread = new HandlerThread("Camera Background Thread");
         backgroundThread.start();
         backgroundHandler = new Handler(backgroundThread.getLooper());
+    }
+
+    protected void stopBackgroundThread() {
+        backgroundThread.quitSafely();
+        try {
+            backgroundThread.join();
+            backgroundThread = null;
+            backgroundHandler = null;
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
