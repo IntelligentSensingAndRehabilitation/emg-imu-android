@@ -76,6 +76,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -451,5 +452,16 @@ public class GaitVideoImu extends AppCompatActivity {
             }
         }
         return subDirectory;
+    }
+
+    private File createNewFile(File directory) {
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss",
+                Locale.getDefault()).format(new Date());
+        File mediaFile;
+
+        mediaFile = new File(directory.getPath() + File.separator
+                + "video_" + timeStamp + ".mp4");
+        Toast.makeText(GaitVideoImu.this, "Created new file: " + mediaFile.getPath(), Toast.LENGTH_SHORT).show();
+        return mediaFile;
     }
 }
