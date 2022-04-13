@@ -222,7 +222,6 @@ public class GaitVideoImu extends AppCompatActivity {
     }
 
     private void updatePreview() {
-        Toast.makeText(GaitVideoImu.this, "updatePreview()", Toast.LENGTH_SHORT).show();
         if (null == cameraDevice) {
             Log.e(TAG, "updatePreview error, return");
         }
