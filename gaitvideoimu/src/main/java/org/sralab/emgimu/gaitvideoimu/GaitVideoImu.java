@@ -241,7 +241,19 @@ public class GaitVideoImu extends AppCompatActivity {
             cameraCaptureSession = null;
         }
     }
-    //endregion 
+    //endregion
+
+    private void startVideoRecording() {
+        Toast.makeText(GaitVideoImu.this, "Pressed START recording btn!", Toast.LENGTH_SHORT).show();
+        viewBinding.startButton.setEnabled(false);
+        viewBinding.stopButton.setEnabled(true);
+    }
+
+    private void stopVideoRecording() {
+        Toast.makeText(GaitVideoImu.this, "Pressed STOP recording btn!", Toast.LENGTH_SHORT).show();
+        viewBinding.startButton.setEnabled(true);
+        viewBinding.stopButton.setEnabled(false);
+    }
 
     /**
      * @brief Establishes connection with the camera hardware.
