@@ -327,6 +327,7 @@ public class GaitVideoImu extends AppCompatActivity {
     }
     //endregion
 
+    //region Camera Setup
     /**
      * @brief Establishes connection with the camera hardware.
      * @param width
@@ -369,6 +370,7 @@ public class GaitVideoImu extends AppCompatActivity {
             mediaRecorder = null;
         }
     }
+    //endregion
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
