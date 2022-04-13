@@ -358,6 +358,18 @@ public class GaitVideoImu extends AppCompatActivity {
         }
     }
 
+    private void closeCamera() {
+        closePreview();
+        if (null != cameraDevice) {
+            cameraDevice.close();
+            cameraDevice = null;
+        }
+        if (null != mediaRecorder) {
+            mediaRecorder.release();
+            mediaRecorder = null;
+        }
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
