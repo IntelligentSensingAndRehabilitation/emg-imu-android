@@ -63,9 +63,6 @@ public class GaitVideoImu extends AppCompatActivity {
     private DeviceViewModel dvm;
     private StreamingAdapter streamingAdapter;
 
-    private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
-    @Nullable
-    private Recording recording;
 
     class GaitTrial {
         public String fileName;
@@ -88,9 +85,6 @@ public class GaitVideoImu extends AppCompatActivity {
             Manifest.permission.CAMERA,
             Manifest.permission.RECORD_AUDIO,
             Manifest.permission.WRITE_EXTERNAL_STORAGE};
-    private ExecutorService cameraExecutor;
-    @Nullable
-    private VideoCapture<Recorder> videoCapture;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -118,18 +112,10 @@ public class GaitVideoImu extends AppCompatActivity {
             }
         });
 
-        // Request camera permissions
-        if (!allPermissionsGranted()) {
-            ActivityCompat.requestPermissions(
-                    this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS);
-        }
-        startCamera();
-
-        // Set up the listener for video capture button
-        viewBinding.startButton.setOnClickListener(v -> captureVideo());
-        viewBinding.stopButton.setOnClickListener(v -> stopCaptureVideo());
+        // Set up the listener for video capture buttons
+        //viewBinding.startButton.setOnClickListener(v -> captureVideo());
+        //viewBinding.stopButton.setOnClickListener(v -> stopCaptureVideo());
         viewBinding.stopButton.setEnabled(false); // disable btn initially
-        cameraExecutor = Executors.newSingleThreadExecutor();
     }
 
     public void updateLogger() {
@@ -186,167 +172,5 @@ public class GaitVideoImu extends AppCompatActivity {
 
         storage = FirebaseStorage.getInstance();
 
-    }
-
-    private void stopCaptureVideo() {
-        Recording curRecording = recording;
-        if (curRecording != null) {
-            // Stop the current recording session.
-            curRecording.stop();
-            recording = null;
-            return;
-        }
-    }
-
-    // Implements VideoCapture use case, including start and stop capturing.
-    private final void captureVideo() {
-        viewBinding.startButton.setEnabled(false);
-
-        // if videoCapture is already running (for some reason) stop it
-        Recording curRecording = recording;
-        if (curRecording != null) {
-            // Stop the current recording session.
-            curRecording.stop();
-            recording = null;
-            return;
-        }
-
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd-HHmmss'Z'");
-        Date now = new Date();
-        String fileName = formatter.format(now) + ".mp4";
-        String uploadFileName =  "videos/" + mUser.getUid() + "/" + fileName;
-
-        curTrial = new GaitTrial();
-        curTrial.fileName = uploadFileName;
-        curTrial.startTime = now.getTime(); //new Timestamp(now);
-        trials.add(curTrial);
-        showVideoStatus("Recording " + fileName);
-
-        ContentValues contentValues = new ContentValues();
-        contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, fileName);
-        contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "video/mp4");
-
-
-        // timestamping code for comparison
-        Long startTime_ms1 = now.getTime();
-        Long startTime_us1 = System.nanoTime();
-
-        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
-            contentValues.put(MediaStore.Video.Media.RELATIVE_PATH, "Movies/GaitVideoApp-Video");
-        }
-
-        MediaStoreOutputOptions mediaStoreOutputOptions = new MediaStoreOutputOptions
-                .Builder(getContentResolver(), MediaStore.Video.Media.EXTERNAL_CONTENT_URI)
-                .setContentValues(contentValues)
-                .build();
-
-        recording = videoCapture.getOutput().
-                prepareRecording(this, mediaStoreOutputOptions)
-                .start(ContextCompat.getMainExecutor(this), videoRecordEvent -> {
-                    if (videoRecordEvent instanceof VideoRecordEvent.Start) {
-                        // Handle the start of a new active recording
-                        viewBinding.startButton.setEnabled(false);
-                        viewBinding.stopButton.setEnabled(true);
-                        Date tsFromVideoRecordEvent = new Date();
-                        curTrial.videoRecordEventStartTime = tsFromVideoRecordEvent.getTime();
-
-                        // code for timestamp comparison
-                        Date time_ms2 = new Date();
-                        Long startTime_ms2 = time_ms2.getTime();
-                        long timestampDifference_ms = startTime_ms2 - startTime_ms1;
-                        Long startTime_us2 = System.nanoTime();
-                        long timestampDifference_us = startTime_us2 - startTime_us1;
-                        Log.d(TAG, "timestamp Intent = " + startTime_ms1);
-                        Log.d(TAG, "timestamp inside VideoRecordEvent = " + startTime_ms2);
-                        Log.d(TAG, "timestampDifference_ms = " + timestampDifference_ms + " ms. Note: using Date class, millisecond precision");
-                        Log.d(TAG, "timestampDifference_us = " + timestampDifference_us + " us. Note: using System class, nanosecond precision");
-                    }
-                    else if (videoRecordEvent instanceof VideoRecordEvent.Pause) {
-                        // Handle the case where the active recording is paused
-
-                    } else if (videoRecordEvent instanceof VideoRecordEvent.Resume) {
-                        // Handles the case where the active recording is resumed
-
-                    } else if (videoRecordEvent instanceof VideoRecordEvent.Finalize) {
-                        VideoRecordEvent.Finalize finalizeEvent =
-                                (VideoRecordEvent.Finalize) videoRecordEvent;
-                        // Handles a finalize event for the active recording, checking Finalize.getError()
-                        int error = finalizeEvent.getError();
-                        if (error == VideoRecordEvent.Finalize.ERROR_NONE) {
-                            String msg = "Saved video filename: " + fileName;
-                            Toast.makeText(getBaseContext(), msg, Toast.LENGTH_SHORT).show();
-                            Log.d(TAG, msg);
-
-                            showVideoStatus("Uploading " + fileName);
-                            Uri file = ((VideoRecordEvent.Finalize) videoRecordEvent).getOutputResults().getOutputUri();
-                            StorageReference storageRef = storage.getReference().child(uploadFileName);
-                            storageRef.putFile(file)
-                                    .addOnFailureListener(e -> showVideoStatus("Upload "  + fileName + " failed"))
-                                    .addOnSuccessListener(taskSnapshot -> showVideoStatus("Upload "  + fileName + " succeeded"));
-                            curTrial.endTime = new Date().getTime();
-                            updateLogger();
-                        } else {
-                            Log.d(TAG, "Video error");
-                            showVideoStatus("Video Error!");
-                        }
-
-                        // we can start video capture at any time
-                        viewBinding.startButton.setEnabled(true);
-                        viewBinding.stopButton.setEnabled(false);
-                    }
-
-                    // All events, including VideoRecordEvent.Status, contain RecordingStats.
-                    // This can be used to update the UI or track the recording duration.
-                    RecordingStats recordingStats = videoRecordEvent.getRecordingStats();
-                });
-    }
-    private final void startCamera() {
-        cameraProviderFuture = ProcessCameraProvider.getInstance(getBaseContext());
-        // Used to bind the lifecycle of cameras to the lifecycle owner
-        cameraProviderFuture.addListener(() -> {
-            // Preview
-            Preview preview = new Preview.Builder()
-                    .build();
-            preview.setSurfaceProvider(viewBinding.cameraView.getSurfaceProvider());
-
-            // VideoCapture
-            Recorder recorder = new Recorder.Builder()
-                    .setQualitySelector(QualitySelector.from(Quality.HIGHEST))
-                    .build();
-            videoCapture = androidx.camera.video.VideoCapture.withOutput(recorder);
-
-            // Select back camera as a default
-            CameraSelector cameraSelector = new CameraSelector.Builder()
-                    .requireLensFacing(CameraSelector.LENS_FACING_BACK)
-                    .build();
-            try {
-                ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
-                // Unbind use cases before rebinding
-                cameraProvider.unbindAll();
-
-                // Bind use cases to camera
-                cameraProvider.bindToLifecycle(
-                        this, cameraSelector, preview, videoCapture);
-            } catch (ExecutionException | InterruptedException e) {
-                Log.e(TAG, "Use case binding failed", e);
-            }
-        }, ContextCompat.getMainExecutor(getBaseContext()));
-    }
-
-    private boolean allPermissionsGranted() {
-        return (ContextCompat.checkSelfPermission(getBaseContext(), Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED ||
-                ContextCompat.checkSelfPermission(getBaseContext(), Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED ||
-                ContextCompat.checkSelfPermission(getBaseContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED);
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        ExecutorService executorService = this.cameraExecutor;
-        if (executorService == null) {
-            Intrinsics.throwUninitializedPropertyAccessException("cameraExecutor");
-            executorService = null;
-        }
-        executorService.shutdown();
     }
 }
