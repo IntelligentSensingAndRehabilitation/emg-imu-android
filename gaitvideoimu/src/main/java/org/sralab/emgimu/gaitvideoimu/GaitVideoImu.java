@@ -102,6 +102,8 @@ public class GaitVideoImu extends AppCompatActivity {
             Manifest.permission.WRITE_EXTERNAL_STORAGE};
 
     private File videoDirectory;
+    private Size imageDimension;
+    protected MediaRecorder mediaRecorder;
     protected CameraDevice cameraDevice;
 
     /**
@@ -155,9 +157,6 @@ public class GaitVideoImu extends AppCompatActivity {
             cameraDevice = null;
         }
     };
-
-    private Size imageDimension;
-    protected MediaRecorder mediaRecorder;
 
     /**
      * @brief Establishes connection with the camera hardware.
