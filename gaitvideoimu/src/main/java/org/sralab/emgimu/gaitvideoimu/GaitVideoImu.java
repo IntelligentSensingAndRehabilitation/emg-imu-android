@@ -17,6 +17,8 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.HandlerThread;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.util.Size;
@@ -111,6 +113,8 @@ public class GaitVideoImu extends AppCompatActivity {
     protected CameraDevice cameraDevice;
     protected CaptureRequest.Builder captureRequestBuilder;
     protected CameraCaptureSession cameraCaptureSession;
+    private Handler backgroundHandler;
+    private HandlerThread backgroundThread;
     private TextureView textureView;
 
     /**
@@ -164,6 +168,13 @@ public class GaitVideoImu extends AppCompatActivity {
             cameraDevice = null;
         }
     };
+
+
+    protected void startBackgroundThread() {
+        backgroundThread = new HandlerThread("Camera Background Thread");
+        backgroundThread.start();
+        backgroundHandler = new Handler(backgroundThread.getLooper());
+    }
 
     /**
      * @brief Instantiates video stream for user to view inside the application.
