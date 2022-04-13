@@ -187,6 +187,7 @@ public class GaitVideoImu extends AppCompatActivity {
         }
     }
 
+    //region Video Preview
     /**
      * @brief Instantiates video stream for user to view inside the application.
      */
@@ -240,6 +241,7 @@ public class GaitVideoImu extends AppCompatActivity {
             cameraCaptureSession = null;
         }
     }
+    //endregion 
 
     /**
      * @brief Establishes connection with the camera hardware.
