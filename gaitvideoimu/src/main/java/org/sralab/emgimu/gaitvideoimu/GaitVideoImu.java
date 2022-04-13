@@ -442,6 +442,7 @@ public class GaitVideoImu extends AppCompatActivity {
     }
     //endregion
 
+    //region Firebase
     public void updateLogger() {
         if (mGameLogger != null) {
             Gson gson = new Gson();
@@ -497,6 +498,7 @@ public class GaitVideoImu extends AppCompatActivity {
         storage = FirebaseStorage.getInstance();
 
     }
+    //endregion
 
     /**
      * @brief                   Creates an empty directory with a nested directory to host the
