@@ -158,6 +158,9 @@ public class GaitVideoImu extends AppCompatActivity {
         }
     };
 
+    private void createPreview() {
+    }
+
     /**
      * @brief Establishes connection with the camera hardware.
      * @param width
