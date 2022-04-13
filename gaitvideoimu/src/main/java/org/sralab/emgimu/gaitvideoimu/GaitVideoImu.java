@@ -87,13 +87,15 @@ import kotlin.jvm.internal.Intrinsics;
 import no.nordicsemi.android.nrftoolbox.widget.DividerItemDecoration;
 
 public class GaitVideoImu extends AppCompatActivity {
-
     private static final String TAG = GaitVideoImu.class.getSimpleName();
+    private ActivityGaitVideoImuBinding viewBinding; // handles UI
 
+    //region RecyclerView Fields
     private DeviceViewModel dvm;
     private StreamingAdapter streamingAdapter;
+    //endregion
 
-
+    //region Firebase Fields
     class GaitTrial {
         public String fileName;
         public long startTime;
@@ -107,8 +109,9 @@ public class GaitVideoImu extends AppCompatActivity {
     private FirebaseStorage storage;
     private FirebaseUser mUser;
     private FirebaseGameLogger mGameLogger;
+    //endregion
 
-    private ActivityGaitVideoImuBinding viewBinding;
+    //region Camera Fields
     private static final int REQUEST_CODE_PERMISSIONS = 10;
     @NotNull
     private static final String[] REQUIRED_PERMISSIONS = new String[] {
@@ -133,8 +136,7 @@ public class GaitVideoImu extends AppCompatActivity {
         ORIENTATIONS.append(Surface.ROTATION_180, 270);
         ORIENTATIONS.append(Surface.ROTATION_270, 180);
     }
-
-
+    //endregion
 
     //region Video Preview
     /**
