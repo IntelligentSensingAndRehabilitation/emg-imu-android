@@ -234,6 +234,13 @@ public class GaitVideoImu extends AppCompatActivity {
         }
     }
 
+    private void closePreview() {
+        if (cameraCaptureSession != null) {
+            cameraCaptureSession.close();
+            cameraCaptureSession = null;
+        }
+    }
+
     /**
      * @brief Establishes connection with the camera hardware.
      * @param width
