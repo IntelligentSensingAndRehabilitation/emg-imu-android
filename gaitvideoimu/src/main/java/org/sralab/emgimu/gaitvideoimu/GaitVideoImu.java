@@ -372,6 +372,7 @@ public class GaitVideoImu extends AppCompatActivity {
     }
     //endregion
 
+    //region Activity Lifecycle
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -426,6 +427,7 @@ public class GaitVideoImu extends AppCompatActivity {
             textureView.setSurfaceTextureListener(textureListener);
         }
     }
+    //endregion
 
     public void updateLogger() {
         if (mGameLogger != null) {
