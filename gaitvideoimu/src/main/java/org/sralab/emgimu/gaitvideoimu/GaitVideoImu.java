@@ -416,6 +416,17 @@ public class GaitVideoImu extends AppCompatActivity {
         super.onPause();
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        startBackgroundThread();
+        if (textureView.isAvailable()) {
+            openCamera(textureView.getWidth(), textureView.getHeight());
+        } else {
+            textureView.setSurfaceTextureListener(textureListener);
+        }
+    }
+
     public void updateLogger() {
         if (mGameLogger != null) {
             Gson gson = new Gson();
