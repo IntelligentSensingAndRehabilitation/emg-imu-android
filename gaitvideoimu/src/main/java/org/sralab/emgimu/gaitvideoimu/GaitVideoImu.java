@@ -123,6 +123,9 @@ public class GaitVideoImu extends AppCompatActivity {
         }
     };
 
+    private void openCamera(int width, int height) {
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
