@@ -105,6 +105,7 @@ public class GaitVideoImu extends AppCompatActivity {
     private Size imageDimension;
     protected MediaRecorder mediaRecorder;
     protected CameraDevice cameraDevice;
+    private TextureView textureView;
 
     /**
      * Prepares TextureView
@@ -198,6 +199,9 @@ public class GaitVideoImu extends AppCompatActivity {
         viewBinding = ActivityGaitVideoImuBinding.inflate(getLayoutInflater());
         View view = viewBinding.getRoot();
         setContentView(view);
+        textureView = (TextureView) findViewById(R.id.texture);
+        assert textureView != null;
+        textureView.setSurfaceTextureListener(textureListener);
 
         final RecyclerView recyclerView = findViewById(R.id.emg_list);
         recyclerView.setLayoutManager(new LinearLayoutManager(getBaseContext()));

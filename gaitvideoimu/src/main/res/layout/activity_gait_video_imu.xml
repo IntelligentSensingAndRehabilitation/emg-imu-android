@@ -11,14 +11,11 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
 
-    <androidx.camera.view.PreviewView
-        android:id="@+id/cameraView"
+    <TextureView
+        android:id="@+id/texture"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:scaleX="1.0"
-        android:scaleY="1.0"
-        app:scaleType="fitCenter" />
+        android:layout_weight="1" />
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -52,7 +49,7 @@
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/emg_list"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         android:layout_weight="1">
 
     </androidx.recyclerview.widget.RecyclerView>
