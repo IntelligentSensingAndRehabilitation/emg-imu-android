@@ -500,6 +500,7 @@ public class GaitVideoImu extends AppCompatActivity {
     }
     //endregion
 
+    //region Internal File Storage
     /**
      * @brief                   Creates an empty directory with a nested directory to host the
      *                          desired app files - local video/picture copy.
@@ -533,4 +534,5 @@ public class GaitVideoImu extends AppCompatActivity {
         Toast.makeText(GaitVideoImu.this, "Created new file: " + mediaFile.getPath(), Toast.LENGTH_SHORT).show();
         return mediaFile;
     }
+    //endregion
 }
