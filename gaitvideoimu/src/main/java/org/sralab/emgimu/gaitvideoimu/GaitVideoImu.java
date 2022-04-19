@@ -119,7 +119,6 @@ public class GaitVideoImu extends AppCompatActivity {
             Manifest.permission.RECORD_AUDIO,
             Manifest.permission.WRITE_EXTERNAL_STORAGE};
 
-    private File videoDirectory;
     private File currentFile;
     private Size imageDimension;
     protected MediaRecorder mediaRecorder;
@@ -172,7 +171,6 @@ public class GaitVideoImu extends AppCompatActivity {
         viewBinding.startButton.setOnClickListener(v -> startVideoRecording());
         viewBinding.stopButton.setOnClickListener(v -> stopVideoRecording());
         viewBinding.stopButton.setEnabled(false); // disable btn initially
-        videoDirectory = createDirectory("GaitAnalysis", "Videos");
     }
 
     @Override
@@ -414,7 +412,7 @@ public class GaitVideoImu extends AppCompatActivity {
         }
         mediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
         mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
-        currentFile = createNewFile(videoDirectory);
+        currentFile = createNewFile();
         mediaRecorder.setOutputFile(currentFile.getAbsolutePath());
         CamcorderProfile profile = CamcorderProfile.get(CamcorderProfile.QUALITY_1080P);
         mediaRecorder.setVideoFrameRate(profile.videoFrameRate);
@@ -503,37 +501,14 @@ public class GaitVideoImu extends AppCompatActivity {
     //endregion
 
     //region Internal File Storage
-    /**
-     * @brief                   Creates an empty directory with a nested directory to host the
-     *                          desired app files - local video/picture copy.
-     * @param directoryName     Main application directory.
-     * @param subDirectoryName  Nested directory to contain desired files.
-     * @return                  File object.
-     */
-    private File createDirectory(String directoryName, String subDirectoryName) {
-        File directory = new File(Environment.getExternalStorageDirectory() + "/" + directoryName);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            if (!Files.exists(Paths.get(String.valueOf(directory)))) {
-                directory.mkdir();
-            }
-        }
-        File subDirectory = new File(directory + "/" + subDirectoryName);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            if (!Files.exists(Paths.get(String.valueOf(subDirectory)))) {
-                subDirectory.mkdir();
-            }
-        }
-        return subDirectory;
-    }
 
-    private File createNewFile(File directory) {
+    private File createNewFile() {
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss",
                 Locale.getDefault()).format(new Date());
-        File mediaFile;
-
-        mediaFile = new File(directory.getPath() + File.separator
-                + "video_" + timeStamp + ".mp4");
+        String filename = timeStamp + ".mp4";
+        File mediaFile = new File(getApplicationContext().getExternalFilesDir("gait_video"), filename);
         Toast.makeText(GaitVideoImu.this, "Created new file: " + mediaFile.getPath(), Toast.LENGTH_SHORT).show();
+        Log.d(TAG, "Filename: " + mediaFile.getAbsolutePath());
         return mediaFile;
     }
     //endregion
