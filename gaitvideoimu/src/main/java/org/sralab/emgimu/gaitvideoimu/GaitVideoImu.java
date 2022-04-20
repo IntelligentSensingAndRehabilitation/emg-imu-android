@@ -526,5 +526,11 @@ public class GaitVideoImu extends AppCompatActivity {
         Log.d(TAG, "Filename: " + mediaFile.getAbsolutePath());
         return mediaFile;
     }
+
+    private String getSimpleFilename(File file) {
+        String temp[] = file.getAbsolutePath().split("/");
+        String filename = temp[temp.length - 1];
+        return filename;
+    }
     //endregion
 }
