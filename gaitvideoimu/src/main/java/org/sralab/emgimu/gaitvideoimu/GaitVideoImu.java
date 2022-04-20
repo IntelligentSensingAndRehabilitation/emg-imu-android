@@ -439,11 +439,11 @@ public class GaitVideoImu extends AppCompatActivity {
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
-
         // Stop recording
         mediaRecorder.stop();
         mediaRecorder.reset();
         createPreview();
+        pushVideoFileToFirebase();
     }
     //endregion
 
