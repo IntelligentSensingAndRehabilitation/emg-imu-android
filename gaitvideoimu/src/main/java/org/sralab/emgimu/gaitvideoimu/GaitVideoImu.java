@@ -109,6 +109,8 @@ public class GaitVideoImu extends AppCompatActivity {
     private FirebaseStorage storage;
     private FirebaseUser mUser;
     private FirebaseGameLogger mGameLogger;
+    private String firebaseUploadFileName;
+    private String simpleFilename;
     //endregion
 
     //region Video Fields
@@ -414,6 +416,9 @@ public class GaitVideoImu extends AppCompatActivity {
         mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
         currentFile = createNewFile();
         mediaRecorder.setOutputFile(currentFile.getAbsolutePath());
+        simpleFilename = getSimpleFilename(currentFile);
+        firebaseUploadFileName = setupFirebaseFile(simpleFilename);
+        showVideoStatus("Recording " + simpleFilename);
         CamcorderProfile profile = CamcorderProfile.get(CamcorderProfile.QUALITY_1080P);
         mediaRecorder.setVideoFrameRate(profile.videoFrameRate);
         mediaRecorder.setVideoSize(profile.videoFrameWidth, profile.videoFrameHeight);
