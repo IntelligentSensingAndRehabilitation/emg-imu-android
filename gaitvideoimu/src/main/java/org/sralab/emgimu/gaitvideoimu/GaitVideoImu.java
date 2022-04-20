@@ -504,6 +504,16 @@ public class GaitVideoImu extends AppCompatActivity {
 
     }
 
+    private String setupFirebaseFile(String filename) {
+        String uploadFileName =  "videos/" + mUser.getUid() + "/" + filename;
+        curTrial = new GaitTrial();
+        curTrial.fileName = uploadFileName;
+        Date now = new Date();
+        curTrial.startTime = now.getTime(); //new Timestamp(now);
+        trials.add(curTrial);
+        return uploadFileName;
+    }
+
     private void pushVideoFileToFirebase() {
         curTrial.endTime = new Date().getTime();
         updateLogger();
