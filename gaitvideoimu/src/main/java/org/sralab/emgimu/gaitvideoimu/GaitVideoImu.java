@@ -503,6 +503,16 @@ public class GaitVideoImu extends AppCompatActivity {
         storage = FirebaseStorage.getInstance();
 
     }
+
+    private void pushVideoFileToFirebase() {
+        curTrial.endTime = new Date().getTime();
+        updateLogger();
+        showVideoStatus("Uploading "  + simpleFilename + "...");
+        StorageReference storageRef = storage.getReference().child(firebaseUploadFileName);
+        storageRef.putFile(Uri.fromFile(currentFile))
+                .addOnFailureListener(e -> showVideoStatus("Upload "  + simpleFilename + " failed"))
+                .addOnSuccessListener(taskSnapshot -> showVideoStatus("Upload "  + simpleFilename + " succeeded"));
+    }
     //endregion
 
     //region Internal File Storage
