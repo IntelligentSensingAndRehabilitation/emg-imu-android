@@ -140,7 +140,12 @@ public class GaitVideoImu extends AppCompatActivity {
         });
 
         // Set up the listener for video capture buttons
-        viewBinding.startButton.setOnClickListener(v -> startVideoRecording());
+        viewBinding.startButton.setOnClickListener(
+                v -> {
+                    clickButtonTimestamp = new Date().getTime();
+                    Log.d(TAG, "clickButtonTimestamp = " + clickButtonTimestamp);
+                    startVideoRecording();
+                });
         viewBinding.stopButton.setOnClickListener(v -> stopVideoRecording());
         viewBinding.stopButton.setEnabled(false); // disable btn initially
     }
@@ -334,6 +339,11 @@ public class GaitVideoImu extends AppCompatActivity {
     }
     //endregion
 
+    //region Timestamp Synchronization Fields
+    long createFileTimestamp;
+    long clickButtonTimestamp;
+    long onConfiguredTimestamp;
+
     //region Video Recording
     private void startVideoRecording() {
         Toast.makeText(GaitVideoImu.this, "Pressed START recording btn!", Toast.LENGTH_SHORT).show();
@@ -364,6 +374,11 @@ public class GaitVideoImu extends AppCompatActivity {
                     cameraCaptureSession = captureSession;
                     updatePreview();
                     mediaRecorder.start();
+                    onConfiguredTimestamp = new Date().getTime();
+                    Log.d(TAG, "onConfiguredTimestamp = " + onConfiguredTimestamp);
+                    Log.d(TAG, "Timestamp difference (onConfiguredTimestamp - createFileTimestamp) = " + (onConfiguredTimestamp - createFileTimestamp) + " ms");
+                    Log.d(TAG, "Timestamp difference (onConfiguredTimestamp - clickButtonTimestamp) = " + (onConfiguredTimestamp - clickButtonTimestamp) + " ms");
+                    Log.d(TAG, "Timestamp difference (clickButtonTimestamp - createFileTimestamp) = " + (clickButtonTimestamp - createFileTimestamp) + " ms");
                 }
 
                 @Override
@@ -500,6 +515,8 @@ public class GaitVideoImu extends AppCompatActivity {
     private File createNewFile() {
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss'Z'",
                 Locale.getDefault()).format(new Date());
+        createFileTimestamp = new Date().getTime();
+        Log.d(TAG, "createFileTimestamp = " + createFileTimestamp);
         String filename = timeStamp + ".mp4";
         File mediaFile = new File(getApplicationContext().getExternalFilesDir("gait_video"), filename);
         Toast.makeText(GaitVideoImu.this, "Created new file: " + mediaFile.getPath(), Toast.LENGTH_SHORT).show();
