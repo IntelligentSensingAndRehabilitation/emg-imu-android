@@ -508,7 +508,7 @@ public class GaitVideoImu extends AppCompatActivity {
     //region Internal File Storage
 
     private File createNewFile() {
-        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss",
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss'Z'",
                 Locale.getDefault()).format(new Date());
         String filename = timeStamp + ".mp4";
         File mediaFile = new File(getApplicationContext().getExternalFilesDir("gait_video"), filename);
