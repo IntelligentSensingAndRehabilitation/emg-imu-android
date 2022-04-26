@@ -68,9 +68,10 @@ public class GaitVideoImu extends AppCompatActivity {
     //region Firebase Fields & Nested Class
     class GaitTrial {
         public String fileName;
-        public long startTime;
-        public long endTime;
-        public long videoRecordEventStartTime;
+        public long userPressedStartVideoRecordingButtonTimestamp;
+        public long systemCreatedFileTimestamp;
+        public long cameraHardwareConfiguredStartRecordingTimestamp;
+        public long userPressedStopVideoRecordingButtonTimestamp;
     }
     ArrayList<GaitTrial> trials = new ArrayList<>();
     private GaitTrial curTrial;
@@ -81,6 +82,9 @@ public class GaitVideoImu extends AppCompatActivity {
     private FirebaseGameLogger mGameLogger;
     private String firebaseUploadFileName;
     private String simpleFilename;
+    private long clickButtonTimestamp;      // user presses start button
+    private long createFileTimestamp;       // the system created the video file
+    private long startRecordingTimestamp;   // after camera has been configured, when recording starts
     //endregion
 
     //region Video Fields
@@ -143,7 +147,6 @@ public class GaitVideoImu extends AppCompatActivity {
         viewBinding.startButton.setOnClickListener(
                 v -> {
                     clickButtonTimestamp = new Date().getTime();
-                    Log.d(TAG, "clickButtonTimestamp = " + clickButtonTimestamp);
                     startVideoRecording();
                 });
         viewBinding.stopButton.setOnClickListener(v -> stopVideoRecording());
@@ -339,11 +342,6 @@ public class GaitVideoImu extends AppCompatActivity {
     }
     //endregion
 
-    //region Timestamp Synchronization Fields
-    long createFileTimestamp;
-    long clickButtonTimestamp;
-    long onConfiguredTimestamp;
-
     //region Video Recording
     private void startVideoRecording() {
         Toast.makeText(GaitVideoImu.this, "Pressed START recording btn!", Toast.LENGTH_SHORT).show();
@@ -374,11 +372,9 @@ public class GaitVideoImu extends AppCompatActivity {
                     cameraCaptureSession = captureSession;
                     updatePreview();
                     mediaRecorder.start();
-                    onConfiguredTimestamp = new Date().getTime();
-                    Log.d(TAG, "onConfiguredTimestamp = " + onConfiguredTimestamp);
-                    Log.d(TAG, "Timestamp difference (onConfiguredTimestamp - createFileTimestamp) = " + (onConfiguredTimestamp - createFileTimestamp) + " ms");
-                    Log.d(TAG, "Timestamp difference (onConfiguredTimestamp - clickButtonTimestamp) = " + (onConfiguredTimestamp - clickButtonTimestamp) + " ms");
-                    Log.d(TAG, "Timestamp difference (clickButtonTimestamp - createFileTimestamp) = " + (clickButtonTimestamp - createFileTimestamp) + " ms");
+                    startRecordingTimestamp = new Date().getTime();
+                    curTrial.cameraHardwareConfiguredStartRecordingTimestamp = startRecordingTimestamp;
+                    Log.d(TAG, "Timestamp difference (startRecordingTimestamp - clickButtonTimestamp) = " + (startRecordingTimestamp - clickButtonTimestamp) + " ms");
                 }
 
                 @Override
@@ -493,14 +489,14 @@ public class GaitVideoImu extends AppCompatActivity {
         String uploadFileName =  "videos/" + mUser.getUid() + "/" + filename;
         curTrial = new GaitTrial();
         curTrial.fileName = uploadFileName;
-        Date now = new Date();
-        curTrial.startTime = now.getTime(); //new Timestamp(now);
+        curTrial.userPressedStartVideoRecordingButtonTimestamp = clickButtonTimestamp;
+        curTrial.systemCreatedFileTimestamp = createFileTimestamp;
         trials.add(curTrial);
         return uploadFileName;
     }
 
     private void pushVideoFileToFirebase() {
-        curTrial.endTime = new Date().getTime();
+        curTrial.userPressedStopVideoRecordingButtonTimestamp = new Date().getTime();
         updateLogger();
         showVideoStatus("Uploading "  + simpleFilename + "...");
         StorageReference storageRef = storage.getReference().child(firebaseUploadFileName);
@@ -516,7 +512,6 @@ public class GaitVideoImu extends AppCompatActivity {
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss'Z'",
                 Locale.getDefault()).format(new Date());
         createFileTimestamp = new Date().getTime();
-        Log.d(TAG, "createFileTimestamp = " + createFileTimestamp);
         String filename = timeStamp + ".mp4";
         File mediaFile = new File(getApplicationContext().getExternalFilesDir("gait_video"), filename);
         Toast.makeText(GaitVideoImu.this, "Created new file: " + mediaFile.getPath(), Toast.LENGTH_SHORT).show();
