@@ -1,37 +1,41 @@
 package org.sralab.emgimu.gaitvideoimu;
 
+import static android.hardware.camera2.CameraDevice.TEMPLATE_RECORD;
 import android.Manifest;
-import android.content.ContentValues;
+import android.app.Activity;
+import android.content.Context;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
+import android.graphics.SurfaceTexture;
+import android.hardware.camera2.CameraAccessException;
+import android.hardware.camera2.CameraCaptureSession;
+import android.hardware.camera2.CameraCharacteristics;
+import android.hardware.camera2.CameraDevice;
+import android.hardware.camera2.CameraManager;
+import android.hardware.camera2.CameraMetadata;
+import android.hardware.camera2.CaptureRequest;
+import android.hardware.camera2.params.StreamConfigurationMap;
+import android.media.CamcorderProfile;
+import android.media.MediaPlayer;
+import android.media.MediaRecorder;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
-import android.provider.MediaStore;
+import android.os.Handler;
+import android.os.HandlerThread;
 import android.util.Log;
+import android.util.Size;
+import android.util.SparseIntArray;
+import android.view.Surface;
+import android.view.TextureView;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import androidx.annotation.Nullable;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.camera.core.CameraSelector;
-import androidx.camera.core.Preview;
-import androidx.camera.lifecycle.ProcessCameraProvider;
-import androidx.camera.video.MediaStoreOutputOptions;
-import androidx.camera.video.Quality;
-import androidx.camera.video.QualitySelector;
-import androidx.camera.video.Recorder;
-import androidx.camera.video.Recording;
-import androidx.camera.video.RecordingStats;
-import androidx.camera.video.VideoCapture;
-import androidx.camera.video.VideoRecordEvent;
 import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
-import com.google.common.util.concurrent.ListenableFuture;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -39,39 +43,38 @@ import com.google.firebase.installations.FirebaseInstallations;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.gson.Gson;
-
 import org.jetbrains.annotations.NotNull;
 import org.sralab.emgimu.gaitvideoimu.databinding.ActivityGaitVideoImuBinding;
 import org.sralab.emgimu.gaitvideoimu.stream_visualization.DeviceViewModel;
 import org.sralab.emgimu.gaitvideoimu.stream_visualization.StreamingAdapter;
 import org.sralab.emgimu.logging.FirebaseGameLogger;
-
+import java.io.File;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
-import kotlin.jvm.internal.Intrinsics;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
 import no.nordicsemi.android.nrftoolbox.widget.DividerItemDecoration;
 
 public class GaitVideoImu extends AppCompatActivity {
-
     private static final String TAG = GaitVideoImu.class.getSimpleName();
+    private ActivityGaitVideoImuBinding viewBinding; // handles UI
 
+    //region RecyclerView Fields
     private DeviceViewModel dvm;
     private StreamingAdapter streamingAdapter;
+    //endregion
 
-    private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
-    @Nullable
-    private Recording recording;
-
+    //region Firebase Fields & Nested Class
     class GaitTrial {
         public String fileName;
-        public long startTime;
-        public long endTime;
-        public long videoRecordEventStartTime;
+        public long userPressedStartVideoRecordingButtonTimestamp;
+        public long systemCreatedFileTimestamp;
+        public long cameraHardwareConfiguredStartRecordingTimestamp;
+        public long userPressedStopVideoRecordingButtonTimestamp;
     }
     ArrayList<GaitTrial> trials = new ArrayList<>();
     private GaitTrial curTrial;
@@ -80,24 +83,62 @@ public class GaitVideoImu extends AppCompatActivity {
     private FirebaseStorage storage;
     private FirebaseUser mUser;
     private FirebaseGameLogger mGameLogger;
+    private String firebaseUploadFileName;
+    private String simpleFilename;
+    private long clickButtonTimestamp;      // user presses start button
+    private long createFileTimestamp;       // the system created the video file
+    private long startRecordingTimestamp;   // after camera has been configured, when recording starts
+    //endregion
 
-    private ActivityGaitVideoImuBinding viewBinding;
+    //region Video Fields
     private static final int REQUEST_CODE_PERMISSIONS = 10;
     @NotNull
     private static final String[] REQUIRED_PERMISSIONS = new String[] {
             Manifest.permission.CAMERA,
             Manifest.permission.RECORD_AUDIO,
             Manifest.permission.WRITE_EXTERNAL_STORAGE};
-    private ExecutorService cameraExecutor;
-    @Nullable
-    private VideoCapture<Recorder> videoCapture;
 
+    private File currentFile;
+    private Size imageDimension;
+    protected MediaRecorder mediaRecorder;
+    protected CameraDevice cameraDevice;
+    protected CaptureRequest.Builder captureRequestBuilder;
+    protected CameraCaptureSession cameraCaptureSession;
+    private Handler backgroundHandler;
+    private HandlerThread backgroundThread;
+    private TextureView textureView;
+    private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
+    static {
+        ORIENTATIONS.append(Surface.ROTATION_0, 90);
+        ORIENTATIONS.append(Surface.ROTATION_90, 0);
+        ORIENTATIONS.append(Surface.ROTATION_180, 270);
+        ORIENTATIONS.append(Surface.ROTATION_270, 180);
+    }
+    //endregion
+
+    //region Sound Effects Fields
+    public MediaPlayer ding = new MediaPlayer();
+    public MediaPlayer punch = new MediaPlayer();
+    public MediaPlayer clap = new MediaPlayer();
+    //endregion
+
+    //region Stop Watch Fields
+    private int seconds = 0;
+    private boolean running;
+    private boolean wasRunning;
+    private String videoDuration;
+    //endregion
+
+    //region Activity Lifecycle Methods
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         viewBinding = ActivityGaitVideoImuBinding.inflate(getLayoutInflater());
         View view = viewBinding.getRoot();
         setContentView(view);
+        textureView = (TextureView) findViewById(R.id.texture);
+        assert textureView != null;
+        textureView.setSurfaceTextureListener(textureListener);
 
         final RecyclerView recyclerView = findViewById(R.id.emg_list);
         recyclerView.setLayoutManager(new LinearLayoutManager(getBaseContext()));
@@ -107,6 +148,7 @@ public class GaitVideoImu extends AppCompatActivity {
 
         dvm = new ViewModelProvider(this, ViewModelProvider.AndroidViewModelFactory.getInstance(getApplication())).get(DeviceViewModel.class);
         recyclerView.setAdapter(streamingAdapter = new StreamingAdapter(this, dvm));
+        Toast.makeText(GaitVideoImu.this, "Connecting to emg-imu sensors!", Toast.LENGTH_SHORT).show();
 
         dvm.getServiceLiveData().observe(this, binder -> {
             if (binder != null) {
@@ -118,20 +160,340 @@ public class GaitVideoImu extends AppCompatActivity {
             }
         });
 
-        // Request camera permissions
-        if (!allPermissionsGranted()) {
-            ActivityCompat.requestPermissions(
-                    this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS);
-        }
-        startCamera();
+        // Sound effects
+        ding = MediaPlayer.create(GaitVideoImu.this, R.raw.ding);
+        punch = MediaPlayer.create(GaitVideoImu.this, R.raw.punch);
+        clap = MediaPlayer.create(GaitVideoImu.this, R.raw.clap);
 
-        // Set up the listener for video capture button
-        viewBinding.startButton.setOnClickListener(v -> captureVideo());
-        viewBinding.stopButton.setOnClickListener(v -> stopCaptureVideo());
+        // Set up the listener for video capture buttons
+        viewBinding.startButton.setOnClickListener(
+                v -> {
+                    clickButtonTimestamp = new Date().getTime();
+                    ding.start();
+                    startVideoRecording();
+                    running = true;
+                    runTimer(true);
+                });
+        viewBinding.stopButton.setOnClickListener(
+                v -> {
+                    punch.start();
+                    stopVideoRecording();
+                    running = false;
+                    seconds = 0;
+                    runTimer(false);
+                });
         viewBinding.stopButton.setEnabled(false); // disable btn initially
-        cameraExecutor = Executors.newSingleThreadExecutor();
+        if (savedInstanceState != null) {
+
+            // Get the previous state of the stopwatch
+            // if the activity has been
+            // destroyed and recreated.
+            seconds
+                    = savedInstanceState
+                    .getInt("seconds");
+            running
+                    = savedInstanceState
+                    .getBoolean("running");
+            wasRunning
+                    = savedInstanceState
+                    .getBoolean("wasRunning");
+        }
     }
 
+    @Override
+    protected void onPause() {
+        super.onPause();
+        closeCamera();
+        stopBackgroundThread();
+
+        // If the activity is paused,
+        // stop the stopwatch.
+        wasRunning = running;
+        running = false;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        startBackgroundThread();
+        if (textureView.isAvailable()) {
+            openCamera(textureView.getWidth(), textureView.getHeight());
+        } else {
+            textureView.setSurfaceTextureListener(textureListener);
+        }
+
+        // If the activity is resumed,
+        // start the stopwatch
+        // again if it was running previously.
+        if (wasRunning) {
+            running = true;
+        }
+    }
+
+    @Override
+    public void onStop() {
+        updateLogger();
+        this.finish();
+        super.onStop();
+    }
+
+    //endregion
+
+    //region Video Setup
+    /**
+     * Prepares TextureView
+     * TextureView is the view which renders captured camera image data.
+     * TextureView is prepared at View creation, and this callback gives us a notification
+     * when we are ready to prepare for the camera device initialization.
+     */
+    TextureView.SurfaceTextureListener textureListener = new TextureView.SurfaceTextureListener() {
+        @Override
+        public void onSurfaceTextureAvailable(@NonNull SurfaceTexture surface, int width, int height) {
+            openCamera(width, height);
+        }
+
+        @Override
+        public void onSurfaceTextureSizeChanged(@NonNull SurfaceTexture surface, int width, int height) {
+
+        }
+
+        @Override
+        public boolean onSurfaceTextureDestroyed(@NonNull SurfaceTexture surface) {
+            return false;
+        }
+
+        @Override
+        public void onSurfaceTextureUpdated(@NonNull SurfaceTexture surface) {
+
+        }
+    };
+
+    /**
+     * This is used to check a camera device state (open, close). It is required to open a camera.
+     */
+    private CameraDevice.StateCallback stateCallback = new CameraDevice.StateCallback() {
+        @Override
+        public void onOpened(@NonNull CameraDevice camera) {
+            // This is called when the camera is in the open state
+            cameraDevice = camera;
+            createPreview();
+        }
+
+        @Override
+        public void onDisconnected(@NonNull CameraDevice camera) {
+            cameraDevice.close();
+            cameraDevice = null;
+        }
+
+        @Override
+        public void onError(@NonNull CameraDevice camera, int error) {
+            cameraDevice.close();
+            cameraDevice = null;
+        }
+    };
+
+    protected void startBackgroundThread() {
+        backgroundThread = new HandlerThread("Camera Background Thread");
+        backgroundThread.start();
+        backgroundHandler = new Handler(backgroundThread.getLooper());
+    }
+
+    protected void stopBackgroundThread() {
+        backgroundThread.quitSafely();
+        try {
+            backgroundThread.join();
+            backgroundThread = null;
+            backgroundHandler = null;
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * @brief Establishes connection with the camera hardware.
+     * @param width
+     * @param height
+     */
+    private void openCamera(int width, int height) {
+        CameraManager manager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
+        try {
+            String cameraId = manager.getCameraIdList()[0]; // Camera 0 facing CAMERA_FACING_BACK
+            CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
+            StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+            assert map != null;
+            imageDimension = map.getOutputSizes(SurfaceTexture.class)[0];
+            mediaRecorder = new MediaRecorder();
+            // Explicitly check user permissions
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
+                    != PackageManager.PERMISSION_GRANTED &&
+                    ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                            != PackageManager.PERMISSION_GRANTED &&
+                    ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+                            != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(
+                        this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS);
+                return;
+            }
+            manager.openCamera(cameraId, stateCallback, null);
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void closeCamera() {
+        closePreview();
+        if (null != cameraDevice) {
+            cameraDevice.close();
+            cameraDevice = null;
+        }
+        if (null != mediaRecorder) {
+            mediaRecorder.release();
+            mediaRecorder = null;
+        }
+    }
+    //endregion
+
+    //region Video Preview
+    /**
+     * @brief Instantiates video stream for user to view inside the application.
+     */
+    private void createPreview() {
+        SurfaceTexture texture = textureView.getSurfaceTexture();
+        assert texture != null;
+        texture.setDefaultBufferSize(imageDimension.getWidth(), imageDimension.getHeight());
+        Surface previewSurface = new Surface(texture);
+        try {
+            captureRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
+            captureRequestBuilder.addTarget(previewSurface);
+            cameraDevice.createCaptureSession(Arrays.asList(previewSurface), new CameraCaptureSession.StateCallback() {
+                @Override
+                public void onConfigured(@NonNull CameraCaptureSession captureSession) {
+                    //The camera is already closed
+                    if (null == cameraDevice) {
+                        return;
+                    }
+                    // When the session is ready, we start displaying the preview.
+                    cameraCaptureSession = captureSession;
+                    updatePreview();
+                }
+
+                @Override
+                public void onConfigureFailed(@NonNull CameraCaptureSession captureSession) {
+                    Toast.makeText(GaitVideoImu.this, "Configuration failed", Toast.LENGTH_SHORT).show();
+                }
+            }, backgroundHandler);
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void updatePreview() {
+        if (null == cameraDevice) {
+            Log.e(TAG, "updatePreview error, return");
+        }
+        captureRequestBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
+        startBackgroundThread();
+        try {
+            cameraCaptureSession.setRepeatingRequest(captureRequestBuilder.build(), null, backgroundHandler);
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void closePreview() {
+        if (cameraCaptureSession != null) {
+            cameraCaptureSession.close();
+            cameraCaptureSession = null;
+        }
+    }
+    //endregion
+
+    //region Video Recording
+    private void startVideoRecording() {
+        viewBinding.startButton.setEnabled(false);
+        viewBinding.stopButton.setEnabled(true);
+        closePreview();
+        try {
+            setupMediaRecorder();
+            Toast.makeText(GaitVideoImu.this, "Recording " + simpleFilename, Toast.LENGTH_SHORT).show();
+            SurfaceTexture texture = textureView.getSurfaceTexture();
+            assert texture != null;
+            texture.setDefaultBufferSize(imageDimension.getWidth(), imageDimension.getHeight());
+            captureRequestBuilder = cameraDevice.createCaptureRequest(TEMPLATE_RECORD);
+            List<Surface> surfaces = new ArrayList<>();
+
+            Surface previewSurface = new Surface(texture);
+            surfaces.add(previewSurface);
+            captureRequestBuilder.addTarget(previewSurface);
+
+            // MediaRecorder setup for surface
+            Surface recorderSurface = mediaRecorder.getSurface();
+            surfaces.add(recorderSurface);
+            captureRequestBuilder.addTarget(recorderSurface);
+
+            // Start capture session
+            cameraDevice.createCaptureSession(surfaces, new CameraCaptureSession.StateCallback() {
+                @Override
+                public void onConfigured(@NonNull CameraCaptureSession captureSession) {
+                    cameraCaptureSession = captureSession;
+                    updatePreview();
+                    mediaRecorder.start();
+                    startRecordingTimestamp = new Date().getTime();
+                    curTrial.cameraHardwareConfiguredStartRecordingTimestamp = startRecordingTimestamp;
+                    Log.d(TAG, "Timestamp difference (startRecordingTimestamp - clickButtonTimestamp) = " + (startRecordingTimestamp - clickButtonTimestamp) + " ms");
+                }
+
+                @Override
+                public void onConfigureFailed(@NonNull CameraCaptureSession captureSession) {
+                    Toast.makeText(GaitVideoImu.this, "Configuration failed", Toast.LENGTH_SHORT).show();
+                }
+            }, backgroundHandler);
+
+        } catch (IOException | CameraAccessException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void setupMediaRecorder() throws IOException {
+        final Activity activity = this;
+        if (null == activity) {
+            return;
+        }
+        mediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
+        mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+        currentFile = createNewFile();
+        mediaRecorder.setOutputFile(currentFile.getAbsolutePath());
+        simpleFilename = getSimpleFilename(currentFile);
+        firebaseUploadFileName = setupFirebaseFile(simpleFilename);
+        showVideoStatus("Recording " + simpleFilename, "gray");
+        CamcorderProfile profile = CamcorderProfile.get(CamcorderProfile.QUALITY_1080P);
+        mediaRecorder.setVideoFrameRate(profile.videoFrameRate);
+        mediaRecorder.setVideoSize(profile.videoFrameWidth, profile.videoFrameHeight);
+        mediaRecorder.setVideoEncodingBitRate(profile.videoBitRate);
+        mediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
+        int rotation = activity.getWindowManager().getDefaultDisplay().getRotation();
+        mediaRecorder.setOrientationHint(ORIENTATIONS.get(rotation));
+        mediaRecorder.prepare();
+    }
+
+    private void stopVideoRecording() {
+        Toast.makeText(GaitVideoImu.this, "Uploading " + simpleFilename, Toast.LENGTH_SHORT).show();
+        viewBinding.stopButton.setEnabled(false);
+        try {
+            cameraCaptureSession.stopRepeating();
+            cameraCaptureSession.abortCaptures();
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+        // Stop recording
+        mediaRecorder.stop();
+        mediaRecorder.reset();
+        createPreview();
+        pushVideoFileToFirebase();
+    }
+    //endregion
+
+    //region Firebase
     public void updateLogger() {
         if (mGameLogger != null) {
             Gson gson = new Gson();
@@ -140,18 +502,18 @@ public class GaitVideoImu extends AppCompatActivity {
         }
     }
 
-    public void onStop() {
-        updateLogger();
-        super.onStop();
-    }
-
     void showUser() {
         TextView text = findViewById(R.id.userId);
         text.setText("User: " + mUser.getUid());
     }
 
-    void showVideoStatus(String status) {
+    void showVideoStatus(String status, String color) {
         TextView text = findViewById(R.id.videoStatus);
+        HashMap<String, String> textColorMap = new HashMap<>();
+        textColorMap.put("green", "#6BB02F");
+        textColorMap.put("red", "#FF0000");
+        textColorMap.put("gray", "#BDBDBD");
+        text.setTextColor(Color.parseColor(textColorMap.get(color)));
         text.setText(status);
     }
 
@@ -188,165 +550,136 @@ public class GaitVideoImu extends AppCompatActivity {
 
     }
 
-    private void stopCaptureVideo() {
-        Recording curRecording = recording;
-        if (curRecording != null) {
-            // Stop the current recording session.
-            curRecording.stop();
-            recording = null;
-            return;
-        }
-    }
-
-    // Implements VideoCapture use case, including start and stop capturing.
-    private final void captureVideo() {
-        viewBinding.startButton.setEnabled(false);
-
-        // if videoCapture is already running (for some reason) stop it
-        Recording curRecording = recording;
-        if (curRecording != null) {
-            // Stop the current recording session.
-            curRecording.stop();
-            recording = null;
-            return;
-        }
-
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd-HHmmss'Z'");
-        Date now = new Date();
-        String fileName = formatter.format(now) + ".mp4";
-        String uploadFileName =  "videos/" + mUser.getUid() + "/" + fileName;
-
+    private String setupFirebaseFile(String filename) {
+        String uploadFileName =  "videos/" + mUser.getUid() + "/" + filename;
         curTrial = new GaitTrial();
         curTrial.fileName = uploadFileName;
-        curTrial.startTime = now.getTime(); //new Timestamp(now);
+        curTrial.userPressedStartVideoRecordingButtonTimestamp = clickButtonTimestamp;
+        curTrial.systemCreatedFileTimestamp = createFileTimestamp;
         trials.add(curTrial);
-        showVideoStatus("Recording " + fileName);
-
-        ContentValues contentValues = new ContentValues();
-        contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, fileName);
-        contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "video/mp4");
-
-
-        // timestamping code for comparison
-        Long startTime_ms1 = now.getTime();
-        Long startTime_us1 = System.nanoTime();
-
-        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
-            contentValues.put(MediaStore.Video.Media.RELATIVE_PATH, "Movies/GaitVideoApp-Video");
-        }
-
-        MediaStoreOutputOptions mediaStoreOutputOptions = new MediaStoreOutputOptions
-                .Builder(getContentResolver(), MediaStore.Video.Media.EXTERNAL_CONTENT_URI)
-                .setContentValues(contentValues)
-                .build();
-
-        recording = videoCapture.getOutput().
-                prepareRecording(this, mediaStoreOutputOptions)
-                .start(ContextCompat.getMainExecutor(this), videoRecordEvent -> {
-                    if (videoRecordEvent instanceof VideoRecordEvent.Start) {
-                        // Handle the start of a new active recording
-                        viewBinding.startButton.setEnabled(false);
-                        viewBinding.stopButton.setEnabled(true);
-                        Date tsFromVideoRecordEvent = new Date();
-                        curTrial.videoRecordEventStartTime = tsFromVideoRecordEvent.getTime();
-
-                        // code for timestamp comparison
-                        Date time_ms2 = new Date();
-                        Long startTime_ms2 = time_ms2.getTime();
-                        long timestampDifference_ms = startTime_ms2 - startTime_ms1;
-                        Long startTime_us2 = System.nanoTime();
-                        long timestampDifference_us = startTime_us2 - startTime_us1;
-                        Log.d(TAG, "timestamp Intent = " + startTime_ms1);
-                        Log.d(TAG, "timestamp inside VideoRecordEvent = " + startTime_ms2);
-                        Log.d(TAG, "timestampDifference_ms = " + timestampDifference_ms + " ms. Note: using Date class, millisecond precision");
-                        Log.d(TAG, "timestampDifference_us = " + timestampDifference_us + " us. Note: using System class, nanosecond precision");
-                    }
-                    else if (videoRecordEvent instanceof VideoRecordEvent.Pause) {
-                        // Handle the case where the active recording is paused
-
-                    } else if (videoRecordEvent instanceof VideoRecordEvent.Resume) {
-                        // Handles the case where the active recording is resumed
-
-                    } else if (videoRecordEvent instanceof VideoRecordEvent.Finalize) {
-                        VideoRecordEvent.Finalize finalizeEvent =
-                                (VideoRecordEvent.Finalize) videoRecordEvent;
-                        // Handles a finalize event for the active recording, checking Finalize.getError()
-                        int error = finalizeEvent.getError();
-                        if (error == VideoRecordEvent.Finalize.ERROR_NONE) {
-                            String msg = "Saved video filename: " + fileName;
-                            Toast.makeText(getBaseContext(), msg, Toast.LENGTH_SHORT).show();
-                            Log.d(TAG, msg);
-
-                            showVideoStatus("Uploading " + fileName);
-                            Uri file = ((VideoRecordEvent.Finalize) videoRecordEvent).getOutputResults().getOutputUri();
-                            StorageReference storageRef = storage.getReference().child(uploadFileName);
-                            storageRef.putFile(file)
-                                    .addOnFailureListener(e -> showVideoStatus("Upload "  + fileName + " failed"))
-                                    .addOnSuccessListener(taskSnapshot -> showVideoStatus("Upload "  + fileName + " succeeded"));
-                            curTrial.endTime = new Date().getTime();
-                            updateLogger();
-                        } else {
-                            Log.d(TAG, "Video error");
-                            showVideoStatus("Video Error!");
-                        }
-
-                        // we can start video capture at any time
-                        viewBinding.startButton.setEnabled(true);
-                        viewBinding.stopButton.setEnabled(false);
-                    }
-
-                    // All events, including VideoRecordEvent.Status, contain RecordingStats.
-                    // This can be used to update the UI or track the recording duration.
-                    RecordingStats recordingStats = videoRecordEvent.getRecordingStats();
-                });
-    }
-    private final void startCamera() {
-        cameraProviderFuture = ProcessCameraProvider.getInstance(getBaseContext());
-        // Used to bind the lifecycle of cameras to the lifecycle owner
-        cameraProviderFuture.addListener(() -> {
-            // Preview
-            Preview preview = new Preview.Builder()
-                    .build();
-            preview.setSurfaceProvider(viewBinding.cameraView.getSurfaceProvider());
-
-            // VideoCapture
-            Recorder recorder = new Recorder.Builder()
-                    .setQualitySelector(QualitySelector.from(Quality.HIGHEST))
-                    .build();
-            videoCapture = androidx.camera.video.VideoCapture.withOutput(recorder);
-
-            // Select back camera as a default
-            CameraSelector cameraSelector = new CameraSelector.Builder()
-                    .requireLensFacing(CameraSelector.LENS_FACING_BACK)
-                    .build();
-            try {
-                ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
-                // Unbind use cases before rebinding
-                cameraProvider.unbindAll();
-
-                // Bind use cases to camera
-                cameraProvider.bindToLifecycle(
-                        this, cameraSelector, preview, videoCapture);
-            } catch (ExecutionException | InterruptedException e) {
-                Log.e(TAG, "Use case binding failed", e);
-            }
-        }, ContextCompat.getMainExecutor(getBaseContext()));
+        return uploadFileName;
     }
 
-    private boolean allPermissionsGranted() {
-        return (ContextCompat.checkSelfPermission(getBaseContext(), Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED ||
-                ContextCompat.checkSelfPermission(getBaseContext(), Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED ||
-                ContextCompat.checkSelfPermission(getBaseContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED);
+    private void pushVideoFileToFirebase() {
+        curTrial.userPressedStopVideoRecordingButtonTimestamp = new Date().getTime();
+        updateLogger();
+        showVideoStatus("Uploading "  + simpleFilename + "...", "red");
+        StorageReference storageRef = storage.getReference().child(firebaseUploadFileName);
+        storageRef.putFile(Uri.fromFile(currentFile))
+                .addOnFailureListener(e -> showVideoStatus("Upload "  + simpleFilename + " failed", "failed"))
+                .addOnSuccessListener(taskSnapshot -> {
+                    String fileSize = " " + String.valueOf(currentFile.length()/1024) + " MB";
+                    showVideoStatus("Uploaded video: "  + simpleFilename + ", " + fileSize + " " + videoDuration, "green");
+                    Log.d(TAG, "fileSize = " +fileSize);
+                    Toast.makeText(GaitVideoImu.this, "Upload "  + simpleFilename + " succeeded!", Toast.LENGTH_SHORT).show();
+                    clap.start();
+                    viewBinding.startButton.setEnabled(true);
+                        });
+
+    }
+    //endregion
+
+    //region Internal File Storage
+
+    private File createNewFile() {
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss'Z'",
+                Locale.getDefault()).format(new Date());
+        createFileTimestamp = new Date().getTime();
+        String filename = timeStamp + ".mp4";
+        File mediaFile = new File(getApplicationContext().getExternalFilesDir("gait_video"), filename);
+        Log.d(TAG, "Filename: " + mediaFile.getAbsolutePath());
+        return mediaFile;
     }
 
+    private String getSimpleFilename(File file) {
+        String temp[] = file.getAbsolutePath().split("/");
+        String filename = temp[temp.length - 1];
+        return filename;
+    }
+    //endregion
+
+    //region Stop Watch
+    // Save the state of the stopwatch
+    // if it's about to be destroyed.
     @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        ExecutorService executorService = this.cameraExecutor;
-        if (executorService == null) {
-            Intrinsics.throwUninitializedPropertyAccessException("cameraExecutor");
-            executorService = null;
-        }
-        executorService.shutdown();
+    public void onSaveInstanceState(
+            Bundle savedInstanceState) {
+        super.onSaveInstanceState(savedInstanceState);
+        savedInstanceState
+                .putInt("seconds", seconds);
+        savedInstanceState
+                .putBoolean("running", running);
+        savedInstanceState
+                .putBoolean("wasRunning", wasRunning);
     }
+
+    // Sets the NUmber of seconds on the timer.
+    // The runTimer() method uses a Handler
+    // to increment the seconds and
+    // update the text view.
+    private void runTimer(boolean isTimerVisible)
+    {
+
+        // Get the text view.
+        final TextView timeView
+                = (TextView)findViewById(
+                R.id.time_view);
+
+        if (isTimerVisible) {
+            timeView.setVisibility(View.VISIBLE);
+            timeView.setTextColor(Color.parseColor("#FFFFFF"));
+            timeView.setBackgroundColor(Color.parseColor("#FF0000"));
+        } else {
+            timeView.setVisibility(View.INVISIBLE);
+        }
+
+        // Creates a new Handler
+        final Handler handler
+                = new Handler();
+
+        // Call the post() method,
+        // passing in a new Runnable.
+        // The post() method processes
+        // code without a delay,
+        // so the code in the Runnable
+        // will run almost immediately.
+        handler.post(new Runnable() {
+            @Override
+
+            public void run()
+            {
+                int hours = seconds / 3600;
+                int minutes = (seconds % 3600) / 60;
+                int secs = seconds % 60;
+
+                // Format the seconds into hours, minutes,
+                // and seconds.
+                String time
+                        = String
+                        .format(Locale.getDefault(),
+                                "%02d:%02d:%02d", hours,
+                                minutes, secs);
+
+                // Set the text view text.
+                timeView.setText(time);
+
+                // If running is true, increment the
+                // seconds variable.
+                if (running) {
+                    if (minutes > 0) {
+                        videoDuration = ", " + String.valueOf(minutes) + ":" + String.valueOf(secs);
+                    } else {
+                        videoDuration = ", " + String.valueOf(secs) + " sec";
+                    }
+                    seconds++;
+                }
+
+                // Post the code again
+                // with a delay of 1 second.
+                handler.postDelayed(this, 1000);
+            }
+        });
+    }
+    //endregion
+
 }

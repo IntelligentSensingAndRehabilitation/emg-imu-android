@@ -14,6 +14,7 @@ import org.sralab.emgimu.service.ImuData;
 import org.sralab.emgimu.service.ImuQuatData;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.stream.IntStream;
 
 public class DeviceViewModel extends EmgImuViewModel<Device> {
@@ -91,5 +92,4 @@ public class DeviceViewModel extends EmgImuViewModel<Device> {
         Device dev = new Device();
         return dev;
     }
-
 }
