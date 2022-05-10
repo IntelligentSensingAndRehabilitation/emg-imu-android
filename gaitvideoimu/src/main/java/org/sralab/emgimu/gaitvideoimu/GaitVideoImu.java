@@ -132,11 +132,10 @@ public class GaitVideoImu extends AppCompatActivity {
     // Number of seconds displayed
     // on the stopwatch.
     private int seconds = 0;
-
     // Is the stopwatch running?
     private boolean running;
-
     private boolean wasRunning;
+    private String videoDuration;
     //endregion
 
     //region Activity Lifecycle Methods
@@ -579,7 +578,9 @@ public class GaitVideoImu extends AppCompatActivity {
         storageRef.putFile(Uri.fromFile(currentFile))
                 .addOnFailureListener(e -> showVideoStatus("Upload "  + simpleFilename + " failed", "failed"))
                 .addOnSuccessListener(taskSnapshot -> {
-                    showVideoStatus("Upload "  + simpleFilename + " succeeded", "green");
+                    String fileSize = " " + String.valueOf(currentFile.length()/1024) + " MB";
+                    showVideoStatus("Uploaded video: "  + simpleFilename + ", " + fileSize + " " + videoDuration, "green");
+                    Log.d(TAG, "fileSize = " +fileSize);
                     Toast.makeText(GaitVideoImu.this, "Upload "  + simpleFilename + " succeeded!", Toast.LENGTH_SHORT).show();
                     clap.start();
                     viewBinding.startButton.setEnabled(true);
@@ -676,12 +677,17 @@ public class GaitVideoImu extends AppCompatActivity {
                 // If running is true, increment the
                 // seconds variable.
                 if (running) {
+                    if (minutes > 0) {
+                        videoDuration = ", " + String.valueOf(minutes) + ":" + String.valueOf(secs);
+                    } else {
+                        videoDuration = ", " + String.valueOf(secs) + " sec";
+                    }
                     seconds++;
                 }
 
                 // Post the code again
                 // with a delay of 1 second.
-                handler.postDelayed(this, 1000);
+                handler.postDelayed(this, 500);
             }
         });
     }
