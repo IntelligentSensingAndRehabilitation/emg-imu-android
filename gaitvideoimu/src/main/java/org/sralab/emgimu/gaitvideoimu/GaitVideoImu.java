@@ -122,6 +122,23 @@ public class GaitVideoImu extends AppCompatActivity {
     public MediaPlayer clap = new MediaPlayer();
     //endregion
 
+    //region Stop Watch Fields
+    // Use seconds, running and wasRunning respectively
+    // to record the number of seconds passed,
+    // whether the stopwatch is running and
+    // whether the stopwatch was running
+    // before the activity was paused.
+
+    // Number of seconds displayed
+    // on the stopwatch.
+    private int seconds = 0;
+
+    // Is the stopwatch running?
+    private boolean running;
+
+    private boolean wasRunning;
+    //endregion
+
     //region Activity Lifecycle Methods
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -164,13 +181,33 @@ public class GaitVideoImu extends AppCompatActivity {
                     clickButtonTimestamp = new Date().getTime();
                     ding.start();
                     startVideoRecording();
+                    running = true;
+                    runTimer(true);
                 });
         viewBinding.stopButton.setOnClickListener(
                 v -> {
                     punch.start();
                     stopVideoRecording();
+                    running = false;
+                    seconds = 0;
+                    runTimer(false);
                 });
         viewBinding.stopButton.setEnabled(false); // disable btn initially
+        if (savedInstanceState != null) {
+
+            // Get the previous state of the stopwatch
+            // if the activity has been
+            // destroyed and recreated.
+            seconds
+                    = savedInstanceState
+                    .getInt("seconds");
+            running
+                    = savedInstanceState
+                    .getBoolean("running");
+            wasRunning
+                    = savedInstanceState
+                    .getBoolean("wasRunning");
+        }
     }
 
     @Override
@@ -178,7 +215,11 @@ public class GaitVideoImu extends AppCompatActivity {
         super.onPause();
         closeCamera();
         stopBackgroundThread();
-        super.onPause();
+
+        // If the activity is paused,
+        // stop the stopwatch.
+        wasRunning = running;
+        running = false;
     }
 
     @Override
@@ -189,6 +230,13 @@ public class GaitVideoImu extends AppCompatActivity {
             openCamera(textureView.getWidth(), textureView.getHeight());
         } else {
             textureView.setSurfaceTextureListener(textureListener);
+        }
+
+        // If the activity is resumed,
+        // start the stopwatch
+        // again if it was running previously.
+        if (wasRunning) {
+            running = true;
         }
     }
 
@@ -559,4 +607,84 @@ public class GaitVideoImu extends AppCompatActivity {
         return filename;
     }
     //endregion
+
+    //region Stop Watch
+    // Save the state of the stopwatch
+    // if it's about to be destroyed.
+    @Override
+    public void onSaveInstanceState(
+            Bundle savedInstanceState) {
+        super.onSaveInstanceState(savedInstanceState);
+        savedInstanceState
+                .putInt("seconds", seconds);
+        savedInstanceState
+                .putBoolean("running", running);
+        savedInstanceState
+                .putBoolean("wasRunning", wasRunning);
+    }
+
+    // Sets the NUmber of seconds on the timer.
+    // The runTimer() method uses a Handler
+    // to increment the seconds and
+    // update the text view.
+    private void runTimer(boolean isTimerVisible)
+    {
+
+        // Get the text view.
+        final TextView timeView
+                = (TextView)findViewById(
+                R.id.time_view);
+
+        if (isTimerVisible) {
+            timeView.setVisibility(View.VISIBLE);
+            timeView.setTextColor(Color.parseColor("#FFFFFF"));
+            timeView.setBackgroundColor(Color.parseColor("#FF0000"));
+        } else {
+            timeView.setVisibility(View.INVISIBLE);
+        }
+
+        // Creates a new Handler
+        final Handler handler
+                = new Handler();
+
+        // Call the post() method,
+        // passing in a new Runnable.
+        // The post() method processes
+        // code without a delay,
+        // so the code in the Runnable
+        // will run almost immediately.
+        handler.post(new Runnable() {
+            @Override
+
+            public void run()
+            {
+                int hours = seconds / 3600;
+                int minutes = (seconds % 3600) / 60;
+                int secs = seconds % 60;
+
+                // Format the seconds into hours, minutes,
+                // and seconds.
+                String time
+                        = String
+                        .format(Locale.getDefault(),
+                                "%02d:%02d:%02d", hours,
+                                minutes, secs);
+
+                // Set the text view text.
+                timeView.setText(time);
+
+                // If running is true, increment the
+                // seconds variable.
+                if (running) {
+                    seconds++;
+                }
+
+                // Post the code again
+                // with a delay of 1 second.
+                handler.postDelayed(this, 1000);
+            }
+        });
+    }
+    //endregion
+
 }
