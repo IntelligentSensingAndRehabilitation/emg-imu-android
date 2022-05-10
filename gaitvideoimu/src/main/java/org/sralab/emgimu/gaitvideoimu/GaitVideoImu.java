@@ -16,6 +16,7 @@ import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.CamcorderProfile;
+import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 import android.net.Uri;
 import android.os.Bundle;
@@ -115,6 +116,12 @@ public class GaitVideoImu extends AppCompatActivity {
     }
     //endregion
 
+    //region Sound Effects Fields
+    public MediaPlayer ding = new MediaPlayer();
+    public MediaPlayer punch = new MediaPlayer();
+    public MediaPlayer clap = new MediaPlayer();
+    //endregion
+
     //region Activity Lifecycle Methods
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -146,13 +153,23 @@ public class GaitVideoImu extends AppCompatActivity {
             }
         });
 
+        // Sound effects
+        ding = MediaPlayer.create(GaitVideoImu.this, R.raw.ding);
+        punch = MediaPlayer.create(GaitVideoImu.this, R.raw.punch);
+        clap = MediaPlayer.create(GaitVideoImu.this, R.raw.clap);
+
         // Set up the listener for video capture buttons
         viewBinding.startButton.setOnClickListener(
                 v -> {
                     clickButtonTimestamp = new Date().getTime();
+                    ding.start();
                     startVideoRecording();
                 });
-        viewBinding.stopButton.setOnClickListener(v -> stopVideoRecording());
+        viewBinding.stopButton.setOnClickListener(
+                v -> {
+                    punch.start();
+                    stopVideoRecording();
+                });
         viewBinding.stopButton.setEnabled(false); // disable btn initially
     }
 
@@ -424,7 +441,6 @@ public class GaitVideoImu extends AppCompatActivity {
 
     private void stopVideoRecording() {
         Toast.makeText(GaitVideoImu.this, "Uploading " + simpleFilename, Toast.LENGTH_SHORT).show();
-        viewBinding.startButton.setEnabled(true);
         viewBinding.stopButton.setEnabled(false);
         try {
             cameraCaptureSession.stopRepeating();
@@ -517,6 +533,8 @@ public class GaitVideoImu extends AppCompatActivity {
                 .addOnSuccessListener(taskSnapshot -> {
                     showVideoStatus("Upload "  + simpleFilename + " succeeded", "green");
                     Toast.makeText(GaitVideoImu.this, "Upload "  + simpleFilename + " succeeded!", Toast.LENGTH_SHORT).show();
+                    clap.start();
+                    viewBinding.startButton.setEnabled(true);
                         });
 
     }
