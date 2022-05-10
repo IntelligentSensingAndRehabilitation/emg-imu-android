@@ -174,8 +174,11 @@ public class GaitVideoImu extends AppCompatActivity {
     
     public void onStop() {
         updateLogger();
+        this.finish();
         super.onStop();
     }
+
+
     //endregion
 
     //region Video Setup
