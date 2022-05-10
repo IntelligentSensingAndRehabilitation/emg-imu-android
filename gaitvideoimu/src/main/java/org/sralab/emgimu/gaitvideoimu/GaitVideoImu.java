@@ -171,7 +171,8 @@ public class GaitVideoImu extends AppCompatActivity {
             textureView.setSurfaceTextureListener(textureListener);
         }
     }
-    
+
+    @Override
     public void onStop() {
         updateLogger();
         this.finish();
