@@ -171,6 +171,11 @@ public class GaitVideoImu extends AppCompatActivity {
             textureView.setSurfaceTextureListener(textureListener);
         }
     }
+    
+    public void onStop() {
+        updateLogger();
+        super.onStop();
+    }
     //endregion
 
     //region Video Setup
@@ -435,11 +440,6 @@ public class GaitVideoImu extends AppCompatActivity {
             String json = gson.toJson(trials);
             mGameLogger.finalize(trials.size(), json);
         }
-    }
-
-    public void onStop() {
-        updateLogger();
-        super.onStop();
     }
 
     void showUser() {
