@@ -123,16 +123,7 @@ public class GaitVideoImu extends AppCompatActivity {
     //endregion
 
     //region Stop Watch Fields
-    // Use seconds, running and wasRunning respectively
-    // to record the number of seconds passed,
-    // whether the stopwatch is running and
-    // whether the stopwatch was running
-    // before the activity was paused.
-
-    // Number of seconds displayed
-    // on the stopwatch.
     private int seconds = 0;
-    // Is the stopwatch running?
     private boolean running;
     private boolean wasRunning;
     private String videoDuration;
@@ -245,7 +236,6 @@ public class GaitVideoImu extends AppCompatActivity {
         this.finish();
         super.onStop();
     }
-
 
     //endregion
 
@@ -597,7 +587,6 @@ public class GaitVideoImu extends AppCompatActivity {
         createFileTimestamp = new Date().getTime();
         String filename = timeStamp + ".mp4";
         File mediaFile = new File(getApplicationContext().getExternalFilesDir("gait_video"), filename);
-        //Toast.makeText(GaitVideoImu.this, "Created new file: " + mediaFile.getPath(), Toast.LENGTH_SHORT).show();
         Log.d(TAG, "Filename: " + mediaFile.getAbsolutePath());
         return mediaFile;
     }
@@ -687,7 +676,7 @@ public class GaitVideoImu extends AppCompatActivity {
 
                 // Post the code again
                 // with a delay of 1 second.
-                handler.postDelayed(this, 500);
+                handler.postDelayed(this, 1000);
             }
         });
     }
