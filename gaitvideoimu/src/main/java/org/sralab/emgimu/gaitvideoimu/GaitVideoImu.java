@@ -132,6 +132,7 @@ public class GaitVideoImu extends AppCompatActivity {
 
         dvm = new ViewModelProvider(this, ViewModelProvider.AndroidViewModelFactory.getInstance(getApplication())).get(DeviceViewModel.class);
         recyclerView.setAdapter(streamingAdapter = new StreamingAdapter(this, dvm));
+        Toast.makeText(GaitVideoImu.this, "Connecting to emg-imu sensors!", Toast.LENGTH_SHORT).show();
 
         dvm.getServiceLiveData().observe(this, binder -> {
             if (binder != null) {
@@ -353,12 +354,12 @@ public class GaitVideoImu extends AppCompatActivity {
 
     //region Video Recording
     private void startVideoRecording() {
-        Toast.makeText(GaitVideoImu.this, "Pressed START recording btn!", Toast.LENGTH_SHORT).show();
         viewBinding.startButton.setEnabled(false);
         viewBinding.stopButton.setEnabled(true);
         closePreview();
         try {
             setupMediaRecorder();
+            Toast.makeText(GaitVideoImu.this, "Recording " + simpleFilename, Toast.LENGTH_SHORT).show();
             SurfaceTexture texture = textureView.getSurfaceTexture();
             assert texture != null;
             texture.setDefaultBufferSize(imageDimension.getWidth(), imageDimension.getHeight());
@@ -420,7 +421,7 @@ public class GaitVideoImu extends AppCompatActivity {
     }
 
     private void stopVideoRecording() {
-        Toast.makeText(GaitVideoImu.this, "Pressed STOP recording btn!", Toast.LENGTH_SHORT).show();
+        Toast.makeText(GaitVideoImu.this, "Uploading " + simpleFilename, Toast.LENGTH_SHORT).show();
         viewBinding.startButton.setEnabled(true);
         viewBinding.stopButton.setEnabled(false);
         try {
@@ -506,7 +507,11 @@ public class GaitVideoImu extends AppCompatActivity {
         StorageReference storageRef = storage.getReference().child(firebaseUploadFileName);
         storageRef.putFile(Uri.fromFile(currentFile))
                 .addOnFailureListener(e -> showVideoStatus("Upload "  + simpleFilename + " failed"))
-                .addOnSuccessListener(taskSnapshot -> showVideoStatus("Upload "  + simpleFilename + " succeeded"));
+                .addOnSuccessListener(taskSnapshot -> {
+                    showVideoStatus("Upload "  + simpleFilename + " succeeded");
+                    Toast.makeText(GaitVideoImu.this, "Upload "  + simpleFilename + " succeeded!", Toast.LENGTH_SHORT).show();
+                        });
+
     }
     //endregion
 
@@ -518,7 +523,7 @@ public class GaitVideoImu extends AppCompatActivity {
         createFileTimestamp = new Date().getTime();
         String filename = timeStamp + ".mp4";
         File mediaFile = new File(getApplicationContext().getExternalFilesDir("gait_video"), filename);
-        Toast.makeText(GaitVideoImu.this, "Created new file: " + mediaFile.getPath(), Toast.LENGTH_SHORT).show();
+        //Toast.makeText(GaitVideoImu.this, "Created new file: " + mediaFile.getPath(), Toast.LENGTH_SHORT).show();
         Log.d(TAG, "Filename: " + mediaFile.getAbsolutePath());
         return mediaFile;
     }
