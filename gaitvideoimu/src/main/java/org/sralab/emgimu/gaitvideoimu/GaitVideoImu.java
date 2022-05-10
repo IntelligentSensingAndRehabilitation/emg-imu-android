@@ -5,6 +5,7 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
@@ -52,6 +53,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import no.nordicsemi.android.nrftoolbox.widget.DividerItemDecoration;
@@ -409,7 +411,7 @@ public class GaitVideoImu extends AppCompatActivity {
         mediaRecorder.setOutputFile(currentFile.getAbsolutePath());
         simpleFilename = getSimpleFilename(currentFile);
         firebaseUploadFileName = setupFirebaseFile(simpleFilename);
-        showVideoStatus("Recording " + simpleFilename);
+        showVideoStatus("Recording " + simpleFilename, "gray");
         CamcorderProfile profile = CamcorderProfile.get(CamcorderProfile.QUALITY_1080P);
         mediaRecorder.setVideoFrameRate(profile.videoFrameRate);
         mediaRecorder.setVideoSize(profile.videoFrameWidth, profile.videoFrameHeight);
@@ -452,8 +454,13 @@ public class GaitVideoImu extends AppCompatActivity {
         text.setText("User: " + mUser.getUid());
     }
 
-    void showVideoStatus(String status) {
+    void showVideoStatus(String status, String color) {
         TextView text = findViewById(R.id.videoStatus);
+        HashMap<String, String> textColorMap = new HashMap<>();
+        textColorMap.put("green", "#6BB02F");
+        textColorMap.put("red", "#FF0000");
+        textColorMap.put("gray", "#BDBDBD");
+        text.setTextColor(Color.parseColor(textColorMap.get(color)));
         text.setText(status);
     }
 
@@ -503,12 +510,12 @@ public class GaitVideoImu extends AppCompatActivity {
     private void pushVideoFileToFirebase() {
         curTrial.userPressedStopVideoRecordingButtonTimestamp = new Date().getTime();
         updateLogger();
-        showVideoStatus("Uploading "  + simpleFilename + "...");
+        showVideoStatus("Uploading "  + simpleFilename + "...", "red");
         StorageReference storageRef = storage.getReference().child(firebaseUploadFileName);
         storageRef.putFile(Uri.fromFile(currentFile))
-                .addOnFailureListener(e -> showVideoStatus("Upload "  + simpleFilename + " failed"))
+                .addOnFailureListener(e -> showVideoStatus("Upload "  + simpleFilename + " failed", "failed"))
                 .addOnSuccessListener(taskSnapshot -> {
-                    showVideoStatus("Upload "  + simpleFilename + " succeeded");
+                    showVideoStatus("Upload "  + simpleFilename + " succeeded", "green");
                     Toast.makeText(GaitVideoImu.this, "Upload "  + simpleFilename + " succeeded!", Toast.LENGTH_SHORT).show();
                         });
 

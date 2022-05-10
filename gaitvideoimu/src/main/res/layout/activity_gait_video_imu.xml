@@ -9,7 +9,8 @@
     <TextView
         android:id="@+id/userId"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        android:gravity="center" />
 
     <TextureView
         android:id="@+id/texture"
@@ -24,11 +25,12 @@
 
         <Button
             android:id="@+id/startButton"
+            style="?android:attr/buttonBarButtonStyle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="Start"
-            style="?android:attr/buttonBarButtonStyle" />
+            app:iconTint="#FFFFFF" />
 
         <Button
             android:id="@+id/stopButton"
@@ -44,7 +46,8 @@
     <TextView
         android:id="@+id/videoStatus"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="30dp"
+        android:gravity="center" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/emg_list"
