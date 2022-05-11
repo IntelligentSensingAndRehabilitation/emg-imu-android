@@ -50,6 +50,9 @@ import org.sralab.emgimu.gaitvideoimu.stream_visualization.StreamingAdapter;
 import org.sralab.emgimu.logging.FirebaseGameLogger;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -128,6 +131,9 @@ public class GaitVideoImu extends AppCompatActivity {
     private boolean wasRunning;
     private String videoDuration;
     //endregion
+
+    //region Internal Log File Fields
+    List<String> uploadedVideos = new ArrayList<>();
 
     //region Activity Lifecycle Methods
     @Override
@@ -568,7 +574,20 @@ public class GaitVideoImu extends AppCompatActivity {
         storageRef.putFile(Uri.fromFile(currentFile))
                 .addOnFailureListener(e -> showVideoStatus("Upload "  + simpleFilename + " failed", "failed"))
                 .addOnSuccessListener(taskSnapshot -> {
-                    String fileSize = " " + String.valueOf(currentFile.length()/1024) + " MB";
+                    String fileSize = " " + String.valueOf(currentFile.length()/1024) + " KB";
+                    Path path = Paths.get(String.valueOf(currentFile));
+                    try {
+                        long bytes = Files.size(path);
+                        if(bytes > 1024 && bytes < 1000000) {
+                            fileSize = " " + (String.format("%,d KB", bytes / 1024));
+                        } else if(bytes > 1000000) {
+                            fileSize = " " + (String.format("%,d MB", bytes / 1000000));;
+                        } else {
+                            fileSize = " " + (String.format("%,d bytes", bytes));
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                     showVideoStatus("Uploaded video: "  + simpleFilename + ", " + fileSize + " " + videoDuration, "green");
                     Log.d(TAG, "fileSize = " +fileSize);
                     Toast.makeText(GaitVideoImu.this, "Upload "  + simpleFilename + " succeeded!", Toast.LENGTH_SHORT).show();
@@ -667,16 +686,17 @@ public class GaitVideoImu extends AppCompatActivity {
                 // seconds variable.
                 if (running) {
                     if (minutes > 0) {
-                        videoDuration = ", " + String.valueOf(minutes) + ":" + String.valueOf(secs);
+                        videoDuration = ", " + String
+                                .format(Locale.getDefault(), "%d:%02d", minutes, secs);
                     } else {
-                        videoDuration = ", " + String.valueOf(secs) + " sec";
+                        videoDuration = ", " + String.format(Locale.getDefault(), "%d sec", secs);
                     }
                     seconds++;
+                    // Post the code again
+                    // with a delay of 1 second.
+                    handler.postDelayed(this, 1000);
                 }
 
-                // Post the code again
-                // with a delay of 1 second.
-                handler.postDelayed(this, 1000);
             }
         });
     }
