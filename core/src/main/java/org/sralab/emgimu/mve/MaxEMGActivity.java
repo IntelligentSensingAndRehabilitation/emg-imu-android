@@ -39,4 +39,16 @@ public class MaxEMGActivity extends AppCompatActivity {
 
         recyclerView.setAdapter(deviceAdapter = new DeviceAdapter(this, dvm));
     }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        dvm.onPause();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        dvm.onResume();
+    }
 }
