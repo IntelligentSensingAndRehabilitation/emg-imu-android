@@ -36,7 +36,7 @@ public class StreamingActivity extends AppCompatActivity {
     protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // TODO: this may need to be reverted but testing for now.
+/*        // TODO: this may need to be reverted but testing for now.
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             Intent intent = new Intent();
             String packageName = getPackageName();
@@ -46,7 +46,7 @@ public class StreamingActivity extends AppCompatActivity {
                 intent.setData(Uri.parse("package:" + packageName));
                 startActivity(intent);
             }
-        }
+        }*/
         setContentView(R.layout.activity_streaming);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
@@ -91,6 +91,18 @@ public class StreamingActivity extends AppCompatActivity {
             }
         });
 
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        dvm.onPause();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        dvm.onResume();
     }
 
 }
