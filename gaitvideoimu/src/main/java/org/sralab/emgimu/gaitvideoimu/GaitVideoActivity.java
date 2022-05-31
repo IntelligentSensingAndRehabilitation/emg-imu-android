@@ -62,8 +62,8 @@ import java.util.List;
 import java.util.Locale;
 import no.nordicsemi.android.nrftoolbox.widget.DividerItemDecoration;
 
-public class GaitVideoImu extends AppCompatActivity {
-    private static final String TAG = GaitVideoImu.class.getSimpleName();
+public class GaitVideoActivity extends AppCompatActivity {
+    private static final String TAG = GaitVideoActivity.class.getSimpleName();
     private Button startButton;
     private Button stopButton;
 
@@ -156,7 +156,7 @@ public class GaitVideoImu extends AppCompatActivity {
 
         dvm = new ViewModelProvider(this, ViewModelProvider.AndroidViewModelFactory.getInstance(getApplication())).get(DeviceViewModel.class);
         recyclerView.setAdapter(streamingAdapter = new StreamingAdapter(this, dvm));
-        Toast.makeText(GaitVideoImu.this, "Connecting to emg-imu sensors!", Toast.LENGTH_SHORT).show();
+        Toast.makeText(GaitVideoActivity.this, "Connecting to emg-imu sensors!", Toast.LENGTH_SHORT).show();
 
         dvm.getServiceLiveData().observe(this, binder -> {
             if (binder != null) {
@@ -169,9 +169,9 @@ public class GaitVideoImu extends AppCompatActivity {
         });
 
         // Sound effects
-        ding = MediaPlayer.create(GaitVideoImu.this, R.raw.ding);
-        punch = MediaPlayer.create(GaitVideoImu.this, R.raw.punch);
-        clap = MediaPlayer.create(GaitVideoImu.this, R.raw.clap);
+        ding = MediaPlayer.create(GaitVideoActivity.this, R.raw.ding);
+        punch = MediaPlayer.create(GaitVideoActivity.this, R.raw.punch);
+        clap = MediaPlayer.create(GaitVideoActivity.this, R.raw.clap);
 
         // Set up the listener for video capture buttons
         startButton.setOnClickListener(
@@ -389,7 +389,7 @@ public class GaitVideoImu extends AppCompatActivity {
 
                 @Override
                 public void onConfigureFailed(@NonNull CameraCaptureSession captureSession) {
-                    Toast.makeText(GaitVideoImu.this, "Configuration failed", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(GaitVideoActivity.this, "Configuration failed", Toast.LENGTH_SHORT).show();
                 }
             }, backgroundHandler);
         } catch (CameraAccessException e) {
@@ -425,7 +425,7 @@ public class GaitVideoImu extends AppCompatActivity {
         closePreview();
         try {
             setupMediaRecorder();
-            Toast.makeText(GaitVideoImu.this, "Recording " + simpleFilename, Toast.LENGTH_SHORT).show();
+            Toast.makeText(GaitVideoActivity.this, "Recording " + simpleFilename, Toast.LENGTH_SHORT).show();
             SurfaceTexture texture = textureView.getSurfaceTexture();
             assert texture != null;
             texture.setDefaultBufferSize(imageDimension.getWidth(), imageDimension.getHeight());
@@ -455,7 +455,7 @@ public class GaitVideoImu extends AppCompatActivity {
 
                 @Override
                 public void onConfigureFailed(@NonNull CameraCaptureSession captureSession) {
-                    Toast.makeText(GaitVideoImu.this, "Configuration failed", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(GaitVideoActivity.this, "Configuration failed", Toast.LENGTH_SHORT).show();
                 }
             }, backgroundHandler);
 
@@ -487,7 +487,7 @@ public class GaitVideoImu extends AppCompatActivity {
     }
 
     private void stopVideoRecording() {
-        Toast.makeText(GaitVideoImu.this, "Uploading " + simpleFilename, Toast.LENGTH_SHORT).show();
+        Toast.makeText(GaitVideoActivity.this, "Uploading " + simpleFilename, Toast.LENGTH_SHORT).show();
         stopButton.setEnabled(false);
         try {
             cameraCaptureSession.stopRepeating();
@@ -594,7 +594,7 @@ public class GaitVideoImu extends AppCompatActivity {
                     }
                     showVideoStatus("Uploaded video: "  + simpleFilename + ", " + fileSize + " " + videoDuration, "green");
                     Log.d(TAG, "fileSize = " +fileSize);
-                    Toast.makeText(GaitVideoImu.this, "Upload "  + simpleFilename + " succeeded!", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(GaitVideoActivity.this, "Upload "  + simpleFilename + " succeeded!", Toast.LENGTH_SHORT).show();
                     clap.start();
                     startButton.setEnabled(true);
                         });
