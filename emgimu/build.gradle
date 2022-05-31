@@ -46,6 +46,7 @@ android {
             enableSplit = true
         }
     }
+    namespace 'org.sralab.emgimu'
 
 }
 

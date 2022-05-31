@@ -20,8 +20,7 @@
   ~ USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   -->
 
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-	package="org.sralab.emgimu.common">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 	<uses-feature android:glEsVersion="0x00020000" android:required="true"/>
 
 	<queries>
