@@ -28,6 +28,7 @@ import android.util.SparseIntArray;
 import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
@@ -44,7 +45,6 @@ import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.gson.Gson;
 import org.jetbrains.annotations.NotNull;
-import org.sralab.emgimu.gaitvideoimu.databinding.ActivityGaitVideoImuBinding;
 import org.sralab.emgimu.gaitvideoimu.stream_visualization.DeviceViewModel;
 import org.sralab.emgimu.gaitvideoimu.stream_visualization.StreamingAdapter;
 import org.sralab.emgimu.logging.FirebaseGameLogger;
@@ -64,7 +64,9 @@ import no.nordicsemi.android.nrftoolbox.widget.DividerItemDecoration;
 
 public class GaitVideoImu extends AppCompatActivity {
     private static final String TAG = GaitVideoImu.class.getSimpleName();
-    private ActivityGaitVideoImuBinding viewBinding; // handles UI
+    private Button startButton;
+    private Button stopButton;
+
 
     //region RecyclerView Fields
     private DeviceViewModel dvm;
@@ -139,12 +141,12 @@ public class GaitVideoImu extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        viewBinding = ActivityGaitVideoImuBinding.inflate(getLayoutInflater());
-        View view = viewBinding.getRoot();
-        setContentView(view);
+        setContentView(R.layout.activity_gait_video_imu);
         textureView = (TextureView) findViewById(R.id.texture);
         assert textureView != null;
         textureView.setSurfaceTextureListener(textureListener);
+        startButton = (Button) findViewById(R.id.startButton);
+        stopButton = (Button) findViewById(R.id.stopButton);
 
         final RecyclerView recyclerView = findViewById(R.id.emg_list);
         recyclerView.setLayoutManager(new LinearLayoutManager(getBaseContext()));
@@ -172,7 +174,7 @@ public class GaitVideoImu extends AppCompatActivity {
         clap = MediaPlayer.create(GaitVideoImu.this, R.raw.clap);
 
         // Set up the listener for video capture buttons
-        viewBinding.startButton.setOnClickListener(
+        startButton.setOnClickListener(
                 v -> {
                     clickButtonTimestamp = new Date().getTime();
                     ding.start();
@@ -180,7 +182,7 @@ public class GaitVideoImu extends AppCompatActivity {
                     running = true;
                     runTimer(true);
                 });
-        viewBinding.stopButton.setOnClickListener(
+        stopButton.setOnClickListener(
                 v -> {
                     punch.start();
                     stopVideoRecording();
@@ -188,7 +190,7 @@ public class GaitVideoImu extends AppCompatActivity {
                     seconds = 0;
                     runTimer(false);
                 });
-        viewBinding.stopButton.setEnabled(false); // disable btn initially
+        stopButton.setEnabled(false); // disable btn initially
         if (savedInstanceState != null) {
 
             // Get the previous state of the stopwatch
@@ -416,8 +418,8 @@ public class GaitVideoImu extends AppCompatActivity {
 
     //region Video Recording
     private void startVideoRecording() {
-        viewBinding.startButton.setEnabled(false);
-        viewBinding.stopButton.setEnabled(true);
+        startButton.setEnabled(false);
+        stopButton.setEnabled(true);
         closePreview();
         try {
             setupMediaRecorder();
@@ -484,7 +486,7 @@ public class GaitVideoImu extends AppCompatActivity {
 
     private void stopVideoRecording() {
         Toast.makeText(GaitVideoImu.this, "Uploading " + simpleFilename, Toast.LENGTH_SHORT).show();
-        viewBinding.stopButton.setEnabled(false);
+        stopButton.setEnabled(false);
         try {
             cameraCaptureSession.stopRepeating();
             cameraCaptureSession.abortCaptures();
@@ -592,7 +594,7 @@ public class GaitVideoImu extends AppCompatActivity {
                     Log.d(TAG, "fileSize = " +fileSize);
                     Toast.makeText(GaitVideoImu.this, "Upload "  + simpleFilename + " succeeded!", Toast.LENGTH_SHORT).show();
                     clap.start();
-                    viewBinding.startButton.setEnabled(true);
+                    startButton.setEnabled(true);
                         });
 
     }
