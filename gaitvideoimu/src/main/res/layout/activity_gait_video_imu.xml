@@ -9,16 +9,22 @@
     <TextView
         android:id="@+id/userId"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:textColor="#FFA500" />
 
-    <androidx.camera.view.PreviewView
-        android:id="@+id/cameraView"
+    <TextureView
+        android:id="@+id/texture"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:scaleX="1.0"
-        android:scaleY="1.0"
-        app:scaleType="fitCenter" />
+        android:layout_weight="1" />
+
+    <TextView
+        android:id="@+id/time_view"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:gravity="center" />
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -27,11 +33,12 @@
 
         <Button
             android:id="@+id/startButton"
+            style="?android:attr/buttonBarButtonStyle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="Start"
-            style="?android:attr/buttonBarButtonStyle" />
+            app:iconTint="#FFFFFF" />
 
         <Button
             android:id="@+id/stopButton"
@@ -47,12 +54,13 @@
     <TextView
         android:id="@+id/videoStatus"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="30dp"
+        android:gravity="center" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/emg_list"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         android:layout_weight="1">
 
     </androidx.recyclerview.widget.RecyclerView>
