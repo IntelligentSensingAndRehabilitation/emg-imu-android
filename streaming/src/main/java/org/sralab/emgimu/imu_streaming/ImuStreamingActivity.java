@@ -6,6 +6,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.PowerManager;
 import android.provider.Settings;
+import android.util.Log;
 import android.view.WindowManager;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -23,13 +24,13 @@ public class ImuStreamingActivity extends AppCompatActivity {
     private static final String TAG = ImuStreamingActivity.class.getSimpleName();
 
 
-    private DeviceViewModel dvm;
     private ImuStreamingAdapter streamingAdapter;
+    private DeviceViewModel dvm;
 
     protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // TODO: this may need to be reverted but testing for now.
+/*        // TODO: this may need to be reverted but testing for now.
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             Intent intent = new Intent();
             String packageName = getPackageName();
@@ -39,7 +40,7 @@ public class ImuStreamingActivity extends AppCompatActivity {
                 intent.setData(Uri.parse("package:" + packageName));
                 startActivity(intent);
             }
-        }
+        }*/
         setContentView(R.layout.activity_imu_streaming);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
@@ -83,6 +84,18 @@ public class ImuStreamingActivity extends AppCompatActivity {
 
         dvm = new ViewModelProvider(this, ViewModelProvider.AndroidViewModelFactory.getInstance(getApplication())).get(DeviceViewModel.class);
         recyclerView.setAdapter(streamingAdapter = new ImuStreamingAdapter(this, dvm));
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        dvm.onPause();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        dvm.onResume();
     }
 
 }
