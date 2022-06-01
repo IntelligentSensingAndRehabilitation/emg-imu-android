@@ -28,6 +28,7 @@ public class ImuCalibration extends AppCompatActivity {
     static final private String TAG = ImuCalibration.class.getSimpleName();
 
     CalibrationAdapter calibrationAdapater;
+    DeviceViewModel dvm;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,12 +39,24 @@ public class ImuCalibration extends AppCompatActivity {
 
         final RecyclerView recyclerView = findViewById(R.id.imu_calibration_list);
 
-        DeviceViewModel dvm = new ViewModelProvider(this, ViewModelProvider.AndroidViewModelFactory.getInstance(getApplication())).get(DeviceViewModel.class);
+        dvm = new ViewModelProvider(this, ViewModelProvider.AndroidViewModelFactory.getInstance(getApplication())).get(DeviceViewModel.class);
 
         recyclerView.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false));
         recyclerView.addItemDecoration(new DividerItemDecoration(this, DividerItemDecoration.VERTICAL_LIST));
 
         recyclerView.setAdapter(calibrationAdapater = new CalibrationAdapter(this, dvm));
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        dvm.onPause();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        dvm.onResume();
     }
     
 }

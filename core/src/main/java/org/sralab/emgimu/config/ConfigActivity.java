@@ -76,6 +76,18 @@ public class ConfigActivity extends EmgImuBaseActivity implements ScannerFragmen
 		mDevicesView.setAdapter(mAdapter = new DeviceAdapter(this, dvm));
 	}
 
+	@Override
+	public void onPause() {
+		super.onPause();
+		dvm.onPause();
+	}
+
+	@Override
+	public void onResume() {
+		super.onResume();
+		dvm.onResume();
+	}
+
 	private void setGUI() {
 		final RecyclerView recyclerView = mDevicesView = findViewById(android.R.id.list);
 		recyclerView.setLayoutManager(new LinearLayoutManager(this));

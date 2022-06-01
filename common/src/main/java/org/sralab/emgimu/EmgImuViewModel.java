@@ -52,19 +52,19 @@ public abstract class EmgImuViewModel <T> extends AndroidViewModel {
 
     public EmgImuViewModel(Application app) {
         super(app);
+        this.app = app;
 
         deviceMap = new HashMap<>();
         devicesLiveData.setValue(new ArrayList<>());
+    }
 
+    public void onResume() {
         final Intent service = new Intent();
         service.setComponent(new ComponentName("org.sralab.emgimu", "org.sralab.emgimu.service.EmgImuService"));
         app.getApplicationContext().bindService(service, serviceConnection, Context.BIND_AUTO_CREATE);
-        this.app = app;
     }
 
-    @Override
-    protected void onCleared() {
-        super.onCleared();
+    public void onPause() {
         try {
             if (service == null) {
                 throw new RuntimeException("Service disconnected before unregistering.");
@@ -77,10 +77,19 @@ public abstract class EmgImuViewModel <T> extends AndroidViewModel {
             if (getObserveMag()) service.unregisterImuMagObserver(null, magObserver);
             if (getObserveQuat()) service.unregisterImuQuatObserver(null, quatObserver);
             if (getObserveBat()) service.unregisterBatObserver(null, batObserver);
+            service = null;
         } catch (RemoteException e) {
             throw new RuntimeException(e);
         }
         this.app.getApplicationContext().unbindService(serviceConnection);
+    }
+
+    @Override
+    public void onCleared() {
+        super.onCleared();
+        if (service != null) {
+            throw new RuntimeException("EmgImuViewModel life cycle not respected. Please handle onPause event.");
+        }
     }
 
     public abstract T getDev(BluetoothDevice d);

@@ -1,25 +1,15 @@
 package org.sralab.emgimu.mve;
 
 import android.os.Bundle;
-import android.text.Editable;
-import android.text.TextWatcher;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.TextView;
-
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
 import org.sralab.emgimu.config.R;
-
 import no.nordicsemi.android.nrftoolbox.widget.DividerItemDecoration;
 
 public class MaxEMGActivity extends AppCompatActivity {
-
-    private final static String TAG = MaxEMGActivity.class.getSimpleName();
-
+    private final String TAG = MaxEMGActivity.class.getSimpleName();
     RecyclerView recyclerView;
     DeviceAdapter deviceAdapter;
     DeviceViewModel dvm;
@@ -38,5 +28,17 @@ public class MaxEMGActivity extends AppCompatActivity {
         recyclerView.addItemDecoration(new DividerItemDecoration(this, DividerItemDecoration.VERTICAL_LIST));
 
         recyclerView.setAdapter(deviceAdapter = new DeviceAdapter(this, dvm));
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        dvm.onPause();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        dvm.onResume();
     }
 }
