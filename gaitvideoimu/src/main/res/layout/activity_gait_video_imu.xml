@@ -32,22 +32,31 @@
         android:orientation="horizontal">
 
         <Button
-            android:id="@+id/startButton"
+            android:id="@+id/start_video_recording_button"
             style="?android:attr/buttonBarButtonStyle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Start"
+            android:text="@string/start_video_recording_id"
             app:iconTint="#FFFFFF" />
 
         <Button
-            android:id="@+id/stopButton"
+            android:id="@+id/enable_emg_pwr_button"
+            style="?android:attr/buttonBarButtonStyle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:clickable="false"
-            android:text="Stop"
-            style="?android:attr/buttonBarButtonStyle" />
+            android:text="@string/enable_emg_pwr_id" />
+
+        <Button
+            android:id="@+id/stop_video_recording_button"
+            style="?android:attr/buttonBarButtonStyle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:clickable="false"
+            android:text="@string/stop_video_recording_id" />
 
     </LinearLayout>
 
