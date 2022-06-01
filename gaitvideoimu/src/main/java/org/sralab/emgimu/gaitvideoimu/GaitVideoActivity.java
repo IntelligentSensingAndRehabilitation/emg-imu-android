@@ -22,6 +22,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.os.RemoteException;
 import android.util.Log;
 import android.util.Size;
 import android.util.SparseIntArray;
@@ -64,8 +65,9 @@ import no.nordicsemi.android.nrftoolbox.widget.DividerItemDecoration;
 
 public class GaitVideoActivity extends AppCompatActivity {
     private static final String TAG = GaitVideoActivity.class.getSimpleName();
-    private Button startButton;
-    private Button stopButton;
+    private Button startVideoRecordingButton;
+    private Button stopVideoRecordingButton;
+    private Button enableEmgPwrButton;
 
 
     //region RecyclerView Fields
@@ -80,6 +82,7 @@ public class GaitVideoActivity extends AppCompatActivity {
         public long systemCreatedFileTimestamp;
         public long cameraHardwareConfiguredStartRecordingTimestamp;
         public long userPressedStopVideoRecordingButtonTimestamp;
+        public boolean isEmgEnabled = false;
     }
     ArrayList<GaitTrial> trials = new ArrayList<>();
     private GaitTrial curTrial;
@@ -145,8 +148,9 @@ public class GaitVideoActivity extends AppCompatActivity {
         textureView = (TextureView) findViewById(R.id.texture);
         assert textureView != null;
         textureView.setSurfaceTextureListener(textureListener);
-        startButton = (Button) findViewById(R.id.startButton);
-        stopButton = (Button) findViewById(R.id.stopButton);
+        startVideoRecordingButton = (Button) findViewById(R.id.start_video_recording_button);
+        stopVideoRecordingButton = (Button) findViewById(R.id.stop_video_recording_button);
+        enableEmgPwrButton = (Button) findViewById(R.id.enable_emg_pwr_button);
 
         final RecyclerView recyclerView = findViewById(R.id.emg_list);
         recyclerView.setLayoutManager(new LinearLayoutManager(getBaseContext()));
@@ -173,8 +177,8 @@ public class GaitVideoActivity extends AppCompatActivity {
         punch = MediaPlayer.create(GaitVideoActivity.this, R.raw.punch);
         clap = MediaPlayer.create(GaitVideoActivity.this, R.raw.clap);
 
-        // Set up the listener for video capture buttons
-        startButton.setOnClickListener(
+        // Set up the listeners for the buttons
+        startVideoRecordingButton.setOnClickListener(
                 v -> {
                     clickButtonTimestamp = new Date().getTime();
                     ding.start();
@@ -182,7 +186,7 @@ public class GaitVideoActivity extends AppCompatActivity {
                     running = true;
                     runTimer(true);
                 });
-        stopButton.setOnClickListener(
+        stopVideoRecordingButton.setOnClickListener(
                 v -> {
                     punch.start();
                     stopVideoRecording();
@@ -190,7 +194,7 @@ public class GaitVideoActivity extends AppCompatActivity {
                     seconds = 0;
                     runTimer(false);
                 });
-        stopButton.setEnabled(false); // disable btn initially
+        stopVideoRecordingButton.setEnabled(false); // disable btn initially
         if (savedInstanceState != null) {
 
             // Get the previous state of the stopwatch
@@ -206,6 +210,14 @@ public class GaitVideoActivity extends AppCompatActivity {
                     = savedInstanceState
                     .getBoolean("wasRunning");
         }
+
+        enableEmgPwrButton.setOnClickListener(v -> {
+            try {
+                enableEmgPwr();
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        });
     }
 
     @Override
@@ -418,8 +430,8 @@ public class GaitVideoActivity extends AppCompatActivity {
 
     //region Video Recording
     private void startVideoRecording() {
-        startButton.setEnabled(false);
-        stopButton.setEnabled(true);
+        startVideoRecordingButton.setEnabled(false);
+        stopVideoRecordingButton.setEnabled(true);
         closePreview();
         try {
             setupMediaRecorder();
@@ -486,7 +498,7 @@ public class GaitVideoActivity extends AppCompatActivity {
 
     private void stopVideoRecording() {
         Toast.makeText(GaitVideoActivity.this, "Uploading " + simpleFilename, Toast.LENGTH_SHORT).show();
-        stopButton.setEnabled(false);
+        stopVideoRecordingButton.setEnabled(false);
         try {
             cameraCaptureSession.stopRepeating();
             cameraCaptureSession.abortCaptures();
@@ -594,7 +606,7 @@ public class GaitVideoActivity extends AppCompatActivity {
                     Log.d(TAG, "fileSize = " +fileSize);
                     Toast.makeText(GaitVideoActivity.this, "Upload "  + simpleFilename + " succeeded!", Toast.LENGTH_SHORT).show();
                     clap.start();
-                    startButton.setEnabled(true);
+                    startVideoRecordingButton.setEnabled(true);
                         });
 
     }
@@ -701,6 +713,22 @@ public class GaitVideoActivity extends AppCompatActivity {
 
             }
         });
+    }
+    //endregion
+
+    //region EmgPwr
+
+    /**
+     * Enables emgPwr streaming - assumes that it is initially disabled. Note: once
+     * emg is enabled, it will remain enabled until the app is killed.
+     * Firebase streams will be updated with EmgPwr message and the field isEmgEnabled in the
+     * details of the gamePlay logs will be updated to true.
+     */
+    private void enableEmgPwr() throws RemoteException {
+        dvm.enableEmgPwr();
+        enableEmgPwrButton.setEnabled(false);
+        Toast.makeText(GaitVideoActivity.this, "EMG enabled!", Toast.LENGTH_SHORT).show();
+        curTrial.isEmgEnabled = true;
     }
     //endregion
 
