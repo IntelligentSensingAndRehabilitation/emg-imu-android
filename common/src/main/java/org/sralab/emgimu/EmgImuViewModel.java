@@ -248,4 +248,12 @@ public abstract class EmgImuViewModel <T> extends AndroidViewModel {
             batUpdated(dev, bat);
         }
     };
+
+    /**
+     * Registers emgPwr callback - assumes that it is initially unregistered.
+     */
+    public void registerEmgPwrObserver() throws RemoteException {
+        service.registerEmgPwrObserver(null, pwrObserver);
+    }
+
 }

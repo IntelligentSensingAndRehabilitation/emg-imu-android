@@ -15,7 +15,11 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Android">
         <activity
+<<<<<<< HEAD
             android:name=".GaitVideoImu"
+=======
+            android:name=".GaitVideoActivity"
+>>>>>>> gait-enable-emg
             android:screenOrientation="portrait"
             android:exported="true">
             <intent-filter>

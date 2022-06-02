@@ -2,6 +2,8 @@ package org.sralab.emgimu.gaitvideoimu.stream_visualization;
 
 import android.app.Application;
 import android.bluetooth.BluetoothDevice;
+import android.os.RemoteException;
+import android.util.Log;
 
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
@@ -91,5 +93,12 @@ public class DeviceViewModel extends EmgImuViewModel<Device> {
     public Device getDev(BluetoothDevice d) {
         Device dev = new Device();
         return dev;
+    }
+
+    /**
+     * Enables emgPwr streaming - assumes that it is disabled initially.
+     */
+    public void enableEmgPwr() throws RemoteException {
+        registerEmgPwrObserver();
     }
 }
