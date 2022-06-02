@@ -211,6 +211,7 @@ public class GaitVideoImu extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
+        dvm.onPause();
         closeCamera();
         stopBackgroundThread();
 
@@ -223,6 +224,7 @@ public class GaitVideoImu extends AppCompatActivity {
     @Override
     public void onResume() {
         super.onResume();
+        dvm.onResume();
         startBackgroundThread();
         if (textureView.isAvailable()) {
             openCamera(textureView.getWidth(), textureView.getHeight());
