@@ -82,7 +82,7 @@ public class GaitVideoActivity extends AppCompatActivity {
         public long systemCreatedFileTimestamp;
         public long cameraHardwareConfiguredStartRecordingTimestamp;
         public long userPressedStopVideoRecordingButtonTimestamp;
-        public boolean isEmgEnabled = false;
+        public boolean isEmgEnabled;
     }
     ArrayList<GaitTrial> trials = new ArrayList<>();
     private GaitTrial curTrial;
@@ -136,6 +136,8 @@ public class GaitVideoActivity extends AppCompatActivity {
     private boolean wasRunning;
     private String videoDuration;
     //endregion
+
+    private Boolean isEmgEnabled = false;
 
     //region Internal Log File Fields
     List<String> uploadedVideos = new ArrayList<>();
@@ -223,6 +225,7 @@ public class GaitVideoActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
+        updateLogger();
         dvm.onPause();
         closeCamera();
         stopBackgroundThread();
@@ -254,7 +257,6 @@ public class GaitVideoActivity extends AppCompatActivity {
 
     @Override
     public void onStop() {
-        updateLogger();
         this.finish();
         super.onStop();
     }
@@ -578,6 +580,7 @@ public class GaitVideoActivity extends AppCompatActivity {
         curTrial.fileName = uploadFileName;
         curTrial.userPressedStartVideoRecordingButtonTimestamp = clickButtonTimestamp;
         curTrial.systemCreatedFileTimestamp = createFileTimestamp;
+        curTrial.isEmgEnabled = isEmgEnabled;
         trials.add(curTrial);
         return uploadFileName;
     }
@@ -730,7 +733,7 @@ public class GaitVideoActivity extends AppCompatActivity {
         dvm.enableEmgPwr();
         enableEmgPwrButton.setEnabled(false);
         Toast.makeText(GaitVideoActivity.this, "EMG enabled!", Toast.LENGTH_SHORT).show();
-        curTrial.isEmgEnabled = true;
+        isEmgEnabled = true;
     }
     //endregion
 
