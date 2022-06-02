@@ -1506,6 +1506,7 @@ public class EmgImuManager extends BleManager {
     }
 
     private void parseBattery(@NonNull final BluetoothDevice device, @NonNull final Data data) {
+
         int batteryLevel = data.getIntValue(Data.FORMAT_UINT8, 0);
 
         double voltage = 3.0 + 1.35 * (batteryLevel / 100.0);
@@ -1513,6 +1514,11 @@ public class EmgImuManager extends BleManager {
 
         onBatteryReceived(device, (float) voltage);
         log(Log.DEBUG, "Received battery level: " + batteryLevel);
+
+        if (mLogging && streamLogger != null) {
+            // long sensor_timestamp, double battery voltage
+            streamLogger.addBatterySample(new Date().getTime(), voltage);
+        }
     }
 
     public String getManufacturer() {
