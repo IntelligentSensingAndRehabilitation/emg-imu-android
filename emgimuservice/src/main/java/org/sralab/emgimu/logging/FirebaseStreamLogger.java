@@ -219,6 +219,7 @@ public class FirebaseStreamLogger extends Observable {
     }
 
     public void addBatterySample(long time, double data) {
+        // method to add battery message
         Gson gson = new Gson();
         BatteryMessage msg = new BatteryMessage(mDeviceMac, time, data);
         addJson(gson.toJson(msg));

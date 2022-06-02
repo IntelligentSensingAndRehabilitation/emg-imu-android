@@ -1516,9 +1516,7 @@ public class EmgImuManager extends BleManager {
         log(Log.DEBUG, "Received battery level: " + batteryLevel);
 
         if (mLogging && streamLogger != null) {
-            // long sensor_timestamp, int sensor_counter
-            log(Log.INFO, "Battery Info");
-            log(Log.INFO, String.valueOf(voltage));
+            // long sensor_timestamp, double battery voltage
             streamLogger.addBatterySample(new Date().getTime(), voltage);
         }
     }
