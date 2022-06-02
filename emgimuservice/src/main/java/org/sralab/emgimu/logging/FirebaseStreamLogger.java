@@ -18,6 +18,7 @@ import org.sralab.emgimu.service.EmgImuManager;
 import org.sralab.emgimu.streaming.messages.EmgPwrMessage;
 import org.sralab.emgimu.streaming.messages.EmgRawMessage;
 import org.sralab.emgimu.streaming.messages.ImuAccelMessage;
+import org.sralab.emgimu.streaming.messages.BatteryMessage;
 import org.sralab.emgimu.streaming.messages.ImuAttitudeMessage;
 import org.sralab.emgimu.streaming.messages.ImuGyroMessage;
 import org.sralab.emgimu.streaming.messages.ImuMagMessage;
@@ -214,6 +215,12 @@ public class FirebaseStreamLogger extends Observable {
     public void addAccelSample(long time, long sensor_timestamp, int sensor_counter, float [][] data) {
         Gson gson = new Gson();
         ImuAccelMessage msg = new ImuAccelMessage(mDeviceMac, time, sensor_timestamp, sensor_counter, data);
+        addJson(gson.toJson(msg));
+    }
+
+    public void addBatterySample(long time, double data) {
+        Gson gson = new Gson();
+        BatteryMessage msg = new BatteryMessage(mDeviceMac, time, data);
         addJson(gson.toJson(msg));
     }
 
