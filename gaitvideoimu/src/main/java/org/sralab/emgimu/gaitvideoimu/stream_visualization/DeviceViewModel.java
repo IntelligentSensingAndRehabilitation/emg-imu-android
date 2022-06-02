@@ -101,4 +101,11 @@ public class DeviceViewModel extends EmgImuViewModel<Device> {
     public void enableEmgPwr() throws RemoteException {
         registerEmgPwrObserver();
     }
+
+    /**
+     * Enables emgPwr streaming - assumes that it is disabled initially.
+     */
+    public void enableEmgStream() throws RemoteException {
+        registerEmgStreamObserver();
+    }
 }

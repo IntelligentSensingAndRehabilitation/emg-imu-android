@@ -215,7 +215,8 @@ public class GaitVideoActivity extends AppCompatActivity {
 
         enableEmgPwrButton.setOnClickListener(v -> {
             try {
-                enableEmgPwr();
+                //enableEmgPwr();
+                enableEmgStream();
             } catch (RemoteException e) {
                 e.printStackTrace();
             }
@@ -731,6 +732,13 @@ public class GaitVideoActivity extends AppCompatActivity {
      */
     private void enableEmgPwr() throws RemoteException {
         dvm.enableEmgPwr();
+        enableEmgPwrButton.setEnabled(false);
+        Toast.makeText(GaitVideoActivity.this, "EMG enabled!", Toast.LENGTH_SHORT).show();
+        isEmgEnabled = true;
+    }
+
+    private void enableEmgStream() throws RemoteException {
+        dvm.enableEmgStream();
         enableEmgPwrButton.setEnabled(false);
         Toast.makeText(GaitVideoActivity.this, "EMG enabled!", Toast.LENGTH_SHORT).show();
         isEmgEnabled = true;

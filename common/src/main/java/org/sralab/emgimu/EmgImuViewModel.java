@@ -256,4 +256,8 @@ public abstract class EmgImuViewModel <T> extends AndroidViewModel {
         service.registerEmgPwrObserver(null, pwrObserver);
     }
 
+    public void registerEmgStreamObserver() throws RemoteException {
+        service.registerEmgStreamObserver(null, streamObserver);
+    }
+
 }
