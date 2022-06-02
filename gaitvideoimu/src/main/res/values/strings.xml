@@ -1,5 +1,6 @@
 <resources>
     <string name="app_name">Gait Analysis</string>
-    <string name="stop">Stop</string>
-    <string name="start">Start</string>
+    <string name="stop_video_recording_id">Stop</string>
+    <string name="start_video_recording_id">Start</string>
+    <string name="enable_emg_pwr_id">EMG</string>
 </resources>
