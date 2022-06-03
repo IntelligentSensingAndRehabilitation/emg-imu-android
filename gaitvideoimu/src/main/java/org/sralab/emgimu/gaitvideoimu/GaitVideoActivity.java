@@ -508,8 +508,8 @@ public class GaitVideoActivity extends AppCompatActivity {
         simpleFilename = getSimpleFilename(currentFile);
         firebaseUploadFileName = setupFirebaseFile(simpleFilename);
         showVideoStatus("Recording " + simpleFilename, "gray");
-        //CamcorderProfile profile = CamcorderProfile.get(CamcorderProfile.QUALITY_1080P);
-        CamcorderProfile profile = CamcorderProfile.get(CamcorderProfile.QUALITY_HIGH_SPEED_1080P);
+        CamcorderProfile profile = CamcorderProfile.get(CamcorderProfile.QUALITY_1080P);
+        //CamcorderProfile profile = CamcorderProfile.get(CamcorderProfile.QUALITY_HIGH_SPEED_1080P); // CRASHES the app
         Log.d(TAG, "gait, camcorder, fps: " + profile.videoFrameRate);
         mediaRecorder.setVideoFrameRate(60);
         //mediaRecorder.setVideoFrameRate(profile.videoFrameRate);
