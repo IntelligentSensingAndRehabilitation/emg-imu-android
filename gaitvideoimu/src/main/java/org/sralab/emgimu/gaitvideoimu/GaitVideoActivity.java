@@ -24,6 +24,7 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.RemoteException;
 import android.util.Log;
+import android.util.Range;
 import android.util.Size;
 import android.util.SparseIntArray;
 import android.view.Surface;
@@ -344,6 +345,18 @@ public class GaitVideoActivity extends AppCompatActivity {
         try {
             String cameraId = manager.getCameraIdList()[0]; // Camera 0 facing CAMERA_FACING_BACK
             CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
+
+            // Exploring the fps ranges that camera supports
+            for (int j=0; j <manager.getCameraIdList().length; j++) {
+                CameraCharacteristics characteristicsTemp = manager.getCameraCharacteristics(cameraId);
+                Range<Integer>[] rangesTemp = characteristicsTemp.get(CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES);
+                String fpsRangeArrayToDisplay = new String();
+                for (int i=0; i <rangesTemp.length; i++) {
+                    fpsRangeArrayToDisplay = fpsRangeArrayToDisplay + rangesTemp[i].toString() + ", ";
+                }
+                Log.d(TAG, "gait,  cameraId = " + manager.getCameraIdList()[j] + " | fps range = " + fpsRangeArrayToDisplay);
+            }
+
             StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
             assert map != null;
             imageDimension = map.getOutputSizes(SurfaceTexture.class)[0];
@@ -455,6 +468,10 @@ public class GaitVideoActivity extends AppCompatActivity {
             Surface recorderSurface = mediaRecorder.getSurface();
             surfaces.add(recorderSurface);
             captureRequestBuilder.addTarget(recorderSurface);
+
+            // setting the camera fps
+            Range<Integer> fpsRange = new Range<>(30,30);
+            captureRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,fpsRange);
 
             // Start capture session
             cameraDevice.createCaptureSession(surfaces, new CameraCaptureSession.StateCallback() {
