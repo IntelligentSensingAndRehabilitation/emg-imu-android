@@ -361,6 +361,24 @@ public class GaitVideoActivity extends AppCompatActivity {
             assert map != null;
             imageDimension = map.getOutputSizes(SurfaceTexture.class)[0];
             mediaRecorder = new MediaRecorder();
+
+            // For each size, list the expected FPS
+            int counter = 0;
+            for (Size outputSize : map.getOutputSizes(SurfaceTexture.class)) {
+                counter++;
+                double secondsPerFrame =
+                        map.getOutputMinFrameDuration(SurfaceTexture.class, outputSize) /
+                                1_000_000_000.0;
+                // Compute the frames per second to let user select a configuration
+                int fps;
+                if (secondsPerFrame > 0) {
+                    fps = (int) (1.0 / secondsPerFrame);
+                } else {
+                    fps = 0;
+                }
+                    Log.d(TAG, "gait, (" + counter + ") FPS = " + fps);
+            }
+
             // Explicitly check user permissions
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
                     != PackageManager.PERMISSION_GRANTED &&
