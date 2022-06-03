@@ -143,6 +143,13 @@ public class GaitVideoActivity extends AppCompatActivity {
     //region Internal Log File Fields
     List<String> uploadedVideos = new ArrayList<>();
 
+    /** Setup a dictionary to map the lens orientation enum into a human-readable string */
+    HashMap<Integer, String> lensOrientationMap = new HashMap<Integer, String>() {{
+        put((int) CameraCharacteristics.LENS_FACING_BACK, "Back");
+        put((int) CameraCharacteristics.LENS_FACING_FRONT, "Front");
+        put((int) CameraCharacteristics.LENS_FACING_EXTERNAL,"External");
+    }};
+
     //region Activity Lifecycle Methods
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -335,6 +342,63 @@ public class GaitVideoActivity extends AppCompatActivity {
         }
     }
 
+    private class CameraInfo {
+        Integer fps;
+        String name;
+        String cameraId;
+        Size size;
+    }
+
+
+    /** Lists all video-capable cameras and supported resolution and FPS combinations */
+    private List<CameraInfo> enumerateVideoCameras(CameraManager manager) throws CameraAccessException {
+        List<CameraInfo> availableCameras = new ArrayList<>();
+
+        //  Iterate over the list of cameras and add those with high speed video recording
+        //  capability to our output. This function only returns those cameras that declare
+        //  constrained high speed video recording, but some cameras may be capable of doing
+        //  unconstrained video recording with high enough FPS for some use cases and they will
+        //  not necessarily declare constrained high speed video capability.
+        for (String cameraId : manager.getCameraIdList()) {
+            CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
+            String orientation = lensOrientationMap(characteristics.get(CameraCharacteristics.LENS_FACING));
+            // Query the available capabilities and output formats
+            int[] capabilities = characteristics.get(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES);
+            StreamConfigurationMap cameraConfig = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+
+            // Return cameras that declare to be backward compatible
+            // Recording should always be done in the most efficient format, which is
+            //  the format native to the camera framework
+            if (Arrays.stream(capabilities).anyMatch(i -> i == CameraCharacteristics
+                    .REQUEST_AVAILABLE_CAPABILITIES_BACKWARD_COMPATIBLE)) {
+                // For each size, list the expected FPS
+                for (Size outputSize : cameraConfig.getOutputSizes(SurfaceTexture.class)) {
+                    double secondsPerFrame =
+                            cameraConfig.getOutputMinFrameDuration(SurfaceTexture.class, outputSize) /
+                                    1_000_000_000.0;
+                    // Compute the frames per second to let user select a configuration
+                    int fps;
+                    if (secondsPerFrame > 0) {
+                        fps = (int) (1.0 / secondsPerFrame);
+                    } else {
+                        fps = 0;
+                    }
+                    CameraInfo cameraInfo = new CameraInfo();
+                    cameraInfo.cameraId = cameraId;
+                    cameraInfo.name = orientation;
+                    cameraInfo.size = outputSize;
+                    cameraInfo.fps = fps;
+                    availableCameras.add(cameraInfo);
+                }
+            }
+        }
+        return availableCameras;
+    }
+
+    private String lensOrientationMap(Integer integer) {
+        return lensOrientationMap.get(integer);
+    }
+
     /**
      * @brief Establishes connection with the camera hardware.
      * @param width
@@ -345,9 +409,15 @@ public class GaitVideoActivity extends AppCompatActivity {
         try {
             String cameraId = manager.getCameraIdList()[0]; // Camera 0 facing CAMERA_FACING_BACK
             CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
-
+            List<CameraInfo> cameraInfoList = new ArrayList<>(enumerateVideoCameras(manager));
+            Log.d(TAG, "gait, cameraInfoList.length = " + cameraInfoList.size());
+            int counter = 0;
+            for(CameraInfo cameraInfo : cameraInfoList) {
+                Log.d(TAG, "gait, (" + counter + "): " + "cameraId: " + cameraInfo.cameraId + ", size: " + cameraInfo.size + ", FPS: " + cameraInfo.fps);
+                counter++;
+            }
             // Exploring the fps ranges that camera supports
-            for (int j=0; j <manager.getCameraIdList().length; j++) {
+/*            for (int j=0; j <manager.getCameraIdList().length; j++) {
                 CameraCharacteristics characteristicsTemp = manager.getCameraCharacteristics(cameraId);
                 Range<Integer>[] rangesTemp = characteristicsTemp.get(CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES);
                 String fpsRangeArrayToDisplay = new String();
@@ -355,29 +425,12 @@ public class GaitVideoActivity extends AppCompatActivity {
                     fpsRangeArrayToDisplay = fpsRangeArrayToDisplay + rangesTemp[i].toString() + ", ";
                 }
                 Log.d(TAG, "gait,  cameraId = " + manager.getCameraIdList()[j] + " | fps range = " + fpsRangeArrayToDisplay);
-            }
+            }*/
 
             StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
             assert map != null;
             imageDimension = map.getOutputSizes(SurfaceTexture.class)[0];
             mediaRecorder = new MediaRecorder();
-
-            // For each size, list the expected FPS
-            int counter = 0;
-            for (Size outputSize : map.getOutputSizes(SurfaceTexture.class)) {
-                counter++;
-                double secondsPerFrame =
-                        map.getOutputMinFrameDuration(SurfaceTexture.class, outputSize) /
-                                1_000_000_000.0;
-                // Compute the frames per second to let user select a configuration
-                int fps;
-                if (secondsPerFrame > 0) {
-                    fps = (int) (1.0 / secondsPerFrame);
-                } else {
-                    fps = 0;
-                }
-                    Log.d(TAG, "gait, (" + counter + ") FPS = " + fps);
-            }
 
             // Explicitly check user permissions
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
