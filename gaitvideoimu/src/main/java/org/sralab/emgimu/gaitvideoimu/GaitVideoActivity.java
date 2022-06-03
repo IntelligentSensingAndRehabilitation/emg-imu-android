@@ -470,8 +470,8 @@ public class GaitVideoActivity extends AppCompatActivity {
             captureRequestBuilder.addTarget(recorderSurface);
 
             // setting the camera fps
-            Range<Integer> fpsRange = new Range<>(30,30);
-            captureRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,fpsRange);
+/*            Range<Integer> fpsRange = new Range<>(30,30);
+            captureRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,fpsRange);*/
 
             // Start capture session
             cameraDevice.createCaptureSession(surfaces, new CameraCaptureSession.StateCallback() {
@@ -508,8 +508,11 @@ public class GaitVideoActivity extends AppCompatActivity {
         simpleFilename = getSimpleFilename(currentFile);
         firebaseUploadFileName = setupFirebaseFile(simpleFilename);
         showVideoStatus("Recording " + simpleFilename, "gray");
-        CamcorderProfile profile = CamcorderProfile.get(CamcorderProfile.QUALITY_1080P);
-        mediaRecorder.setVideoFrameRate(profile.videoFrameRate);
+        //CamcorderProfile profile = CamcorderProfile.get(CamcorderProfile.QUALITY_1080P);
+        CamcorderProfile profile = CamcorderProfile.get(CamcorderProfile.QUALITY_HIGH_SPEED_1080P);
+        Log.d(TAG, "gait, camcorder, fps: " + profile.videoFrameRate);
+        mediaRecorder.setVideoFrameRate(60);
+        //mediaRecorder.setVideoFrameRate(profile.videoFrameRate);
         mediaRecorder.setVideoSize(profile.videoFrameWidth, profile.videoFrameHeight);
         mediaRecorder.setVideoEncodingBitRate(profile.videoBitRate);
         mediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
