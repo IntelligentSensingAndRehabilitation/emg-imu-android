@@ -349,6 +349,8 @@ public class GaitVideoActivity extends AppCompatActivity {
         Size size;
     }
 
+    private Range<Integer> fpsRange;
+
 
     /** Lists all video-capable cameras and supported resolution and FPS combinations */
     private List<CameraInfo> enumerateVideoCameras(CameraManager manager) throws CameraAccessException {
@@ -365,6 +367,8 @@ public class GaitVideoActivity extends AppCompatActivity {
             // Query the available capabilities and output formats
             int[] capabilities = characteristics.get(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES);
             StreamConfigurationMap cameraConfig = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+
+
 
             // Return cameras that declare to be backward compatible
             // Recording should always be done in the most efficient format, which is
@@ -412,12 +416,16 @@ public class GaitVideoActivity extends AppCompatActivity {
             List<CameraInfo> cameraInfoList = new ArrayList<>(enumerateVideoCameras(manager));
             Log.d(TAG, "gait, cameraInfoList.length = " + cameraInfoList.size());
             int counter = 0;
+            List<Size> sizeOf60fps= new ArrayList<>();
             for(CameraInfo cameraInfo : cameraInfoList) {
-                Log.d(TAG, "gait, (" + counter + "): " + "cameraId: " + cameraInfo.cameraId + ", size: " + cameraInfo.size + ", FPS: " + cameraInfo.fps);
-                counter++;
+                if (cameraInfo.cameraId.equals("0") && cameraInfo.fps.equals(60)) {
+                    Log.d(TAG, "gait, (" + counter + "): " + "cameraId: " + cameraInfo.cameraId + ", size: " + cameraInfo.size + ", Calculated FPS (getOutputMinFrameDuration): " + cameraInfo.fps);
+                    counter++;
+                    sizeOf60fps.add(cameraInfo.size);
+                }
             }
             // Exploring the fps ranges that camera supports
-/*            for (int j=0; j <manager.getCameraIdList().length; j++) {
+            for (int j=0; j <manager.getCameraIdList().length; j++) {
                 CameraCharacteristics characteristicsTemp = manager.getCameraCharacteristics(cameraId);
                 Range<Integer>[] rangesTemp = characteristicsTemp.get(CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES);
                 String fpsRangeArrayToDisplay = new String();
@@ -425,11 +433,14 @@ public class GaitVideoActivity extends AppCompatActivity {
                     fpsRangeArrayToDisplay = fpsRangeArrayToDisplay + rangesTemp[i].toString() + ", ";
                 }
                 Log.d(TAG, "gait,  cameraId = " + manager.getCameraIdList()[j] + " | fps range = " + fpsRangeArrayToDisplay);
-            }*/
+            }
 
             StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
             assert map != null;
             imageDimension = map.getOutputSizes(SurfaceTexture.class)[0];
+            //imageDimension = new Size(1920,1080); // 2048 x 1152
+            fpsRange = new Range<>(30,30);
+            Log.d(TAG, "gait, imageDimensions: " + imageDimension.toString() + "| desiredFps = " + fpsRange);
             mediaRecorder = new MediaRecorder();
 
             // Explicitly check user permissions
@@ -473,6 +484,7 @@ public class GaitVideoActivity extends AppCompatActivity {
         Surface previewSurface = new Surface(texture);
         try {
             captureRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
+            captureRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,fpsRange); // This sets the frame rate accurately*/
             captureRequestBuilder.addTarget(previewSurface);
             cameraDevice.createCaptureSession(Arrays.asList(previewSurface), new CameraCaptureSession.StateCallback() {
                 @Override
@@ -529,6 +541,14 @@ public class GaitVideoActivity extends AppCompatActivity {
             assert texture != null;
             texture.setDefaultBufferSize(imageDimension.getWidth(), imageDimension.getHeight());
             captureRequestBuilder = cameraDevice.createCaptureRequest(TEMPLATE_RECORD);
+            captureRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,fpsRange); // This sets the frame rate accurately*/
+
+            // setting the camera fps
+/*            Range<Integer> fpsRange = new Range<>(120,120);
+            captureRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,fpsRange); // This sets the frame rate accurately*/
+/*            final long frameDuration = 1666666666; // 1/60 ns
+            captureRequestBuilder.set(CaptureRequest.SENSOR_FRAME_DURATION, frameDuration);*/
+
             List<Surface> surfaces = new ArrayList<>();
 
             Surface previewSurface = new Surface(texture);
@@ -539,10 +559,6 @@ public class GaitVideoActivity extends AppCompatActivity {
             Surface recorderSurface = mediaRecorder.getSurface();
             surfaces.add(recorderSurface);
             captureRequestBuilder.addTarget(recorderSurface);
-
-            // setting the camera fps
-/*            Range<Integer> fpsRange = new Range<>(30,30);
-            captureRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,fpsRange);*/
 
             // Start capture session
             cameraDevice.createCaptureSession(surfaces, new CameraCaptureSession.StateCallback() {
@@ -574,21 +590,16 @@ public class GaitVideoActivity extends AppCompatActivity {
         }
         mediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
         mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+        mediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
+        mediaRecorder.setVideoSize(imageDimension.getWidth(), imageDimension.getHeight()); // absolutely necessary
+        mediaRecorder.setVideoEncodingBitRate(10_000_000);
+        int rotation = activity.getWindowManager().getDefaultDisplay().getRotation();
+        mediaRecorder.setOrientationHint(ORIENTATIONS.get(rotation));
         currentFile = createNewFile();
-        mediaRecorder.setOutputFile(currentFile.getAbsolutePath());
         simpleFilename = getSimpleFilename(currentFile);
         firebaseUploadFileName = setupFirebaseFile(simpleFilename);
         showVideoStatus("Recording " + simpleFilename, "gray");
-        CamcorderProfile profile = CamcorderProfile.get(CamcorderProfile.QUALITY_1080P);
-        //CamcorderProfile profile = CamcorderProfile.get(CamcorderProfile.QUALITY_HIGH_SPEED_1080P); // CRASHES the app
-        Log.d(TAG, "gait, camcorder, fps: " + profile.videoFrameRate);
-        mediaRecorder.setVideoFrameRate(60);
-        //mediaRecorder.setVideoFrameRate(profile.videoFrameRate);
-        mediaRecorder.setVideoSize(profile.videoFrameWidth, profile.videoFrameHeight);
-        mediaRecorder.setVideoEncodingBitRate(profile.videoBitRate);
-        mediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
-        int rotation = activity.getWindowManager().getDefaultDisplay().getRotation();
-        mediaRecorder.setOrientationHint(ORIENTATIONS.get(rotation));
+        mediaRecorder.setOutputFile(currentFile.getAbsolutePath());
         mediaRecorder.prepare();
     }
 
