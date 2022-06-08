@@ -8,6 +8,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.graphics.Matrix;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
@@ -119,6 +120,7 @@ public class GaitVideoActivity extends AppCompatActivity {
     private int fps;
     protected MediaRecorder mediaRecorder;
     protected CameraDevice cameraDevice;
+    protected CameraCharacteristics characteristics;
     protected CaptureRequest.Builder captureRequestBuilder;
     protected CameraCaptureSession cameraCaptureSession;
     private Handler backgroundHandler;
@@ -290,6 +292,7 @@ public class GaitVideoActivity extends AppCompatActivity {
     TextureView.SurfaceTextureListener textureListener = new TextureView.SurfaceTextureListener() {
         @Override
         public void onSurfaceTextureAvailable(@NonNull SurfaceTexture surface, int width, int height) {
+            Log.d(TAG, "Surface dimensions: " + width + " " + height);
             openCamera();
         }
 
@@ -420,7 +423,7 @@ public class GaitVideoActivity extends AppCompatActivity {
         CameraManager manager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
         try {
             String cameraId = manager.getCameraIdList()[0]; // Camera 0 facing CAMERA_FACING_BACK
-            CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
+            characteristics = manager.getCameraCharacteristics(cameraId);
             List<CameraInfo> cameraInfoList = new ArrayList<>(enumerateVideoCameras(manager));
             Log.d(TAG, "gait, cameraInfoList.length = " + cameraInfoList.size());
             int counter = 0;
@@ -484,6 +487,105 @@ public class GaitVideoActivity extends AppCompatActivity {
     }
     //endregion
 
+    /**
+     * Computes rotation required to transform the camera sensor output orientation to the
+     * device's current orientation in degrees.
+     *
+     * @param characteristics The CameraCharacteristics to query for the sensor orientation.
+     * @param surfaceRotationDegrees The current device orientation as a Surface constant.
+     * @return Relative rotation of the camera sensor output.
+     */
+    public int computeRelativeRotation(
+            CameraCharacteristics characteristics,
+            int surfaceRotationDegrees
+    ){
+        Integer sensorOrientationDegrees =
+                characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
+
+        // Reverse device orientation for back-facing cameras.
+        int sign = characteristics.get(CameraCharacteristics.LENS_FACING) ==
+                CameraCharacteristics.LENS_FACING_FRONT ? 1 : -1;
+
+        // Calculate desired orientation relative to camera orientation to make
+        // the image upright relative to the device orientation.
+        return (sensorOrientationDegrees - surfaceRotationDegrees * sign + 360) % 360;
+    }
+
+    /**
+     * This method calculates the transformation matrix that we need to apply to the
+     * TextureView to avoid a distorted preview.
+     */
+    public Matrix computeTransformationMatrix(
+            TextureView textureView,
+            CameraCharacteristics characteristics,
+            Size previewSize,
+            int surfaceRotation
+    ) {
+        Matrix matrix = new Matrix();
+
+        int surfaceRotationDegrees;
+
+        switch (surfaceRotation) {
+            case Surface.ROTATION_0:
+                surfaceRotationDegrees = 0;
+                break;
+            case Surface.ROTATION_90:
+                surfaceRotationDegrees = 90;
+                break;
+            case Surface.ROTATION_180:
+                surfaceRotationDegrees = 180;
+                break;
+            case Surface.ROTATION_270:
+                surfaceRotationDegrees = 270;
+                break;
+            default:
+                surfaceRotationDegrees = 0;
+        }
+
+        /* Rotation required to transform from the camera sensor orientation to the
+         * device's current orientation in degrees. */
+        int relativeRotation = computeRelativeRotation(characteristics, surfaceRotationDegrees);
+
+        /* Scale factor required to scale the preview to its original size on the x-axis. */
+        float scaleX = (relativeRotation % 180 == 0)
+                ? (float) textureView.getWidth() / previewSize.getWidth()
+                : (float) textureView.getWidth() / previewSize.getHeight();
+
+        /* Scale factor required to scale the preview to its original size on the y-axis. */
+        float scaleY = (relativeRotation % 180 == 0)
+                ? (float) textureView.getHeight() / previewSize.getHeight()
+                : (float) textureView.getHeight() / previewSize.getWidth();
+
+        /* Scale factor required to fit the preview to the TextureView size. */
+        float finalScale = Math.min(scaleX, scaleY);
+
+        /* The scale will be different if the buffer has been rotated. */
+        if (relativeRotation % 180 == 0) {
+            matrix.setScale(
+                    textureView.getHeight() / (float) textureView.getWidth() / scaleY * finalScale,
+                    textureView.getWidth() / (float) textureView.getHeight() / scaleX * finalScale,
+                    textureView.getWidth() / 2f,
+                    textureView.getHeight() / 2f
+            );
+        } else {
+            matrix.setScale(
+                    1 / scaleX * finalScale,
+                    1 / scaleY * finalScale,
+                    textureView.getWidth() / 2f,
+                    textureView.getHeight() / 2f
+            );
+        }
+
+        // Rotate the TextureView to compensate for the Surface's rotation.
+        matrix.postRotate(
+                (float) -surfaceRotationDegrees,
+                textureView.getWidth() / 2f,
+                textureView.getHeight() / 2f
+        );
+
+        return matrix;
+    }
+
     //region Video Preview
     /**
      * @brief Instantiates video stream for user to view inside the application.
@@ -492,7 +594,10 @@ public class GaitVideoActivity extends AppCompatActivity {
         SurfaceTexture texture = textureView.getSurfaceTexture();
         assert texture != null;
 
-        texture.setDefaultBufferSize(imageDimension.getWidth(), imageDimension.getHeight());
+        Matrix transform = computeTransformationMatrix(textureView, characteristics, new Size(textureView.getWidth(), textureView.getHeight()), 0);
+        textureView.setTransform(transform);
+
+        //texture.setDefaultBufferSize(imageDimension.getWidth(), imageDimension.getHeight());
         Surface previewSurface = new Surface(texture);
         try {
             captureRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
