@@ -1,7 +1,6 @@
 package org.sralab.emgimu.gaitvideoimu;
 
 import static android.hardware.camera2.CameraDevice.TEMPLATE_RECORD;
-import static android.hardware.camera2.CaptureRequest.SENSOR_FRAME_DURATION;
 
 import android.Manifest;
 import android.app.Activity;
@@ -17,11 +16,9 @@ import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureRequest;
-import android.hardware.camera2.params.InputConfiguration;
 import android.hardware.camera2.params.OutputConfiguration;
 import android.hardware.camera2.params.SessionConfiguration;
 import android.hardware.camera2.params.StreamConfigurationMap;
-import android.media.CamcorderProfile;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 import android.net.Uri;
@@ -29,7 +26,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.RemoteException;
-import android.provider.MediaStore;
 import android.util.Log;
 import android.util.Range;
 import android.util.Size;
@@ -42,7 +38,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.camera.video.internal.encoder.OutputConfig;
 import androidx.core.app.ActivityCompat;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -92,6 +87,7 @@ public class GaitVideoActivity extends AppCompatActivity {
         public long cameraHardwareConfiguredStartRecordingTimestamp;
         public long userPressedStopVideoRecordingButtonTimestamp;
         public boolean isEmgEnabled;
+        private long exposureOfFirstFrameTimestamp;
     }
     ArrayList<GaitTrial> trials = new ArrayList<>();
     private GaitTrial curTrial;
@@ -102,9 +98,11 @@ public class GaitVideoActivity extends AppCompatActivity {
     private FirebaseGameLogger mGameLogger;
     private String firebaseUploadFileName;
     private String simpleFilename;
-    private long clickButtonTimestamp;      // user presses start button
-    private long createFileTimestamp;       // the system created the video file
-    private long startRecordingTimestamp;   // after camera has been configured, when recording starts
+    private long clickButtonTimestamp;              // user presses start button
+    private long createFileTimestamp;               // the system created the video file
+    private long startRecordingTimestamp;           // after camera has been configured, when recording starts
+    private Long exposureOfFirstFrameTimestamp;     // note: this includes the frames in the preview
+    boolean isFirstFrameTimestampCollected = false; // flag to collect first frame only
     //endregion
 
     //region Video Fields
@@ -618,7 +616,14 @@ public class GaitVideoActivity extends AppCompatActivity {
             startBackgroundThread();
 
             captureRequestBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
-            cameraCaptureSession.setRepeatingRequest(captureRequestBuilder.build(), null, backgroundHandler);
+            cameraCaptureSession.setRepeatingRequest(captureRequestBuilder.build(), new CameraCaptureSession.CaptureCallback() {
+                /* Note that the frame count starts as soon as the preview is started - which is when the app is launched */
+                @Override
+                public void onCaptureStarted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, long timestamp, long frameNumber) {
+                    super.onCaptureStarted(session, request, timestamp, frameNumber);
+                    exposureOfFirstFrameTimestamp = null;
+                }
+            }, backgroundHandler);
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
@@ -668,14 +673,17 @@ public class GaitVideoActivity extends AppCompatActivity {
                     public void onConfigured(@NonNull CameraCaptureSession captureSession) {
                         Log.d(TAG, "Configuration succeeded");
                         cameraCaptureSession = captureSession;
-
                         try {
                             mediaRecorder.start();
                             cameraCaptureSession.setRepeatingRequest(captureRequestBuilder.build(), new CameraCaptureSession.CaptureCallback() {
                                 @Override
                                 public void onCaptureStarted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, long timestamp, long frameNumber) {
                                     super.onCaptureStarted(session, request, timestamp, frameNumber);
-                                    Log.d(TAG, "Timestamp: " + timestamp + " frame number: " + frameNumber + " system timetamp: " + new Date().getTime());
+                                    if (exposureOfFirstFrameTimestamp == null && !isFirstFrameTimestampCollected) {
+                                        exposureOfFirstFrameTimestamp = new Date().getTime();
+                                        curTrial.exposureOfFirstFrameTimestamp = exposureOfFirstFrameTimestamp;
+                                        isFirstFrameTimestampCollected = true;
+                                    }
                                 }
                             }, backgroundHandler);
                         } catch (CameraAccessException e) {
@@ -684,7 +692,6 @@ public class GaitVideoActivity extends AppCompatActivity {
 
                         startRecordingTimestamp = new Date().getTime();
                         curTrial.cameraHardwareConfiguredStartRecordingTimestamp = startRecordingTimestamp;
-                        Log.d(TAG, "Timestamp difference (startRecordingTimestamp - clickButtonTimestamp) = " + (startRecordingTimestamp - clickButtonTimestamp) + " ms");
                     }
 
                     @Override
