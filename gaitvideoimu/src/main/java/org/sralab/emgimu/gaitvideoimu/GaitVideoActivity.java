@@ -133,6 +133,9 @@ public class GaitVideoActivity extends AppCompatActivity {
         ORIENTATIONS.append(Surface.ROTATION_180, 270);
         ORIENTATIONS.append(Surface.ROTATION_270, 180);
     }
+
+    private Range<Integer> fpsRange;
+    private Size videoResolutionHD = new Size(1920, 1080);
     //endregion
 
     //region Sound Effects Fields
@@ -360,9 +363,6 @@ public class GaitVideoActivity extends AppCompatActivity {
         Size size;
     }
 
-    private Range<Integer> fpsRange;
-
-
     /** Lists all video-capable cameras and supported resolution and FPS combinations */
     private List<CameraInfo> enumerateVideoCameras(CameraManager manager) throws CameraAccessException {
         List<CameraInfo> availableCameras = new ArrayList<>();
@@ -416,45 +416,30 @@ public class GaitVideoActivity extends AppCompatActivity {
 
     /**
      * @brief Establishes connection with the camera hardware.
-     * @param width
-     * @param height
      */
     private void openCamera() {
         CameraManager manager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
         try {
             String cameraId = manager.getCameraIdList()[0]; // Camera 0 facing CAMERA_FACING_BACK
             characteristics = manager.getCameraCharacteristics(cameraId);
+            /* Queries the camera capabilities and stores it into the list.
+            *  Then we find the index of the camera with the HD resolution of 1920x1080, and feed it
+            *  downstream */
             List<CameraInfo> cameraInfoList = new ArrayList<>(enumerateVideoCameras(manager));
-            Log.d(TAG, "gait, cameraInfoList.length = " + cameraInfoList.size());
             int counter = 0;
-            List<Size> sizeOf60fps= new ArrayList<>();
+            int indexOfCameraWithResolutionHD = 0;
             for(CameraInfo cameraInfo : cameraInfoList) {
-                if (cameraInfo.cameraId.equals("0") && cameraInfo.fps.equals(60)) {
-                    Log.d(TAG, "gait, (" + counter + "): " + "cameraId: " + cameraInfo.cameraId + ", size: " + cameraInfo.size + ", Calculated FPS (getOutputMinFrameDuration): " + cameraInfo.fps);
-                    counter++;
-                    sizeOf60fps.add(cameraInfo.size);
+                if (cameraInfo.cameraId.equals(cameraId) && cameraInfo.size.equals(videoResolutionHD)) {
+                    indexOfCameraWithResolutionHD = counter;
                 }
+                counter++;
             }
-
-            // Exploring the fps ranges that camera supports
-            for (int j=0; j <manager.getCameraIdList().length; j++) {
-                CameraCharacteristics characteristicsTemp = manager.getCameraCharacteristics(cameraId);
-                Range<Integer>[] rangesTemp = characteristicsTemp.get(CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES);
-                String fpsRangeArrayToDisplay = new String();
-                for (int i=0; i <rangesTemp.length; i++) {
-                    fpsRangeArrayToDisplay = fpsRangeArrayToDisplay + rangesTemp[i].toString() + ", ";
-                }
-                Log.d(TAG, "gait,  cameraId = " + manager.getCameraIdList()[j] + " | fps range = " + fpsRangeArrayToDisplay);
-            }
-
             StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
             assert map != null;
-
-            imageDimension = map.getOutputSizes(SurfaceTexture.class)[4]; // TODO: should allow selecting resolution
+            imageDimension = map.getOutputSizes(SurfaceTexture.class)[indexOfCameraWithResolutionHD]; // TODO: should allow selecting resolution
             fps = 60; // TODO: should handle situations where no FPS 60 is available
-            fpsRange = new Range<>(fps,fps);
-            Log.d(TAG, "gait, imageDimensions: " + imageDimension.toString() + "| desiredFps = " + fpsRange);
-
+            fpsRange = new Range<>(fps,fps); // Determined through observation that, when the range is outside of what the camera can provide,
+                                             //  will automatically default to a lower fps (30 most likely) without crashing the app.
             mediaRecorder = new MediaRecorder();
 
             // Explicitly check user permissions
@@ -653,7 +638,6 @@ public class GaitVideoActivity extends AppCompatActivity {
         stopVideoRecordingButton.setEnabled(true);
         closePreview();
         try {
-
             setupMediaRecorder();
             Toast.makeText(GaitVideoActivity.this, "Recording " + simpleFilename, Toast.LENGTH_SHORT).show();
 
