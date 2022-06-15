@@ -202,6 +202,8 @@ public class EmgImuManager extends BleManager {
     private List<IEmgImuStreamDataCallback> emgStreamCbs = new ArrayList<>();
     // endregion
 
+    private int droppedSampledCounter = 0;
+
     // region Register/Unregister Callbacks Section
     public void registerEmgPwrCallback(IEmgImuPwrDataCallback callback)
     {
@@ -650,7 +652,8 @@ public class EmgImuManager extends BleManager {
 
             long counter_diff = counter - last_counter;
             if (counter_diff > 1) {
-                Log.d(TAG, this.name + " Missed sample " + counter + " " + last_counter);
+                droppedSampledCounter++;
+                Log.d(TAG, this.name + " Missed sample " + counter + " " + last_counter + " | Victor's counter: " + droppedSampledCounter);
             } else if (counter_diff < 0) {
                 Log.d(TAG, this.name + " Wraparound. " + this.alias + " " + counter);
                 this.delta = this.delta + this.alias / (sensor_Fs / samples) * 1000.0f;
