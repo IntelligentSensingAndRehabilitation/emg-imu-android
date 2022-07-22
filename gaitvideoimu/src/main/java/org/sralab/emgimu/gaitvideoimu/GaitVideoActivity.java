@@ -6,8 +6,11 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
+import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
@@ -67,7 +70,7 @@ import java.util.List;
 import java.util.Locale;
 import no.nordicsemi.android.nrftoolbox.widget.DividerItemDecoration;
 
-public class GaitVideoActivity extends AppCompatActivity {
+public class GaitVideoActivity extends AppCompatActivity implements DepthFrameVisualizer {
     private static final String TAG = GaitVideoActivity.class.getSimpleName();
     private Button startVideoRecordingButton;
     private Button stopVideoRecordingButton;
@@ -77,6 +80,58 @@ public class GaitVideoActivity extends AppCompatActivity {
     //region RecyclerView Fields
     private DeviceViewModel dvm;
     private StreamingAdapter streamingAdapter;
+
+    private Matrix defaultBitmapTransform;
+
+    private Matrix defaultBitmapTransform(TextureView view) {
+        if (defaultBitmapTransform == null || view.getWidth() == 0 || view.getHeight() == 0) {
+            Matrix matrix = new Matrix();
+            int centerX = view.getWidth() / 2;
+            int centerY = view.getHeight() / 2;
+
+            int bufferWidth = DepthFrameAvailableListener.WIDTH;
+            int bufferHeight = DepthFrameAvailableListener.HEIGHT;
+
+            RectF bufferRect = new RectF(0, 0, bufferWidth, bufferHeight);
+            RectF viewRect = new RectF(0, 0, view.getWidth(), view.getHeight());
+            matrix.setRectToRect(bufferRect, viewRect, Matrix.ScaleToFit.CENTER);
+            matrix.postRotate(270, centerX, centerY);
+
+            defaultBitmapTransform = matrix;
+        }
+        return defaultBitmapTransform;
+    }
+
+    /* We don't want a direct camera preview since we want to get the frames of data directly
+    from the camera and process.
+
+    This takes a converted bitmap and renders it onto the surface, with a basic rotation
+    applied. */
+    private void renderBitmapToTextureView(Bitmap bitmap, TextureView textureView) {
+        Canvas canvas = textureView.lockCanvas();
+        canvas.drawBitmap(bitmap, defaultBitmapTransform(textureView), null);
+        textureView.unlockCanvasAndPost(canvas);
+    }
+
+    @Override
+    public void onRawDataAvailable(Bitmap bitmap) {
+        renderBitmapToTextureView(bitmap, depthTextureView);
+    }
+
+    @Override
+    public void onNoiseReductionAvailable(Bitmap bitmap) {
+
+    }
+
+    @Override
+    public void onMovingAverageAvailable(Bitmap bitmap) {
+
+    }
+
+    @Override
+    public void onBlurredMovingAverageAvailable(Bitmap bitmap) {
+
+    }
     //endregion
 
     //region Firebase Fields & Nested Class
@@ -103,6 +158,8 @@ public class GaitVideoActivity extends AppCompatActivity {
     private long startRecordingTimestamp;           // after camera has been configured, when recording starts
     private Long exposureOfFirstFrameTimestamp;     // note: this includes the frames in the preview
     boolean isFirstFrameTimestampCollected = false; // flag to collect first frame only
+
+    DepthCamera depthCamera;
     //endregion
 
     //region Video Fields
@@ -124,6 +181,7 @@ public class GaitVideoActivity extends AppCompatActivity {
     private Handler backgroundHandler;
     private HandlerThread backgroundThread;
     private TextureView textureView;
+    private TextureView depthTextureView;
     private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
     static {
         ORIENTATIONS.append(Surface.ROTATION_0, 90);
@@ -167,6 +225,7 @@ public class GaitVideoActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_gait_video_imu);
         textureView = (TextureView) findViewById(R.id.texture);
+        depthTextureView = (TextureView) findViewById(R.id.depth_texture);
         assert textureView != null;
         textureView.setSurfaceTextureListener(textureListener);
         startVideoRecordingButton = (Button) findViewById(R.id.start_video_recording_button);
@@ -176,6 +235,8 @@ public class GaitVideoActivity extends AppCompatActivity {
         final RecyclerView recyclerView = findViewById(R.id.emg_list);
         recyclerView.setLayoutManager(new LinearLayoutManager(getBaseContext()));
         recyclerView.addItemDecoration(new DividerItemDecoration(getBaseContext(), DividerItemDecoration.VERTICAL_LIST));
+
+        depthCamera = new DepthCamera(this, this);
 
         enableFirebase();
 
@@ -203,7 +264,8 @@ public class GaitVideoActivity extends AppCompatActivity {
                 v -> {
                     clickButtonTimestamp = new Date().getTime();
                     ding.start();
-                    startVideoRecording();
+                    //startVideoRecording();
+                    depthCamera.openFrontDepthCamera();
                     running = true;
                     runTimer(true);
                 });
@@ -221,15 +283,9 @@ public class GaitVideoActivity extends AppCompatActivity {
             // Get the previous state of the stopwatch
             // if the activity has been
             // destroyed and recreated.
-            seconds
-                    = savedInstanceState
-                    .getInt("seconds");
-            running
-                    = savedInstanceState
-                    .getBoolean("running");
-            wasRunning
-                    = savedInstanceState
-                    .getBoolean("wasRunning");
+            seconds = savedInstanceState.getInt("seconds");
+            running = savedInstanceState.getBoolean("running");
+            wasRunning = savedInstanceState.getBoolean("wasRunning");
         }
 
         enableEmgPwrButton.setOnClickListener(v -> {
