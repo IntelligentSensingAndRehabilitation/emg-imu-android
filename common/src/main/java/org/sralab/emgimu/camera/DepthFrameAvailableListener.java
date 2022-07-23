@@ -29,12 +29,10 @@ public class DepthFrameAvailableListener implements ImageReader.OnImageAvailable
     public static int WIDTH = 320;
     public static int HEIGHT = 240;
 
-    private static float RANGE_MIN = 100.0f;
-    private static float RANGE_MAX = 5000.0f;
-    private static float CONFIDENCE_FILTER = 0.1f;
+    final private static float RANGE_MIN = 10.0f;
+    final private static float RANGE_MAX = 5000.0f;
 
     private Bitmap bitmap;
-    private int[] rawMask;
 
     private Surface listeningSurface = null;
     private Surface previewSurface = null;
@@ -75,10 +73,9 @@ public class DepthFrameAvailableListener implements ImageReader.OnImageAvailable
         }
         WIDTH = image.getWidth();
         HEIGHT = image.getHeight();
-        //Log.d(TAG, "Height: " + HEIGHT + " " + "Width: " + WIDTH);
+
         if (image != null && image.getFormat() == ImageFormat.DEPTH16) {
-            processImage(image);
-            bitmap = convertToRGBBitmap(rawMask);
+            bitmap = processImage(image);
             postToPreviewSurface();
             postToRecordingSurface();
             bitmap.recycle();
@@ -94,13 +91,12 @@ public class DepthFrameAvailableListener implements ImageReader.OnImageAvailable
 
         Rect src = new Rect(0, 0, WIDTH, HEIGHT);
         Rect dest = new Rect(0, 0, canvas.getWidth(), canvas.getHeight());
-        // canvas.drawBitmap(bitmap, defaultBitmapTransform(textureView), null);
-        //canvas.drawBitmap(bitmap, 0, 0, null);
+
         canvas.drawBitmap(bitmap, src, dest, null);
 
         previewSurface.unlockCanvasAndPost(canvas);
     }
-    
+
     private void postToRecordingSurface() {
         if (listeningSurface != null) {
 
@@ -116,9 +112,6 @@ public class DepthFrameAvailableListener implements ImageReader.OnImageAvailable
                     Log.d(TAG, "First timestamp: " + firstTimestamp);
                 }
 
-                Log.d(TAG, "Canvas width: " + canvas.getWidth() + ". Canvas height: " + canvas.getHeight());
-                Log.d(TAG, "Bitmap width: " + bitmap.getWidth() + ". Bitmap height: " + bitmap.getHeight());
-                //canvas.setBitmap(bitmap);
                 canvas.drawBitmap(bitmap, 0, 0, null);
                 listeningSurface.unlockCanvasAndPost(canvas);
                 Log.d(TAG, "Posted");
@@ -128,50 +121,26 @@ public class DepthFrameAvailableListener implements ImageReader.OnImageAvailable
         }
     }
 
-    private void processImage(Image image) {
+    private Bitmap processImage(Image image) {
         ShortBuffer shortDepthBuffer = image.getPlanes()[0].getBuffer().asShortBuffer();
-        for (int y = 0; y < HEIGHT; y++) {
-            for (int x = 0; x < WIDTH; x++) {
-                int index = y * WIDTH + x;
-                short depthSample = shortDepthBuffer.get(index);
-                int newValue = extractRange(depthSample, CONFIDENCE_FILTER);
-                // Store value in the rawMask for visualization
-                rawMask[index] = newValue;
-            }
-        }
-
-    }
-
-    private int extractRange(short sample, float confidenceFilter) {
-        int depthRange = (short) (sample & 0x1FFF);
-        int depthConfidence = (short) ((sample >> 13) & 0x7);
-        float depthPercentage = depthConfidence == 0 ? 1.f : (depthConfidence - 1) / 7.f;
-        if (depthPercentage > confidenceFilter) {
-            return normalizeRange(depthRange);
-        } else {
-            return 0;
-        }
-    }
-
-    private int normalizeRange(int range) {
-        float normalized = (float)range - RANGE_MIN;
-        // Clamp to min/max
-        normalized = Math.max(RANGE_MIN, normalized);
-        normalized = Math.min(RANGE_MAX, normalized);
-        // Normalize to 0 to 255
-        normalized = normalized - RANGE_MIN;
-        normalized = normalized / (RANGE_MAX - RANGE_MIN) * 255;
-        return (int)normalized;
-    }
-
-    private Bitmap convertToRGBBitmap(int[] mask) {
         Bitmap bitmap = Bitmap.createBitmap(WIDTH, HEIGHT, Bitmap.Config.ARGB_4444);
+
         for (int y = 0; y < HEIGHT; y++) {
             for (int x = 0; x < WIDTH; x++) {
                 int index = HEIGHT * WIDTH - (y * WIDTH + x) - 1;
-                bitmap.setPixel(x, y, Color.argb(255, 0, mask[index],0));
+                short depthSample = shortDepthBuffer.get(index);
+
+                int depthRange = (short) (depthSample & 0x1FFF);
+                int depthConfidence = (short) ((depthSample >> 13) & 0x7);
+
+                float normalized = depthRange;
+                normalized = Math.max(RANGE_MIN, normalized);
+                normalized = Math.min(RANGE_MAX, normalized);
+                normalized = (normalized - RANGE_MIN) / (RANGE_MAX - RANGE_MIN);
+                bitmap.setPixel(x, y, Color.argb(255, depthConfidence * 30, (int) (Math.sqrt(normalized) * 255), (int) (normalized * 255)));
             }
         }
+
         return bitmap;
     }
 }
