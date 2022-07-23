@@ -200,11 +200,13 @@ public class DepthCamera extends CameraDevice.StateCallback implements DepthFram
         imageAvailableListener.setListeningSurface(null);
         mediaRecorder.stop();
         mediaRecorder.reset();
+        cameraActivity.pushVideoFileToFirebase(currentFile, imageAvailableListener.getFirstTimestamp(),
+                imageAvailableListener.getFirstTimestamp(), true);
     }
 
     private void setupMediaRecorder() throws IOException {
         Log.d(TAG, "setupMediaRecorder");
-        //mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+        mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
         mediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
         mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
         mediaRecorder.setVideoSize(DepthFrameAvailableListener.WIDTH,
@@ -213,7 +215,7 @@ public class DepthCamera extends CameraDevice.StateCallback implements DepthFram
         Log.d(TAG, "FPS: " + fps);
         mediaRecorder.setVideoFrameRate(fps);
         mediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
-        //mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
+        mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
         mediaRecorder.setVideoEncodingBitRate(500_000);
 
         int rotation = context.getWindowManager().getDefaultDisplay().getRotation();

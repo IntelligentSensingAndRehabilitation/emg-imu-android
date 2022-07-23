@@ -279,7 +279,7 @@ public class Camera {
         mediaRecorder.stop();
         mediaRecorder.reset();
         createPreview();
-        activity.pushVideoFileToFirebase(currentFile, exposureOfFirstFrameTimestamp, startRecordingTimestamp);
+        activity.pushVideoFileToFirebase(currentFile, exposureOfFirstFrameTimestamp, startRecordingTimestamp, false);
     }
 
 

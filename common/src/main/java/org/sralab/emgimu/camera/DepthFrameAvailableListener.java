@@ -13,6 +13,7 @@ import android.util.Log;
 import android.view.Surface;
 
 import java.nio.ShortBuffer;
+import java.util.Date;
 
 
 public class DepthFrameAvailableListener implements ImageReader.OnImageAvailableListener {
@@ -31,9 +32,19 @@ public class DepthFrameAvailableListener implements ImageReader.OnImageAvailable
 
     public void setListeningSurface(Surface listeningSurface) {
         this.listeningSurface = listeningSurface;
+
+        // when starting a new recording grab first timestamp
+        if (listeningSurface != null)
+            firstTimestamp = null;
     }
 
     private Surface listeningSurface = null;
+
+    public Long getFirstTimestamp() {
+        return firstTimestamp;
+    }
+
+    private Long firstTimestamp = null;
 
     public DepthFrameAvailableListener(DepthFrameVisualizer depthFrameVisualizer) {
         this.depthFrameVisualizer = depthFrameVisualizer;
@@ -79,6 +90,12 @@ public class DepthFrameAvailableListener implements ImageReader.OnImageAvailable
                 Canvas canvas = listeningSurface.lockHardwareCanvas();
                 if (!canvas.isHardwareAccelerated()) {
                     Log.e(TAG, "No hardware accel");
+                }
+
+                // Store the first timestamp
+                if (firstTimestamp == null) {
+                    firstTimestamp = new Date().getTime();
+                    Log.d(TAG, "First timestamp: " + firstTimestamp);
                 }
 
                 Log.d(TAG, "Canvas width: " + canvas.getWidth() + ". Canvas height: " + canvas.getHeight());

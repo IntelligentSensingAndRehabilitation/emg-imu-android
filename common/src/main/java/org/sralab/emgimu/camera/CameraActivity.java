@@ -9,7 +9,7 @@ public interface CameraActivity {
     File createNewFile(String suffix);
     String getSimpleFilename(File currentFile);
     void showVideoStatus(String status, String color);
-    void pushVideoFileToFirebase(File currentFile, Long exposureOfFirstFrameTimestamp, Long startRecordingTimestamp);
+    void pushVideoFileToFirebase(File currentFile, Long exposureOfFirstFrameTimestamp, Long startRecordingTimestamp, boolean depth);
     Handler getBackgroundHandler();
     boolean checkPermissions();
     void startBackgroundThread();

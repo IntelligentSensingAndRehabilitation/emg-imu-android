@@ -72,6 +72,8 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraActivi
         public long cameraHardwareConfiguredStartRecordingTimestamp;
         public long userPressedStopVideoRecordingButtonTimestamp;
         public boolean isEmgEnabled;
+        public String depthFileName;
+        public long depthStartTime;
         private long exposureOfFirstFrameTimestamp;
     }
     ArrayList<GaitTrial> trials = new ArrayList<>();
@@ -181,8 +183,8 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraActivi
         stopVideoRecordingButton.setOnClickListener(
                 v -> {
                     punch.start();
-                    camera.stopVideoRecording();
                     depthCamera.stopVideoRecording();
+                    camera.stopVideoRecording();
                     stopVideoRecordingButton.setEnabled(false);
                     running = false;
                     seconds = 0;
@@ -357,26 +359,47 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraActivi
 
     private String setupFirebaseFile(String filename) {
         String uploadFileName =  "videos/" + mUser.getUid() + "/" + filename;
-        curTrial = new GaitTrial();
-        curTrial.fileName = uploadFileName;
-        curTrial.userPressedStartVideoRecordingButtonTimestamp = clickButtonTimestamp;
-        curTrial.systemCreatedFileTimestamp = createFileTimestamp;
-        curTrial.isEmgEnabled = isEmgEnabled;
-        trials.add(curTrial);
         return uploadFileName;
     }
 
-    public void pushVideoFileToFirebase(File currentFile, Long exposureOfFirstFrameTimestamp, Long startRecordingTimestamp) {
-        curTrial.exposureOfFirstFrameTimestamp = exposureOfFirstFrameTimestamp;
-        curTrial.cameraHardwareConfiguredStartRecordingTimestamp = startRecordingTimestamp;
-        curTrial.userPressedStopVideoRecordingButtonTimestamp = new Date().getTime();
+    public void pushVideoFileToFirebase(File currentFile, Long exposureOfFirstFrameTimestamp, Long startRecordingTimestamp, boolean depth) {
+
         String simpleFilename = getSimpleFilename(currentFile);
+        String firebaseUploadFileName = setupFirebaseFile(simpleFilename);
+
+        if (depth) {
+            curTrial.depthFileName = firebaseUploadFileName;
+            curTrial.depthStartTime = exposureOfFirstFrameTimestamp;
+        }
+        else {
+            curTrial.fileName = firebaseUploadFileName;
+
+            // Store lots of timestamps
+            curTrial.exposureOfFirstFrameTimestamp = exposureOfFirstFrameTimestamp;
+            curTrial.cameraHardwareConfiguredStartRecordingTimestamp = startRecordingTimestamp;
+            curTrial.userPressedStopVideoRecordingButtonTimestamp = new Date().getTime();
+            curTrial.userPressedStartVideoRecordingButtonTimestamp = clickButtonTimestamp;
+            curTrial.systemCreatedFileTimestamp = createFileTimestamp;
+
+            // TODO: this should probably be outside of this function
+            curTrial.isEmgEnabled = isEmgEnabled;
+
+            // Store trial
+            // Note: this presumes that the depth video is uploaded first!
+            trials.add(curTrial);
+        }
+
         updateLogger();
         showVideoStatus("Uploading "  + simpleFilename + "...", "red");
-        String firebaseUploadFileName = setupFirebaseFile(simpleFilename);
+
         StorageReference storageRef = storage.getReference().child(firebaseUploadFileName);
         storageRef.putFile(Uri.fromFile(currentFile))
-                .addOnFailureListener(e -> showVideoStatus("Upload "  + simpleFilename + " failed", "failed"))
+                .addOnFailureListener(e -> {
+                    showVideoStatus("Upload "  + simpleFilename + " failed", "failed");
+
+                    if (!depth)
+                        startVideoRecordingButton.setEnabled(true);
+                })
                 .addOnSuccessListener(taskSnapshot -> {
                     String fileSize = " " + String.valueOf(currentFile.length()/1024) + " KB";
                     Path path = Paths.get(String.valueOf(currentFile));
@@ -395,9 +418,12 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraActivi
                     showVideoStatus("Uploaded video: "  + simpleFilename + ", " + fileSize + " " + videoDuration, "green");
                     Log.d(TAG, "fileSize = " +fileSize);
                     Toast.makeText(GaitVideoActivity.this, "Upload "  + simpleFilename + " succeeded!", Toast.LENGTH_SHORT).show();
-                    clap.start();
-                    startVideoRecordingButton.setEnabled(true);
-                        });
+
+                    if (!depth) {
+                        clap.start();
+                        startVideoRecordingButton.setEnabled(true);
+                    }
+                });
 
     }
     //endregion
