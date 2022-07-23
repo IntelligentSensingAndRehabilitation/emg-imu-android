@@ -7,15 +7,22 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.ImageFormat;
+import android.graphics.Matrix;
+import android.graphics.Rect;
+import android.graphics.RectF;
 import android.media.Image;
 import android.media.ImageReader;
 import android.util.Log;
 import android.view.Surface;
+import android.view.TextureView;
 
 import java.nio.ShortBuffer;
 import java.util.Date;
 
-
+/**
+ * The camera outputs a DEPTH16 image which cannot be directly shown in
+ * a preview or written to disk. This class
+ */
 public class DepthFrameAvailableListener implements ImageReader.OnImageAvailableListener {
     private static final String TAG = DepthFrameAvailableListener.class.getSimpleName();
 
@@ -26,10 +33,19 @@ public class DepthFrameAvailableListener implements ImageReader.OnImageAvailable
     private static float RANGE_MAX = 5000.0f;
     private static float CONFIDENCE_FILTER = 0.1f;
 
-    private DepthFrameVisualizer depthFrameVisualizer;
     private Bitmap bitmap;
     private int[] rawMask;
 
+    private Surface listeningSurface = null;
+    private Surface previewSurface = null;
+    private Long firstTimestamp = null;
+
+    public DepthFrameAvailableListener() {
+        int size = WIDTH * HEIGHT;
+        rawMask = new int[size];
+    }
+
+    /* Gettors and settors */
     public void setListeningSurface(Surface listeningSurface) {
         this.listeningSurface = listeningSurface;
 
@@ -38,21 +54,15 @@ public class DepthFrameAvailableListener implements ImageReader.OnImageAvailable
             firstTimestamp = null;
     }
 
-    private Surface listeningSurface = null;
+    public void setPreviewSurface(Surface surface) {
+        previewSurface = surface;
+    }
 
     public Long getFirstTimestamp() {
         return firstTimestamp;
     }
 
-    private Long firstTimestamp = null;
-
-    public DepthFrameAvailableListener(DepthFrameVisualizer depthFrameVisualizer) {
-        this.depthFrameVisualizer = depthFrameVisualizer;
-
-        int size = WIDTH * HEIGHT;
-        rawMask = new int[size];
-    }
-
+    // Callback when new data available
     @Override
     public void onImageAvailable(ImageReader reader) {
         Image image;
@@ -69,21 +79,51 @@ public class DepthFrameAvailableListener implements ImageReader.OnImageAvailable
         if (image != null && image.getFormat() == ImageFormat.DEPTH16) {
             processImage(image);
             bitmap = convertToRGBBitmap(rawMask);
-            publishRawData();
-            postToSurface();
+            postToPreviewSurface();
+            postToRecordingSurface();
             bitmap.recycle();
         }
         image.close();
     }
 
-    private void publishRawData() {
-        if (depthFrameVisualizer != null) {
-            //Bitmap bitmap = convertToRGBBitmap(rawMask);
-            depthFrameVisualizer.onRawDataAvailable(bitmap);
-        }
+    private void postToPreviewSurface() {
+        if (previewSurface == null)
+            return;
+
+        Canvas canvas = previewSurface.lockHardwareCanvas();
+
+        Rect src = new Rect(0, 0, WIDTH, HEIGHT);
+        Rect dest = new Rect(0, 0, canvas.getWidth(), canvas.getHeight());
+        // canvas.drawBitmap(bitmap, defaultBitmapTransform(textureView), null);
+        //canvas.drawBitmap(bitmap, 0, 0, null);
+        canvas.drawBitmap(bitmap, src, dest, null);
+
+        previewSurface.unlockCanvasAndPost(canvas);
     }
 
-    private void postToSurface() {
+
+    private Matrix defaultBitmapTransform;
+
+    private Matrix defaultBitmapTransform(TextureView view) {
+        if (defaultBitmapTransform == null || view.getWidth() == 0 || view.getHeight() == 0) {
+            Matrix matrix = new Matrix();
+            int centerX = view.getWidth() / 2;
+            int centerY = view.getHeight() / 2;
+
+            int bufferWidth = DepthFrameAvailableListener.WIDTH;
+            int bufferHeight = DepthFrameAvailableListener.HEIGHT;
+
+            RectF bufferRect = new RectF(0, 0, bufferWidth, bufferHeight);
+            RectF viewRect = new RectF(0, 0, view.getWidth(), view.getHeight());
+            matrix.setRectToRect(bufferRect, viewRect, Matrix.ScaleToFit.CENTER);
+            matrix.postRotate(270, centerX, centerY);
+
+            defaultBitmapTransform = matrix;
+        }
+        return defaultBitmapTransform;
+    }
+
+    private void postToRecordingSurface() {
         if (listeningSurface != null) {
 
             if (listeningSurface.isValid()) {

@@ -12,6 +12,7 @@ import android.graphics.Canvas;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
 import android.graphics.RectF;
+import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
@@ -23,6 +24,7 @@ import android.media.ImageReader;
 import android.media.MediaRecorder;
 import android.util.Log;
 import android.util.Range;
+import android.util.Size;
 import android.util.SizeF;
 import android.util.SparseIntArray;
 import android.view.Surface;
@@ -36,7 +38,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
-public class DepthCamera extends CameraDevice.StateCallback implements DepthFrameVisualizer{
+public class DepthCamera extends CameraDevice.StateCallback {
     private static final String TAG = DepthCamera.class.getSimpleName();
 
     private static int FPS_MIN = 15;
@@ -46,10 +48,12 @@ public class DepthCamera extends CameraDevice.StateCallback implements DepthFram
     private CameraActivity cameraActivity;
     private CameraManager cameraManager;
     private CameraDevice cameraDevice;
+    protected CameraCharacteristics characteristics;
     private ImageReader previewReader;
     private CaptureRequest.Builder previewBuilder;
     private DepthFrameAvailableListener imageAvailableListener;
     private TextureView textureView;
+    private Surface previewSurface;
 
     private static final SparseIntArray ORIENTATIONS = new SparseIntArray() {{
         put(Surface.ROTATION_0, 270);
@@ -65,10 +69,11 @@ public class DepthCamera extends CameraDevice.StateCallback implements DepthFram
         this.context = context;
         this.textureView = textureView;
 
-        cameraActivity = (CameraActivity) context;
+        imageAvailableListener = new DepthFrameAvailableListener();
 
-        cameraManager = (CameraManager)context.getSystemService(Context.CAMERA_SERVICE);
-        imageAvailableListener = new DepthFrameAvailableListener(this);
+        cameraActivity = (CameraActivity) context;
+        cameraManager = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
+
         previewReader = ImageReader.newInstance(DepthFrameAvailableListener.WIDTH,
                 DepthFrameAvailableListener.HEIGHT, ImageFormat.DEPTH16,2);
         previewReader.setOnImageAvailableListener(imageAvailableListener, null);
@@ -76,22 +81,46 @@ public class DepthCamera extends CameraDevice.StateCallback implements DepthFram
 
     // Open the front depth camera and start sending frames
     public void openFrontDepthCamera() {
-        final String cameraId = getFrontDepthCameraID();
-        Log.d(TAG, "Depth camera: " + cameraId);
-        openCamera(cameraId);
+
+        textureView.setSurfaceTextureListener(new TextureView.SurfaceTextureListener() {
+            @Override
+            public void onSurfaceTextureAvailable(@NonNull SurfaceTexture surfaceTexture, int i, int i1) {
+                final String cameraId = getFrontDepthCameraID();
+                Log.d(TAG, "Depth camera: " + cameraId);
+                openCamera(cameraId);
+
+                previewSurface = new Surface(surfaceTexture);
+                imageAvailableListener.setPreviewSurface(previewSurface);
+            }
+
+            @Override
+            public void onSurfaceTextureSizeChanged(@NonNull SurfaceTexture surfaceTexture, int i, int i1) {
+
+            }
+
+            @Override
+            public boolean onSurfaceTextureDestroyed(@NonNull SurfaceTexture surfaceTexture) {
+                return false;
+            }
+
+            @Override
+            public void onSurfaceTextureUpdated(@NonNull SurfaceTexture surfaceTexture) {
+
+            }
+        });
     }
 
     public void closeCamera() {
         cameraDevice.close();
     }
 
-    private String getFrontDepthCameraID() {
+    public String getFrontDepthCameraID() {
         try {
             for (String camera : cameraManager.getCameraIdList()) {
-                CameraCharacteristics chars = cameraManager.getCameraCharacteristics(camera);
-                final int[] capabilities = chars.get(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES);
+                characteristics = cameraManager.getCameraCharacteristics(camera);
+                final int[] capabilities = characteristics.get(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES);
                 Log.d(TAG, "Capabilities: " + Arrays.toString(capabilities));
-                boolean facingBack = chars.get(CameraCharacteristics.LENS_FACING) == CameraMetadata.LENS_FACING_BACK;
+                boolean facingBack = characteristics.get(CameraCharacteristics.LENS_FACING) == CameraMetadata.LENS_FACING_BACK;
                 boolean depthCapable = false;
                 for (int capability : capabilities) {
                     boolean capable = capability == CameraMetadata.REQUEST_AVAILABLE_CAPABILITIES_DEPTH_OUTPUT;
@@ -99,12 +128,12 @@ public class DepthCamera extends CameraDevice.StateCallback implements DepthFram
                 }
                 if (depthCapable && facingBack) {
                     // Note that the sensor size is much larger than the available capture size
-                    SizeF sensorSize = chars.get(CameraCharacteristics.SENSOR_INFO_PHYSICAL_SIZE);
+                    SizeF sensorSize = characteristics.get(CameraCharacteristics.SENSOR_INFO_PHYSICAL_SIZE);
                     Log.i(TAG, "Sensor size: " + sensorSize);
 
                     // Since sensor size doesn't actually match capture size and because it is
                     // reporting an extremely wide aspect ratio, this FoV is bogus
-                    float[] focalLengths = chars.get(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS);
+                    float[] focalLengths = characteristics.get(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS);
                     if (focalLengths.length > 0) {
                         float focalLength = focalLengths[0];
                         double fov = 2 * Math.atan(sensorSize.getWidth() / (2 * focalLength));
@@ -140,6 +169,14 @@ public class DepthCamera extends CameraDevice.StateCallback implements DepthFram
     @Override
     public void onOpened(@NonNull CameraDevice camera) {
         cameraDevice = camera;
+
+        Matrix transform1 = computeTransformationMatrix(textureView, characteristics,
+                new Size(320, 240), Surface.ROTATION_90);
+        Matrix transform2 = defaultBitmapTransform(textureView);
+
+        Log.d(TAG, "Matrix: " + transform1 + " Matrix: " + transform2);
+        textureView.setTransform(transform1);
+
         try {
             previewBuilder = camera.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
             previewBuilder.set(CaptureRequest.JPEG_ORIENTATION, 0);
@@ -230,42 +267,117 @@ public class DepthCamera extends CameraDevice.StateCallback implements DepthFram
         mediaRecorder.start();
     }
 
+    /**
+     * Computes rotation required to transform the camera sensor output orientation to the
+     * device's current orientation in degrees.
+     *
+     * @param characteristics The CameraCharacteristics to query for the sensor orientation.
+     * @param surfaceRotationDegrees The current device orientation as a Surface constant.
+     * @return Relative rotation of the camera sensor output.
+     */
+    public int computeRelativeRotation(CameraCharacteristics characteristics, int surfaceRotationDegrees) {
+        Integer sensorOrientationDegrees = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
 
-    private Matrix defaultBitmapTransform;
+        // Reverse device orientation for back-facing cameras.
+        int sign = characteristics.get(CameraCharacteristics.LENS_FACING) == CameraCharacteristics.LENS_FACING_FRONT ? 1 : -1;
+
+        // Calculate desired orientation relative to camera orientation to make
+        // the image upright relative to the device orientation.
+        return (sensorOrientationDegrees - surfaceRotationDegrees * sign + 360) % 360;
+    }
+
+    /**
+     * This method calculates the transformation matrix that we need to apply to the
+     * TextureView to avoid a distorted preview.
+     */
+    public Matrix computeTransformationMatrix(
+            TextureView textureView,
+            CameraCharacteristics characteristics,
+            Size previewSize,
+            int surfaceRotation
+    ) {
+        Matrix matrix = new Matrix();
+
+        int surfaceRotationDegrees;
+
+        switch (surfaceRotation) {
+            case Surface.ROTATION_90:
+                surfaceRotationDegrees = 90;
+                break;
+            case Surface.ROTATION_180:
+                surfaceRotationDegrees = 180;
+                break;
+            case Surface.ROTATION_270:
+                surfaceRotationDegrees = 270;
+                break;
+            default:
+                surfaceRotationDegrees = 0;
+        }
+
+        /* Rotation required to transform from the camera sensor orientation to the
+         * device's current orientation in degrees. */
+        int relativeRotation = computeRelativeRotation(characteristics, surfaceRotationDegrees);
+        relativeRotation = 180;
+
+        Log.d(TAG, "Matrix calc. Preview size: " + previewSize + " relativeRotation: " +
+                relativeRotation + " surfaceRotationDegrees: " + surfaceRotationDegrees +
+                " textureView: " + textureView.getWidth() + " " +
+                textureView.getHeight() );
+
+        /* Scale factor required to scale the preview to its original size on the x-axis. */
+        float scaleX = (relativeRotation % 180 == 0)
+                ? (float) textureView.getWidth() / previewSize.getWidth()
+                : (float) textureView.getWidth() / previewSize.getHeight();
+
+        /* Scale factor required to scale the preview to its original size on the y-axis. */
+        float scaleY = (relativeRotation % 180 == 0)
+                ? (float) textureView.getHeight() / previewSize.getHeight()
+                : (float) textureView.getHeight() / previewSize.getWidth();
+
+        /* Scale factor required to fit the preview to the TextureView size. */
+        float finalScale = Math.min(scaleX, scaleY);
+
+        /* The scale will be different if the buffer has been rotated. */
+        if (relativeRotation % 180 == 0) {
+            matrix.setScale(
+                    textureView.getHeight() / (float) textureView.getWidth() / scaleY * finalScale,
+                    textureView.getWidth() / (float) textureView.getHeight() / scaleX * finalScale,
+                    textureView.getWidth() / 2f,
+                    textureView.getHeight() / 2f
+            );
+        } else {
+            matrix.setScale(
+                    1 / scaleX * finalScale,
+                    1 / scaleY * finalScale,
+                    textureView.getWidth() / 2f,
+                    textureView.getHeight() / 2f
+            );
+        }
+
+        // Rotate the TextureView to compensate for the Surface's rotation.
+        matrix.postRotate(
+                (float) -surfaceRotationDegrees,
+                textureView.getWidth() / 2f,
+                textureView.getHeight() / 2f
+        );
+
+        return matrix;
+    }
 
     private Matrix defaultBitmapTransform(TextureView view) {
-        if (defaultBitmapTransform == null || view.getWidth() == 0 || view.getHeight() == 0) {
-            Matrix matrix = new Matrix();
-            int centerX = view.getWidth() / 2;
-            int centerY = view.getHeight() / 2;
 
-            int bufferWidth = DepthFrameAvailableListener.WIDTH;
-            int bufferHeight = DepthFrameAvailableListener.HEIGHT;
+        Matrix matrix = new Matrix();
+        int centerX = view.getWidth() / 2;
+        int centerY = view.getHeight() / 2;
 
-            RectF bufferRect = new RectF(0, 0, bufferWidth, bufferHeight);
-            RectF viewRect = new RectF(0, 0, view.getWidth(), view.getHeight());
-            matrix.setRectToRect(bufferRect, viewRect, Matrix.ScaleToFit.CENTER);
-            matrix.postRotate(270, centerX, centerY);
+        int bufferWidth = DepthFrameAvailableListener.WIDTH;
+        int bufferHeight = DepthFrameAvailableListener.HEIGHT;
 
-            defaultBitmapTransform = matrix;
-        }
-        return defaultBitmapTransform;
+        RectF bufferRect = new RectF(0, 0, bufferWidth, bufferHeight);
+        RectF viewRect = new RectF(0, 0, view.getWidth(), view.getHeight());
+        matrix.setRectToRect(bufferRect, viewRect, Matrix.ScaleToFit.CENTER);
+        matrix.postRotate(270, centerX, centerY);
+
+        return matrix;
     }
-
-    /* We don't want a direct camera preview since we want to get the frames of data directly
-    from the camera and process.
-
-    This takes a converted bitmap and renders it onto the surface, with a basic rotation
-    applied. */
-    private void renderBitmapToTextureView(Bitmap bitmap, TextureView textureView) {
-        Canvas canvas = textureView.lockCanvas();
-        canvas.drawBitmap(bitmap, defaultBitmapTransform(textureView), null);
-        textureView.unlockCanvasAndPost(canvas);
-    }
-
-    @Override
-    public void onRawDataAvailable(Bitmap bitmap) {
-        renderBitmapToTextureView(bitmap, textureView);
-    }
-
 }

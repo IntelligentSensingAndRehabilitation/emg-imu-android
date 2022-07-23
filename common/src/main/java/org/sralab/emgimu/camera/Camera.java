@@ -76,6 +76,7 @@ public class Camera {
         this.textureView = textureView;
     }
 
+    // Callbacks for opening the camera
     CameraDevice.StateCallback openStateCallback = new CameraDevice.StateCallback() {
         @Override
         public void onOpened(@NonNull CameraDevice _cameraDevice) {
@@ -93,30 +94,31 @@ public class Camera {
 
         @Override
         public void onError(@NonNull CameraDevice _cameraDevice, int i) {
-            Log.d(TAG, "openStateCallback.onError");
+            String error = "";
             switch (i) {
                 case CameraDevice.StateCallback.ERROR_CAMERA_DEVICE:
-                    Log.e(TAG, "ERROR_CAMERA_DEVICE");
+                    error = "ERROR_CAMERA_DEVICE";
                     break;
                 case CameraDevice.StateCallback.ERROR_CAMERA_DISABLED:
-                    Log.e(TAG, "ERROR_CAMERA_DISABLED");
+                    error = "ERROR_CAMERA_DISABLED";
                     break;
                 case CameraDevice.StateCallback.ERROR_CAMERA_IN_USE:
-                    Log.e(TAG, "ERROR_CAMERA_IN_USE");
+                    error = "ERROR_CAMERA_IN_USE";
                     break;
                 case CameraDevice.StateCallback.ERROR_CAMERA_SERVICE:
-                    Log.e(TAG, "ERROR_CAMERA_SERVICE");
+                    error = "ERROR_CAMERA_SERVICE";
                     break;
                 case CameraDevice.StateCallback.ERROR_MAX_CAMERAS_IN_USE:
-                    Log.e(TAG, "ERROR_MAX_CAMERAS_IN_USE");
+                    error = "ERROR_MAX_CAMERAS_IN_USE";
                     break;
             }
 
             cameraDevice.close();
             cameraDevice = null;
+
+            throw new RuntimeException("openStateCallback.onError: " + error);
         }
     };
-    //endregion
 
     /**
      * @brief Instantiates video stream for user to view inside the application.

@@ -138,7 +138,12 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraActivi
         recyclerView.addItemDecoration(new DividerItemDecoration(getBaseContext(), DividerItemDecoration.VERTICAL_LIST));
 
         depthCamera = new DepthCamera(this, depthTextureView);
-        depthCamera.openFrontDepthCamera();
+        if (depthCamera.getFrontDepthCameraID() == null) {
+            depthTextureView.setVisibility(View.GONE);
+            depthCamera = null;
+        } else {
+            depthCamera.openFrontDepthCamera();
+        }
 
         // Set up the camera. When the texture is ready the camera is opened.
         camera = new Camera(this, this, textureView);
@@ -173,7 +178,8 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraActivi
                     curTrial = new GaitTrial();
 
                     camera.startVideoRecording();
-                    depthCamera.startVideoRecording();
+                    if (depthCamera != null)
+                        depthCamera.startVideoRecording();
 
                     startVideoRecordingButton.setEnabled(false);
                     stopVideoRecordingButton.setEnabled(true);
@@ -183,7 +189,8 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraActivi
         stopVideoRecordingButton.setOnClickListener(
                 v -> {
                     punch.start();
-                    depthCamera.stopVideoRecording();
+                    if (depthCamera != null)
+                        depthCamera.stopVideoRecording();
                     camera.stopVideoRecording();
                     stopVideoRecordingButton.setEnabled(false);
                     running = false;
@@ -217,7 +224,8 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraActivi
         updateLogger();
         dvm.onPause();
         camera.closeCamera();
-        depthCamera.closeCamera();
+        if (depthCamera != null)
+            depthCamera.closeCamera();
         stopBackgroundThread();
 
         // If the activity is paused,
@@ -264,7 +272,8 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraActivi
         @Override
         public void onSurfaceTextureAvailable(@NonNull SurfaceTexture surface, int width, int height) {
             Log.d(TAG, "Surface dimensions: " + width + " " + height);
-            camera.openCamera(new Size(1920, 1080), 30);
+            //camera.openCamera(new Size(1920, 1080), 60);
+            camera.openCamera(new Size(3840, 2160), 60);
         }
 
         @Override
