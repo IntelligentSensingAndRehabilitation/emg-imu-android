@@ -2,6 +2,8 @@ package org.sralab.emgimu.camera;
 
 import static android.hardware.camera2.CameraDevice.TEMPLATE_RECORD;
 
+import static org.sralab.emgimu.camera.CameraUtils.computeTransformationMatrix;
+
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Matrix;
@@ -39,9 +41,9 @@ public class Camera {
 
     private static final String TAG = Camera.class.getSimpleName() + "Recording";
 
-    protected Activity context;
+    protected Context context;
     protected TextureView textureView;
-    protected CameraActivity activity;
+    protected CameraCallbacks callbacks;
 
     protected MediaRecorder mediaRecorder;
     protected CameraDevice cameraDevice;
@@ -70,9 +72,9 @@ public class Camera {
         put((int) CameraCharacteristics.LENS_FACING_EXTERNAL,"External");
     }};
 
-    public Camera(Activity context, CameraActivity activity, TextureView textureView) {
+    public Camera(Context context, CameraCallbacks callbacks, TextureView textureView) {
         this.context = context;
-        this.activity = activity;
+        this.callbacks = callbacks;
         this.textureView = textureView;
     }
 
@@ -127,9 +129,9 @@ public class Camera {
         SurfaceTexture texture = textureView.getSurfaceTexture();
         assert texture != null;
 
-        int rotation = context.getWindowManager().getDefaultDisplay().getRotation();
+        int rotation = callbacks.getDisplayRotation();
         Matrix transform = computeTransformationMatrix(textureView, characteristics,
-                imageDimension, rotation);
+                imageDimension, rotation, 0);
         textureView.setTransform(transform);
 
         Surface previewSurface = new Surface(texture);
@@ -152,7 +154,7 @@ public class Camera {
                                 super.onCaptureStarted(session, request, timestamp, frameNumber);
                                 exposureOfFirstFrameTimestamp = null;
                             }
-                        }, activity.getBackgroundHandler());
+                        }, callbacks.getBackgroundHandler());
                     } catch (CameraAccessException e) {
                         Log.e(TAG, "cameraCaptureSession.setRepeatingRequest error");
                         e.printStackTrace();
@@ -163,7 +165,7 @@ public class Camera {
                 public void onConfigureFailed(@NonNull CameraCaptureSession captureSession) {
                     Log.e(TAG, "Configuration failed");
                 }
-            }, activity.getBackgroundHandler());
+            }, callbacks.getBackgroundHandler());
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
@@ -189,11 +191,11 @@ public class Camera {
         mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
         mediaRecorder.setVideoEncodingBitRate(10_000_000);
 
-        int rotation = context.getWindowManager().getDefaultDisplay().getRotation();
+        int rotation = callbacks.getDisplayRotation();
         mediaRecorder.setOrientationHint(ORIENTATIONS.get(rotation));
 
-        currentFile = activity.createNewFile("");
-        activity.showVideoStatus("Recording " + activity.getSimpleFilename(currentFile), "gray");
+        currentFile = callbacks.createNewFile("");
+        callbacks.showVideoStatus("Recording " + callbacks.getSimpleFilename(currentFile), "gray");
         mediaRecorder.setOutputFile(currentFile.getAbsolutePath());
 
         mediaRecorder.prepare();
@@ -204,7 +206,7 @@ public class Camera {
         closePreview();
         try {
             setupMediaRecorder();
-            Log.d(TAG, "Recording " + activity.getSimpleFilename(currentFile));
+            Log.d(TAG, "Recording " + callbacks.getSimpleFilename(currentFile));
 
             SurfaceTexture texture = textureView.getSurfaceTexture();
 
@@ -243,7 +245,7 @@ public class Camera {
                                             exposureOfFirstFrameTimestamp = new Date().getTime();
                                         }
                                     }
-                                }, activity.getBackgroundHandler());
+                                }, callbacks.getBackgroundHandler());
                         } catch (CameraAccessException e) {
                             throw new RuntimeException("Error configuring recording", e);
                         }
@@ -271,7 +273,7 @@ public class Camera {
     }
 
     public void stopVideoRecording() {
-        Log.d(TAG, "stopVideoRecording " + activity.getSimpleFilename(currentFile));
+        Log.d(TAG, "stopVideoRecording " + callbacks.getSimpleFilename(currentFile));
         try {
             cameraCaptureSession.stopRepeating();
             cameraCaptureSession.abortCaptures();
@@ -282,7 +284,7 @@ public class Camera {
         mediaRecorder.stop();
         mediaRecorder.reset();
         createPreview();
-        activity.pushVideoFileToFirebase(currentFile, exposureOfFirstFrameTimestamp, startRecordingTimestamp, false);
+        callbacks.pushVideoFileToFirebase(currentFile, exposureOfFirstFrameTimestamp, startRecordingTimestamp, false);
     }
 
 
@@ -405,12 +407,12 @@ public class Camera {
         mediaRecorder = new MediaRecorder();
 
         // Explicitly check user permissions
-        if (!activity.checkPermissions())
+        if (!callbacks.checkPermissions())
             return;
 
         try {
             characteristics = manager.getCameraCharacteristics(cameraId);
-            manager.openCamera(cameraId, openStateCallback, activity.getBackgroundHandler());
+            manager.openCamera(cameraId, openStateCallback, callbacks.getBackgroundHandler());
         } catch (CameraAccessException e) {
             throw new RuntimeException("Unable to access camera", e);
         }
@@ -432,97 +434,6 @@ public class Camera {
 
     private String lensOrientationMap(Integer integer) {
         return lensOrientationMap.get(integer);
-    }
-
-    /**
-     * Computes rotation required to transform the camera sensor output orientation to the
-     * device's current orientation in degrees.
-     *
-     * @param characteristics The CameraCharacteristics to query for the sensor orientation.
-     * @param surfaceRotationDegrees The current device orientation as a Surface constant.
-     * @return Relative rotation of the camera sensor output.
-     */
-    public int computeRelativeRotation(CameraCharacteristics characteristics, int surfaceRotationDegrees) {
-        Integer sensorOrientationDegrees = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
-
-        // Reverse device orientation for back-facing cameras.
-        int sign = characteristics.get(CameraCharacteristics.LENS_FACING) == CameraCharacteristics.LENS_FACING_FRONT ? 1 : -1;
-
-        // Calculate desired orientation relative to camera orientation to make
-        // the image upright relative to the device orientation.
-        return (sensorOrientationDegrees - surfaceRotationDegrees * sign + 360) % 360;
-    }
-
-    /**
-     * This method calculates the transformation matrix that we need to apply to the
-     * TextureView to avoid a distorted preview.
-     */
-    public Matrix computeTransformationMatrix(
-            TextureView textureView,
-            CameraCharacteristics characteristics,
-            Size previewSize,
-            int surfaceRotation
-    ) {
-        Matrix matrix = new Matrix();
-
-        int surfaceRotationDegrees;
-
-        switch (surfaceRotation) {
-            case Surface.ROTATION_90:
-                surfaceRotationDegrees = 90;
-                break;
-            case Surface.ROTATION_180:
-                surfaceRotationDegrees = 180;
-                break;
-            case Surface.ROTATION_270:
-                surfaceRotationDegrees = 270;
-                break;
-            default:
-                surfaceRotationDegrees = 0;
-        }
-
-        /* Rotation required to transform from the camera sensor orientation to the
-         * device's current orientation in degrees. */
-        int relativeRotation = computeRelativeRotation(characteristics, surfaceRotationDegrees);
-
-        /* Scale factor required to scale the preview to its original size on the x-axis. */
-        float scaleX = (relativeRotation % 180 == 0)
-                ? (float) textureView.getWidth() / previewSize.getWidth()
-                : (float) textureView.getWidth() / previewSize.getHeight();
-
-        /* Scale factor required to scale the preview to its original size on the y-axis. */
-        float scaleY = (relativeRotation % 180 == 0)
-                ? (float) textureView.getHeight() / previewSize.getHeight()
-                : (float) textureView.getHeight() / previewSize.getWidth();
-
-        /* Scale factor required to fit the preview to the TextureView size. */
-        float finalScale = Math.min(scaleX, scaleY);
-
-        /* The scale will be different if the buffer has been rotated. */
-        if (relativeRotation % 180 == 0) {
-            matrix.setScale(
-                    textureView.getHeight() / (float) textureView.getWidth() / scaleY * finalScale,
-                    textureView.getWidth() / (float) textureView.getHeight() / scaleX * finalScale,
-                    textureView.getWidth() / 2f,
-                    textureView.getHeight() / 2f
-            );
-        } else {
-            matrix.setScale(
-                    1 / scaleX * finalScale,
-                    1 / scaleY * finalScale,
-                    textureView.getWidth() / 2f,
-                    textureView.getHeight() / 2f
-            );
-        }
-
-        // Rotate the TextureView to compensate for the Surface's rotation.
-        matrix.postRotate(
-                (float) -surfaceRotationDegrees,
-                textureView.getWidth() / 2f,
-                textureView.getHeight() / 2f
-        );
-
-        return matrix;
     }
 
 }

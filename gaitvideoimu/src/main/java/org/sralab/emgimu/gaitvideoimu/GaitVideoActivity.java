@@ -9,6 +9,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.os.Looper;
 import android.os.RemoteException;
 import android.util.Log;
 import android.util.Size;
@@ -32,7 +33,7 @@ import com.google.firebase.storage.StorageReference;
 import com.google.gson.Gson;
 
 import org.jetbrains.annotations.NotNull;
-import org.sralab.emgimu.camera.CameraActivity;
+import org.sralab.emgimu.camera.CameraCallbacks;
 import org.sralab.emgimu.camera.DepthCamera;
 import org.sralab.emgimu.gaitvideoimu.stream_visualization.DeviceViewModel;
 import org.sralab.emgimu.gaitvideoimu.stream_visualization.StreamingAdapter;
@@ -47,11 +48,10 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Locale;
 import no.nordicsemi.android.nrftoolbox.widget.DividerItemDecoration;
 
-public class GaitVideoActivity extends AppCompatActivity implements CameraActivity {
+public class GaitVideoActivity extends AppCompatActivity implements CameraCallbacks {
     private static final String TAG = GaitVideoActivity.class.getSimpleName();
 
     Camera camera;
@@ -60,11 +60,11 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraActivi
     private Button stopVideoRecordingButton;
     private Button enableEmgPwrButton;
 
-    //region RecyclerView Fields
+    // RecyclerView Fields
     private DeviceViewModel dvm;
     private StreamingAdapter streamingAdapter;
 
-    //region Firebase Fields & Nested Class
+    //Firebase Fields & Nested Class
     class GaitTrial {
         public String fileName;
         public long userPressedStartVideoRecordingButtonTimestamp;
@@ -133,7 +133,7 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraActivi
         recyclerView.setLayoutManager(new LinearLayoutManager(getBaseContext()));
         recyclerView.addItemDecoration(new DividerItemDecoration(getBaseContext(), DividerItemDecoration.VERTICAL_LIST));
 
-        depthCamera = new DepthCamera(this, depthTextureView);
+        depthCamera = new DepthCamera(this, this, depthTextureView);
         if (depthCamera.getFrontDepthCameraID() == null) {
             depthTextureView.setVisibility(View.GONE);
             depthCamera = null;
@@ -431,10 +431,8 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraActivi
                 });
 
     }
-    //endregion
 
-    //region Internal File Storage
-
+    // Internal File Storage
     public File createNewFile(String suffix) {
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss",
                 Locale.getDefault()).format(new Date());
@@ -453,9 +451,7 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraActivi
         String filename = temp[temp.length - 1];
         return filename;
     }
-    //endregion
 
-    //region Stop Watch
     // Save the state of the stopwatch
     // if it's about to be destroyed.
     @Override
@@ -474,9 +470,7 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraActivi
     {
 
         // Get the text view.
-        final TextView timeView
-                = (TextView)findViewById(
-                R.id.time_view);
+        final TextView timeView = (TextView)findViewById(R.id.time_view);
 
         if (isTimerVisible) {
             timeView.setVisibility(View.VISIBLE);
@@ -487,17 +481,14 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraActivi
         }
 
         // Creates a new Handler
-        final Handler handler = new Handler();
+        final Handler handler = new Handler(Looper.getMainLooper());
 
-        // Call the post() method,
-        // passing in a new Runnable.
-        // The post() method processes
-        // code without a delay,
-        // so the code in the Runnable
-        // will run almost immediately.
+        // Call the post() method, passing in a new Runnable.
+        // The post() method processes code without a delay,
+        // so the code in the Runnable will run almost immediately.
         handler.post(new Runnable() {
-            @Override
 
+            @Override
             public void run()
             {
                 int hours = seconds / 3600;
@@ -506,17 +497,13 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraActivi
 
                 // Format the seconds into hours, minutes,
                 // and seconds.
-                String time
-                        = String
-                        .format(Locale.getDefault(),
-                                "%02d:%02d:%02d", hours,
-                                minutes, secs);
+                String time = String.format(Locale.getDefault(),"%02d:%02d:%02d",
+                        hours, minutes, secs);
 
                 // Set the text view text.
                 timeView.setText(time);
 
-                // If running is true, increment the
-                // seconds variable.
+                // If running is true, increment the seconds variable.
                 if (running) {
                     if (minutes > 0) {
                         videoDuration = ", " + String
@@ -533,7 +520,6 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraActivi
             }
         });
     }
-    //endregion
 
    public boolean checkPermissions() {
        // Explicitly check user permissions
@@ -549,6 +535,11 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraActivi
        }
        return true;
    }
+
+    @Override
+    public int getDisplayRotation() {
+        return getDisplay().getRotation();
+    }
 
     /**
      * Enables emgPwr streaming - assumes that it is initially disabled. Note: once

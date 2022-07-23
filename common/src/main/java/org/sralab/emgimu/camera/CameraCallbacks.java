@@ -4,7 +4,7 @@ import android.os.Handler;
 
 import java.io.File;
 
-public interface CameraActivity {
+public interface CameraCallbacks {
 
     File createNewFile(String suffix);
     String getSimpleFilename(File currentFile);
@@ -12,5 +12,5 @@ public interface CameraActivity {
     void pushVideoFileToFirebase(File currentFile, Long exposureOfFirstFrameTimestamp, Long startRecordingTimestamp, boolean depth);
     Handler getBackgroundHandler();
     boolean checkPermissions();
-    void startBackgroundThread();
+    int getDisplayRotation();
 }
