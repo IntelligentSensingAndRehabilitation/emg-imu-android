@@ -127,7 +127,9 @@ public class Camera {
         SurfaceTexture texture = textureView.getSurfaceTexture();
         assert texture != null;
 
-        Matrix transform = computeTransformationMatrix(textureView, characteristics, new Size(textureView.getWidth(), textureView.getHeight()), 0);
+        int rotation = context.getWindowManager().getDefaultDisplay().getRotation();
+        Matrix transform = computeTransformationMatrix(textureView, characteristics,
+                imageDimension, rotation);
         textureView.setTransform(transform);
 
         Surface previewSurface = new Surface(texture);

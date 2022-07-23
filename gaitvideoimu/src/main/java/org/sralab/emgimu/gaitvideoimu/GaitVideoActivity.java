@@ -117,10 +117,6 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraActivi
 
     private Boolean isEmgEnabled = false;
 
-    //region Internal Log File Fields
-    List<String> uploadedVideos = new ArrayList<>();
-
-
     //region Activity Lifecycle Methods
     @Override
     protected void onCreate(Bundle savedInstanceState) {

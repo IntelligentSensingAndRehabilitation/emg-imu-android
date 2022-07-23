@@ -16,7 +16,6 @@
         android:theme="@style/Theme.Android">
         <activity
             android:name=".GaitVideoActivity"
-            android:screenOrientation="portrait"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

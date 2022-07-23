@@ -170,8 +170,9 @@ public class DepthCamera extends CameraDevice.StateCallback {
     public void onOpened(@NonNull CameraDevice camera) {
         cameraDevice = camera;
 
+        int rotation = context.getWindowManager().getDefaultDisplay().getRotation();
         Matrix transform1 = computeTransformationMatrix(textureView, characteristics,
-                new Size(320, 240), Surface.ROTATION_90);
+                new Size(DepthFrameAvailableListener.HEIGHT, DepthFrameAvailableListener.WIDTH), rotation);
         Matrix transform2 = defaultBitmapTransform(textureView);
 
         Log.d(TAG, "Matrix: " + transform1 + " Matrix: " + transform2);
@@ -256,6 +257,7 @@ public class DepthCamera extends CameraDevice.StateCallback {
         mediaRecorder.setVideoEncodingBitRate(500_000);
 
         int rotation = context.getWindowManager().getDefaultDisplay().getRotation();
+        Log.d(TAG, "Video rotation: " + rotation);
         mediaRecorder.setOrientationHint(ORIENTATIONS.get(rotation));
 
         currentFile = cameraActivity.createNewFile("_depth");
@@ -300,18 +302,19 @@ public class DepthCamera extends CameraDevice.StateCallback {
 
         int surfaceRotationDegrees;
 
+        // Adding fixed offset to rotations, which seems to be required for depth sensor
         switch (surfaceRotation) {
             case Surface.ROTATION_90:
-                surfaceRotationDegrees = 90;
-                break;
-            case Surface.ROTATION_180:
                 surfaceRotationDegrees = 180;
                 break;
-            case Surface.ROTATION_270:
+            case Surface.ROTATION_180:
                 surfaceRotationDegrees = 270;
                 break;
-            default:
+            case Surface.ROTATION_270:
                 surfaceRotationDegrees = 0;
+                break;
+            default:
+                surfaceRotationDegrees = 90;
         }
 
         /* Rotation required to transform from the camera sensor orientation to the

@@ -100,29 +100,7 @@ public class DepthFrameAvailableListener implements ImageReader.OnImageAvailable
 
         previewSurface.unlockCanvasAndPost(canvas);
     }
-
-
-    private Matrix defaultBitmapTransform;
-
-    private Matrix defaultBitmapTransform(TextureView view) {
-        if (defaultBitmapTransform == null || view.getWidth() == 0 || view.getHeight() == 0) {
-            Matrix matrix = new Matrix();
-            int centerX = view.getWidth() / 2;
-            int centerY = view.getHeight() / 2;
-
-            int bufferWidth = DepthFrameAvailableListener.WIDTH;
-            int bufferHeight = DepthFrameAvailableListener.HEIGHT;
-
-            RectF bufferRect = new RectF(0, 0, bufferWidth, bufferHeight);
-            RectF viewRect = new RectF(0, 0, view.getWidth(), view.getHeight());
-            matrix.setRectToRect(bufferRect, viewRect, Matrix.ScaleToFit.CENTER);
-            matrix.postRotate(270, centerX, centerY);
-
-            defaultBitmapTransform = matrix;
-        }
-        return defaultBitmapTransform;
-    }
-
+    
     private void postToRecordingSurface() {
         if (listeningSurface != null) {
 
