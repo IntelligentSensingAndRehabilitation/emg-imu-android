@@ -7,14 +7,11 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.ImageFormat;
-import android.graphics.Matrix;
 import android.graphics.Rect;
-import android.graphics.RectF;
 import android.media.Image;
 import android.media.ImageReader;
 import android.util.Log;
 import android.view.Surface;
-import android.view.TextureView;
 
 import java.nio.ShortBuffer;
 import java.util.Date;
@@ -39,8 +36,6 @@ public class DepthFrameAvailableListener implements ImageReader.OnImageAvailable
     private Long firstTimestamp = null;
 
     public DepthFrameAvailableListener() {
-        int size = WIDTH * HEIGHT;
-        rawMask = new int[size];
     }
 
     /* Gettors and settors */
@@ -98,27 +93,27 @@ public class DepthFrameAvailableListener implements ImageReader.OnImageAvailable
     }
 
     private void postToRecordingSurface() {
-        if (listeningSurface != null) {
+        if (listeningSurface == null)
+            return;
 
-            if (listeningSurface.isValid()) {
-                Canvas canvas = listeningSurface.lockHardwareCanvas();
-                if (!canvas.isHardwareAccelerated()) {
-                    Log.e(TAG, "No hardware accel");
-                }
-
-                // Store the first timestamp
-                if (firstTimestamp == null) {
-                    firstTimestamp = new Date().getTime();
-                    Log.d(TAG, "First timestamp: " + firstTimestamp);
-                }
-
-                canvas.drawBitmap(bitmap, 0, 0, null);
-                listeningSurface.unlockCanvasAndPost(canvas);
-                Log.d(TAG, "Posted");
-            } else {
-                Log.e(TAG, "Invalid listening surface");
-            }
+        if (!listeningSurface.isValid()) {
+            Log.e(TAG, "Invalid listening surface");
+            return;
         }
+
+        Canvas canvas = listeningSurface.lockHardwareCanvas();
+        if (!canvas.isHardwareAccelerated()) {
+            Log.e(TAG, "No hardware accel");
+        }
+
+        // Store the first timestamp
+        if (firstTimestamp == null) {
+            firstTimestamp = new Date().getTime();
+            Log.d(TAG, "First timestamp: " + firstTimestamp);
+        }
+
+        canvas.drawBitmap(bitmap, 0, 0, null);
+        listeningSurface.unlockCanvasAndPost(canvas);
     }
 
     private Bitmap processImage(Image image) {
