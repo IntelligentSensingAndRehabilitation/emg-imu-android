@@ -20,6 +20,7 @@ import android.media.MediaRecorder;
 import android.util.Log;
 import android.util.Range;
 import android.util.Size;
+import android.util.SizeF;
 import android.util.SparseIntArray;
 import android.view.Surface;
 import android.view.TextureView;
@@ -54,7 +55,6 @@ public class Camera {
     protected File currentFile;
     protected Size imageDimension;
     protected int fps;
-    protected Range<Integer> fpsRange;
 
     private static final SparseIntArray ORIENTATIONS = new SparseIntArray() {{
         put(Surface.ROTATION_0, 90);
@@ -179,7 +179,7 @@ public class Camera {
         mediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
         mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
         mediaRecorder.setVideoSize(imageDimension.getWidth(), imageDimension.getHeight()); // absolutely necessary
-        Log.d(TAG, "FPS: " + fps);
+        Log.d(TAG, "FPS: " + fps + " Resolution: " + imageDimension) ;
         mediaRecorder.setVideoFrameRate(fps);
         mediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
         mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
@@ -207,7 +207,7 @@ public class Camera {
             captureRequestBuilder = cameraDevice.createCaptureRequest(TEMPLATE_RECORD);
 
             // setting the camera fps
-            Log.d(TAG, "fpsRange: " + fpsRange);
+            Range<Integer> fpsRange = new Range<>(fps,fps);
             captureRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, fpsRange); // This sets the frame rate accurately
 
             Surface previewSurface = new Surface(texture);
@@ -236,13 +236,12 @@ public class Camera {
                                 public void onCaptureStarted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, long timestamp, long frameNumber) {
                                         super.onCaptureStarted(session, request, timestamp, frameNumber);
                                         if (exposureOfFirstFrameTimestamp == null) {
-                                            Log.d(TAG, "First frame");
                                             exposureOfFirstFrameTimestamp = new Date().getTime();
                                         }
                                     }
                                 }, activity.getBackgroundHandler());
                         } catch (CameraAccessException e) {
-                            e.printStackTrace();
+                            throw new RuntimeException("Error configuring recording", e);
                         }
 
                         startRecordingTimestamp = new Date().getTime();
@@ -250,7 +249,7 @@ public class Camera {
 
                     @Override
                     public void onConfigureFailed(@NonNull CameraCaptureSession captureSession) {
-                        Log.d(TAG, "Configuration failed");
+                        throw new RuntimeException("Configuration failed");
                     }
 
                 });
@@ -285,13 +284,15 @@ public class Camera {
 
     private class CameraInfo {
         Integer fps;
-        String name;
+        String orientation;
         String cameraId;
+        SizeF sensorSize;
+        double fov;
         Size size;
     }
 
     /** Lists all video-capable cameras and supported resolution and FPS combinations */
-    private List<CameraInfo> enumerateVideoCameras(CameraManager manager) throws CameraAccessException {
+    private List<CameraInfo> enumerateVideoCameras(CameraManager manager) {
         List<CameraInfo> availableCameras = new ArrayList<>();
 
         //  Iterate over the list of cameras and add those with high speed video recording
@@ -299,40 +300,79 @@ public class Camera {
         //  constrained high speed video recording, but some cameras may be capable of doing
         //  unconstrained video recording with high enough FPS for some use cases and they will
         //  not necessarily declare constrained high speed video capability.
-        for (String cameraId : manager.getCameraIdList()) {
-            CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
-            String orientation = lensOrientationMap(characteristics.get(CameraCharacteristics.LENS_FACING));
-            // Query the available capabilities and output formats
-            int[] capabilities = characteristics.get(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES);
-            StreamConfigurationMap cameraConfig = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+        String [] cameraList = null;
+        try {
+            cameraList = manager.getCameraIdList();
+            for (String cameraId : cameraList) {
+                CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
+                String orientation = lensOrientationMap(characteristics.get(CameraCharacteristics.LENS_FACING));
 
-            // Return cameras that declare to be backward compatible
-            // Recording should always be done in the most efficient format, which is
-            //  the format native to the camera framework
-            if (Arrays.stream(capabilities).anyMatch(i -> i == CameraCharacteristics
-                    .REQUEST_AVAILABLE_CAPABILITIES_BACKWARD_COMPATIBLE)) {
-                // For each size, list the expected FPS
-                for (Size outputSize : cameraConfig.getOutputSizes(SurfaceTexture.class)) {
-                    double secondsPerFrame =
-                            cameraConfig.getOutputMinFrameDuration(SurfaceTexture.class, outputSize) /
-                                    1_000_000_000.0;
-                    // Compute the frames per second to let user select a configuration
-                    int fps;
-                    if (secondsPerFrame > 0) {
-                        fps = (int) (1.0 / secondsPerFrame);
-                    } else {
-                        fps = 0;
+                // Get optics
+                SizeF sensorSize = characteristics.get(CameraCharacteristics.SENSOR_INFO_PHYSICAL_SIZE);
+                float[] focalLengths = characteristics.get(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS);
+                double fov = 0;
+                if (focalLengths.length > 0) {
+                    float focalLength = focalLengths[0];
+                    fov = 2 * Math.atan(sensorSize.getWidth() / (2 * focalLength));
+                }
+
+                // Query the available capabilities and output formats
+                int[] capabilities = characteristics.get(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES);
+                StreamConfigurationMap cameraConfig = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+
+                // Return cameras that declare to be backward compatible
+                // Recording should always be done in the most efficient format, which is
+                //  the format native to the camera framework
+                if (Arrays.stream(capabilities).anyMatch(i -> i == CameraCharacteristics
+                        .REQUEST_AVAILABLE_CAPABILITIES_BACKWARD_COMPATIBLE)) {
+                    // For each size, list the expected FPS
+                    for (Size outputSize : cameraConfig.getOutputSizes(SurfaceTexture.class)) {
+                        double secondsPerFrame = cameraConfig.getOutputMinFrameDuration(SurfaceTexture.class, outputSize) /
+                                        1_000_000_000.0;
+                        // Compute the frames per second to let user select a configuration
+                        int fps;
+                        if (secondsPerFrame > 0) {
+                            fps = (int) (1.0 / secondsPerFrame);
+                        } else {
+                            fps = 0;
+                        }
+                        CameraInfo cameraInfo = new CameraInfo();
+                        cameraInfo.cameraId = cameraId;
+                        cameraInfo.orientation = orientation;
+                        cameraInfo.size = outputSize;
+                        cameraInfo.fps = fps;
+                        cameraInfo.fov = fov;
+                        cameraInfo.sensorSize = sensorSize;
+                        availableCameras.add(cameraInfo);
                     }
-                    CameraInfo cameraInfo = new CameraInfo();
-                    cameraInfo.cameraId = cameraId;
-                    cameraInfo.name = orientation;
-                    cameraInfo.size = outputSize;
-                    cameraInfo.fps = fps;
-                    availableCameras.add(cameraInfo);
                 }
             }
+        } catch (CameraAccessException e) {
+            throw new RuntimeException("Unable to access camera", e);
         }
+
         return availableCameras;
+    }
+
+    private CameraInfo selectMode(Size resolution, int fps) {
+        CameraManager manager = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
+        List<CameraInfo> cameraInfoList = enumerateVideoCameras(manager);
+
+        for (CameraInfo cameraInfo : cameraInfoList) {
+
+            Log.d(TAG, "CameraID: " + cameraInfo.cameraId +
+                    ". Orientation: " + cameraInfo.orientation +
+                    ". Size: " + cameraInfo.size +
+                    ". FPS: " + cameraInfo.fps +
+                    ". FOV: " + cameraInfo.fov +
+                    ". Sensor Size: " + cameraInfo.sensorSize);
+
+            if (cameraInfo.fps == fps && cameraInfo.size.getHeight() == resolution.getHeight()  && cameraInfo.size.getWidth() == resolution.getWidth()) { // && cameraInfo.orientation.toUpperCase() == "BACK") {
+                return cameraInfo;
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -341,43 +381,36 @@ public class Camera {
     public void openCamera(Size resolution, int fps) {
         Log.d(TAG, "openCamera");
         CameraManager manager = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
+        CameraInfo cameraInfo = selectMode(resolution, fps);
+        if (cameraInfo == null && fps > 30) {
+            Log.w(TAG, "Unable to satisfy request for " + resolution + " at " + fps + ". Falling back to 30.");
+
+            fps = 30;
+            cameraInfo = selectMode(resolution, fps);
+        }
+        if (cameraInfo == null) {
+            throw new RuntimeException("Unable to match requested camera settings. Resolution: " + resolution + " FPS: " + fps);
+        }
+
+        String cameraId = cameraInfo.cameraId;
+
+        imageDimension = cameraInfo.size;
+        Log.d(TAG, "Resolution: " + imageDimension + " FPS " + fps);
+        this.fps = fps;
+
+        mediaRecorder = new MediaRecorder();
+
+        // Explicitly check user permissions
+        if (!activity.checkPermissions())
+            return;
+
         try {
-            String cameraId = manager.getCameraIdList()[0]; // Camera 0 facing CAMERA_FACING_BACK
             characteristics = manager.getCameraCharacteristics(cameraId);
-            /* Queries the camera capabilities and stores it into the list.
-             *  Then we find the index of the camera with the HD resolution of 1920x1080, and feed it
-             *  downstream */
-            List<CameraInfo> cameraInfoList = new ArrayList<>(enumerateVideoCameras(manager));
-            int counter = 0;
-            int indexOfCameraWithResolutionHD = 0;
-            for(CameraInfo cameraInfo : cameraInfoList) {
-                Log.d(TAG, "CameraID: " + cameraInfo.cameraId +
-                        ". Orientation: " + cameraInfo.name +
-                        ". Size: " + cameraInfo.size +
-                        ". FPS: " + cameraInfo.fps);
-
-                if (cameraInfo.cameraId.equals(cameraId) && cameraInfo.size.equals(resolution)) {
-                    indexOfCameraWithResolutionHD = counter;
-                }
-                counter++;
-            }
-            StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
-            assert map != null;
-            imageDimension = map.getOutputSizes(SurfaceTexture.class)[indexOfCameraWithResolutionHD]; // TODO: should allow selecting resolution
-            fpsRange = new Range<>(fps,fps); // Determined through observation that, when the range is outside of what the camera can provide,
-            this.fps = fps;
-            //  will automatically default to a lower fps (30 most likely) without crashing the app.
-            mediaRecorder = new MediaRecorder();
-
-            // Explicitly check user permissions
-            if (!activity.checkPermissions())
-                return;
-
             manager.openCamera(cameraId, openStateCallback, activity.getBackgroundHandler());
         } catch (CameraAccessException e) {
-            Log.e(TAG, "Error in openCamera");
-            e.printStackTrace();
+            throw new RuntimeException("Unable to access camera", e);
         }
+
     }
 
     public void closeCamera() {
