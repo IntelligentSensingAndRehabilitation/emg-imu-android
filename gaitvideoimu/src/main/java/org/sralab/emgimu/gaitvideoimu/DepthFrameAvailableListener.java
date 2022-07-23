@@ -25,20 +25,12 @@ public class DepthFrameAvailableListener implements ImageReader.OnImageAvailable
 
     private DepthFrameVisualizer depthFrameVisualizer;
     private int[] rawMask;
-    private int[] noiseReduceMask;
-    private int[] averagedMask;
-    private int[] averagedMaskP2;
-    private int[] blurredAverage;
 
     public DepthFrameAvailableListener(DepthFrameVisualizer depthFrameVisualizer) {
         this.depthFrameVisualizer = depthFrameVisualizer;
 
         int size = WIDTH * HEIGHT;
         rawMask = new int[size];
-        noiseReduceMask = new int[size];
-        averagedMask = new int[size];
-        averagedMaskP2 = new int[size];
-        blurredAverage = new int[size];
     }
 
     @Override
@@ -47,13 +39,10 @@ public class DepthFrameAvailableListener implements ImageReader.OnImageAvailable
             Image image = reader.acquireNextImage();
             WIDTH = image.getWidth();
             HEIGHT = image.getHeight();
-            Log.d(TAG, "Height: " + HEIGHT + " " + "Width: " + WIDTH);
+            //Log.d(TAG, "Height: " + HEIGHT + " " + "Width: " + WIDTH);
             if (image != null && image.getFormat() == ImageFormat.DEPTH16) {
                 processImage(image);
                 publishRawData();
-                //publishNoiseReduction();
-                //publishMovingAverage();
-                //publishBlurredMovingAverage();
             }
             image.close();
         }
@@ -70,34 +59,8 @@ public class DepthFrameAvailableListener implements ImageReader.OnImageAvailable
         }
     }
 
-    private void publishNoiseReduction() {
-        if (depthFrameVisualizer != null) {
-            Bitmap bitmap = convertToRGBBitmap(noiseReduceMask);
-            depthFrameVisualizer.onNoiseReductionAvailable(bitmap);
-            bitmap.recycle();
-        }
-    }
-
-    private void publishMovingAverage() {
-        if (depthFrameVisualizer != null) {
-            Bitmap bitmap = convertToRGBBitmap(averagedMask);
-            depthFrameVisualizer.onMovingAverageAvailable(bitmap);
-            bitmap.recycle();
-        }
-    }
-
-    private void publishBlurredMovingAverage() {
-        if (depthFrameVisualizer != null) {
-            Bitmap bitmap = convertToRGBBitmap(blurredAverage);
-            depthFrameVisualizer.onBlurredMovingAverageAvailable(bitmap);
-            bitmap.recycle();
-        }
-    }
-
     private void processImage(Image image) {
         ShortBuffer shortDepthBuffer = image.getPlanes()[0].getBuffer().asShortBuffer();
-        int[] mask = new int[WIDTH * HEIGHT];
-        int[] noiseReducedMask = new int[WIDTH * HEIGHT];
         for (int y = 0; y < HEIGHT; y++) {
             for (int x = 0; x < WIDTH; x++) {
                 int index = y * WIDTH + x;
@@ -105,28 +68,9 @@ public class DepthFrameAvailableListener implements ImageReader.OnImageAvailable
                 int newValue = extractRange(depthSample, CONFIDENCE_FILTER);
                 // Store value in the rawMask for visualization
                 rawMask[index] = newValue;
-
-                int p1Value = averagedMask[index];
-                int p2Value = averagedMaskP2[index];
-                int avgValue = (newValue + p1Value + p2Value) / 3;
-                if (p1Value < 0 || p2Value < 0 || newValue < 0) {
-                    Log.d("TAG", "WHAT");
-                }
-                // Store the new moving average temporarily
-                mask[index] = avgValue;
             }
         }
-        // Produce a noise reduced version of the raw mask for visualization
-        System.arraycopy(rawMask, 0, noiseReducedMask, 0, rawMask.length);
-        noiseReduceMask = FastBlur.boxBlur(noiseReducedMask, WIDTH, HEIGHT, 1);
 
-        // Remember the last two frames for moving average
-        averagedMaskP2 = averagedMask;
-        averagedMask = mask;
-
-        // Produce a blurred version of the latest moving average result
-        System.arraycopy(averagedMask, 0, blurredAverage, 0, averagedMask.length);
-        blurredAverage = FastBlur.boxBlur(blurredAverage, WIDTH, HEIGHT, 1);
     }
 
     private int extractRange(short sample, float confidenceFilter) {

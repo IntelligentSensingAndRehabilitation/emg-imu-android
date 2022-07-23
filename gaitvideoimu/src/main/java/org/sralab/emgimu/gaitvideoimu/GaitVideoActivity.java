@@ -167,7 +167,7 @@ public class GaitVideoActivity extends AppCompatActivity implements DepthFrameVi
         setContentView(R.layout.activity_gait_video_imu);
 
         textureView = (TextureView) findViewById(R.id.texture);
-        //depthTextureView = (TextureView) findViewById(R.id.depth_texture);
+        depthTextureView = (TextureView) findViewById(R.id.depth_texture);
         startVideoRecordingButton = (Button) findViewById(R.id.start_video_recording_button);
         stopVideoRecordingButton = (Button) findViewById(R.id.stop_video_recording_button);
         enableEmgPwrButton = (Button) findViewById(R.id.enable_emg_pwr_button);
@@ -176,7 +176,8 @@ public class GaitVideoActivity extends AppCompatActivity implements DepthFrameVi
         recyclerView.setLayoutManager(new LinearLayoutManager(getBaseContext()));
         recyclerView.addItemDecoration(new DividerItemDecoration(getBaseContext(), DividerItemDecoration.VERTICAL_LIST));
 
-        //depthCamera = new DepthCamera(this, this);
+        depthCamera = new DepthCamera(this, this);
+        depthCamera.openFrontDepthCamera();
 
         // Set up the camera. When the texture is ready the camera is opened.
         camera = new Camera(this, this, textureView);
@@ -209,10 +210,11 @@ public class GaitVideoActivity extends AppCompatActivity implements DepthFrameVi
                     clickButtonTimestamp = new Date().getTime();
                     ding.start();
                     curTrial = new GaitTrial();
+
                     camera.startVideoRecording();
+
                     startVideoRecordingButton.setEnabled(false);
                     stopVideoRecordingButton.setEnabled(true);
-                    //depthCamera.openFrontDepthCamera();
                     running = true;
                     runTimer(true);
                 });
