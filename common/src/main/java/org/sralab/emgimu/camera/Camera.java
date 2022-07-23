@@ -2,10 +2,8 @@ package org.sralab.emgimu.camera;
 
 import static android.hardware.camera2.CameraDevice.TEMPLATE_RECORD;
 
-import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
-import android.content.pm.PackageManager;
 import android.graphics.Matrix;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
@@ -25,12 +23,8 @@ import android.util.Size;
 import android.util.SparseIntArray;
 import android.view.Surface;
 import android.view.TextureView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.core.app.ActivityCompat;
-
-import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.IOException;
@@ -143,17 +137,22 @@ public class Camera {
                 @Override
                 public void onConfigured(@NonNull CameraCaptureSession captureSession) {
 
-                    //The camera is already closed
-                    if (null == cameraDevice) {
-                        Log.e(TAG, "Camera is null. Should not be.");
-                        return;
-                    }
-
                     // When the session is ready, we start displaying the preview.
                     cameraCaptureSession = captureSession;
-
                     captureRequestBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
-                    updatePreview();
+
+                    try {
+                        cameraCaptureSession.setRepeatingRequest(captureRequestBuilder.build(), new CameraCaptureSession.CaptureCallback() {
+                            @Override
+                            public void onCaptureStarted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, long timestamp, long frameNumber) {
+                                super.onCaptureStarted(session, request, timestamp, frameNumber);
+                                exposureOfFirstFrameTimestamp = null;
+                            }
+                        }, activity.getBackgroundHandler());
+                    } catch (CameraAccessException e) {
+                        Log.e(TAG, "cameraCaptureSession.setRepeatingRequest error");
+                        e.printStackTrace();
+                    }
                 }
 
                 @Override
@@ -166,24 +165,6 @@ public class Camera {
         }
     }
 
-    private void updatePreview() {
-        try {
-            if (null == cameraDevice) {
-                Log.e(TAG, "updatePreview error, return");
-            }
-
-            captureRequestBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
-            cameraCaptureSession.setRepeatingRequest(captureRequestBuilder.build(), new CameraCaptureSession.CaptureCallback() {
-                @Override
-                public void onCaptureStarted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, long timestamp, long frameNumber) {
-                    super.onCaptureStarted(session, request, timestamp, frameNumber);
-                    exposureOfFirstFrameTimestamp = null;
-                }
-            }, activity.getBackgroundHandler());
-        } catch (CameraAccessException e) {
-            e.printStackTrace();
-        }
-    }
 
     private void closePreview() {
         if (cameraCaptureSession != null) {
@@ -191,7 +172,6 @@ public class Camera {
             cameraCaptureSession = null;
         }
     }
-
 
     private void setupMediaRecorder() throws IOException {
         Log.d(TAG, "setupMediaRecorder");
@@ -208,7 +188,7 @@ public class Camera {
         int rotation = context.getWindowManager().getDefaultDisplay().getRotation();
         mediaRecorder.setOrientationHint(ORIENTATIONS.get(rotation));
 
-        currentFile = activity.createNewFile();
+        currentFile = activity.createNewFile("");
         activity.showVideoStatus("Recording " + activity.getSimpleFilename(currentFile), "gray");
         mediaRecorder.setOutputFile(currentFile.getAbsolutePath());
 
@@ -275,10 +255,7 @@ public class Camera {
 
                 });
 
-                //config.setSessionParameters(captureRequestBuilder.build());
-
                 cameraDevice.createCaptureSession(config);
-
 
             } else {
                 Log.e(TAG, "Not implemented yet");

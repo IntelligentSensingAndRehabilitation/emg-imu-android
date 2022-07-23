@@ -4,9 +4,14 @@
 package org.sralab.emgimu.gaitvideoimu;
 
 import android.Manifest;
+import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.ImageFormat;
+import android.graphics.Matrix;
+import android.graphics.RectF;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
@@ -15,36 +20,66 @@ import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureRequest;
 import android.media.ImageReader;
+import android.media.MediaRecorder;
 import android.util.Log;
 import android.util.Range;
 import android.util.SizeF;
+import android.util.SparseIntArray;
 import android.view.Surface;
+import android.view.TextureView;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 
+import org.sralab.emgimu.camera.Camera;
+import org.sralab.emgimu.camera.CameraActivity;
+
+import java.io.File;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
-public class DepthCamera extends CameraDevice.StateCallback {
+public class DepthCamera extends CameraDevice.StateCallback implements DepthFrameVisualizer{
     private static final String TAG = DepthCamera.class.getSimpleName();
 
     private static int FPS_MIN = 15;
     private static int FPS_MAX = 30;
 
-    private Context context;
+    private Activity context;
+    private CameraActivity cameraActivity;
     private CameraManager cameraManager;
+    private CameraDevice cameraDevice;
     private ImageReader previewReader;
     private CaptureRequest.Builder previewBuilder;
     private DepthFrameAvailableListener imageAvailableListener;
+    private TextureView textureView;
 
-    public DepthCamera(Context context, DepthFrameVisualizer depthFrameVisualizer) {
+    private static final SparseIntArray ORIENTATIONS = new SparseIntArray() {{
+        put(Surface.ROTATION_0, 270);
+        put(Surface.ROTATION_90, 180);
+        put(Surface.ROTATION_180, 90);
+        put(Surface.ROTATION_270, 0);
+    }};
+
+    protected MediaRecorder mediaRecorder;
+    protected File currentFile;
+
+    public DepthCamera(Activity context, TextureView textureView) {
         this.context = context;
+        this.textureView = textureView;
+
+        cameraActivity = (CameraActivity) context;
+
         cameraManager = (CameraManager)context.getSystemService(Context.CAMERA_SERVICE);
-        imageAvailableListener = new DepthFrameAvailableListener(depthFrameVisualizer);
+        imageAvailableListener = new DepthFrameAvailableListener(this);
         previewReader = ImageReader.newInstance(DepthFrameAvailableListener.WIDTH,
                 DepthFrameAvailableListener.HEIGHT, ImageFormat.DEPTH16,2);
         previewReader.setOnImageAvailableListener(imageAvailableListener, null);
+
+        //setupMediaRecorder();
+        //Canvas canvas = mediaRecorder.getSurface().lockHardwareCanvas();
+        //canvas.draw;
+
     }
 
     // Open the front depth camera and start sending frames
@@ -52,6 +87,10 @@ public class DepthCamera extends CameraDevice.StateCallback {
         final String cameraId = getFrontDepthCameraID();
         Log.d(TAG, "Depth camera: " + cameraId);
         openCamera(cameraId);
+    }
+
+    public void closeCamera() {
+        cameraDevice.close();
     }
 
     private String getFrontDepthCameraID() {
@@ -101,11 +140,14 @@ public class DepthCamera extends CameraDevice.StateCallback {
             Log.e(TAG,"Opening Camera has an Exception " + e);
             e.printStackTrace();
         }
+
+        mediaRecorder = new MediaRecorder();
     }
 
 
     @Override
     public void onOpened(@NonNull CameraDevice camera) {
+        cameraDevice = camera;
         try {
             previewBuilder = camera.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
             previewBuilder.set(CaptureRequest.JPEG_ORIENTATION, 0);
@@ -124,7 +166,7 @@ public class DepthCamera extends CameraDevice.StateCallback {
                         public void onConfigureFailed(@NonNull CameraCaptureSession session) {
                             Log.e(TAG,"!!! Creating Capture Session failed due to internal error ");
                         }
-                    }, null);
+                    }, cameraActivity.getBackgroundHandler());
 
         } catch (CameraAccessException e) {
             e.printStackTrace();
@@ -135,7 +177,7 @@ public class DepthCamera extends CameraDevice.StateCallback {
         Log.i(TAG,"Capture Session created");
         previewBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
         try {
-            session.setRepeatingRequest(previewBuilder.build(), null, null);
+            session.setRepeatingRequest(previewBuilder.build(), null, cameraActivity.getBackgroundHandler());
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
@@ -151,4 +193,85 @@ public class DepthCamera extends CameraDevice.StateCallback {
     public void onError(@NonNull CameraDevice camera, int error) {
 
     }
+    public void startVideoRecording() {
+        Log.d(TAG, "startVideoRecording");
+        try {
+            setupMediaRecorder();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        imageAvailableListener.setListeningSurface(mediaRecorder.getSurface());
+    }
+
+    public void stopVideoRecording() {
+        Log.d(TAG, "stopVideoRecording");
+        imageAvailableListener.setListeningSurface(null);
+        mediaRecorder.stop();
+        mediaRecorder.reset();
+    }
+
+    private void setupMediaRecorder() throws IOException {
+        Log.d(TAG, "setupMediaRecorder");
+        //mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+        mediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
+        mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+        mediaRecorder.setVideoSize(DepthFrameAvailableListener.WIDTH,
+                DepthFrameAvailableListener.HEIGHT); // absolutely necessary
+        int fps = 30;
+        Log.d(TAG, "FPS: " + fps);
+        mediaRecorder.setVideoFrameRate(fps);
+        mediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
+        //mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
+        mediaRecorder.setVideoEncodingBitRate(500_000);
+
+        int rotation = context.getWindowManager().getDefaultDisplay().getRotation();
+        mediaRecorder.setOrientationHint(ORIENTATIONS.get(rotation));
+
+        currentFile = cameraActivity.createNewFile("_depth");
+        mediaRecorder.setOutputFile(currentFile.getAbsolutePath());
+
+        Log.d(TAG, "Recording to " + currentFile.getAbsolutePath());
+
+        mediaRecorder.prepare();
+        mediaRecorder.start();
+    }
+
+
+    private Matrix defaultBitmapTransform;
+
+    private Matrix defaultBitmapTransform(TextureView view) {
+        if (defaultBitmapTransform == null || view.getWidth() == 0 || view.getHeight() == 0) {
+            Matrix matrix = new Matrix();
+            int centerX = view.getWidth() / 2;
+            int centerY = view.getHeight() / 2;
+
+            int bufferWidth = DepthFrameAvailableListener.WIDTH;
+            int bufferHeight = DepthFrameAvailableListener.HEIGHT;
+
+            RectF bufferRect = new RectF(0, 0, bufferWidth, bufferHeight);
+            RectF viewRect = new RectF(0, 0, view.getWidth(), view.getHeight());
+            matrix.setRectToRect(bufferRect, viewRect, Matrix.ScaleToFit.CENTER);
+            matrix.postRotate(270, centerX, centerY);
+
+            defaultBitmapTransform = matrix;
+        }
+        return defaultBitmapTransform;
+    }
+
+    /* We don't want a direct camera preview since we want to get the frames of data directly
+    from the camera and process.
+
+    This takes a converted bitmap and renders it onto the surface, with a basic rotation
+    applied. */
+    private void renderBitmapToTextureView(Bitmap bitmap, TextureView textureView) {
+        Canvas canvas = textureView.lockCanvas();
+        canvas.drawBitmap(bitmap, defaultBitmapTransform(textureView), null);
+        textureView.unlockCanvasAndPost(canvas);
+    }
+
+    @Override
+    public void onRawDataAvailable(Bitmap bitmap) {
+        renderBitmapToTextureView(bitmap, textureView);
+    }
+
 }

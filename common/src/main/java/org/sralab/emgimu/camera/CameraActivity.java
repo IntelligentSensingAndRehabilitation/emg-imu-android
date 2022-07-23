@@ -6,7 +6,7 @@ import java.io.File;
 
 public interface CameraActivity {
 
-    File createNewFile();
+    File createNewFile(String suffix);
     String getSimpleFilename(File currentFile);
     void showVideoStatus(String status, String color);
     void pushVideoFileToFirebase(File currentFile, Long exposureOfFirstFrameTimestamp, Long startRecordingTimestamp);

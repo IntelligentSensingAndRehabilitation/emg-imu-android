@@ -55,7 +55,7 @@ import java.util.List;
 import java.util.Locale;
 import no.nordicsemi.android.nrftoolbox.widget.DividerItemDecoration;
 
-public class GaitVideoActivity extends AppCompatActivity implements DepthFrameVisualizer, CameraActivity {
+public class GaitVideoActivity extends AppCompatActivity implements CameraActivity {
     private static final String TAG = GaitVideoActivity.class.getSimpleName();
 
     Camera camera;
@@ -67,43 +67,6 @@ public class GaitVideoActivity extends AppCompatActivity implements DepthFrameVi
     //region RecyclerView Fields
     private DeviceViewModel dvm;
     private StreamingAdapter streamingAdapter;
-
-    private Matrix defaultBitmapTransform;
-
-    private Matrix defaultBitmapTransform(TextureView view) {
-        if (defaultBitmapTransform == null || view.getWidth() == 0 || view.getHeight() == 0) {
-            Matrix matrix = new Matrix();
-            int centerX = view.getWidth() / 2;
-            int centerY = view.getHeight() / 2;
-
-            int bufferWidth = DepthFrameAvailableListener.WIDTH;
-            int bufferHeight = DepthFrameAvailableListener.HEIGHT;
-
-            RectF bufferRect = new RectF(0, 0, bufferWidth, bufferHeight);
-            RectF viewRect = new RectF(0, 0, view.getWidth(), view.getHeight());
-            matrix.setRectToRect(bufferRect, viewRect, Matrix.ScaleToFit.CENTER);
-            matrix.postRotate(270, centerX, centerY);
-
-            defaultBitmapTransform = matrix;
-        }
-        return defaultBitmapTransform;
-    }
-
-    /* We don't want a direct camera preview since we want to get the frames of data directly
-    from the camera and process.
-
-    This takes a converted bitmap and renders it onto the surface, with a basic rotation
-    applied. */
-    private void renderBitmapToTextureView(Bitmap bitmap, TextureView textureView) {
-        Canvas canvas = textureView.lockCanvas();
-        canvas.drawBitmap(bitmap, defaultBitmapTransform(textureView), null);
-        textureView.unlockCanvasAndPost(canvas);
-    }
-
-    @Override
-    public void onRawDataAvailable(Bitmap bitmap) {
-        renderBitmapToTextureView(bitmap, depthTextureView);
-    }
 
     //region Firebase Fields & Nested Class
     class GaitTrial {
@@ -176,7 +139,7 @@ public class GaitVideoActivity extends AppCompatActivity implements DepthFrameVi
         recyclerView.setLayoutManager(new LinearLayoutManager(getBaseContext()));
         recyclerView.addItemDecoration(new DividerItemDecoration(getBaseContext(), DividerItemDecoration.VERTICAL_LIST));
 
-        depthCamera = new DepthCamera(this, this);
+        depthCamera = new DepthCamera(this, depthTextureView);
         depthCamera.openFrontDepthCamera();
 
         // Set up the camera. When the texture is ready the camera is opened.
@@ -212,6 +175,7 @@ public class GaitVideoActivity extends AppCompatActivity implements DepthFrameVi
                     curTrial = new GaitTrial();
 
                     camera.startVideoRecording();
+                    depthCamera.startVideoRecording();
 
                     startVideoRecordingButton.setEnabled(false);
                     stopVideoRecordingButton.setEnabled(true);
@@ -222,6 +186,7 @@ public class GaitVideoActivity extends AppCompatActivity implements DepthFrameVi
                 v -> {
                     punch.start();
                     camera.stopVideoRecording();
+                    depthCamera.stopVideoRecording();
                     stopVideoRecordingButton.setEnabled(false);
                     running = false;
                     seconds = 0;
@@ -254,6 +219,7 @@ public class GaitVideoActivity extends AppCompatActivity implements DepthFrameVi
         updateLogger();
         dvm.onPause();
         camera.closeCamera();
+        depthCamera.closeCamera();
         stopBackgroundThread();
 
         // If the activity is paused,
@@ -442,9 +408,12 @@ public class GaitVideoActivity extends AppCompatActivity implements DepthFrameVi
 
     //region Internal File Storage
 
-    public File createNewFile() {
-        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss'Z'",
+    public File createNewFile(String suffix) {
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss",
                 Locale.getDefault()).format(new Date());
+        if (suffix != null) {
+            timeStamp = timeStamp + suffix;
+        }
         createFileTimestamp = new Date().getTime();
         String filename = timeStamp + ".mp4";
         File mediaFile = new File(getApplicationContext().getExternalFilesDir("gait_video"), filename);

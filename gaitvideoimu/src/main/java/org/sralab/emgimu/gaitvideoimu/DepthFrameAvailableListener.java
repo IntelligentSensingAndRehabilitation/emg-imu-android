@@ -4,11 +4,13 @@
 package org.sralab.emgimu.gaitvideoimu;
 
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.ImageFormat;
 import android.media.Image;
 import android.media.ImageReader;
 import android.util.Log;
+import android.view.Surface;
 
 import java.nio.ShortBuffer;
 
@@ -19,12 +21,19 @@ public class DepthFrameAvailableListener implements ImageReader.OnImageAvailable
     public static int WIDTH = 320;
     public static int HEIGHT = 240;
 
-    private static float RANGE_MIN = 200.0f;
-    private static float RANGE_MAX = 1600.0f;
+    private static float RANGE_MIN = 100.0f;
+    private static float RANGE_MAX = 5000.0f;
     private static float CONFIDENCE_FILTER = 0.1f;
 
     private DepthFrameVisualizer depthFrameVisualizer;
+    private Bitmap bitmap;
     private int[] rawMask;
+
+    public void setListeningSurface(Surface listeningSurface) {
+        this.listeningSurface = listeningSurface;
+    }
+
+    private Surface listeningSurface = null;
 
     public DepthFrameAvailableListener(DepthFrameVisualizer depthFrameVisualizer) {
         this.depthFrameVisualizer = depthFrameVisualizer;
@@ -35,27 +44,52 @@ public class DepthFrameAvailableListener implements ImageReader.OnImageAvailable
 
     @Override
     public void onImageAvailable(ImageReader reader) {
+        Image image;
         try {
-            Image image = reader.acquireNextImage();
-            WIDTH = image.getWidth();
-            HEIGHT = image.getHeight();
-            //Log.d(TAG, "Height: " + HEIGHT + " " + "Width: " + WIDTH);
-            if (image != null && image.getFormat() == ImageFormat.DEPTH16) {
-                processImage(image);
-                publishRawData();
-            }
-            image.close();
+            image = reader.acquireNextImage();
         }
         catch (Exception e) {
             Log.e(TAG, "Failed to acquireNextImage: " + e.getMessage());
+            return;
         }
+        WIDTH = image.getWidth();
+        HEIGHT = image.getHeight();
+        //Log.d(TAG, "Height: " + HEIGHT + " " + "Width: " + WIDTH);
+        if (image != null && image.getFormat() == ImageFormat.DEPTH16) {
+            processImage(image);
+            bitmap = convertToRGBBitmap(rawMask);
+            publishRawData();
+            postToSurface();
+            bitmap.recycle();
+        }
+        image.close();
     }
 
     private void publishRawData() {
         if (depthFrameVisualizer != null) {
-            Bitmap bitmap = convertToRGBBitmap(rawMask);
+            //Bitmap bitmap = convertToRGBBitmap(rawMask);
             depthFrameVisualizer.onRawDataAvailable(bitmap);
-            bitmap.recycle();
+        }
+    }
+
+    private void postToSurface() {
+        if (listeningSurface != null) {
+
+            if (listeningSurface.isValid()) {
+                Canvas canvas = listeningSurface.lockHardwareCanvas();
+                if (!canvas.isHardwareAccelerated()) {
+                    Log.e(TAG, "No hardware accel");
+                }
+
+                Log.d(TAG, "Canvas width: " + canvas.getWidth() + ". Canvas height: " + canvas.getHeight());
+                Log.d(TAG, "Bitmap width: " + bitmap.getWidth() + ". Bitmap height: " + bitmap.getHeight());
+                //canvas.setBitmap(bitmap);
+                canvas.drawBitmap(bitmap, 0, 0, null);
+                listeningSurface.unlockCanvasAndPost(canvas);
+                Log.d(TAG, "Posted");
+            } else {
+                Log.e(TAG, "Invalid listening surface");
+            }
         }
     }
 
