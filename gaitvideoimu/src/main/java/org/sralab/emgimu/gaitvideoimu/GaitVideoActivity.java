@@ -1,10 +1,6 @@
 package org.sralab.emgimu.gaitvideoimu;
 
-import static android.hardware.camera2.CameraDevice.TEMPLATE_RECORD;
-
 import android.Manifest;
-import android.app.Activity;
-import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -12,28 +8,15 @@ import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
-import android.hardware.camera2.CameraAccessException;
-import android.hardware.camera2.CameraCaptureSession;
-import android.hardware.camera2.CameraCharacteristics;
-import android.hardware.camera2.CameraDevice;
-import android.hardware.camera2.CameraManager;
-import android.hardware.camera2.CameraMetadata;
-import android.hardware.camera2.CaptureRequest;
-import android.hardware.camera2.params.OutputConfiguration;
-import android.hardware.camera2.params.SessionConfiguration;
-import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.MediaPlayer;
-import android.media.MediaRecorder;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.RemoteException;
 import android.util.Log;
-import android.util.Range;
 import android.util.Size;
 import android.util.SparseIntArray;
-import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
 import android.widget.Button;
@@ -52,10 +35,13 @@ import com.google.firebase.installations.FirebaseInstallations;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.gson.Gson;
+
 import org.jetbrains.annotations.NotNull;
+import org.sralab.emgimu.camera.CameraActivity;
 import org.sralab.emgimu.gaitvideoimu.stream_visualization.DeviceViewModel;
 import org.sralab.emgimu.gaitvideoimu.stream_visualization.StreamingAdapter;
 import org.sralab.emgimu.logging.FirebaseGameLogger;
+import org.sralab.emgimu.camera.Camera;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -63,19 +49,20 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import no.nordicsemi.android.nrftoolbox.widget.DividerItemDecoration;
 
-public class GaitVideoActivity extends AppCompatActivity implements DepthFrameVisualizer {
+public class GaitVideoActivity extends AppCompatActivity implements DepthFrameVisualizer, CameraActivity {
     private static final String TAG = GaitVideoActivity.class.getSimpleName();
+
+    Camera camera;
+
     private Button startVideoRecordingButton;
     private Button stopVideoRecordingButton;
     private Button enableEmgPwrButton;
-
 
     //region RecyclerView Fields
     private DeviceViewModel dvm;
@@ -118,22 +105,6 @@ public class GaitVideoActivity extends AppCompatActivity implements DepthFrameVi
         renderBitmapToTextureView(bitmap, depthTextureView);
     }
 
-    @Override
-    public void onNoiseReductionAvailable(Bitmap bitmap) {
-
-    }
-
-    @Override
-    public void onMovingAverageAvailable(Bitmap bitmap) {
-
-    }
-
-    @Override
-    public void onBlurredMovingAverageAvailable(Bitmap bitmap) {
-
-    }
-    //endregion
-
     //region Firebase Fields & Nested Class
     class GaitTrial {
         public String fileName;
@@ -151,48 +122,24 @@ public class GaitVideoActivity extends AppCompatActivity implements DepthFrameVi
     private FirebaseStorage storage;
     private FirebaseUser mUser;
     private FirebaseGameLogger mGameLogger;
-    private String firebaseUploadFileName;
-    private String simpleFilename;
     private long clickButtonTimestamp;              // user presses start button
     private long createFileTimestamp;               // the system created the video file
-    private long startRecordingTimestamp;           // after camera has been configured, when recording starts
-    private Long exposureOfFirstFrameTimestamp;     // note: this includes the frames in the preview
-    boolean isFirstFrameTimestampCollected = false; // flag to collect first frame only
 
     DepthCamera depthCamera;
     //endregion
 
-    //region Video Fields
+
+    private Handler backgroundHandler;
+    private HandlerThread backgroundThread;
+    private TextureView textureView;
+    private TextureView depthTextureView;
+
     private static final int REQUEST_CODE_PERMISSIONS = 10;
     @NotNull
     private static final String[] REQUIRED_PERMISSIONS = new String[] {
             Manifest.permission.CAMERA,
             Manifest.permission.RECORD_AUDIO,
             Manifest.permission.WRITE_EXTERNAL_STORAGE};
-
-    private File currentFile;
-    private Size imageDimension;
-    private int fps;
-    protected MediaRecorder mediaRecorder;
-    protected CameraDevice cameraDevice;
-    protected CameraCharacteristics characteristics;
-    protected CaptureRequest.Builder captureRequestBuilder;
-    protected CameraCaptureSession cameraCaptureSession;
-    private Handler backgroundHandler;
-    private HandlerThread backgroundThread;
-    private TextureView textureView;
-    private TextureView depthTextureView;
-    private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
-    static {
-        ORIENTATIONS.append(Surface.ROTATION_0, 90);
-        ORIENTATIONS.append(Surface.ROTATION_90, 0);
-        ORIENTATIONS.append(Surface.ROTATION_180, 270);
-        ORIENTATIONS.append(Surface.ROTATION_270, 180);
-    }
-
-    private Range<Integer> fpsRange;
-    private Size videoResolutionHD = new Size(1920, 1080);
-    //endregion
 
     //region Sound Effects Fields
     public MediaPlayer ding = new MediaPlayer();
@@ -212,22 +159,15 @@ public class GaitVideoActivity extends AppCompatActivity implements DepthFrameVi
     //region Internal Log File Fields
     List<String> uploadedVideos = new ArrayList<>();
 
-    /** Setup a dictionary to map the lens orientation enum into a human-readable string */
-    HashMap<Integer, String> lensOrientationMap = new HashMap<Integer, String>() {{
-        put((int) CameraCharacteristics.LENS_FACING_BACK, "Back");
-        put((int) CameraCharacteristics.LENS_FACING_FRONT, "Front");
-        put((int) CameraCharacteristics.LENS_FACING_EXTERNAL,"External");
-    }};
 
     //region Activity Lifecycle Methods
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_gait_video_imu);
+
         textureView = (TextureView) findViewById(R.id.texture);
-        depthTextureView = (TextureView) findViewById(R.id.depth_texture);
-        assert textureView != null;
-        textureView.setSurfaceTextureListener(textureListener);
+        //depthTextureView = (TextureView) findViewById(R.id.depth_texture);
         startVideoRecordingButton = (Button) findViewById(R.id.start_video_recording_button);
         stopVideoRecordingButton = (Button) findViewById(R.id.stop_video_recording_button);
         enableEmgPwrButton = (Button) findViewById(R.id.enable_emg_pwr_button);
@@ -236,7 +176,11 @@ public class GaitVideoActivity extends AppCompatActivity implements DepthFrameVi
         recyclerView.setLayoutManager(new LinearLayoutManager(getBaseContext()));
         recyclerView.addItemDecoration(new DividerItemDecoration(getBaseContext(), DividerItemDecoration.VERTICAL_LIST));
 
-        depthCamera = new DepthCamera(this, this);
+        //depthCamera = new DepthCamera(this, this);
+
+        // Set up the camera. When the texture is ready the camera is opened.
+        camera = new Camera(this, this, textureView);
+        textureView.setSurfaceTextureListener(textureListener);
 
         enableFirebase();
 
@@ -264,15 +208,19 @@ public class GaitVideoActivity extends AppCompatActivity implements DepthFrameVi
                 v -> {
                     clickButtonTimestamp = new Date().getTime();
                     ding.start();
-                    //startVideoRecording();
-                    depthCamera.openFrontDepthCamera();
+                    curTrial = new GaitTrial();
+                    camera.startVideoRecording();
+                    startVideoRecordingButton.setEnabled(false);
+                    stopVideoRecordingButton.setEnabled(true);
+                    //depthCamera.openFrontDepthCamera();
                     running = true;
                     runTimer(true);
                 });
         stopVideoRecordingButton.setOnClickListener(
                 v -> {
                     punch.start();
-                    stopVideoRecording();
+                    camera.stopVideoRecording();
+                    stopVideoRecordingButton.setEnabled(false);
                     running = false;
                     seconds = 0;
                     runTimer(false);
@@ -303,7 +251,7 @@ public class GaitVideoActivity extends AppCompatActivity implements DepthFrameVi
         super.onPause();
         updateLogger();
         dvm.onPause();
-        closeCamera();
+        camera.closeCamera();
         stopBackgroundThread();
 
         // If the activity is paused,
@@ -314,11 +262,14 @@ public class GaitVideoActivity extends AppCompatActivity implements DepthFrameVi
 
     @Override
     public void onResume() {
+        Log.d(TAG, "onResume");
         super.onResume();
         dvm.onResume();
         startBackgroundThread();
+
         if (textureView.isAvailable()) {
-            openCamera();
+            Log.d(TAG, "onResume openCamera");
+            camera.openCamera(new Size(1920, 1080), 30);
         } else {
             textureView.setSurfaceTextureListener(textureListener);
         }
@@ -337,9 +288,6 @@ public class GaitVideoActivity extends AppCompatActivity implements DepthFrameVi
         super.onStop();
     }
 
-    //endregion
-
-    //region Video Setup
     /**
      * Prepares TextureView
      * TextureView is the view which renders captured camera image data.
@@ -350,13 +298,11 @@ public class GaitVideoActivity extends AppCompatActivity implements DepthFrameVi
         @Override
         public void onSurfaceTextureAvailable(@NonNull SurfaceTexture surface, int width, int height) {
             Log.d(TAG, "Surface dimensions: " + width + " " + height);
-            openCamera();
+            camera.openCamera(new Size(1920, 1080), 30);
         }
 
         @Override
-        public void onSurfaceTextureSizeChanged(@NonNull SurfaceTexture surface, int width, int height) {
-
-        }
+        public void onSurfaceTextureSizeChanged(@NonNull SurfaceTexture surface, int width, int height) { }
 
         @Override
         public boolean onSurfaceTextureDestroyed(@NonNull SurfaceTexture surface) {
@@ -364,36 +310,10 @@ public class GaitVideoActivity extends AppCompatActivity implements DepthFrameVi
         }
 
         @Override
-        public void onSurfaceTextureUpdated(@NonNull SurfaceTexture surface) {
-
-        }
+        public void onSurfaceTextureUpdated(@NonNull SurfaceTexture surface) { }
     };
 
-    /**
-     * This is used to check a camera device state (open, close). It is required to open a camera.
-     */
-    private CameraDevice.StateCallback stateCallback = new CameraDevice.StateCallback() {
-        @Override
-        public void onOpened(@NonNull CameraDevice camera) {
-            // This is called when the camera is in the open state
-            cameraDevice = camera;
-            createPreview();
-        }
-
-        @Override
-        public void onDisconnected(@NonNull CameraDevice camera) {
-            cameraDevice.close();
-            cameraDevice = null;
-        }
-
-        @Override
-        public void onError(@NonNull CameraDevice camera, int error) {
-            cameraDevice.close();
-            cameraDevice = null;
-        }
-    };
-
-    protected void startBackgroundThread() {
+    public void startBackgroundThread() {
         backgroundThread = new HandlerThread("Camera Background Thread");
         backgroundThread.start();
         backgroundHandler = new Handler(backgroundThread.getLooper());
@@ -410,409 +330,9 @@ public class GaitVideoActivity extends AppCompatActivity implements DepthFrameVi
         }
     }
 
-    private class CameraInfo {
-        Integer fps;
-        String name;
-        String cameraId;
-        Size size;
+    public Handler getBackgroundHandler() {
+        return backgroundHandler;
     }
-
-    /** Lists all video-capable cameras and supported resolution and FPS combinations */
-    private List<CameraInfo> enumerateVideoCameras(CameraManager manager) throws CameraAccessException {
-        List<CameraInfo> availableCameras = new ArrayList<>();
-
-        //  Iterate over the list of cameras and add those with high speed video recording
-        //  capability to our output. This function only returns those cameras that declare
-        //  constrained high speed video recording, but some cameras may be capable of doing
-        //  unconstrained video recording with high enough FPS for some use cases and they will
-        //  not necessarily declare constrained high speed video capability.
-        for (String cameraId : manager.getCameraIdList()) {
-            CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
-            String orientation = lensOrientationMap(characteristics.get(CameraCharacteristics.LENS_FACING));
-            // Query the available capabilities and output formats
-            int[] capabilities = characteristics.get(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES);
-            StreamConfigurationMap cameraConfig = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
-
-
-
-            // Return cameras that declare to be backward compatible
-            // Recording should always be done in the most efficient format, which is
-            //  the format native to the camera framework
-            if (Arrays.stream(capabilities).anyMatch(i -> i == CameraCharacteristics
-                    .REQUEST_AVAILABLE_CAPABILITIES_BACKWARD_COMPATIBLE)) {
-                // For each size, list the expected FPS
-                for (Size outputSize : cameraConfig.getOutputSizes(SurfaceTexture.class)) {
-                    double secondsPerFrame =
-                            cameraConfig.getOutputMinFrameDuration(SurfaceTexture.class, outputSize) /
-                                    1_000_000_000.0;
-                    // Compute the frames per second to let user select a configuration
-                    int fps;
-                    if (secondsPerFrame > 0) {
-                        fps = (int) (1.0 / secondsPerFrame);
-                    } else {
-                        fps = 0;
-                    }
-                    CameraInfo cameraInfo = new CameraInfo();
-                    cameraInfo.cameraId = cameraId;
-                    cameraInfo.name = orientation;
-                    cameraInfo.size = outputSize;
-                    cameraInfo.fps = fps;
-                    availableCameras.add(cameraInfo);
-                }
-            }
-        }
-        return availableCameras;
-    }
-
-    private String lensOrientationMap(Integer integer) {
-        return lensOrientationMap.get(integer);
-    }
-
-    /**
-     * @brief Establishes connection with the camera hardware.
-     */
-    private void openCamera() {
-        CameraManager manager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
-        try {
-            String cameraId = manager.getCameraIdList()[0]; // Camera 0 facing CAMERA_FACING_BACK
-            characteristics = manager.getCameraCharacteristics(cameraId);
-            /* Queries the camera capabilities and stores it into the list.
-            *  Then we find the index of the camera with the HD resolution of 1920x1080, and feed it
-            *  downstream */
-            List<CameraInfo> cameraInfoList = new ArrayList<>(enumerateVideoCameras(manager));
-            int counter = 0;
-            int indexOfCameraWithResolutionHD = 0;
-            for(CameraInfo cameraInfo : cameraInfoList) {
-                if (cameraInfo.cameraId.equals(cameraId) && cameraInfo.size.equals(videoResolutionHD)) {
-                    indexOfCameraWithResolutionHD = counter;
-                }
-                counter++;
-            }
-            StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
-            assert map != null;
-            imageDimension = map.getOutputSizes(SurfaceTexture.class)[indexOfCameraWithResolutionHD]; // TODO: should allow selecting resolution
-            fps = 60; // TODO: should handle situations where no FPS 60 is available
-            fpsRange = new Range<>(fps,fps); // Determined through observation that, when the range is outside of what the camera can provide,
-                                             //  will automatically default to a lower fps (30 most likely) without crashing the app.
-            mediaRecorder = new MediaRecorder();
-
-            // Explicitly check user permissions
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
-                    != PackageManager.PERMISSION_GRANTED &&
-                    ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                            != PackageManager.PERMISSION_GRANTED &&
-                    ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
-                            != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(
-                        this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS);
-                return;
-            }
-            manager.openCamera(cameraId, stateCallback, backgroundHandler);
-        } catch (CameraAccessException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void closeCamera() {
-        closePreview();
-        if (null != cameraDevice) {
-            cameraDevice.close();
-            cameraDevice = null;
-        }
-        if (null != mediaRecorder) {
-            mediaRecorder.release();
-            mediaRecorder = null;
-        }
-    }
-    //endregion
-
-    /**
-     * Computes rotation required to transform the camera sensor output orientation to the
-     * device's current orientation in degrees.
-     *
-     * @param characteristics The CameraCharacteristics to query for the sensor orientation.
-     * @param surfaceRotationDegrees The current device orientation as a Surface constant.
-     * @return Relative rotation of the camera sensor output.
-     */
-    public int computeRelativeRotation(
-            CameraCharacteristics characteristics,
-            int surfaceRotationDegrees
-    ){
-        Integer sensorOrientationDegrees =
-                characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
-
-        // Reverse device orientation for back-facing cameras.
-        int sign = characteristics.get(CameraCharacteristics.LENS_FACING) ==
-                CameraCharacteristics.LENS_FACING_FRONT ? 1 : -1;
-
-        // Calculate desired orientation relative to camera orientation to make
-        // the image upright relative to the device orientation.
-        return (sensorOrientationDegrees - surfaceRotationDegrees * sign + 360) % 360;
-    }
-
-    /**
-     * This method calculates the transformation matrix that we need to apply to the
-     * TextureView to avoid a distorted preview.
-     */
-    public Matrix computeTransformationMatrix(
-            TextureView textureView,
-            CameraCharacteristics characteristics,
-            Size previewSize,
-            int surfaceRotation
-    ) {
-        Matrix matrix = new Matrix();
-
-        int surfaceRotationDegrees;
-
-        switch (surfaceRotation) {
-            case Surface.ROTATION_0:
-                surfaceRotationDegrees = 0;
-                break;
-            case Surface.ROTATION_90:
-                surfaceRotationDegrees = 90;
-                break;
-            case Surface.ROTATION_180:
-                surfaceRotationDegrees = 180;
-                break;
-            case Surface.ROTATION_270:
-                surfaceRotationDegrees = 270;
-                break;
-            default:
-                surfaceRotationDegrees = 0;
-        }
-
-        /* Rotation required to transform from the camera sensor orientation to the
-         * device's current orientation in degrees. */
-        int relativeRotation = computeRelativeRotation(characteristics, surfaceRotationDegrees);
-
-        /* Scale factor required to scale the preview to its original size on the x-axis. */
-        float scaleX = (relativeRotation % 180 == 0)
-                ? (float) textureView.getWidth() / previewSize.getWidth()
-                : (float) textureView.getWidth() / previewSize.getHeight();
-
-        /* Scale factor required to scale the preview to its original size on the y-axis. */
-        float scaleY = (relativeRotation % 180 == 0)
-                ? (float) textureView.getHeight() / previewSize.getHeight()
-                : (float) textureView.getHeight() / previewSize.getWidth();
-
-        /* Scale factor required to fit the preview to the TextureView size. */
-        float finalScale = Math.min(scaleX, scaleY);
-
-        /* The scale will be different if the buffer has been rotated. */
-        if (relativeRotation % 180 == 0) {
-            matrix.setScale(
-                    textureView.getHeight() / (float) textureView.getWidth() / scaleY * finalScale,
-                    textureView.getWidth() / (float) textureView.getHeight() / scaleX * finalScale,
-                    textureView.getWidth() / 2f,
-                    textureView.getHeight() / 2f
-            );
-        } else {
-            matrix.setScale(
-                    1 / scaleX * finalScale,
-                    1 / scaleY * finalScale,
-                    textureView.getWidth() / 2f,
-                    textureView.getHeight() / 2f
-            );
-        }
-
-        // Rotate the TextureView to compensate for the Surface's rotation.
-        matrix.postRotate(
-                (float) -surfaceRotationDegrees,
-                textureView.getWidth() / 2f,
-                textureView.getHeight() / 2f
-        );
-
-        return matrix;
-    }
-
-    //region Video Preview
-    /**
-     * @brief Instantiates video stream for user to view inside the application.
-     */
-    private void createPreview() {
-        SurfaceTexture texture = textureView.getSurfaceTexture();
-        assert texture != null;
-
-        Matrix transform = computeTransformationMatrix(textureView, characteristics, new Size(textureView.getWidth(), textureView.getHeight()), 0);
-        textureView.setTransform(transform);
-
-        //texture.setDefaultBufferSize(imageDimension.getWidth(), imageDimension.getHeight());
-        Surface previewSurface = new Surface(texture);
-        try {
-            captureRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
-            captureRequestBuilder.addTarget(previewSurface);
-
-            cameraDevice.createCaptureSession(Arrays.asList(previewSurface), new CameraCaptureSession.StateCallback() {
-                @Override
-                public void onConfigured(@NonNull CameraCaptureSession captureSession) {
-                    //The camera is already closed
-                    if (null == cameraDevice) {
-                        return;
-                    }
-                    // When the session is ready, we start displaying the preview.
-                    cameraCaptureSession = captureSession;
-                    updatePreview();
-                }
-
-                @Override
-                public void onConfigureFailed(@NonNull CameraCaptureSession captureSession) {
-                    Toast.makeText(GaitVideoActivity.this, "Configuration failed", Toast.LENGTH_SHORT).show();
-                }
-            }, backgroundHandler);
-        } catch (CameraAccessException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void updatePreview() {
-        try {
-            if (null == cameraDevice) {
-                Log.e(TAG, "updatePreview error, return");
-            }
-            startBackgroundThread();
-
-            captureRequestBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
-            cameraCaptureSession.setRepeatingRequest(captureRequestBuilder.build(), new CameraCaptureSession.CaptureCallback() {
-                /* Note that the frame count starts as soon as the preview is started - which is when the app is launched */
-                @Override
-                public void onCaptureStarted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, long timestamp, long frameNumber) {
-                    super.onCaptureStarted(session, request, timestamp, frameNumber);
-                    exposureOfFirstFrameTimestamp = null;
-                }
-            }, backgroundHandler);
-        } catch (CameraAccessException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void closePreview() {
-        if (cameraCaptureSession != null) {
-            cameraCaptureSession.close();
-            cameraCaptureSession = null;
-        }
-    }
-    //endregion
-
-    //region Video Recording
-    private void startVideoRecording() {
-        startVideoRecordingButton.setEnabled(false);
-        stopVideoRecordingButton.setEnabled(true);
-        closePreview();
-        try {
-            setupMediaRecorder();
-            Toast.makeText(GaitVideoActivity.this, "Recording " + simpleFilename, Toast.LENGTH_SHORT).show();
-
-            SurfaceTexture texture = textureView.getSurfaceTexture();
-            assert texture != null;
-            //texture.setDefaultBufferSize(imageDimension.getWidth(), imageDimension.getHeight());
-
-            captureRequestBuilder = cameraDevice.createCaptureRequest(TEMPLATE_RECORD);
-
-            // setting the camera fps
-            captureRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, fpsRange); // This sets the frame rate accurately
-
-            Surface previewSurface = new Surface(texture);
-            captureRequestBuilder.addTarget(previewSurface);
-
-            // MediaRecorder setup for surface
-            Surface recorderSurface = mediaRecorder.getSurface();
-            captureRequestBuilder.addTarget(recorderSurface);
-
-            List<OutputConfiguration> outputConfig = Arrays.asList(new OutputConfiguration(previewSurface),
-                    new OutputConfiguration(recorderSurface));
-
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
-                SessionConfiguration config = new SessionConfiguration(SessionConfiguration.SESSION_REGULAR, outputConfig,
-                        getBaseContext().getMainExecutor(), new CameraCaptureSession.StateCallback() {
-
-                    @Override
-                    public void onConfigured(@NonNull CameraCaptureSession captureSession) {
-                        Log.d(TAG, "Configuration succeeded");
-                        cameraCaptureSession = captureSession;
-                        try {
-                            mediaRecorder.start();
-                            cameraCaptureSession.setRepeatingRequest(captureRequestBuilder.build(), new CameraCaptureSession.CaptureCallback() {
-                                @Override
-                                public void onCaptureStarted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, long timestamp, long frameNumber) {
-                                    super.onCaptureStarted(session, request, timestamp, frameNumber);
-                                    if (exposureOfFirstFrameTimestamp == null && !isFirstFrameTimestampCollected) {
-                                        exposureOfFirstFrameTimestamp = new Date().getTime();
-                                        curTrial.exposureOfFirstFrameTimestamp = exposureOfFirstFrameTimestamp;
-                                        isFirstFrameTimestampCollected = true;
-                                    }
-                                }
-                            }, backgroundHandler);
-                        } catch (CameraAccessException e) {
-                            e.printStackTrace();
-                        }
-
-                        startRecordingTimestamp = new Date().getTime();
-                        curTrial.cameraHardwareConfiguredStartRecordingTimestamp = startRecordingTimestamp;
-                    }
-
-                    @Override
-                    public void onConfigureFailed(@NonNull CameraCaptureSession captureSession) {
-                        Log.d(TAG, "Configuration failed");
-                    }
-
-                });
-
-                //config.setSessionParameters(captureRequestBuilder.build());
-
-                cameraDevice.createCaptureSession(config);
-
-
-            } else {
-                Log.e(TAG, "Not implemented yet");
-            }
-
-        } catch (IOException | CameraAccessException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void setupMediaRecorder() throws IOException {
-        final Activity activity = this;
-        if (null == activity) {
-            return;
-        }
-        mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-        mediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
-        mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
-        mediaRecorder.setVideoSize(imageDimension.getWidth(), imageDimension.getHeight()); // absolutely necessary
-        mediaRecorder.setVideoFrameRate(fps);
-        mediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
-        mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
-        mediaRecorder.setVideoEncodingBitRate(10_000_000);
-
-        int rotation = activity.getWindowManager().getDefaultDisplay().getRotation();
-        mediaRecorder.setOrientationHint(ORIENTATIONS.get(rotation));
-
-        currentFile = createNewFile();
-        simpleFilename = getSimpleFilename(currentFile);
-        firebaseUploadFileName = setupFirebaseFile(simpleFilename);
-        showVideoStatus("Recording " + simpleFilename, "gray");
-        mediaRecorder.setOutputFile(currentFile.getAbsolutePath());
-
-        mediaRecorder.prepare();
-    }
-
-    private void stopVideoRecording() {
-        Toast.makeText(GaitVideoActivity.this, "Uploading " + simpleFilename, Toast.LENGTH_SHORT).show();
-        stopVideoRecordingButton.setEnabled(false);
-        try {
-            cameraCaptureSession.stopRepeating();
-            cameraCaptureSession.abortCaptures();
-        } catch (CameraAccessException e) {
-            e.printStackTrace();
-        }
-        // Stop recording
-        mediaRecorder.stop();
-        mediaRecorder.reset();
-        createPreview();
-        pushVideoFileToFirebase();
-    }
-    //endregion
 
     //region Firebase
     public void updateLogger() {
@@ -828,7 +348,7 @@ public class GaitVideoActivity extends AppCompatActivity implements DepthFrameVi
         text.setText("User: " + mUser.getUid());
     }
 
-    void showVideoStatus(String status, String color) {
+    public void showVideoStatus(String status, String color) {
         TextView text = findViewById(R.id.videoStatus);
         HashMap<String, String> textColorMap = new HashMap<>();
         textColorMap.put("green", "#6BB02F");
@@ -882,10 +402,14 @@ public class GaitVideoActivity extends AppCompatActivity implements DepthFrameVi
         return uploadFileName;
     }
 
-    private void pushVideoFileToFirebase() {
+    public void pushVideoFileToFirebase(File currentFile, Long exposureOfFirstFrameTimestamp, Long startRecordingTimestamp) {
+        curTrial.exposureOfFirstFrameTimestamp = exposureOfFirstFrameTimestamp;
+        curTrial.cameraHardwareConfiguredStartRecordingTimestamp = startRecordingTimestamp;
         curTrial.userPressedStopVideoRecordingButtonTimestamp = new Date().getTime();
+        String simpleFilename = getSimpleFilename(currentFile);
         updateLogger();
         showVideoStatus("Uploading "  + simpleFilename + "...", "red");
+        String firebaseUploadFileName = setupFirebaseFile(simpleFilename);
         StorageReference storageRef = storage.getReference().child(firebaseUploadFileName);
         storageRef.putFile(Uri.fromFile(currentFile))
                 .addOnFailureListener(e -> showVideoStatus("Upload "  + simpleFilename + " failed", "failed"))
@@ -916,7 +440,7 @@ public class GaitVideoActivity extends AppCompatActivity implements DepthFrameVi
 
     //region Internal File Storage
 
-    private File createNewFile() {
+    public File createNewFile() {
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss'Z'",
                 Locale.getDefault()).format(new Date());
         createFileTimestamp = new Date().getTime();
@@ -926,7 +450,7 @@ public class GaitVideoActivity extends AppCompatActivity implements DepthFrameVi
         return mediaFile;
     }
 
-    private String getSimpleFilename(File file) {
+    public String getSimpleFilename(File file) {
         String temp[] = file.getAbsolutePath().split("/");
         String filename = temp[temp.length - 1];
         return filename;
@@ -937,15 +461,11 @@ public class GaitVideoActivity extends AppCompatActivity implements DepthFrameVi
     // Save the state of the stopwatch
     // if it's about to be destroyed.
     @Override
-    public void onSaveInstanceState(
-            Bundle savedInstanceState) {
+    public void onSaveInstanceState(Bundle savedInstanceState) {
         super.onSaveInstanceState(savedInstanceState);
-        savedInstanceState
-                .putInt("seconds", seconds);
-        savedInstanceState
-                .putBoolean("running", running);
-        savedInstanceState
-                .putBoolean("wasRunning", wasRunning);
+        savedInstanceState.putInt("seconds", seconds);
+        savedInstanceState.putBoolean("running", running);
+        savedInstanceState.putBoolean("wasRunning", wasRunning);
     }
 
     // Sets the NUmber of seconds on the timer.
@@ -969,8 +489,7 @@ public class GaitVideoActivity extends AppCompatActivity implements DepthFrameVi
         }
 
         // Creates a new Handler
-        final Handler handler
-                = new Handler();
+        final Handler handler = new Handler();
 
         // Call the post() method,
         // passing in a new Runnable.
@@ -1018,7 +537,20 @@ public class GaitVideoActivity extends AppCompatActivity implements DepthFrameVi
     }
     //endregion
 
-    //region EmgPwr
+   public boolean checkPermissions() {
+       // Explicitly check user permissions
+       if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
+               != PackageManager.PERMISSION_GRANTED &&
+               ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                       != PackageManager.PERMISSION_GRANTED &&
+               ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+                       != PackageManager.PERMISSION_GRANTED) {
+           ActivityCompat.requestPermissions(
+                   this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS);
+           return false;
+       }
+       return true;
+   }
 
     /**
      * Enables emgPwr streaming - assumes that it is initially disabled. Note: once
@@ -1039,6 +571,5 @@ public class GaitVideoActivity extends AppCompatActivity implements DepthFrameVi
         Toast.makeText(GaitVideoActivity.this, "EMG enabled!", Toast.LENGTH_SHORT).show();
         isEmgEnabled = true;
     }
-    //endregion
 
 }
