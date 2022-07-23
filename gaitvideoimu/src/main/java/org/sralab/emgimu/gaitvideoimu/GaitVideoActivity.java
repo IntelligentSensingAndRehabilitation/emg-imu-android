@@ -2,11 +2,7 @@ package org.sralab.emgimu.gaitvideoimu;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.Matrix;
-import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
 import android.media.MediaPlayer;
 import android.net.Uri;
@@ -16,7 +12,6 @@ import android.os.HandlerThread;
 import android.os.RemoteException;
 import android.util.Log;
 import android.util.Size;
-import android.util.SparseIntArray;
 import android.view.TextureView;
 import android.view.View;
 import android.widget.Button;
@@ -38,6 +33,7 @@ import com.google.gson.Gson;
 
 import org.jetbrains.annotations.NotNull;
 import org.sralab.emgimu.camera.CameraActivity;
+import org.sralab.emgimu.camera.DepthCamera;
 import org.sralab.emgimu.gaitvideoimu.stream_visualization.DeviceViewModel;
 import org.sralab.emgimu.gaitvideoimu.stream_visualization.StreamingAdapter;
 import org.sralab.emgimu.logging.FirebaseGameLogger;

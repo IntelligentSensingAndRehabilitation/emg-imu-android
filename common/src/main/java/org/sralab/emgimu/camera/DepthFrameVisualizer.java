@@ -1,7 +1,7 @@
 // Code originally from https://github.com/plluke/tof and previously licensed under
 // The Unlicense
 
-package org.sralab.emgimu.gaitvideoimu;
+package org.sralab.emgimu.camera;
 
 import android.graphics.Bitmap;
 

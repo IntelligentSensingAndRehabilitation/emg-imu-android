@@ -1,7 +1,7 @@
 // Code originally from https://github.com/plluke/tof and previously licensed under
 // The Unlicense
 
-package org.sralab.emgimu.gaitvideoimu;
+package org.sralab.emgimu.camera;
 
 import android.Manifest;
 import android.app.Activity;
@@ -30,9 +30,6 @@ import android.view.TextureView;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
-
-import org.sralab.emgimu.camera.Camera;
-import org.sralab.emgimu.camera.CameraActivity;
 
 import java.io.File;
 import java.io.IOException;
@@ -75,11 +72,6 @@ public class DepthCamera extends CameraDevice.StateCallback implements DepthFram
         previewReader = ImageReader.newInstance(DepthFrameAvailableListener.WIDTH,
                 DepthFrameAvailableListener.HEIGHT, ImageFormat.DEPTH16,2);
         previewReader.setOnImageAvailableListener(imageAvailableListener, null);
-
-        //setupMediaRecorder();
-        //Canvas canvas = mediaRecorder.getSurface().lockHardwareCanvas();
-        //canvas.draw;
-
     }
 
     // Open the front depth camera and start sending frames
