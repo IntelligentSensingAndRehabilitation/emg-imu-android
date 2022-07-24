@@ -33,6 +33,7 @@ import com.google.gson.Gson;
 import org.jetbrains.annotations.NotNull;
 import org.sralab.emgimu.camera.CameraCallbacks;
 import org.sralab.emgimu.camera.DepthCamera;
+import org.sralab.emgimu.camera.PhoneSensors;
 import org.sralab.emgimu.gaitvideoimu.stream_visualization.DeviceViewModel;
 import org.sralab.emgimu.gaitvideoimu.stream_visualization.StreamingAdapter;
 import org.sralab.emgimu.logging.FirebaseGameLogger;
@@ -61,6 +62,7 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
     // RecyclerView Fields
     private DeviceViewModel dvm;
     private StreamingAdapter streamingAdapter;
+    private PhoneSensors phoneSensors;
 
     //Firebase Fields & Nested Class
     class GaitTrial {
@@ -69,7 +71,8 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
         public long stopTime;
         public boolean isEmgEnabled;
         public String depthFileName;
-        public long depthStartTime;
+        public Long depthStartTime;
+        public String phoneSensorLog;
     }
     ArrayList<GaitTrial> trials = new ArrayList<>();
     private GaitTrial curTrial;
@@ -136,6 +139,7 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
 
         // Set up the camera. When the texture is ready the camera is opened.
         camera = new Camera(this, this, textureView);
+        phoneSensors = new PhoneSensors(this, this);
 
         enableFirebase();
 
@@ -168,6 +172,8 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
                     camera.startVideoRecording();
                     if (depthCamera != null)
                         depthCamera.startVideoRecording();
+                    if (phoneSensors != null)
+                        phoneSensors.startRecording();
 
                     startVideoRecordingButton.setEnabled(false);
                     stopVideoRecordingButton.setEnabled(true);
@@ -177,6 +183,11 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
         stopVideoRecordingButton.setOnClickListener(
                 v -> {
                     punch.start();
+
+                    if (phoneSensors != null) {
+                        curTrial.phoneSensorLog = phoneSensors.getFirebasePath();
+                        phoneSensors.stopRecording();
+                    }
                     if (depthCamera != null)
                         depthCamera.stopVideoRecording();
                     camera.stopVideoRecording();
@@ -214,6 +225,7 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
         camera.closeCamera();
         if (depthCamera != null)
             depthCamera.closeCamera();
+
         stopBackgroundThread();
 
         // If the activity is paused,
