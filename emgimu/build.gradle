@@ -64,7 +64,7 @@ dependencies {
     api 'androidx.multidex:multidex:2.0.1'
 
     // Required to prevent google-services pulling in arbitrary versions
-    api 'androidx.appcompat:appcompat:1.4.1'
+    api 'androidx.appcompat:appcompat:1.4.2'
     api 'androidx.legacy:legacy-support-v4:1.0.0'
 
     implementation "com.google.firebase:firebase-crashlytics:$firebaseCrashlyticsVer"

@@ -45,21 +45,21 @@ ext {
     //googlePlayServicesVersion   = "15.0.1"
 
     buildTools = '30.0.3'
-    compileSdk = 31
+    compileSdk = 32
     minSdk = 26
     minSdkInstant = 26
     ndkVersion = '21.2.6472646'
 
     supportLib = '28.0.0'
-    firebaseCoreVer = '21.0.0'
-    firebaseAuthVer = '21.0.5'
+    firebaseCoreVer = '21.1.0'
+    firebaseAuthVer = '21.0.6'
     firebaseStorageVer = '20.0.1'
-    firebaseFirestoreVer = '24.1.2'
-    firebaseMessagingVer = '23.0.5'
+    firebaseFirestoreVer = '24.2.1'
+    firebaseMessagingVer = '23.0.6'
     firebaseCrashlyticsVer = '18.2.11'
     instantAppsVer = '1.1.0'
 
-    nordicBleLVer = '2.4.1'
+    nordicBleLVer = '2.5.1'
 
     espressoVersion = "3.0.1"
     androidTestVersion = "1.0.1"
