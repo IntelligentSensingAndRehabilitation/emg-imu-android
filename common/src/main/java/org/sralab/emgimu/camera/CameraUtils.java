@@ -3,11 +3,22 @@ package org.sralab.emgimu.camera;
 import android.graphics.Matrix;
 import android.hardware.camera2.CameraCharacteristics;
 import android.util.Size;
+import android.util.SparseIntArray;
 import android.view.Surface;
 import android.view.TextureView;
 
 public class CameraUtils {
 
+    private static final SparseIntArray ORIENTATIONS = new SparseIntArray() {{
+        put(Surface.ROTATION_0, 90);
+        put(Surface.ROTATION_90, 0);
+        put(Surface.ROTATION_180, 270);
+        put(Surface.ROTATION_270, 180);
+    }};
+
+    public static int getRotationDegrees(CameraCallbacks callbacks) {
+        return ORIENTATIONS.get(callbacks.getDisplayRotation());
+    }
 
     /**
      * Computes rotation required to transform the camera sensor output orientation to the

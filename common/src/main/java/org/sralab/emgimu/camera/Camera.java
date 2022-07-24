@@ -3,6 +3,7 @@ package org.sralab.emgimu.camera;
 import static android.hardware.camera2.CameraDevice.TEMPLATE_RECORD;
 
 import static org.sralab.emgimu.camera.CameraUtils.computeTransformationMatrix;
+import static org.sralab.emgimu.camera.CameraUtils.getRotationDegrees;
 
 import android.app.Activity;
 import android.content.Context;
@@ -58,12 +59,6 @@ public class Camera {
     protected Size imageDimension;
     protected int fps;
 
-    private static final SparseIntArray ORIENTATIONS = new SparseIntArray() {{
-        put(Surface.ROTATION_0, 90);
-        put(Surface.ROTATION_90, 0);
-        put(Surface.ROTATION_180, 270);
-        put(Surface.ROTATION_270, 180);
-    }};
 
     /** Setup a dictionary to map the lens orientation enum into a human-readable string */
     HashMap<Integer, String> lensOrientationMap = new HashMap<Integer, String>() {{
@@ -191,8 +186,7 @@ public class Camera {
         mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
         mediaRecorder.setVideoEncodingBitRate(10_000_000);
 
-        int rotation = callbacks.getDisplayRotation();
-        mediaRecorder.setOrientationHint(ORIENTATIONS.get(rotation));
+        mediaRecorder.setOrientationHint(getRotationDegrees(callbacks));
 
         currentFile = callbacks.createNewFile("");
         callbacks.showVideoStatus("Recording " + callbacks.getSimpleFilename(currentFile), "gray");

@@ -53,6 +53,8 @@ public class DepthCamera extends CameraDevice.StateCallback {
     private TextureView textureView;
     private Surface previewSurface;
 
+    // Note this is a slightly altered version due to quirk with depth
+    // camera
     private static final SparseIntArray ORIENTATIONS = new SparseIntArray() {{
         put(Surface.ROTATION_0, 270);
         put(Surface.ROTATION_90, 180);
