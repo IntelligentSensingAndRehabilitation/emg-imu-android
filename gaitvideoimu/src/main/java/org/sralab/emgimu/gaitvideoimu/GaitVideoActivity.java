@@ -229,7 +229,7 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
         dvm.onResume();
         startBackgroundThread();
 
-        camera.openCamera(new Size(1920, 1080), 30);
+        camera.openCamera(new Size(1920, 1080), 60);
         if (depthCamera != null)
             depthCamera.openFrontDepthCamera();
 
