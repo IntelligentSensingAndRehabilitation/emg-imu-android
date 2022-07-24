@@ -52,7 +52,6 @@ public class Camera {
     protected CaptureRequest.Builder captureRequestBuilder;
     protected CameraCaptureSession cameraCaptureSession;
 
-    private long startRecordingTimestamp;
     private Long exposureOfFirstFrameTimestamp;
 
     protected File currentFile;
@@ -244,7 +243,6 @@ public class Camera {
                             throw new RuntimeException("Error configuring recording", e);
                         }
 
-                        startRecordingTimestamp = new Date().getTime();
                     }
 
                     @Override
@@ -278,7 +276,7 @@ public class Camera {
         mediaRecorder.stop();
         mediaRecorder.reset();
         createPreview();
-        callbacks.pushVideoFileToFirebase(currentFile, exposureOfFirstFrameTimestamp, startRecordingTimestamp, false);
+        callbacks.pushVideoFileToFirebase(currentFile, exposureOfFirstFrameTimestamp, false);
     }
 
 

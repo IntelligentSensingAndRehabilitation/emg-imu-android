@@ -65,14 +65,11 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
     //Firebase Fields & Nested Class
     class GaitTrial {
         public String fileName;
-        public long userPressedStartVideoRecordingButtonTimestamp;
-        public long systemCreatedFileTimestamp;
-        public long cameraHardwareConfiguredStartRecordingTimestamp;
-        public long userPressedStopVideoRecordingButtonTimestamp;
+        public long startTime;
+        public long stopTime;
         public boolean isEmgEnabled;
         public String depthFileName;
         public long depthStartTime;
-        private long exposureOfFirstFrameTimestamp;
     }
     ArrayList<GaitTrial> trials = new ArrayList<>();
     private GaitTrial curTrial;
@@ -333,24 +330,21 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
         return uploadFileName;
     }
 
-    public void pushVideoFileToFirebase(File currentFile, Long exposureOfFirstFrameTimestamp, Long startRecordingTimestamp, boolean depth) {
+    public void pushVideoFileToFirebase(File currentFile, long startTime, boolean depth) {
 
         String simpleFilename = getSimpleFilename(currentFile);
         String firebaseUploadFileName = setupFirebaseFile(simpleFilename);
 
         if (depth) {
             curTrial.depthFileName = firebaseUploadFileName;
-            curTrial.depthStartTime = exposureOfFirstFrameTimestamp;
+            curTrial.depthStartTime = startTime;
         }
         else {
             curTrial.fileName = firebaseUploadFileName;
 
             // Store lots of timestamps
-            curTrial.exposureOfFirstFrameTimestamp = exposureOfFirstFrameTimestamp;
-            curTrial.cameraHardwareConfiguredStartRecordingTimestamp = startRecordingTimestamp;
-            curTrial.userPressedStopVideoRecordingButtonTimestamp = new Date().getTime();
-            curTrial.userPressedStartVideoRecordingButtonTimestamp = clickButtonTimestamp;
-            curTrial.systemCreatedFileTimestamp = createFileTimestamp;
+            curTrial.startTime = startTime;
+            curTrial.stopTime = new Date().getTime();
 
             // TODO: this should probably be outside of this function
             curTrial.isEmgEnabled = isEmgEnabled;

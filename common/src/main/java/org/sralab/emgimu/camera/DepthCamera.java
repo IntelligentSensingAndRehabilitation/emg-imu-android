@@ -234,8 +234,7 @@ public class DepthCamera extends CameraDevice.StateCallback {
         imageAvailableListener.setListeningSurface(null);
         mediaRecorder.stop();
         mediaRecorder.reset();
-        callbacks.pushVideoFileToFirebase(currentFile, imageAvailableListener.getFirstTimestamp(),
-                imageAvailableListener.getFirstTimestamp(), true);
+        callbacks.pushVideoFileToFirebase(currentFile, imageAvailableListener.getFirstTimestamp(), true);
     }
 
     private void setupMediaRecorder() throws IOException {

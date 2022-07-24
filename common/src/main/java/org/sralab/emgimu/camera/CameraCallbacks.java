@@ -9,7 +9,7 @@ public interface CameraCallbacks {
     File createNewFile(String suffix);
     String getSimpleFilename(File currentFile);
     void showVideoStatus(String status, String color);
-    void pushVideoFileToFirebase(File currentFile, Long exposureOfFirstFrameTimestamp, Long startRecordingTimestamp, boolean depth);
+    void pushVideoFileToFirebase(File currentFile, long startTime, boolean depth);
     Handler getBackgroundHandler();
     boolean checkPermissions();
     int getDisplayRotation();
