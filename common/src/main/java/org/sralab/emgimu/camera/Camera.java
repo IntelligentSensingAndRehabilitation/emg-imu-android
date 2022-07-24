@@ -61,7 +61,7 @@ public class Camera {
 
 
     /** Setup a dictionary to map the lens orientation enum into a human-readable string */
-    HashMap<Integer, String> lensOrientationMap = new HashMap<Integer, String>() {{
+    static final HashMap<Integer, String> lensOrientationMap = new HashMap<Integer, String>() {{
         put((int) CameraCharacteristics.LENS_FACING_BACK, "Back");
         put((int) CameraCharacteristics.LENS_FACING_FRONT, "Front");
         put((int) CameraCharacteristics.LENS_FACING_EXTERNAL,"External");
@@ -282,7 +282,7 @@ public class Camera {
     }
 
 
-    private class CameraInfo {
+    protected static class CameraInfo {
         Integer fps;
         String orientation;
         String cameraId;
@@ -292,7 +292,7 @@ public class Camera {
     }
 
     /** Lists all video-capable cameras and supported resolution and FPS combinations */
-    private List<CameraInfo> enumerateVideoCameras(CameraManager manager) {
+    static private List<CameraInfo> enumerateVideoCameras(CameraManager manager) {
         List<CameraInfo> availableCameras = new ArrayList<>();
 
         //  Iterate over the list of cameras and add those with high speed video recording
@@ -354,8 +354,7 @@ public class Camera {
         return availableCameras;
     }
 
-    private CameraInfo selectMode(Size resolution, int fps) {
-        CameraManager manager = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
+    static protected CameraInfo selectMode(CameraManager manager, Size resolution, int fps) {
         List<CameraInfo> cameraInfoList = enumerateVideoCameras(manager);
 
         for (CameraInfo cameraInfo : cameraInfoList) {
@@ -381,12 +380,12 @@ public class Camera {
     public void openCamera(Size resolution, int fps) {
         Log.d(TAG, "openCamera");
         CameraManager manager = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
-        CameraInfo cameraInfo = selectMode(resolution, fps);
+        CameraInfo cameraInfo = selectMode(manager, resolution, fps);
         if (cameraInfo == null && fps > 30) {
             Log.w(TAG, "Unable to satisfy request for " + resolution + " at " + fps + ". Falling back to 30.");
 
             fps = 30;
-            cameraInfo = selectMode(resolution, fps);
+            cameraInfo = selectMode(manager, resolution, fps);
         }
         if (cameraInfo == null) {
             throw new RuntimeException("Unable to match requested camera settings. Resolution: " + resolution + " FPS: " + fps);
@@ -447,7 +446,7 @@ public class Camera {
         }
     }
 
-    private String lensOrientationMap(Integer integer) {
+    static String lensOrientationMap(Integer integer) {
         return lensOrientationMap.get(integer);
     }
 

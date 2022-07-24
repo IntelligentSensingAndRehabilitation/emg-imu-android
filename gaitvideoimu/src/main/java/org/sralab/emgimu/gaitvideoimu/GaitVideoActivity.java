@@ -5,6 +5,7 @@ import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.media.MediaPlayer;
 import android.net.Uri;
+import android.opengl.GLSurfaceView;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -23,11 +24,6 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.ar.core.exceptions.RecordingFailedException;
-import com.google.ar.core.exceptions.UnavailableApkTooOldException;
-import com.google.ar.core.exceptions.UnavailableArcoreNotInstalledException;
-import com.google.ar.core.exceptions.UnavailableDeviceNotCompatibleException;
-import com.google.ar.core.exceptions.UnavailableSdkTooOldException;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -54,6 +50,10 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
+
+import javax.microedition.khronos.egl.EGLConfig;
+import javax.microedition.khronos.opengles.GL10;
+
 import no.nordicsemi.android.nrftoolbox.widget.DividerItemDecoration;
 
 public class GaitVideoActivity extends AppCompatActivity implements CameraCallbacks {
@@ -100,6 +100,7 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
     private HandlerThread backgroundThread;
     private TextureView textureView;
     private TextureView depthTextureView;
+    GLSurfaceView arSurface;
 
     private static final int REQUEST_CODE_PERMISSIONS = 10;
     @NotNull
@@ -140,24 +141,32 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
         recyclerView.addItemDecoration(new DividerItemDecoration(getBaseContext(), DividerItemDecoration.VERTICAL_LIST));
 
         Log.d(TAG, "Starting ARCameraTracking");
-        arTracking = new ARCameraTracking();
-        try {
-            arTracking.startRecording(this, this);
-        } catch (UnavailableDeviceNotCompatibleException e) {
-            e.printStackTrace();
-        } catch (UnavailableSdkTooOldException e) {
-            e.printStackTrace();
-        } catch (UnavailableArcoreNotInstalledException e) {
-            e.printStackTrace();
-        } catch (UnavailableApkTooOldException e) {
-            e.printStackTrace();
-        }
+        arSurface = findViewById(R.id.ar_surfaceview);
+        arSurface.setRenderer(new GLSurfaceView.Renderer() {
+            @Override
+            public void onSurfaceCreated(GL10 gl10, EGLConfig eglConfig) {
 
+            }
+
+            @Override
+            public void onSurfaceChanged(GL10 gl10, int i, int i1) {
+
+            }
+
+            @Override
+            public void onDrawFrame(GL10 gl10) {
+                arTracking.processFrame();
+            }
+        });
+        arTracking = new ARCameraTracking(this, this, arSurface);
+
+        /*
         depthCamera = new DepthCamera(this, this, depthTextureView);
         if (depthCamera.getFrontDepthCameraID() == null) {
             depthTextureView.setVisibility(View.GONE);
             depthCamera = null;
         }
+        */
 
         // Set up the camera. When the texture is ready the camera is opened.
         camera = new Camera(this, this, textureView);
@@ -237,11 +246,8 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
         updateLogger();
         dvm.onPause();
 
-        try {
-            arTracking.stopRecording();
-        } catch (RecordingFailedException e) {
-            e.printStackTrace();
-        }
+        arSurface.onPause();
+        arTracking.stopRecording();
 
         camera.closeCamera();
         if (depthCamera != null)
@@ -260,6 +266,10 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
         super.onResume();
         dvm.onResume();
         startBackgroundThread();
+
+        arTracking.openCamera(new Size(1920, 1080), 30);
+        assert arSurface != null;
+        arSurface.onResume();
 
         /*
         camera.openCamera(new Size(1920, 1080), 30);
