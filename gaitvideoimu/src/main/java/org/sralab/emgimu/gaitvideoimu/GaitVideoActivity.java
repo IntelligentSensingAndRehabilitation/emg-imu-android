@@ -22,6 +22,12 @@ import androidx.core.app.ActivityCompat;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.google.ar.core.exceptions.RecordingFailedException;
+import com.google.ar.core.exceptions.UnavailableApkTooOldException;
+import com.google.ar.core.exceptions.UnavailableArcoreNotInstalledException;
+import com.google.ar.core.exceptions.UnavailableDeviceNotCompatibleException;
+import com.google.ar.core.exceptions.UnavailableSdkTooOldException;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -31,6 +37,7 @@ import com.google.firebase.storage.StorageReference;
 import com.google.gson.Gson;
 
 import org.jetbrains.annotations.NotNull;
+import org.sralab.emgimu.camera.ARCameraTracking;
 import org.sralab.emgimu.camera.CameraCallbacks;
 import org.sralab.emgimu.camera.DepthCamera;
 import org.sralab.emgimu.gaitvideoimu.stream_visualization.DeviceViewModel;
@@ -85,7 +92,8 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
     private long createFileTimestamp;               // the system created the video file
 
     DepthCamera depthCamera;
-    //endregion
+
+    ARCameraTracking arTracking;
 
 
     private Handler backgroundHandler;
@@ -130,6 +138,20 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
         final RecyclerView recyclerView = findViewById(R.id.emg_list);
         recyclerView.setLayoutManager(new LinearLayoutManager(getBaseContext()));
         recyclerView.addItemDecoration(new DividerItemDecoration(getBaseContext(), DividerItemDecoration.VERTICAL_LIST));
+
+        Log.d(TAG, "Starting ARCameraTracking");
+        arTracking = new ARCameraTracking();
+        try {
+            arTracking.startRecording(this, this);
+        } catch (UnavailableDeviceNotCompatibleException e) {
+            e.printStackTrace();
+        } catch (UnavailableSdkTooOldException e) {
+            e.printStackTrace();
+        } catch (UnavailableArcoreNotInstalledException e) {
+            e.printStackTrace();
+        } catch (UnavailableApkTooOldException e) {
+            e.printStackTrace();
+        }
 
         depthCamera = new DepthCamera(this, this, depthTextureView);
         if (depthCamera.getFrontDepthCameraID() == null) {
@@ -214,6 +236,13 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
         super.onPause();
         updateLogger();
         dvm.onPause();
+
+        try {
+            arTracking.stopRecording();
+        } catch (RecordingFailedException e) {
+            e.printStackTrace();
+        }
+
         camera.closeCamera();
         if (depthCamera != null)
             depthCamera.closeCamera();
@@ -232,9 +261,11 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
         dvm.onResume();
         startBackgroundThread();
 
+        /*
         camera.openCamera(new Size(1920, 1080), 30);
         if (depthCamera != null)
             depthCamera.openFrontDepthCamera();
+        */
 
         // If the activity is resumed,
         // start the stopwatch

@@ -69,6 +69,10 @@ dependencies {
     implementation "com.google.firebase:firebase-auth:$firebaseAuthVer"
     implementation "com.google.firebase:firebase-firestore:$firebaseFirestoreVer"
     implementation "com.google.firebase:firebase-storage:$firebaseStorageVer"
+
+    // ARCore (Google Play Services for AR) library.
+    implementation 'com.google.ar:core:1.32.0'
+    //implementation 'com.google.android.gms:play-services-location:20'
 }
 
 apply plugin: 'com.google.gms.google-services'
