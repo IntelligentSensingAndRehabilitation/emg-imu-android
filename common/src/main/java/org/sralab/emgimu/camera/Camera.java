@@ -404,12 +404,33 @@ public class Camera {
         if (!callbacks.checkPermissions())
             return;
 
-        try {
-            characteristics = manager.getCameraCharacteristics(cameraId);
-            manager.openCamera(cameraId, openStateCallback, callbacks.getBackgroundHandler());
-        } catch (CameraAccessException e) {
-            throw new RuntimeException("Unable to access camera", e);
-        }
+        // Wait for texture to be available before actually opening the camera
+        textureView.setSurfaceTextureListener(new TextureView.SurfaceTextureListener() {
+            @Override
+            public void onSurfaceTextureAvailable(@NonNull SurfaceTexture surfaceTexture, int i, int i1) {
+                try {
+                    characteristics = manager.getCameraCharacteristics(cameraId);
+                    manager.openCamera(cameraId, openStateCallback, callbacks.getBackgroundHandler());
+                } catch (CameraAccessException e) {
+                    throw new RuntimeException("Unable to access camera", e);
+                }
+            }
+
+            @Override
+            public void onSurfaceTextureSizeChanged(@NonNull SurfaceTexture surfaceTexture, int i, int i1) {
+
+            }
+
+            @Override
+            public boolean onSurfaceTextureDestroyed(@NonNull SurfaceTexture surfaceTexture) {
+                return false;
+            }
+
+            @Override
+            public void onSurfaceTextureUpdated(@NonNull SurfaceTexture surfaceTexture) {
+
+            }
+        });
 
     }
 

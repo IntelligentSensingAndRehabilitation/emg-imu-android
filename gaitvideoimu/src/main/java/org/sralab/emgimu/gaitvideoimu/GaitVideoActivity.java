@@ -3,7 +3,6 @@ package org.sralab.emgimu.gaitvideoimu;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
-import android.graphics.SurfaceTexture;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
@@ -18,7 +17,6 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.lifecycle.ViewModelProvider;
@@ -137,13 +135,10 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
         if (depthCamera.getFrontDepthCameraID() == null) {
             depthTextureView.setVisibility(View.GONE);
             depthCamera = null;
-        } else {
-            depthCamera.openFrontDepthCamera();
         }
 
         // Set up the camera. When the texture is ready the camera is opened.
         camera = new Camera(this, this, textureView);
-        textureView.setSurfaceTextureListener(textureListener);
 
         enableFirebase();
 
@@ -237,12 +232,9 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
         dvm.onResume();
         startBackgroundThread();
 
-        if (textureView.isAvailable()) {
-            Log.d(TAG, "onResume openCamera");
-            camera.openCamera(new Size(1920, 1080), 30);
-        } else {
-            textureView.setSurfaceTextureListener(textureListener);
-        }
+        camera.openCamera(new Size(1920, 1080), 30);
+        if (depthCamera != null)
+            depthCamera.openFrontDepthCamera();
 
         // If the activity is resumed,
         // start the stopwatch
@@ -258,33 +250,7 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
         super.onStop();
     }
 
-    /**
-     * Prepares TextureView
-     * TextureView is the view which renders captured camera image data.
-     * TextureView is prepared at View creation, and this callback gives us a notification
-     * when we are ready to prepare for the camera device initialization.
-     */
-    TextureView.SurfaceTextureListener textureListener = new TextureView.SurfaceTextureListener() {
-        @Override
-        public void onSurfaceTextureAvailable(@NonNull SurfaceTexture surface, int width, int height) {
-            Log.d(TAG, "Surface dimensions: " + width + " " + height);
-            //camera.openCamera(new Size(1920, 1080), 60);
-            camera.openCamera(new Size(3840, 2160), 60);
-        }
-
-        @Override
-        public void onSurfaceTextureSizeChanged(@NonNull SurfaceTexture surface, int width, int height) { }
-
-        @Override
-        public boolean onSurfaceTextureDestroyed(@NonNull SurfaceTexture surface) {
-            return false;
-        }
-
-        @Override
-        public void onSurfaceTextureUpdated(@NonNull SurfaceTexture surface) { }
-    };
-
-    public void startBackgroundThread() {
+    protected void startBackgroundThread() {
         backgroundThread = new HandlerThread("Camera Background Thread");
         backgroundThread.start();
         backgroundHandler = new Handler(backgroundThread.getLooper());
