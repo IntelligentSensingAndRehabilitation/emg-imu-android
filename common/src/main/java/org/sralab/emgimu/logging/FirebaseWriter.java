@@ -38,17 +38,21 @@ public class FirebaseWriter extends Observable {
 
     private String suffix;
     private String dateName;
+    private String subpath;
+    private String basepath;
 
     private OutputStream localWriter;
     private OutputStream dataStream;
     private boolean firstEntry = false;
 
-    public FirebaseWriter(Context context, String suffix) {
+    public FirebaseWriter(Context context, String suffix, String basepath) {
 
         this.context = context;
         this.suffix = suffix;
         if (suffix == null)
             this.suffix = "";
+        this.basepath = basepath;
+        this.subpath = null;
 
         FirebaseAuth mAuth = FirebaseAuth.getInstance();
         user = mAuth.getCurrentUser(); // Log in performed by main service
@@ -175,7 +179,16 @@ public class FirebaseWriter extends Observable {
             handler.post(new MsgWriteRunnable(",\n" + json));
     }
 
-    private String getFilename() { return "phone_streams/" + user.getUid() + "/" + dateName + suffix + ".json.gz"; }
+    public void setSubpath(String subpath) {
+        this.subpath = subpath;
+    }
+
+    private String getFilename() {
+        if (subpath == null)
+            return basepath + "/" + user.getUid() + "/" + dateName + suffix + ".json.gz";
+        else
+            return basepath + "/" + user.getUid() + "/" + subpath + "/" + dateName + suffix + ".json.gz";
+    }
 
     private String getLocalFilename() { return dateName + suffix + ".json.gz"; }
 
