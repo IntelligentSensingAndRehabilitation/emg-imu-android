@@ -418,7 +418,12 @@ public class Camera {
 
             @Override
             public void onSurfaceTextureSizeChanged(@NonNull SurfaceTexture surfaceTexture, int i, int i1) {
-
+                if (characteristics != null) {
+                    int rotation = callbacks.getDisplayRotation();
+                    Matrix transform = computeTransformationMatrix(textureView, characteristics,
+                            imageDimension, rotation, 0);
+                    textureView.setTransform(transform);
+                }
             }
 
             @Override

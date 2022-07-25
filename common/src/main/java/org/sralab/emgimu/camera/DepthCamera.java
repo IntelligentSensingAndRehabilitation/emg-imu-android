@@ -93,7 +93,12 @@ public class DepthCamera extends CameraDevice.StateCallback {
 
             @Override
             public void onSurfaceTextureSizeChanged(@NonNull SurfaceTexture surfaceTexture, int i, int i1) {
-
+                if (characteristics != null) {
+                    int rotation = callbacks.getDisplayRotation();
+                    Matrix transform = computeTransformationMatrix(textureView, characteristics,
+                            new Size(DepthFrameAvailableListener.HEIGHT, DepthFrameAvailableListener.WIDTH), rotation, 90);
+                    textureView.setTransform(transform);
+                }
             }
 
             @Override
