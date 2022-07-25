@@ -365,7 +365,7 @@ public class Camera {
                     ". FOV: " + cameraInfo.fov +
                     ". Sensor Size: " + cameraInfo.sensorSize);
 
-            if (cameraInfo.fps == fps && cameraInfo.size.getHeight() == resolution.getHeight() &&
+            if (cameraInfo.fps >= fps && cameraInfo.size.getHeight() == resolution.getHeight() &&
                     cameraInfo.size.getWidth() == resolution.getWidth() &&
                     cameraInfo.orientation == "Back") {
                 return cameraInfo;
