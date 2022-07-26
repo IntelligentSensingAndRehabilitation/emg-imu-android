@@ -63,6 +63,15 @@ public class ConfigActivity extends EmgImuBaseActivity implements ScannerFragmen
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_config_emgimu);
 		setGUI();
+
+		final ActivityResultLauncher<String[]> requestPermissions =
+				registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), null);
+
+		requestPermissions.launch(new String[] {
+				Manifest.permission.BLUETOOTH_SCAN,
+				Manifest.permission.BLUETOOTH_CONNECT,
+		});
+
 		dvm = new ViewModelProvider(this, ViewModelProvider.AndroidViewModelFactory.getInstance(getApplication())).get(DeviceViewModel.class);
 		mDevicesView.setAdapter(mAdapter = new DeviceAdapter(this, dvm));
 	}
