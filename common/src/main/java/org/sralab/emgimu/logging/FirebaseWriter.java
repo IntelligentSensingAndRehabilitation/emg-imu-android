@@ -45,14 +45,14 @@ public class FirebaseWriter extends Observable {
     private OutputStream dataStream;
     private boolean firstEntry = false;
 
-    public FirebaseWriter(Context context, String suffix, String basepath) {
+    public FirebaseWriter(Context context, String suffix, String basepath, String subpath) {
 
         this.context = context;
         this.suffix = suffix;
         if (suffix == null)
             this.suffix = "";
         this.basepath = basepath;
-        this.subpath = null;
+        this.subpath = subpath;
 
         FirebaseAuth mAuth = FirebaseAuth.getInstance();
         user = mAuth.getCurrentUser(); // Log in performed by main service
@@ -179,14 +179,11 @@ public class FirebaseWriter extends Observable {
             handler.post(new MsgWriteRunnable(",\n" + json));
     }
 
-    public void setSubpath(String subpath) {
-        this.subpath = subpath;
-    }
-
     private String getFilename() {
-        if (subpath == null)
+        if (subpath == null) {
+            Log.d(TAG, "No subpath");
             return basepath + "/" + user.getUid() + "/" + dateName + suffix + ".json.gz";
-        else
+        } else
             return basepath + "/" + user.getUid() + "/" + subpath + "/" + dateName + suffix + ".json.gz";
     }
 

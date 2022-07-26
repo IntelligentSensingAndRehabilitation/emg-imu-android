@@ -38,7 +38,7 @@ public class PhoneSensors implements SensorEventListener {
     }
 
     public void startRecording() {
-        firebaseWriter = new FirebaseWriter(context, "_phone_sensors", "phone_streams");
+        firebaseWriter = new FirebaseWriter(context, "_phone_sensors", "phone_streams", null);
         sensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
         sensors = new ArrayList();
 

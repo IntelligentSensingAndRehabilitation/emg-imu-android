@@ -32,8 +32,7 @@ public class FirebaseStreamLogger extends Observable {
         mManager = manager;
         mDeviceMac = manager.getAddress();
 
-        firebaseWriter = new FirebaseWriter(context, "", "streams");
-        firebaseWriter.setSubpath(mDeviceMac);
+        firebaseWriter = new FirebaseWriter(context, "", "streams", mDeviceMac);
     }
 
     public String getReference() {
