@@ -209,7 +209,7 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
 
         enableEmgPwrButton.setOnClickListener(v -> {
             try {
-                //enableEmgPwr();
+                enableEmgPwr();
                 enableEmgStream();
             } catch (RemoteException e) {
                 e.printStackTrace();
