@@ -3,12 +3,8 @@
     android:sharedUserId="org.sralab.emgimu"
     android:installLocation="auto">
 
-    <uses-permission android:name="android.permission.BLUETOOTH" />
-    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
-
     <application>
-
-
+        
         <activity
             android:name="org.sralab.emgimu.streaming.StreamingActivity"
             android:icon="@drawable/ic_streaming"
