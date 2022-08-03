@@ -172,7 +172,7 @@ public abstract class EmgImuViewModel <T> extends AndroidViewModel {
     };
 
     public void emgStreamUpdated(T dev, EmgStreamData data) { }
-    private final IEmgImuStreamDataCallback.Stub streamObserver = new IEmgImuStreamDataCallback.Stub() {
+    public final IEmgImuStreamDataCallback.Stub streamObserver = new IEmgImuStreamDataCallback.Stub() {
         @Override
         public void handleData(BluetoothDevice device, EmgStreamData data) {
             T dev = deviceMap.get(device);
@@ -256,8 +256,32 @@ public abstract class EmgImuViewModel <T> extends AndroidViewModel {
         service.registerEmgPwrObserver(null, pwrObserver);
     }
 
+    public void unregisterEmgPwrObserver() throws RemoteException {
+        service.unregisterEmgPwrObserver(null, pwrObserver);
+    }
+
     public void registerEmgStreamObserver() throws RemoteException {
         service.registerEmgStreamObserver(null, streamObserver);
+    }
+
+    public void unregisterEmgStreamObserver() throws RemoteException {
+        service.unregisterEmgStreamObserver(null, streamObserver);
+    }
+
+    public void unregisterAccel() throws RemoteException {
+        service.unregisterImuAccelObserver(null, accelObserver);
+    }
+
+    public void unregisterGyro() throws RemoteException {
+        service.unregisterImuGyroObserver(null, gyroObserver);
+    }
+
+    public void unregisterMag() throws RemoteException {
+        service.unregisterImuMagObserver(null, magObserver);
+    }
+
+    public void unregisterQuat() throws RemoteException {
+        service.unregisterImuQuatObserver(null, quatObserver);
     }
 
 }

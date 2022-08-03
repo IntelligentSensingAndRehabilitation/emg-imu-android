@@ -209,8 +209,14 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
 
         enableEmgPwrButton.setOnClickListener(v -> {
             try {
-                enableEmgPwr();
-                enableEmgStream();
+                dvm.enableEmgPwr();
+                dvm.enableEmgStream();
+                dvm.disableImuStream();
+
+                enableEmgPwrButton.setEnabled(false);
+                Toast.makeText(GaitVideoActivity.this, "EMG enabled!", Toast.LENGTH_SHORT).show();
+                isEmgEnabled = true;
+
             } catch (RemoteException e) {
                 e.printStackTrace();
             }
@@ -511,26 +517,6 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
     @Override
     public int getDisplayRotation() {
         return getDisplay().getRotation();
-    }
-
-    /**
-     * Enables emgPwr streaming - assumes that it is initially disabled. Note: once
-     * emg is enabled, it will remain enabled until the app is killed.
-     * Firebase streams will be updated with EmgPwr message and the field isEmgEnabled in the
-     * details of the gamePlay logs will be updated to true.
-     */
-    private void enableEmgPwr() throws RemoteException {
-        dvm.enableEmgPwr();
-        enableEmgPwrButton.setEnabled(false);
-        Toast.makeText(GaitVideoActivity.this, "EMG enabled!", Toast.LENGTH_SHORT).show();
-        isEmgEnabled = true;
-    }
-
-    private void enableEmgStream() throws RemoteException {
-        dvm.enableEmgStream();
-        enableEmgPwrButton.setEnabled(false);
-        Toast.makeText(GaitVideoActivity.this, "EMG enabled!", Toast.LENGTH_SHORT).show();
-        isEmgEnabled = true;
     }
 
 }

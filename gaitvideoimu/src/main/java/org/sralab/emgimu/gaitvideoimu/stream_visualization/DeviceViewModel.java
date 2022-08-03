@@ -51,7 +51,7 @@ public class DeviceViewModel extends EmgImuViewModel<Device> {
     public boolean getObserveGyro() { return true; }
 
     @Override
-    public boolean getObserveAccel() { return true; }
+    public boolean getObserveAccel() { return false; }
 
     @Override
     public boolean getObserveBat() { return true; }
@@ -107,5 +107,16 @@ public class DeviceViewModel extends EmgImuViewModel<Device> {
      */
     public void enableEmgStream() throws RemoteException {
         registerEmgStreamObserver();
+    }
+
+    public void disableImuStream() throws RemoteException {
+        unregisterAccel();
+        unregisterMag();
+
+        // For now keep quat and gyro going for easily visualizing logs and possible synchronization
+        if (false) {
+            unregisterGyro();
+            unregisterQuat();
+        }
     }
 }
