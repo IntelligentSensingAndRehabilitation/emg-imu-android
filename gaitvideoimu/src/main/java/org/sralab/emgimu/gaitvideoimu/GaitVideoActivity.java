@@ -39,7 +39,10 @@ import org.sralab.emgimu.gaitvideoimu.stream_visualization.StreamingAdapter;
 import org.sralab.emgimu.logging.FirebaseGameLogger;
 import org.sralab.emgimu.camera.Camera;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -48,6 +51,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.zip.GZIPOutputStream;
+
 import no.nordicsemi.android.nrftoolbox.widget.DividerItemDecoration;
 
 public class GaitVideoActivity extends AppCompatActivity implements CameraCallbacks {
@@ -69,6 +74,7 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
         public String fileName;
         public long startTime;
         public long stopTime;
+        public String timestampsRef;
         public boolean isEmgEnabled;
         public String depthFileName;
         public Long depthStartTime;
@@ -348,7 +354,7 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
         return uploadFileName;
     }
 
-    public void pushVideoFileToFirebase(File currentFile, long startTime, boolean depth) {
+    public void pushVideoFileToFirebase(File currentFile, long startTime, boolean depth, ArrayList<Long> timestamps) {
 
         String simpleFilename = getSimpleFilename(currentFile);
         String firebaseUploadFileName = setupFirebaseFile(simpleFilename);
@@ -370,10 +376,18 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
             // Store trial
             // Note: this presumes that the depth video is uploaded first!
             trials.add(curTrial);
+
+            if (timestamps != null) {
+                curTrial.timestampsRef = uploadTimestamps(currentFile.getAbsolutePath(), timestamps);
+            } else {
+                curTrial.timestampsRef = null;
+            }
+
         }
 
         updateLogger();
-        showVideoStatus("Uploading "  + simpleFilename + "...", "red");
+        if (!depth)
+            showVideoStatus("Uploading "  + simpleFilename + "...", "red");
 
         StorageReference storageRef = storage.getReference().child(firebaseUploadFileName);
         storageRef.putFile(Uri.fromFile(currentFile))
@@ -398,7 +412,9 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
-                    showVideoStatus("Uploaded video: "  + simpleFilename + ", " + fileSize + " " + videoDuration, "green");
+
+                    if (!depth)
+                        showVideoStatus("Uploaded video: "  + simpleFilename + ", " + fileSize + " " + videoDuration, "green");
                     Log.d(TAG, "fileSize = " +fileSize);
                     Toast.makeText(GaitVideoActivity.this, "Upload "  + simpleFilename + " succeeded!", Toast.LENGTH_SHORT).show();
 
@@ -408,6 +424,43 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
                     }
                 });
 
+    }
+
+    public String uploadTimestamps(String fileName, ArrayList<Long> timestamps) {
+        Log.d(TAG, "uploadTimestamps: " + fileName + " timestamps length: " + timestamps.size());
+
+        // Write timestamps to a local file (partly as a backup)
+        String timestampFileName = fileName.substring(0, fileName.length() - 4) + "_timestamps.json.gz";
+        Gson gson = new Gson();
+        OutputStream writer = null;
+        try {
+            FileOutputStream filewriter = new FileOutputStream(timestampFileName);
+            writer = new GZIPOutputStream(filewriter);
+            writer.write(gson.toJson(timestamps).getBytes());
+            writer.close();
+            filewriter.close();
+            Log.d(TAG, "Timestamps written to " + timestampFileName);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
+        // Now upload to Firestore
+        String temp[] = timestampFileName.split("/");
+        String simpleFilename = temp[temp.length - 1];
+        String firebaseUploadFileName = setupFirebaseFile(simpleFilename);
+
+        File timestampFile = new File(timestampFileName);
+
+        StorageReference storageRef = storage.getReference().child(firebaseUploadFileName);
+        storageRef.putFile(Uri.fromFile(timestampFile))
+                .addOnFailureListener(e ->
+                        Log.d(TAG, "Timestamps upload to " + firebaseUploadFileName + " + failed. "  + e.getMessage()))
+                .addOnSuccessListener(taskSnapshot ->
+                    Log.d(TAG, "Timestamps uploaded successfully to " + firebaseUploadFileName)
+                );
+
+        return firebaseUploadFileName;
     }
 
     // Internal File Storage

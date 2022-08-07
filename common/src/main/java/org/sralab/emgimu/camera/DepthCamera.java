@@ -137,11 +137,19 @@ public class DepthCamera extends CameraDevice.StateCallback {
                     // Since sensor size doesn't actually match capture size and because it is
                     // reporting an extremely wide aspect ratio, this FoV is bogus
                     float[] focalLengths = characteristics.get(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS);
+
+                    int sensor_orientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
                     if (focalLengths.length > 0) {
                         float focalLength = focalLengths[0];
                         double fov = 2 * Math.atan(sensorSize.getWidth() / (2 * focalLength));
+                        if (sensor_orientation == 90 || sensor_orientation == 270) {
+                            Log.d(TAG, "here");
+                            fov = 2 * Math.atan(sensorSize.getHeight() / (2 * focalLength));
+                        }
                         Log.i(TAG, "Calculated FoV: " + fov);
                     }
+                    Log.d(TAG, "Focal lengths " + focalLengths.length + " " + focalLengths[0]);
+                    Log.d(TAG, "Sensor Orientation: " + sensor_orientation);
                     return camera;
                 }
             }
@@ -239,7 +247,7 @@ public class DepthCamera extends CameraDevice.StateCallback {
         imageAvailableListener.setListeningSurface(null);
         mediaRecorder.stop();
         mediaRecorder.reset();
-        callbacks.pushVideoFileToFirebase(currentFile, imageAvailableListener.getFirstTimestamp(), true);
+        callbacks.pushVideoFileToFirebase(currentFile, imageAvailableListener.getFirstTimestamp(), true, null);
     }
 
     private void setupMediaRecorder() throws IOException {

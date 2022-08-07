@@ -5,7 +5,6 @@ import static android.hardware.camera2.CameraDevice.TEMPLATE_RECORD;
 import static org.sralab.emgimu.camera.CameraUtils.computeTransformationMatrix;
 import static org.sralab.emgimu.camera.CameraUtils.getRotationDegrees;
 
-import android.app.Activity;
 import android.content.Context;
 import android.graphics.Matrix;
 import android.graphics.SurfaceTexture;
@@ -24,7 +23,6 @@ import android.util.Log;
 import android.util.Range;
 import android.util.Size;
 import android.util.SizeF;
-import android.util.SparseIntArray;
 import android.view.Surface;
 import android.view.TextureView;
 
@@ -53,6 +51,7 @@ public class Camera {
     protected CameraCaptureSession cameraCaptureSession;
 
     private Long exposureOfFirstFrameTimestamp;
+    private ArrayList<Long> recordingTimestamps;
 
     protected File currentFile;
     protected Size imageDimension;
@@ -147,6 +146,7 @@ public class Camera {
                             public void onCaptureStarted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, long timestamp, long frameNumber) {
                                 super.onCaptureStarted(session, request, timestamp, frameNumber);
                                 exposureOfFirstFrameTimestamp = null;
+                                recordingTimestamps = new ArrayList<>();
                             }
                         }, callbacks.getBackgroundHandler());
                     } catch (CameraAccessException e) {
@@ -237,6 +237,8 @@ public class Camera {
                                         if (exposureOfFirstFrameTimestamp == null) {
                                             exposureOfFirstFrameTimestamp = new Date().getTime();
                                         }
+                                    recordingTimestamps.add(new Date().getTime());
+                                    recordingTimestamps.add(timestamp);
                                     }
                                 }, callbacks.getBackgroundHandler());
                         } catch (CameraAccessException e) {
@@ -276,7 +278,7 @@ public class Camera {
         mediaRecorder.stop();
         mediaRecorder.reset();
         createPreview();
-        callbacks.pushVideoFileToFirebase(currentFile, exposureOfFirstFrameTimestamp, false);
+        callbacks.pushVideoFileToFirebase(currentFile, exposureOfFirstFrameTimestamp, false, recordingTimestamps);
     }
 
 
@@ -285,7 +287,9 @@ public class Camera {
         String orientation;
         String cameraId;
         SizeF sensorSize;
+        double focalLength;
         double fov;
+        int sensorOrientation;
         Size size;
     }
 
@@ -307,11 +311,14 @@ public class Camera {
 
                 // Get optics
                 SizeF sensorSize = characteristics.get(CameraCharacteristics.SENSOR_INFO_PHYSICAL_SIZE);
+                int sensorOrientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
                 float[] focalLengths = characteristics.get(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS);
                 double fov = 0;
                 if (focalLengths.length > 0) {
                     float focalLength = focalLengths[0];
                     fov = 2 * Math.atan(sensorSize.getWidth() / (2 * focalLength));
+                    if (sensorOrientation == 90 || sensorOrientation == 270)
+                        fov = 2 * Math.atan(sensorSize.getHeight() / (2 * focalLength));
                 }
 
                 // Query the available capabilities and output formats
@@ -340,6 +347,8 @@ public class Camera {
                         cameraInfo.size = outputSize;
                         cameraInfo.fps = fps;
                         cameraInfo.fov = fov;
+                        cameraInfo.focalLength = focalLengths[0];
+                        cameraInfo.sensorOrientation = sensorOrientation;
                         cameraInfo.sensorSize = sensorSize;
                         availableCameras.add(cameraInfo);
                     }
@@ -363,6 +372,8 @@ public class Camera {
                     ". Size: " + cameraInfo.size +
                     ". FPS: " + cameraInfo.fps +
                     ". FOV: " + cameraInfo.fov +
+                    ". Focal length: " + cameraInfo.focalLength +
+                    ". Sensor orientation: " + cameraInfo.sensorOrientation +
                     ". Sensor Size: " + cameraInfo.sensorSize);
 
             if (cameraInfo.fps >= fps && cameraInfo.size.getHeight() == resolution.getHeight() &&
