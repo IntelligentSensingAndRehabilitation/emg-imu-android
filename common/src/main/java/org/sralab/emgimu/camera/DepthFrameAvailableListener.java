@@ -33,7 +33,6 @@ public class DepthFrameAvailableListener implements ImageReader.OnImageAvailable
 
     private Surface listeningSurface = null;
     private Surface previewSurface = null;
-    private Long firstTimestamp = null;
 
     public DepthFrameAvailableListener() {
     }
@@ -41,18 +40,10 @@ public class DepthFrameAvailableListener implements ImageReader.OnImageAvailable
     /* Gettors and settors */
     public void setListeningSurface(Surface listeningSurface) {
         this.listeningSurface = listeningSurface;
-
-        // when starting a new recording grab first timestamp
-        if (listeningSurface != null)
-            firstTimestamp = null;
     }
 
     public void setPreviewSurface(Surface surface) {
         previewSurface = surface;
-    }
-
-    public Long getFirstTimestamp() {
-        return firstTimestamp;
     }
 
     // Callback when new data available
@@ -104,12 +95,6 @@ public class DepthFrameAvailableListener implements ImageReader.OnImageAvailable
         Canvas canvas = listeningSurface.lockHardwareCanvas();
         if (!canvas.isHardwareAccelerated()) {
             Log.e(TAG, "No hardware accel");
-        }
-
-        // Store the first timestamp
-        if (firstTimestamp == null) {
-            firstTimestamp = new Date().getTime();
-            Log.d(TAG, "First timestamp: " + firstTimestamp);
         }
 
         canvas.drawBitmap(bitmap, 0, 0, null);

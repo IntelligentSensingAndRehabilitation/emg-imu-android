@@ -78,6 +78,7 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
         public boolean isEmgEnabled;
         public String depthFileName;
         public Long depthStartTime;
+        public String depthTimestampsRef;
         public String phoneSensorLog;
     }
     ArrayList<GaitTrial> trials = new ArrayList<>();
@@ -362,6 +363,11 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
         if (depth) {
             curTrial.depthFileName = firebaseUploadFileName;
             curTrial.depthStartTime = startTime;
+            if (timestamps != null) {
+                curTrial.depthTimestampsRef = uploadTimestamps(currentFile.getAbsolutePath(), timestamps);
+            } else {
+                curTrial.depthTimestampsRef = null;
+            }
         }
         else {
             curTrial.fileName = firebaseUploadFileName;

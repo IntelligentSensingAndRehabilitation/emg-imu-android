@@ -135,24 +135,7 @@ public class Camera {
             cameraDevice.createCaptureSession(Arrays.asList(previewSurface), new CameraCaptureSession.StateCallback() {
                 @Override
                 public void onConfigured(@NonNull CameraCaptureSession captureSession) {
-
-                    // When the session is ready, we start displaying the preview.
-                    cameraCaptureSession = captureSession;
-                    captureRequestBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
-
-                    try {
-                        cameraCaptureSession.setRepeatingRequest(captureRequestBuilder.build(), new CameraCaptureSession.CaptureCallback() {
-                            @Override
-                            public void onCaptureStarted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, long timestamp, long frameNumber) {
-                                super.onCaptureStarted(session, request, timestamp, frameNumber);
-                                exposureOfFirstFrameTimestamp = null;
-                                recordingTimestamps = new ArrayList<>();
-                            }
-                        }, callbacks.getBackgroundHandler());
-                    } catch (CameraAccessException e) {
-                        Log.e(TAG, "cameraCaptureSession.setRepeatingRequest error");
-                        e.printStackTrace();
-                    }
+                    onCaptureSessionConfigured(captureSession, true);
                 }
 
                 @Override
@@ -165,6 +148,41 @@ public class Camera {
         }
     }
 
+    private void onCaptureSessionConfigured(@NonNull CameraCaptureSession session, boolean preview) {
+        Log.i(TAG,"Capture Session created. Preview: " + preview);
+        // When the session is ready, we start displaying the preview.
+        this.cameraCaptureSession = session;
+        captureRequestBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
+
+        try {
+
+            CameraCaptureSession.CaptureCallback callback = null;
+            if (!preview) {
+                Log.d(TAG, "Installing callback");
+                exposureOfFirstFrameTimestamp = null;
+                recordingTimestamps = new ArrayList<>();
+                callback = recordingFrameCallback;
+                mediaRecorder.start();
+            }
+            cameraCaptureSession.setRepeatingRequest(captureRequestBuilder.build(), callback, callbacks.getBackgroundHandler());
+        } catch (CameraAccessException e) {
+            Log.e(TAG, "cameraCaptureSession.setRepeatingRequest error");
+            e.printStackTrace();
+        }
+    }
+
+    // If recording, track timestamps
+    private CameraCaptureSession.CaptureCallback recordingFrameCallback = new CameraCaptureSession.CaptureCallback() {
+        @Override
+        public void onCaptureStarted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, long timestamp, long frameNumber) {
+            super.onCaptureStarted(session, request, timestamp, frameNumber);
+            if (exposureOfFirstFrameTimestamp == null) {
+                exposureOfFirstFrameTimestamp = new Date().getTime();
+            }
+            recordingTimestamps.add(new Date().getTime());
+            recordingTimestamps.add(timestamp);
+        }
+    };
 
     private void closePreview() {
         if (cameraCaptureSession != null) {
@@ -216,53 +234,22 @@ public class Camera {
             Surface recorderSurface = mediaRecorder.getSurface();
             captureRequestBuilder.addTarget(recorderSurface);
 
-            List<OutputConfiguration> outputConfig = Arrays.asList(new OutputConfiguration(previewSurface),
-                    new OutputConfiguration(recorderSurface));
+            List<Surface> targetSurfaces = Arrays.asList(previewSurface, recorderSurface);
 
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
-                SessionConfiguration config = new SessionConfiguration(SessionConfiguration.SESSION_REGULAR, outputConfig,
-                        context.getMainExecutor(), new CameraCaptureSession.StateCallback() {
-
-                    @Override
-                    public void onConfigured(@NonNull CameraCaptureSession captureSession) {
-                        Log.d(TAG, "onConfigured succeeded");
-                        cameraCaptureSession = captureSession;
-                        try {
-                            mediaRecorder.start();
-                            cameraCaptureSession.setRepeatingRequest(captureRequestBuilder.build(),
-                                    new CameraCaptureSession.CaptureCallback() {
-                                @Override
-                                public void onCaptureStarted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, long timestamp, long frameNumber) {
-                                        super.onCaptureStarted(session, request, timestamp, frameNumber);
-                                        if (exposureOfFirstFrameTimestamp == null) {
-                                            exposureOfFirstFrameTimestamp = new Date().getTime();
-                                        }
-                                    recordingTimestamps.add(new Date().getTime());
-                                    recordingTimestamps.add(timestamp);
-                                    }
-                                }, callbacks.getBackgroundHandler());
-                        } catch (CameraAccessException e) {
-                            throw new RuntimeException("Error configuring recording", e);
+            cameraDevice.createCaptureSession(targetSurfaces,
+                    new CameraCaptureSession.StateCallback() {
+                        @Override
+                        public void onConfigured(@NonNull CameraCaptureSession session) {
+                            onCaptureSessionConfigured(session, false);
                         }
-
-                    }
-
-                    @Override
-                    public void onConfigureFailed(@NonNull CameraCaptureSession captureSession) {
-                        throw new RuntimeException("Configuration failed");
-                    }
-
-                });
-
-                cameraDevice.createCaptureSession(config);
-
-            } else {
-                Log.e(TAG, "Not implemented yet");
-            }
+                        @Override
+                        public void onConfigureFailed(@NonNull CameraCaptureSession session) {
+                            Log.e(TAG,"!!! Creating Capture Session failed due to internal error ");
+                        }
+                    }, callbacks.getBackgroundHandler());
 
         } catch (IOException | CameraAccessException e) {
-            Log.e(TAG, "Error in startVideoRecording");
-            e.printStackTrace();
+            throw new RuntimeException("Problem starting video recording: " + e);
         }
     }
 

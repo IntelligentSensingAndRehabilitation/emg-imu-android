@@ -33,10 +33,12 @@ import androidx.core.content.ContextCompat;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 
-public class DepthCamera extends CameraDevice.StateCallback {
+public class DepthCamera {
     private static final String TAG = DepthCamera.class.getSimpleName();
 
     private static int FPS_MIN = 15;
@@ -46,12 +48,18 @@ public class DepthCamera extends CameraDevice.StateCallback {
     private CameraCallbacks callbacks;
     private CameraManager cameraManager;
     private CameraDevice cameraDevice;
+    private CameraCaptureSession cameraCaptureSession;
     protected CameraCharacteristics characteristics;
     private ImageReader previewReader;
-    private CaptureRequest.Builder previewBuilder;
-    private DepthFrameAvailableListener imageAvailableListener;
+    private ImageReader recordingReader;
+    private CaptureRequest.Builder captureRequestBuilder;
+    private DepthFrameAvailableListener previewImageAvailableListener;
+    private DepthFrameAvailableListener recordingImageAvailableListener;
     private TextureView textureView;
     private Surface previewSurface;
+
+    private Long exposureOfFirstFrameTimestamp;
+    private ArrayList<Long> recordingTimestamps;
 
     // Note this is a slightly altered version due to quirk with depth
     // camera
@@ -71,10 +79,20 @@ public class DepthCamera extends CameraDevice.StateCallback {
         this.textureView = textureView;
 
         cameraManager = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
-        imageAvailableListener = new DepthFrameAvailableListener();
+
+        // Map DEPTH16 images to RGB images and pass them onto the texture (connected
+        // below)
+        previewImageAvailableListener = new DepthFrameAvailableListener();
         previewReader = ImageReader.newInstance(DepthFrameAvailableListener.WIDTH,
                 DepthFrameAvailableListener.HEIGHT, ImageFormat.DEPTH16,2);
-        previewReader.setOnImageAvailableListener(imageAvailableListener, null);
+        previewReader.setOnImageAvailableListener(previewImageAvailableListener, null);
+
+        // Use a different listener when recording to files, to make sure no frames from
+        // preview accidentally get pushed to file when it is connected
+        recordingImageAvailableListener = new DepthFrameAvailableListener();
+        recordingReader = ImageReader.newInstance(recordingImageAvailableListener.WIDTH,
+                recordingImageAvailableListener.HEIGHT, ImageFormat.DEPTH16,2);
+        recordingReader.setOnImageAvailableListener(recordingImageAvailableListener, null);
     }
 
     // Open the front depth camera and start sending frames
@@ -88,7 +106,8 @@ public class DepthCamera extends CameraDevice.StateCallback {
                 openCamera(cameraId);
 
                 previewSurface = new Surface(surfaceTexture);
-                imageAvailableListener.setPreviewSurface(previewSurface);
+                previewImageAvailableListener.setPreviewSurface(previewSurface);
+                recordingImageAvailableListener.setPreviewSurface(previewSurface);
             }
 
             @Override
@@ -164,7 +183,7 @@ public class DepthCamera extends CameraDevice.StateCallback {
         try{
             int permission = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA);
             if(PackageManager.PERMISSION_GRANTED == permission) {
-                cameraManager.openCamera(cameraId, this, null);
+                cameraManager.openCamera(cameraId, openStateCallback, null);
             }else{
                 Log.e(TAG,"Permission not available to open camera");
             }
@@ -176,11 +195,30 @@ public class DepthCamera extends CameraDevice.StateCallback {
         mediaRecorder = new MediaRecorder();
     }
 
+    /**** CameraDevice.StateCallback callbacks *****/
+    // Callbacks for opening the camera
+    CameraDevice.StateCallback openStateCallback = new CameraDevice.StateCallback() {
 
-    @Override
-    public void onOpened(@NonNull CameraDevice camera) {
-        cameraDevice = camera;
+        @Override
+        public void onOpened(@NonNull CameraDevice camera) {
+            cameraDevice = camera;
+            createPreview();
+        }
 
+        @Override
+        public void onDisconnected(@NonNull CameraDevice camera) {
+
+        }
+
+        @Override
+        public void onError(@NonNull CameraDevice camera, int error) {
+
+        }
+    };
+
+    /**** End CameraDevice.StateCallback callbacks *****/
+
+    private void createPreview() {
         int rotation = callbacks.getDisplayRotation();
         Matrix transform = computeTransformationMatrix(textureView, characteristics,
                 new Size(DepthFrameAvailableListener.HEIGHT, DepthFrameAvailableListener.WIDTH), rotation, 90);
@@ -188,18 +226,18 @@ public class DepthCamera extends CameraDevice.StateCallback {
         textureView.setTransform(transform);
 
         try {
-            previewBuilder = camera.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
-            previewBuilder.set(CaptureRequest.JPEG_ORIENTATION, 0);
+            captureRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
+            captureRequestBuilder.set(CaptureRequest.JPEG_ORIENTATION, 0);
             Range<Integer> fpsRange = new Range<>(FPS_MIN, FPS_MAX);
-            previewBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, fpsRange);
-            previewBuilder.addTarget(previewReader.getSurface());
+            captureRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, fpsRange);
+            captureRequestBuilder.addTarget(previewReader.getSurface());
 
             List<Surface> targetSurfaces = Arrays.asList(previewReader.getSurface());
-            camera.createCaptureSession(targetSurfaces,
+            cameraDevice.createCaptureSession(targetSurfaces,
                     new CameraCaptureSession.StateCallback() {
                         @Override
                         public void onConfigured(@NonNull CameraCaptureSession session) {
-                            onCaptureSessionConfigured(session);
+                            onCaptureSessionConfigured(session, true);
                         }
                         @Override
                         public void onConfigureFailed(@NonNull CameraCaptureSession session) {
@@ -212,42 +250,46 @@ public class DepthCamera extends CameraDevice.StateCallback {
         }
     }
 
-    private void onCaptureSessionConfigured(@NonNull CameraCaptureSession session) {
+    private void onCaptureSessionConfigured(@NonNull CameraCaptureSession session, boolean preview) {
         Log.i(TAG,"Capture Session created");
-        previewBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
+        this.cameraCaptureSession = session;
+        captureRequestBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
+
         try {
-            session.setRepeatingRequest(previewBuilder.build(), null, callbacks.getBackgroundHandler());
+
+            CameraCaptureSession.CaptureCallback callback = null;
+            if (!preview) {
+                Log.d(TAG, "Installing callback");
+                exposureOfFirstFrameTimestamp = null;
+                recordingTimestamps = new ArrayList<>();
+                callback = recordingFrameCallback;
+                mediaRecorder.start();
+            }
+
+            session.setRepeatingRequest(captureRequestBuilder.build(), callback, callbacks.getBackgroundHandler());
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
     }
 
-
-    @Override
-    public void onDisconnected(@NonNull CameraDevice camera) {
-
-    }
-
-    @Override
-    public void onError(@NonNull CameraDevice camera, int error) {
-
-    }
-    public void startVideoRecording() {
-        Log.d(TAG, "startVideoRecording");
-        try {
-            setupMediaRecorder();
-        } catch (IOException e) {
-            e.printStackTrace();
+    // If recording, track timestamps
+    private CameraCaptureSession.CaptureCallback recordingFrameCallback = new CameraCaptureSession.CaptureCallback() {
+        @Override
+        public void onCaptureStarted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, long timestamp, long frameNumber) {
+            super.onCaptureStarted(session, request, timestamp, frameNumber);
+            if (exposureOfFirstFrameTimestamp == null) {
+                exposureOfFirstFrameTimestamp = new Date().getTime();
+            }
+            recordingTimestamps.add(new Date().getTime());
+            recordingTimestamps.add(timestamp);
         }
-        imageAvailableListener.setListeningSurface(mediaRecorder.getSurface());
-    }
+    };
 
-    public void stopVideoRecording() {
-        Log.d(TAG, "stopVideoRecording");
-        imageAvailableListener.setListeningSurface(null);
-        mediaRecorder.stop();
-        mediaRecorder.reset();
-        callbacks.pushVideoFileToFirebase(currentFile, imageAvailableListener.getFirstTimestamp(), true, null);
+    private void closePreview() {
+        if (cameraCaptureSession != null) {
+            cameraCaptureSession.close();
+            cameraCaptureSession = null;
+        }
     }
 
     private void setupMediaRecorder() throws IOException {
@@ -274,7 +316,63 @@ public class DepthCamera extends CameraDevice.StateCallback {
         Log.d(TAG, "Recording to " + currentFile.getAbsolutePath());
 
         mediaRecorder.prepare();
-        mediaRecorder.start();
+    }
+
+    public void startVideoRecording() {
+        Log.d(TAG, "startVideoRecording");
+        closePreview();
+        try {
+            setupMediaRecorder();
+
+            // Only one surface to write to since we have to map the DEPTH16 to
+            // RGB in the image listener and don't want two of them. Passing
+            // this surface informs the listener to write the video file.
+            recordingImageAvailableListener.setListeningSurface(mediaRecorder.getSurface());
+
+            int rotation = callbacks.getDisplayRotation();
+            Matrix transform = computeTransformationMatrix(textureView, characteristics,
+                    new Size(DepthFrameAvailableListener.HEIGHT, DepthFrameAvailableListener.WIDTH), rotation, 90);
+
+            textureView.setTransform(transform);
+
+            captureRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
+            Range<Integer> fpsRange = new Range<>(FPS_MIN, FPS_MAX);
+            captureRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, fpsRange);
+            captureRequestBuilder.addTarget(recordingReader.getSurface());
+
+            List<Surface> targetSurfaces = Arrays.asList(recordingReader.getSurface());
+            cameraDevice.createCaptureSession(targetSurfaces,
+                    new CameraCaptureSession.StateCallback() {
+                        @Override
+                        public void onConfigured(@NonNull CameraCaptureSession session) {
+                            onCaptureSessionConfigured(session, false);
+                        }
+                        @Override
+                        public void onConfigureFailed(@NonNull CameraCaptureSession session) {
+                            Log.e(TAG,"!!! Creating Capture Session failed due to internal error ");
+                        }
+                    }, callbacks.getBackgroundHandler());
+
+        } catch (CameraAccessException | IOException e) {
+            throw new RuntimeException("Problem starting video recording: " + e);
+        }
+
+    }
+
+    public void stopVideoRecording() {
+        Log.d(TAG, "stopVideoRecording");
+        recordingImageAvailableListener.setListeningSurface(null);
+        try {
+            cameraCaptureSession.stopRepeating();
+            cameraCaptureSession.abortCaptures();
+        } catch (CameraAccessException e) {
+            throw new RuntimeException("Problem stopping video recording: " + e);
+        }
+        // Stop recording
+        mediaRecorder.stop();
+        mediaRecorder.reset();
+        createPreview();
+        callbacks.pushVideoFileToFirebase(currentFile, exposureOfFirstFrameTimestamp, true, recordingTimestamps);
     }
 
 }
