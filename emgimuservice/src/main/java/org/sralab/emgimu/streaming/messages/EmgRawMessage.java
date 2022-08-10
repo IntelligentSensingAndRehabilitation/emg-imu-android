@@ -8,6 +8,7 @@ public class EmgRawMessage {
     public final String MSG = "EmgRaw";
     public String bluetoothMac;
     public long timestamp;
+    public long android_elapsed_nanos;
     public long sensor_timestamp;
     public int sensor_counter;
     public int channels;
@@ -22,11 +23,12 @@ public class EmgRawMessage {
         return dst;
     }
 
-    public EmgRawMessage(String bluetoothMac, long timestamp,
+    public EmgRawMessage(String bluetoothMac, long timestamp, long android_elapsed_nanos,
                          long sensor_timestamp, int sensor_counter,
                          int channels, int samples, double [][] data) {
         this.bluetoothMac = bluetoothMac;
         this.timestamp = timestamp;
+        this.android_elapsed_nanos = android_elapsed_nanos;
         this.channels = channels;
         this.samples = samples;
         this.sensor_timestamp = sensor_timestamp;

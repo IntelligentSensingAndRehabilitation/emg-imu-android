@@ -156,7 +156,7 @@ public class NetworkStreaming {
                                 double[][] data) {
 
         Gson gson = new Gson();
-        EmgRawMessage msg = new EmgRawMessage(dev.getAddress(), time, 0, 0, channels, samples, data);
+        EmgRawMessage msg = new EmgRawMessage(dev.getAddress(), time, 0, 0, 0, channels, samples, data);
         String json = gson.toJson(msg);
         write(json.getBytes());
     }
@@ -166,7 +166,7 @@ public class NetworkStreaming {
                                 int [] data) {
 
         Gson gson = new Gson();
-        EmgPwrMessage msg = new EmgPwrMessage(dev.getAddress(), time, 0, 0, data);
+        EmgPwrMessage msg = new EmgPwrMessage(dev.getAddress(), time,  0,0, 0, data);
         String json = gson.toJson(msg);
         write(json.getBytes());
     }
