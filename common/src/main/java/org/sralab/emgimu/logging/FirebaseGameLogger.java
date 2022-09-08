@@ -79,10 +79,12 @@ public class FirebaseGameLogger {
 //            List<String> newList = new ArrayList<String>(record.logReference);
 //            Log.d(TAG, "Log reference START: " + record.logReference);
 //            Log.d(TAG,"CONCAT1"+newList.addAll(record.logReference));
-            if (!logRefList.contains(record.logReference.get(0)) && !record.logReference.toString().contains("[]")) {
-                logRefList.addAll(record.logReference);
-                Log.d(TAG,"add 1");
-            }
+//            if (!logRefList.contains(record.logReference.get(0)) && !record.logReference.toString().contains("[]")) {
+//                logRefList.addAll(record.logReference);
+//                Log.d(TAG,"add 1");
+//            }
+            updateLogReferenceList(record.logReference);
+            Log.d(TAG,"add 1");
             Log.d(TAG, "Log reference1: " + logRefList);
 
         } catch (RemoteException e) {
@@ -113,10 +115,12 @@ public class FirebaseGameLogger {
 //            List<String> newList = new ArrayList<String>(record.logReference);
             Log.d(TAG,"CONCAT2"+mService.getLoggingReferences());
             record.logReference = mService.getLoggingReferences();
-            if (!logRefList.contains(record.logReference.get(0)) && !record.logReference.toString().contains("[]")) {
-                logRefList.addAll(record.logReference);
-                Log.d(TAG,"add 2");
-            }
+//            if (!logRefList.contains(record.logReference.get(0)) && !record.logReference.toString().contains("[]")) {
+//                logRefList.addAll(record.logReference);
+//
+//            }
+            updateLogReferenceList(record.logReference);
+            Log.d(TAG,"add 2");
 
             Log.d(TAG, "Log reference: " + logRefList);
 
@@ -125,6 +129,12 @@ public class FirebaseGameLogger {
         }
 
         save();
+    }
+
+    public void updateLogReferenceList(List<String> logRef) {
+        if (!logRefList.contains(logRef.get(0)) && !logRef.toString().contains("[]")) {
+            logRefList.addAll(logRef);
+        }
     }
 
     public void writeRecord(GamePlayRecord record) {
