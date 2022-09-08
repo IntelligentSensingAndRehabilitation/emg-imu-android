@@ -40,6 +40,8 @@ public class FirebaseGameLogger {
 
     private GamePlayRecord record;
 
+    private List<String> logRefList = new ArrayList<String>();
+
     void configureService(IEmgImuServiceBinder service) {
         mService = service;
 
@@ -71,8 +73,18 @@ public class FirebaseGameLogger {
         record.stopTime = null;
         record.name = game;
         record.performance = 0;
+
         try {
             record.logReference = mService.getLoggingReferences();
+//            List<String> newList = new ArrayList<String>(record.logReference);
+//            Log.d(TAG, "Log reference START: " + record.logReference);
+//            Log.d(TAG,"CONCAT1"+newList.addAll(record.logReference));
+            if (!logRefList.contains(record.logReference.get(0)) && !record.logReference.toString().contains("[]")) {
+                logRefList.addAll(record.logReference);
+                Log.d(TAG,"add 1");
+            }
+            Log.d(TAG, "Log reference1: " + logRefList);
+
         } catch (RemoteException e) {
             e.printStackTrace();
         }
@@ -97,7 +109,17 @@ public class FirebaseGameLogger {
         record.performance = performance;
         record.details = details;
         try {
+            Log.d(TAG, "Log reference before: " + logRefList);
+//            List<String> newList = new ArrayList<String>(record.logReference);
+            Log.d(TAG,"CONCAT2"+mService.getLoggingReferences());
             record.logReference = mService.getLoggingReferences();
+            if (!logRefList.contains(record.logReference.get(0)) && !record.logReference.toString().contains("[]")) {
+                logRefList.addAll(record.logReference);
+                Log.d(TAG,"add 2");
+            }
+
+            Log.d(TAG, "Log reference: " + logRefList);
+
         } catch (RemoteException e) {
             e.printStackTrace();
         }
