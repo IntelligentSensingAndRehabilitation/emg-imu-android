@@ -75,16 +75,9 @@ public class FirebaseGameLogger {
         record.performance = 0;
 
         try {
-            record.logReference = mService.getLoggingReferences();
-//            List<String> newList = new ArrayList<String>(record.logReference);
-//            Log.d(TAG, "Log reference START: " + record.logReference);
-//            Log.d(TAG,"CONCAT1"+newList.addAll(record.logReference));
-//            if (!logRefList.contains(record.logReference.get(0)) && !record.logReference.toString().contains("[]")) {
-//                logRefList.addAll(record.logReference);
-//                Log.d(TAG,"add 1");
-//            }
-            updateLogReferenceList(record.logReference);
-            Log.d(TAG,"add 1");
+//            record.logReference = mService.getLoggingReferences();
+//            updateLogReferenceList(record.logReference);
+            record.logReference = updateLogReferenceList(mService.getLoggingReferences());
             Log.d(TAG, "Log reference1: " + logRefList);
 
         } catch (RemoteException e) {
@@ -112,16 +105,11 @@ public class FirebaseGameLogger {
         record.details = details;
         try {
             Log.d(TAG, "Log reference before: " + logRefList);
-//            List<String> newList = new ArrayList<String>(record.logReference);
-            Log.d(TAG,"CONCAT2"+mService.getLoggingReferences());
-            record.logReference = mService.getLoggingReferences();
-//            if (!logRefList.contains(record.logReference.get(0)) && !record.logReference.toString().contains("[]")) {
-//                logRefList.addAll(record.logReference);
-//
-//            }
-            updateLogReferenceList(record.logReference);
+            Log.d(TAG,"current ref"+mService.getLoggingReferences());
+//            record.logReference = mService.getLoggingReferences();
+//            updateLogReferenceList(record.logReference);
+            record.logReference = updateLogReferenceList(mService.getLoggingReferences());
             Log.d(TAG,"add 2");
-
             Log.d(TAG, "Log reference: " + logRefList);
 
         } catch (RemoteException e) {
@@ -131,10 +119,14 @@ public class FirebaseGameLogger {
         save();
     }
 
-    public void updateLogReferenceList(List<String> logRef) {
+    public List<String> updateLogReferenceList(List<String> logRef) {
+        // Updating the list of log references if the current reference
+        // is not present already or empty
         if (!logRefList.contains(logRef.get(0)) && !logRef.toString().contains("[]")) {
             logRefList.addAll(logRef);
         }
+
+        return logRefList;
     }
 
     public void writeRecord(GamePlayRecord record) {
