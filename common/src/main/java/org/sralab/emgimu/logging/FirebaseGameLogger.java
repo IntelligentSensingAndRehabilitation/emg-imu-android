@@ -75,11 +75,8 @@ public class FirebaseGameLogger {
         record.performance = 0;
 
         try {
-//            record.logReference = mService.getLoggingReferences();
-//            updateLogReferenceList(record.logReference);
+            // Adding new log references to the log reference list if needed
             record.logReference = updateLogReferenceList(mService.getLoggingReferences());
-            Log.d(TAG, "Log reference1: " + logRefList);
-
         } catch (RemoteException e) {
             e.printStackTrace();
         }
@@ -104,18 +101,11 @@ public class FirebaseGameLogger {
         record.performance = performance;
         record.details = details;
         try {
-            Log.d(TAG, "Log reference before: " + logRefList);
-            Log.d(TAG,"current ref"+mService.getLoggingReferences());
-//            record.logReference = mService.getLoggingReferences();
-//            updateLogReferenceList(record.logReference);
+            // Adding new log references to the log reference list if needed
             record.logReference = updateLogReferenceList(mService.getLoggingReferences());
-            Log.d(TAG,"add 2");
-            Log.d(TAG, "Log reference: " + logRefList);
-
         } catch (RemoteException e) {
             e.printStackTrace();
         }
-
         save();
     }
 
@@ -125,7 +115,6 @@ public class FirebaseGameLogger {
         if (!logRefList.contains(logRef.get(0)) && !logRef.toString().contains("[]")) {
             logRefList.addAll(logRef);
         }
-
         return logRefList;
     }
 
