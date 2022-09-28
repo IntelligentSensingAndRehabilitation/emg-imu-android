@@ -1654,7 +1654,6 @@ public class EmgImuManager extends BleManager {
         dataMsg.samples = SAMPLES;
         dataMsg.voltage = linearizedData;
         dataMsg.batteryVoltage = batteryVoltage.getValue();
-        Log.d(TAG, "EmgImuManager, got battery = " +batteryVoltage.getValue());
         dataMsg.ts = ts_ms;
         dataMsg.Fs = 2000; // TODO: access real data
 
