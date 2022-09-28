@@ -187,7 +187,12 @@ public class FirebaseWriter extends Observable {
             return basepath + "/" + user.getUid() + "/" + subpath + "/" + dateName + suffix + ".json.gz";
     }
 
-    private String getLocalFilename() { return dateName + suffix + ".json.gz"; }
+    private String getLocalFilename() {
+        if (subpath == null)
+            return dateName + suffix + ".json.gz";
+        else
+            return subpath + "_" + dateName + suffix + ".json.gz";
+    }
 
     public String getReference() {
         return storageRef.getPath();
