@@ -40,6 +40,8 @@ public class FirebaseGameLogger {
 
     private GamePlayRecord record;
 
+    private List<String> logRefList = new ArrayList<String>();
+
     void configureService(IEmgImuServiceBinder service) {
         mService = service;
 
@@ -71,8 +73,10 @@ public class FirebaseGameLogger {
         record.stopTime = null;
         record.name = game;
         record.performance = 0;
+
         try {
-            record.logReference = mService.getLoggingReferences();
+            // Adding new log references to the log reference list if needed
+            record.logReference = updateLogReferenceList(mService.getLoggingReferences());
         } catch (RemoteException e) {
             e.printStackTrace();
         }
@@ -97,12 +101,21 @@ public class FirebaseGameLogger {
         record.performance = performance;
         record.details = details;
         try {
-            record.logReference = mService.getLoggingReferences();
+            // Adding new log references to the log reference list if needed
+            record.logReference = updateLogReferenceList(mService.getLoggingReferences());
         } catch (RemoteException e) {
             e.printStackTrace();
         }
-
         save();
+    }
+
+    public List<String> updateLogReferenceList(List<String> logRef) {
+        // Updating the list of log references if the current reference
+        // is not present already or empty
+        if (!logRefList.contains(logRef.get(0)) && !logRef.toString().contains("[]")) {
+            logRefList.addAll(logRef);
+        }
+        return logRefList;
     }
 
     public void writeRecord(GamePlayRecord record) {
