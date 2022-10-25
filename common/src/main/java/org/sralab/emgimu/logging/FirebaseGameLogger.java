@@ -110,11 +110,15 @@ public class FirebaseGameLogger {
     }
 
     public List<String> updateLogReferenceList(List<String> logRef) {
-        // Updating the list of log references if the current reference
-        // is not present already or empty
-        if (!logRefList.contains(logRef.get(0)) && !logRef.toString().contains("[]")) {
-            logRefList.addAll(logRef);
+
+        // Add any logs we don't know about. Keeping the union to handle
+        // disconnects and reconnects.
+        for (String r : logRef) {
+            if (!logRefList.contains(r) && r.length() > 0) {
+                logRefList.add(r);
+            }
         }
+
         return logRefList;
     }
 
