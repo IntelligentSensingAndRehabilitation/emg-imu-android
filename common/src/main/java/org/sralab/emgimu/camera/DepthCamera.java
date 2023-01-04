@@ -133,7 +133,8 @@ public class DepthCamera {
     }
 
     public void closeCamera() {
-        cameraDevice.close();
+        if (cameraDevice != null)
+            cameraDevice.close();
     }
 
     public String getFrontDepthCameraID() {

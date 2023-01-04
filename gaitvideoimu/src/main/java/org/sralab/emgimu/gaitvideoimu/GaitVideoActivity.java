@@ -99,6 +99,7 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
     private HandlerThread backgroundThread;
     private TextureView textureView;
     private TextureView depthTextureView;
+    private RecyclerView recyclerView;
 
     private static final int REQUEST_CODE_PERMISSIONS = 10;
     @NotNull
@@ -134,7 +135,7 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
         stopVideoRecordingButton = (Button) findViewById(R.id.stop_video_recording_button);
         enableEmgPwrButton = (Button) findViewById(R.id.enable_emg_pwr_button);
 
-        final RecyclerView recyclerView = findViewById(R.id.emg_list);
+        recyclerView = findViewById(R.id.emg_list);
         recyclerView.setLayoutManager(new LinearLayoutManager(getBaseContext()));
         recyclerView.addItemDecoration(new DividerItemDecoration(getBaseContext(), DividerItemDecoration.VERTICAL_LIST));
 
@@ -148,21 +149,11 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
         camera = new Camera(this, this, textureView);
         phoneSensors = new PhoneSensors(this, this);
 
-        enableFirebase();
-
         dvm = new ViewModelProvider(this, ViewModelProvider.AndroidViewModelFactory.getInstance(getApplication())).get(DeviceViewModel.class);
         recyclerView.setAdapter(streamingAdapter = new StreamingAdapter(this, dvm));
         Toast.makeText(GaitVideoActivity.this, "Connecting to emg-imu sensors!", Toast.LENGTH_SHORT).show();
 
-        dvm.getServiceLiveData().observe(this, binder -> {
-            if (binder != null) {
-                Log.d(TAG, "Service updated.");
-                long startTime = new Date().getTime();
-                mGameLogger = new FirebaseGameLogger(dvm.getService(), getString(R.string.app_name), startTime);
-            } else {
-                mGameLogger = null;
-            }
-        });
+        enableFirebase();
 
         // Sound effects
         ding = MediaPlayer.create(GaitVideoActivity.this, R.raw.ding);
@@ -228,6 +219,20 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
                 e.printStackTrace();
             }
         });
+    }
+
+    protected void firebaseActivated() {
+
+        dvm.getServiceLiveData().observe(this, binder -> {
+            if (binder != null) {
+                Log.d(TAG, "Service updated.");
+                long startTime = new Date().getTime();
+                mGameLogger = new FirebaseGameLogger(dvm.getService(), getString(R.string.app_name), startTime);
+            } else {
+                mGameLogger = null;
+            }
+        });
+
     }
 
     @Override
@@ -332,6 +337,7 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
                             mUser = mAuth.getCurrentUser();
                             Log.d(TAG, "signInAnonymously:success. UID:" + mUser.getUid());
                             showUser();
+                            firebaseActivated();
                         } else {
                             // If sign in fails, display a message to the user.
                             Log.d(TAG, "signInAnonymously:failure" + task.getException());
@@ -340,6 +346,7 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
         } else {
             Log.d(TAG, "User ID: " + mUser.getUid());
             showUser();
+            firebaseActivated();
         }
 
         FirebaseInstallations.getInstance().getId().addOnSuccessListener(mToken -> {
