@@ -66,18 +66,18 @@ public abstract class EmgImuViewModel <T> extends AndroidViewModel {
 
     public void onPause() {
         try {
-            if (service == null) {
-                throw new RuntimeException("Service disconnected before unregistering.");
+            // Occasionally null if service disconnected before unregistering
+            if (service != null) {
+                service.unregisterDevicesObserver(deviceListObserver);
+                if (getObservePwr()) service.unregisterEmgPwrObserver(null, pwrObserver);
+                if (getObserveStream()) service.unregisterEmgStreamObserver(null, streamObserver);
+                if (getObserveAccel()) service.unregisterImuAccelObserver(null, accelObserver);
+                if (getObserveGyro()) service.unregisterImuGyroObserver(null, gyroObserver);
+                if (getObserveMag()) service.unregisterImuMagObserver(null, magObserver);
+                if (getObserveQuat()) service.unregisterImuQuatObserver(null, quatObserver);
+                if (getObserveBat()) service.unregisterBatObserver(null, batObserver);
+                service = null;
             }
-            service.unregisterDevicesObserver(deviceListObserver);
-            if (getObservePwr()) service.unregisterEmgPwrObserver(null, pwrObserver);
-            if (getObserveStream()) service.unregisterEmgStreamObserver(null, streamObserver);
-            if (getObserveAccel()) service.unregisterImuAccelObserver(null, accelObserver);
-            if (getObserveGyro()) service.unregisterImuGyroObserver(null, gyroObserver);
-            if (getObserveMag()) service.unregisterImuMagObserver(null, magObserver);
-            if (getObserveQuat()) service.unregisterImuQuatObserver(null, quatObserver);
-            if (getObserveBat()) service.unregisterBatObserver(null, batObserver);
-            service = null;
         } catch (RemoteException e) {
             throw new RuntimeException(e);
         }
