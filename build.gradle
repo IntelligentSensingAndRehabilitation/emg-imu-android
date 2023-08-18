@@ -7,7 +7,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:7.4.2'
+        classpath 'com.android.tools.build:gradle:8.1.0'
         classpath 'com.google.gms:google-services:4.3.15'
         classpath 'com.google.firebase:firebase-crashlytics-gradle:2.9.4'
 
@@ -52,14 +52,14 @@ ext {
 
     supportLib = '28.0.0'
     firebaseCoreVer = '21.1.1'
-    firebaseAuthVer = '21.1.0'
-    firebaseStorageVer = '20.1.0'
-    firebaseFirestoreVer = '24.4.4'
-    firebaseMessagingVer = '23.1.2'
-    firebaseCrashlyticsVer = '18.3.5'
+    firebaseAuthVer = '22.1.1'
+    firebaseStorageVer = '20.2.1'
+    firebaseFirestoreVer = '24.7.0'
+    firebaseMessagingVer = '23.2.1'
+    firebaseCrashlyticsVer = '18.4.0'
     instantAppsVer = '1.1.0'
 
-    nordicBleLVer = '2.6.0'
+    nordicBleLVer = '2.6.1'
 
     espressoVersion = "3.0.1"
     androidTestVersion = "1.0.1"
