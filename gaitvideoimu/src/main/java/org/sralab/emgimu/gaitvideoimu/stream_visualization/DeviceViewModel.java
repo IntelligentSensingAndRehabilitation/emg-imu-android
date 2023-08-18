@@ -51,7 +51,7 @@ public class DeviceViewModel extends EmgImuViewModel<Device> {
     public boolean getObserveGyro() { return true; }
 
     @Override
-    public boolean getObserveAccel() { return false; }
+    public boolean getObserveAccel() { return true; }
 
     @Override
     public boolean getObserveBat() { return true; }
