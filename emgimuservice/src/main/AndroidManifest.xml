@@ -34,13 +34,6 @@
             android:label="@string/emgimu_feature_title">
         </service>
         <!--android:process=":remote"-->
-        <service
-            android:name="org.sralab.emgimu.logging.EmgLogFetchJobService"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="com.firebase.jobdispatcher.ACTION_EXECUTE" />
-            </intent-filter>
-        </service>
 
         <service android:name=".MyFirebaseMessagingService"
             android:enabled="true"

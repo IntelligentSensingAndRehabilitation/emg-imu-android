@@ -76,7 +76,6 @@ import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.sralab.emgimu.controller.IEmgDecoderProvider;
-import org.sralab.emgimu.logging.EmgLogFetchJobService;
 import org.sralab.emgimu.logging.FirebaseGameLogger;
 import org.sralab.emgimu.logging.GamePlayRecord;
 import org.sralab.emgimu.unity_bindings.Bridge;
