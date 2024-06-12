@@ -47,6 +47,7 @@ android {
     namespace 'org.sralab.emgimu.common'
     buildFeatures {
         aidl true
+        buildConfig = true
     }
 
 }

@@ -21,6 +21,11 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
     }
     namespace 'org.sralab.emgimu.service'
+
+    buildFeatures {
+        aidl true
+        buildConfig = true
+    }
 }
 
 dependencies {
