@@ -20,6 +20,13 @@
     running on devices using anything prior to 12 -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
 
+    <!-- Android 10 and above need the ACCESS_BACKGROUND_LOCATION permission to get location in the background -->
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+
+    <!-- New permissions for Android 13 and above -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" tools:targetApi="33"/>
+
+    <!-- Permissions required for proper functioning of the app -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 
@@ -33,7 +40,6 @@
             android:exported="true"
             android:label="@string/emgimu_feature_title">
         </service>
-        <!--android:process=":remote"-->
 
         <service android:name=".MyFirebaseMessagingService"
             android:enabled="true"
@@ -43,16 +49,6 @@
             </intent-filter>
         </service>
 
-
-        <!--
-            meta-data
-            android:name="com.google.firebase.messaging.default_notification_icon"
-            android:resource="@drawable/ic_stat_ic_notification" /
-        -->
-        <!--
-             Set color used with incoming notification messages. This is used when no color is set for the incoming
-             notification message. See README(https://goo.gl/6BKBk7) for more.
-        -->
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
             android:value="@string/default_notification_channel_id" />
