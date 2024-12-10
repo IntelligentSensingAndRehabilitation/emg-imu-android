@@ -62,10 +62,12 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.UUID;
@@ -106,6 +108,12 @@ public class EmgImuManager extends BleManager {
     public final static UUID EMG_SERVICE_UUID = UUID.fromString("00001234-1212-EFDE-1523-785FEF13D123");
     public final static UUID EMG_BUFF_CHAR_UUID = UUID.fromString("00001236-1212-EFDE-1523-785FEF13D123");
     public final static UUID EMG_PWR_CHAR_UUID = UUID.fromString("00001237-1212-EFDE-1523-785FEF13D123");
+
+    /**
+     * CTS Service UUID
+     */
+    public final static UUID CTS_SERVICE_UUID = UUID.fromString("00001805-0000-1000-8000-00805f9b34fb");
+    public final static UUID CTS_CURRENT_TIME_CHAR_UUID = UUID.fromString("00002A2B-0000-1000-8000-00805f9b34fb");
 
     /**
      * IMU Service UUID
@@ -183,7 +191,9 @@ public class EmgImuManager extends BleManager {
     private FirebaseStreamLogger streamLogger;
     private List<EmgLogRecord> mRecords = new ArrayList<>();
 
-    private BluetoothGattCharacteristic mRecordAccessControlPointCharacteristic, mEmgLogCharacteristic;
+    private BluetoothGattCharacteristic mRecordAccessControlPointCharacteristic;
+    private BluetoothGattCharacteristic mEmgLogCharacteristic;
+    private BluetoothGattCharacteristic mCtsCurrentTimeCharacteristic;
 
     //! Data relating to logging to FireBase
     private boolean mLogging = true;
@@ -511,6 +521,14 @@ public class EmgImuManager extends BleManager {
             }
             boolean supportsLogging = (mEmgLogCharacteristic != null) && (mRecordAccessControlPointCharacteristic != null);
 
+            // CTS
+            final BluetoothGattService ctsService = gatt.getService(CTS_SERVICE_UUID);
+            if(ctsService != null)
+            {
+                mCtsCurrentTimeCharacteristic = ctsService.getCharacteristic(CTS_CURRENT_TIME_CHAR_UUID);
+                log(Log.INFO, "CTS Service detected!");
+            }
+
             // IMU
             final BluetoothGattService iaService = gatt.getService(IMU_SERVICE_UUID);
             if (iaService != null) {
@@ -602,6 +620,9 @@ public class EmgImuManager extends BleManager {
             mEmgBuffCharacteristic = null;
             mEmgLogCharacteristic = null;
             mRecordAccessControlPointCharacteristic = null;
+
+            // Clear the CTS characteristic
+            mCtsCurrentTimeCharacteristic = null;
 
             mChannels = 0;
 
@@ -1302,6 +1323,39 @@ public class EmgImuManager extends BleManager {
                 .fail((device, status) -> logFetchFailed(device, "Synchronization failed (" + status + ")"))
                 .enqueue();
 
+        GregorianCalendar calendar = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
+
+        // Convert to CTS format (see CTS specification)
+        if (mCtsCurrentTimeCharacteristic != null) {
+            byte[] currentTimeBytes = new byte[10];
+            int year = calendar.get(Calendar.YEAR);
+            currentTimeBytes[0] = (byte) (year & 0xFF);
+            currentTimeBytes[1] = (byte) ((year >> 8) & 0xFF);
+            currentTimeBytes[2] = (byte) (calendar.get(Calendar.MONTH) + 1);
+            currentTimeBytes[3] = (byte) (calendar.get(Calendar.DAY_OF_MONTH));
+            currentTimeBytes[4] = (byte) (calendar.get(Calendar.HOUR_OF_DAY));
+            currentTimeBytes[5] = (byte) (calendar.get(Calendar.MINUTE));
+            currentTimeBytes[6] = (byte) (calendar.get(Calendar.SECOND));
+            currentTimeBytes[7] = (byte) (calendar.get(Calendar.DAY_OF_WEEK));
+            currentTimeBytes[8] = (byte) (((float)calendar.get(Calendar.MILLISECOND) / 1000.0f) * 256.0f);
+            currentTimeBytes[9] = 1; // Manual update
+
+            // Write the value to the characteristic
+            writeCharacteristic(mCtsCurrentTimeCharacteristic, currentTimeBytes)
+                    .done(device -> {
+                        String formattedTime = String.format(Locale.US, "%04d-%02d-%02d %02d:%02d:%02d.%03d",
+                                calendar.get(Calendar.YEAR),
+                                calendar.get(Calendar.MONTH) + 1,
+                                calendar.get(Calendar.DAY_OF_MONTH),
+                                calendar.get(Calendar.HOUR_OF_DAY),
+                                calendar.get(Calendar.MINUTE),
+                                calendar.get(Calendar.SECOND),
+                                calendar.get(Calendar.MILLISECOND));
+
+                        log(Log.INFO, "Timestamp synchronized via CTS: " + formattedTime);
+                    })                    .fail((device, status) -> logFetchFailed(device, "Synchronization via CTS failed (" + status + ")"))
+                    .enqueue();
+        }
     }
 
     // Convert from the device format (8 Hz units since 2018 beginning) to the
