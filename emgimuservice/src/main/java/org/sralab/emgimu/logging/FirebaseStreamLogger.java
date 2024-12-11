@@ -57,27 +57,27 @@ public class FirebaseStreamLogger extends Observable {
         firebaseWriter.addJson(json);
     }
 
-    public void addStreamSample(long time, long androidElapsedNanos, long sensor_timestamp, int sensor_counter, int channels, int samples, double [][] data) {
+    public void addStreamSample(long time, long androidElapsedNanos, long sensor_timestamp, long raw_sensor_timestamp, int sensor_counter, int channels, int samples, double [][] data) {
         Gson gson = new Gson();
-        EmgRawMessage msg = new EmgRawMessage(mDeviceMac, time, androidElapsedNanos, sensor_timestamp, sensor_counter, channels, samples, data);
+        EmgRawMessage msg = new EmgRawMessage(mDeviceMac, time, androidElapsedNanos, sensor_timestamp, raw_sensor_timestamp, sensor_counter, channels, samples, data);
         addJson(gson.toJson(msg));
     }
 
-    public void addPwrSample(long time, long androidElapsedNanos, long sensor_timestamp, int sensor_counter, int [] data) {
+    public void addPwrSample(long time, long androidElapsedNanos, long sensor_timestamp, long raw_sensor_timestamp, int sensor_counter, int [] data) {
         Gson gson = new Gson();
-        EmgPwrMessage msg = new EmgPwrMessage(mDeviceMac, time, androidElapsedNanos, sensor_timestamp, sensor_counter, data);
+        EmgPwrMessage msg = new EmgPwrMessage(mDeviceMac, time, androidElapsedNanos, sensor_timestamp, raw_sensor_timestamp, sensor_counter, data);
         addJson(gson.toJson(msg));
     }
 
-    public void addAttitudeSample(long time, long androidElapsedNanos, long sensor_timestamp, int sensor_counter, float [] data) {
+    public void addAttitudeSample(long time, long androidElapsedNanos, long sensor_timestamp, long raw_sensor_timestamp, int sensor_counter, float [] data) {
         Gson gson = new Gson();
-        ImuAttitudeMessage msg = new ImuAttitudeMessage(mDeviceMac, time, androidElapsedNanos, sensor_timestamp, sensor_counter, data);
+        ImuAttitudeMessage msg = new ImuAttitudeMessage(mDeviceMac, time, androidElapsedNanos, sensor_timestamp, raw_sensor_timestamp, sensor_counter, data);
         addJson(gson.toJson(msg));
     }
 
-    public void addAccelSample(long time, long androidElapsedNanos, long sensor_timestamp, int sensor_counter, float [][] data) {
+    public void addAccelSample(long time, long androidElapsedNanos, long sensor_timestamp, long raw_sensor_timestamp, int sensor_counter, float [][] data) {
         Gson gson = new Gson();
-        ImuAccelMessage msg = new ImuAccelMessage(mDeviceMac, time, androidElapsedNanos, sensor_timestamp, sensor_counter, data);
+        ImuAccelMessage msg = new ImuAccelMessage(mDeviceMac, time, androidElapsedNanos, sensor_timestamp, raw_sensor_timestamp, sensor_counter, data);
         addJson(gson.toJson(msg));
     }
 
@@ -88,15 +88,15 @@ public class FirebaseStreamLogger extends Observable {
         addJson(gson.toJson(msg));
     }
 
-    public void addGyroSample(long time, long androidElapsedNanos, long sensor_timestamp, int sensor_counter, float [][] data) {
+    public void addGyroSample(long time, long androidElapsedNanos, long sensor_timestamp, long raw_sensor_timestamp, int sensor_counter, float [][] data) {
         Gson gson = new Gson();
-        ImuGyroMessage msg = new ImuGyroMessage(mDeviceMac, time, androidElapsedNanos, sensor_timestamp, sensor_counter, data);
+        ImuGyroMessage msg = new ImuGyroMessage(mDeviceMac, time, androidElapsedNanos, sensor_timestamp, raw_sensor_timestamp, sensor_counter, data);
         addJson(gson.toJson(msg));
     }
 
-    public void addMagSample(long time, long androidElapsedNanos, long sensor_timestamp, int sensor_counter, float [][] data) {
+    public void addMagSample(long time, long androidElapsedNanos, long sensor_timestamp, long raw_sensor_timestamp, int sensor_counter, float [][] data) {
         Gson gson = new Gson();
-        ImuMagMessage msg = new ImuMagMessage(mDeviceMac, time, androidElapsedNanos, sensor_timestamp, sensor_counter, data);
+        ImuMagMessage msg = new ImuMagMessage(mDeviceMac, time, androidElapsedNanos, sensor_timestamp, raw_sensor_timestamp, sensor_counter, data);
         addJson(gson.toJson(msg));
     }
 

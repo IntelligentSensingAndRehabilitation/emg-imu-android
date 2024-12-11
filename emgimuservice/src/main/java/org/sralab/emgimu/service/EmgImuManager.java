@@ -746,8 +746,8 @@ public class EmgImuManager extends BleManager {
     private void parseEmgPwr(BluetoothDevice device,  Data characteristic) {
         int expectedNumberOfChannels = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0) >> 4;
         int counter = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1);
-        long timestamp = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 2);
-        timestamp = timestampToReal(timestamp);
+        long raw_timestamp = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 2);
+        long timestamp = timestampToReal(raw_timestamp);
         long timestamp_ms = emgPwrResolver.resolveTime(counter, timestamp, 1);
         int[] emgPowerChannels = new int[expectedNumberOfChannels];
 
@@ -763,7 +763,7 @@ public class EmgImuManager extends BleManager {
 
         // Saves data to a .json log file locally on device & transmits the data to the cloud.
         if (mLogging && streamLogger != null) {
-            streamLogger.addPwrSample(new Date().getTime(), androidElapsedNanos, timestamp, counter, emgPowerChannels);
+            streamLogger.addPwrSample(new Date().getTime(), androidElapsedNanos, timestamp, raw_timestamp, counter, emgPowerChannels);
         }
     }
 
@@ -778,8 +778,8 @@ public class EmgImuManager extends BleManager {
         double microvolts_per_lsb;
 
         int counter = characteristic.getIntValue(FORMAT_UINT8, 1);
-        long timestamp = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 2);
-        timestamp = timestampToReal(timestamp);
+        long raw_timestamp = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 2);
+        long timestamp = timestampToReal(raw_timestamp);
 
         long buf_ts_ms = 0;
 
@@ -856,7 +856,7 @@ public class EmgImuManager extends BleManager {
         onEmgStreamReceived(device, buf_ts_ms, data);
 
         if (mLogging && streamLogger != null) {
-            streamLogger.addStreamSample(new Date().getTime(), androidElapsedNanos, timestamp, counter, channels, samples, data);
+            streamLogger.addStreamSample(new Date().getTime(), androidElapsedNanos, timestamp, raw_timestamp, counter, channels, samples, data);
         }
     }
 
@@ -870,8 +870,8 @@ public class EmgImuManager extends BleManager {
         long androidElapsedNanos = SystemClock.elapsedRealtimeNanos();
 
         int counter = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, 0);
-        long timestamp = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 2);
-        timestamp = timestampToReal(timestamp);
+        long raw_timestamp = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 2);
+        long timestamp = timestampToReal(raw_timestamp);
 
         int len = characteristic.getValue().length - 6;
         int samples = len / 6; // 6 bytes per entry
@@ -888,7 +888,7 @@ public class EmgImuManager extends BleManager {
 
         if (mLogging && streamLogger != null) {
             // long sensor_timestamp, int sensor_counter
-            streamLogger.addAccelSample(new Date().getTime(), androidElapsedNanos, timestamp, counter, accel);
+            streamLogger.addAccelSample(new Date().getTime(), androidElapsedNanos, timestamp, raw_timestamp, counter, accel);
         }
     }
 
@@ -896,8 +896,8 @@ public class EmgImuManager extends BleManager {
         long androidElapsedNanos = SystemClock.elapsedRealtimeNanos();
 
         int counter = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, 0);
-        long timestamp = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 2);
-        timestamp = timestampToReal(timestamp);
+        long raw_timestamp = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 2);
+        long timestamp = timestampToReal(raw_timestamp);
 
         int len = characteristic.getValue().length - 6;
         int samples = len / 6; // 6 bytes per entry
@@ -913,7 +913,7 @@ public class EmgImuManager extends BleManager {
         onImuGyroReceived(device, gyro);
 
         if (mLogging && streamLogger != null) {
-            streamLogger.addGyroSample(new Date().getTime(), androidElapsedNanos, timestamp, counter, gyro);
+            streamLogger.addGyroSample(new Date().getTime(), androidElapsedNanos, timestamp, raw_timestamp, counter, gyro);
         }
     }
 
@@ -921,8 +921,8 @@ public class EmgImuManager extends BleManager {
         long androidElapsedNanos = SystemClock.elapsedRealtimeNanos();
 
         int counter = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, 0);
-        long timestamp = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 2);
-        timestamp = timestampToReal(timestamp);
+        long raw_timestamp = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 2);
+        long timestamp = timestampToReal(raw_timestamp);
 
         int len = characteristic.getValue().length - 6;
         int samples = len / 6; // 6 bytes per entry
@@ -937,7 +937,7 @@ public class EmgImuManager extends BleManager {
         onImuMagReceived(device, mag);
 
         if (mLogging && streamLogger != null) {
-            streamLogger.addMagSample(new Date().getTime(), androidElapsedNanos, timestamp, counter, mag);
+            streamLogger.addMagSample(new Date().getTime(), androidElapsedNanos, timestamp, raw_timestamp, counter, mag);
         }
     }
 
@@ -945,8 +945,8 @@ public class EmgImuManager extends BleManager {
         long androidElapsedNanos = SystemClock.elapsedRealtimeNanos();
 
         int counter = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, 0);
-        long timestamp = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 2);
-        timestamp = timestampToReal(timestamp);
+        long raw_timestamp = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 2);
+        long timestamp = timestampToReal(raw_timestamp);
 
         attitudeResolver.resolveTime(counter, timestamp, 1);
 
@@ -957,7 +957,7 @@ public class EmgImuManager extends BleManager {
         onImuAttitudeReceived(device, quat);
 
         if (mLogging && streamLogger != null) {
-            streamLogger.addAttitudeSample(new Date().getTime(), androidElapsedNanos, timestamp, counter, quat);
+            streamLogger.addAttitudeSample(new Date().getTime(), androidElapsedNanos, timestamp, raw_timestamp, counter, quat);
         }
     }
 
