@@ -1315,6 +1315,8 @@ public class EmgImuManager extends BleManager {
     private void syncDevice() {
         mSynced = true;
 
+        long androidElapsedNanos = SystemClock.elapsedRealtimeNanos();
+
         final int dt = (int) nowToTimestamp();
 
         log(Log.VERBOSE, "Sending sync signal with offset " + dt);
@@ -1365,6 +1367,10 @@ public class EmgImuManager extends BleManager {
                         log(Log.INFO, "Timestamp synchronized via CTS: " + formattedTime);
                     })                    .fail((device, status) -> logFetchFailed(device, "Synchronization via CTS failed (" + status + ")"))
                     .enqueue();
+
+            if (mLogging && streamLogger != null) {
+                streamLogger.addTimestampSync(androidElapsedNanos, timestampBaselineMilliseconds);
+            }
         }
     }
 
