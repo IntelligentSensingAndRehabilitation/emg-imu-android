@@ -215,6 +215,16 @@ public class EmgImuManager extends BleManager {
 
     private int droppedSampledCounter = 0;
 
+    /**
+     * Stores the baseline timestamp used for synchronizing data from the remote sensor.
+     */
+    private long timestampBaselineMilliseconds = 0;
+
+    /**
+     * Indicates if the timestamp has been synchronized.
+     */
+    private boolean mSynced;
+
     // region Register/Unregister Callbacks Section
     public void registerEmgPwrCallback(IEmgImuPwrDataCallback callback)
     {
@@ -1292,7 +1302,6 @@ public class EmgImuManager extends BleManager {
             successCallback.onFetchSucceeded(getBluetoothDevice());
     }
 
-    private boolean mSynced;
     private long t0() {
         return new GregorianCalendar(2021, 0, 0).getTime().getTime();
     }
@@ -1324,6 +1333,7 @@ public class EmgImuManager extends BleManager {
                 .enqueue();
 
         GregorianCalendar calendar = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
+        timestampBaselineMilliseconds = calendar.getTime().getTime();
 
         // Convert to CTS format (see CTS specification)
         if (mCtsCurrentTimeCharacteristic != null) {
@@ -1361,7 +1371,7 @@ public class EmgImuManager extends BleManager {
     // Convert from the device format (8 Hz units since 2018 beginning) to the
     // android time format
     private long timestampToReal(long device_ts) {
-        return t0() + (device_ts * 1000 / 8);
+        return timestampBaselineMilliseconds + device_ts;
     }
 
     // Convert from now to device format (8 Hz units since 2018 beginning)
