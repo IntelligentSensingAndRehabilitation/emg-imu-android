@@ -16,6 +16,7 @@ import org.sralab.emgimu.streaming.messages.ImuAttitudeMessage;
 import org.sralab.emgimu.streaming.messages.ImuGyroMessage;
 import org.sralab.emgimu.streaming.messages.ImuMagMessage;
 import org.sralab.emgimu.streaming.messages.ForceMessage;
+import org.sralab.emgimu.streaming.messages.TimestampSyncMessage;
 
 import java.util.Observable;
 import java.util.Observer;
@@ -104,5 +105,12 @@ public class FirebaseStreamLogger extends Observable {
         ForceMessage msg = new ForceMessage(mDeviceMac, time, data);
         addJson(gson.toJson(msg));
         Log.d(TAG, gson.toJson(msg));
+    }
+
+    public void addTimestampSync(long android_time, long timestamp_sync_milliseconds)
+    {
+        Gson gson = new Gson();
+        TimestampSyncMessage msg = new TimestampSyncMessage(mDeviceMac, android_time, timestamp_sync_milliseconds);
+        addJson(gson.toJson(msg));
     }
 }
