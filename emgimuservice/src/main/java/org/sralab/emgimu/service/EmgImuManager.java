@@ -573,8 +573,12 @@ public class EmgImuManager extends BleManager {
             fireLogger = new FirebaseEmgLogger(EmgImuManager.this);
 
             if (mLogging) {
-                log(Log.INFO, "Created stream logger");
                 streamLogger = new FirebaseStreamLogger(EmgImuManager.this, getContext());
+                log(Log.INFO, "Created stream logger");
+
+                if (mSynced) {
+                    streamLogger.addTimestampSync(SystemClock.elapsedRealtimeNanos(), timestampBaselineMilliseconds);
+                }
             }
 
             connectionState.postValue(getConnectionState());
