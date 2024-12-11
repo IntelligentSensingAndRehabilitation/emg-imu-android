@@ -16,6 +16,8 @@ import org.sralab.emgimu.streaming.messages.ImuAttitudeMessage;
 import org.sralab.emgimu.streaming.messages.ImuGyroMessage;
 import org.sralab.emgimu.streaming.messages.ImuMagMessage;
 import org.sralab.emgimu.streaming.messages.ForceMessage;
+import org.sralab.emgimu.streaming.messages.TimestampSyncMessage;
+import org.sralab.emgimu.streaming.messages.FileVersionMessage;
 
 import java.util.Observable;
 import java.util.Observer;
@@ -23,6 +25,8 @@ import java.util.Observer;
 public class FirebaseStreamLogger extends Observable {
 
     private String TAG = FirebaseStreamLogger.class.getSimpleName();
+
+    private static final String fileVersion = "2.0.0";
 
     private EmgImuManager mManager;
     private String mDeviceMac;
@@ -33,6 +37,8 @@ public class FirebaseStreamLogger extends Observable {
         mDeviceMac = manager.getAddress();
 
         firebaseWriter = new FirebaseWriter(context, "", "streams", mDeviceMac);
+
+        AddFileVersion(fileVersion);
     }
 
     public String getReference() {
@@ -56,27 +62,27 @@ public class FirebaseStreamLogger extends Observable {
         firebaseWriter.addJson(json);
     }
 
-    public void addStreamSample(long time, long androidElapsedNanos, long sensor_timestamp, int sensor_counter, int channels, int samples, double [][] data) {
+    public void addStreamSample(long time, long androidElapsedNanos, long sensor_timestamp, long raw_sensor_timestamp, int sensor_counter, int channels, int samples, double[][] data) {
         Gson gson = new Gson();
-        EmgRawMessage msg = new EmgRawMessage(mDeviceMac, time, androidElapsedNanos, sensor_timestamp, sensor_counter, channels, samples, data);
+        EmgRawMessage msg = new EmgRawMessage(mDeviceMac, time, androidElapsedNanos, sensor_timestamp, raw_sensor_timestamp, sensor_counter, channels, samples, data);
         addJson(gson.toJson(msg));
     }
 
-    public void addPwrSample(long time, long androidElapsedNanos, long sensor_timestamp, int sensor_counter, int [] data) {
+    public void addPwrSample(long time, long androidElapsedNanos, long sensor_timestamp, long raw_sensor_timestamp, int sensor_counter, int[] data) {
         Gson gson = new Gson();
-        EmgPwrMessage msg = new EmgPwrMessage(mDeviceMac, time, androidElapsedNanos, sensor_timestamp, sensor_counter, data);
+        EmgPwrMessage msg = new EmgPwrMessage(mDeviceMac, time, androidElapsedNanos, sensor_timestamp, raw_sensor_timestamp, sensor_counter, data);
         addJson(gson.toJson(msg));
     }
 
-    public void addAttitudeSample(long time, long androidElapsedNanos, long sensor_timestamp, int sensor_counter, float [] data) {
+    public void addAttitudeSample(long time, long androidElapsedNanos, long sensor_timestamp, long raw_sensor_timestamp, int sensor_counter, float[] data) {
         Gson gson = new Gson();
-        ImuAttitudeMessage msg = new ImuAttitudeMessage(mDeviceMac, time, androidElapsedNanos, sensor_timestamp, sensor_counter, data);
+        ImuAttitudeMessage msg = new ImuAttitudeMessage(mDeviceMac, time, androidElapsedNanos, sensor_timestamp, raw_sensor_timestamp, sensor_counter, data);
         addJson(gson.toJson(msg));
     }
 
-    public void addAccelSample(long time, long androidElapsedNanos, long sensor_timestamp, int sensor_counter, float [][] data) {
+    public void addAccelSample(long time, long androidElapsedNanos, long sensor_timestamp, long raw_sensor_timestamp, int sensor_counter, float[][] data) {
         Gson gson = new Gson();
-        ImuAccelMessage msg = new ImuAccelMessage(mDeviceMac, time, androidElapsedNanos, sensor_timestamp, sensor_counter, data);
+        ImuAccelMessage msg = new ImuAccelMessage(mDeviceMac, time, androidElapsedNanos, sensor_timestamp, raw_sensor_timestamp, sensor_counter, data);
         addJson(gson.toJson(msg));
     }
 
@@ -87,22 +93,34 @@ public class FirebaseStreamLogger extends Observable {
         addJson(gson.toJson(msg));
     }
 
-    public void addGyroSample(long time, long androidElapsedNanos, long sensor_timestamp, int sensor_counter, float [][] data) {
+    public void addGyroSample(long time, long androidElapsedNanos, long sensor_timestamp, long raw_sensor_timestamp, int sensor_counter, float[][] data) {
         Gson gson = new Gson();
-        ImuGyroMessage msg = new ImuGyroMessage(mDeviceMac, time, androidElapsedNanos, sensor_timestamp, sensor_counter, data);
+        ImuGyroMessage msg = new ImuGyroMessage(mDeviceMac, time, androidElapsedNanos, sensor_timestamp, raw_sensor_timestamp, sensor_counter, data);
         addJson(gson.toJson(msg));
     }
 
-    public void addMagSample(long time, long androidElapsedNanos, long sensor_timestamp, int sensor_counter, float [][] data) {
+    public void addMagSample(long time, long androidElapsedNanos, long sensor_timestamp, long raw_sensor_timestamp, int sensor_counter, float[][] data) {
         Gson gson = new Gson();
-        ImuMagMessage msg = new ImuMagMessage(mDeviceMac, time, androidElapsedNanos, sensor_timestamp, sensor_counter, data);
+        ImuMagMessage msg = new ImuMagMessage(mDeviceMac, time, androidElapsedNanos, sensor_timestamp, raw_sensor_timestamp, sensor_counter, data);
         addJson(gson.toJson(msg));
     }
 
-    public void addForceSample(long time, double [] data) {
+    public void addForceSample(long time, double[] data) {
         Gson gson = new Gson();
         ForceMessage msg = new ForceMessage(mDeviceMac, time, data);
         addJson(gson.toJson(msg));
         Log.d(TAG, gson.toJson(msg));
+    }
+
+    public void addTimestampSync(long android_time, long timestamp_sync_milliseconds) {
+        Gson gson = new Gson();
+        TimestampSyncMessage msg = new TimestampSyncMessage(mDeviceMac, android_time, timestamp_sync_milliseconds);
+        addJson(gson.toJson(msg));
+    }
+
+    public void AddFileVersion(String version) {
+        Gson gson = new Gson();
+        FileVersionMessage msg = new FileVersionMessage(version);
+        addJson(gson.toJson(msg));
     }
 }
