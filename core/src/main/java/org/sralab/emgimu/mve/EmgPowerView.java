@@ -229,10 +229,10 @@ public class EmgPowerView extends View {
                 mTextPaint);
 
         stringHeight = minHeight + mTextDimension;
-        if (minHeight > getHeight() - mTextDimension) {
+        /*if (minHeight > getHeight() - mTextDimension) {
             // if minimum bar close to the bottom of screen, move text above it
             stringHeight = (float) (minHeight - mTextDimension * 0.5);
-        }
+        }*/
         canvas.drawText(minDescribeString(),
                 (lineLeft + lineRight) / 2,
                 stringHeight,
