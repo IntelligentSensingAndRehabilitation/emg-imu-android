@@ -140,7 +140,10 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
                 dvm.reset();
             });
 
-            dvm.getRange().observe(context, value -> power.setMaxRange(value));
+            dvm.getRange().observe(context, value -> {
+                Log.d("Kevin", "Observed range change: " + value);
+                power.setMaxRange(value);
+            });
 
             // Set up observers for live data that will be bound later. This avoids observers
             // remaining connected to old entities in the list.
@@ -151,8 +154,30 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
             LiveData <Double> maxPower = (LiveData<Double>) Transformations.switchMap(currentDevice, dev -> dev.first.getMaximumTwoChannel()[dev.second]);
             maxPower.observe(context, value -> power.setMaxPower(value));
 
+            /*LiveData <Double> minPower = (LiveData<Double>) Transformations.switchMap(currentDevice, dev -> dev.first.getMinimumTwoChannel()[dev.second]);
+            minPower.observe(context, value -> power.setMinPower(value));*/
+
             LiveData <Double> minPower = (LiveData<Double>) Transformations.switchMap(currentDevice, dev -> dev.first.getMinimumTwoChannel()[dev.second]);
-            minPower.observe(context, value -> power.setMinPower(value));
+            minPower.observe(context, value -> {
+                // Skip placeholder values
+                if (value == Double.MAX_VALUE) {
+                    Log.d("Kevin", "Skipping placeholder value for minPower");
+                    return;
+                }
+                // Update minPower value in the graph
+                power.setMinPower(value);
+                // Dynamically update range if minPower exceeds a hardcoded percentage of the
+                // current range
+                Integer currentRange = dvm.getRange().getValue();
+                if (currentRange != null && value >= power.getPeakMinThresh() * currentRange) {
+                    Integer newRange = (int) (value * power.getAdjustedRangeMultiplier());
+                    Log.d("Kevin","New minimum observed: " + value);
+                    Log.d("Kevin","Current range: " + currentRange);
+                    Log.d("Kevin", "New range: " + newRange);
+                    dvm.setRange(newRange); // Update range in MutableLiveData
+                }
+            });
+
         }
 
         /**

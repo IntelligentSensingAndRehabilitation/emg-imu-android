@@ -31,7 +31,10 @@ public class DeviceViewModel extends EmgImuViewModel<Device> {
     public boolean getObserveStream() { return true; }
 
     MutableLiveData<Integer> range = new MutableLiveData<>(1000);
-    public void setRange(Integer range) { this.range.postValue(range); }
+    public void setRange(Integer range) {
+        Log.d("Kevin", "Setting range to: " + range);
+        this.range.postValue(range);
+    }
     public LiveData<Integer> getRange() { return range; }
     private class MvcSensor {
         String address;
@@ -76,6 +79,8 @@ public class DeviceViewModel extends EmgImuViewModel<Device> {
 
     public void reset() {
         for (final Device d : getDevicesLiveData().getValue()) { d.reset(); }
+        // Reset the range in DeviceViewModel after resetting all devices
+        setRange(1000); // Replace 1000 with the desired default range value
     }
 
     public void saveMvc(Device d, int channel) {

@@ -50,6 +50,8 @@ public class EmgPowerView extends View {
         init(attrs, defStyle);
     }
 
+    private float mPeakMinThresh = 0.9F;
+    private float mAdjustedRangeMultiplier = 2F;
     private float mMin = 0;
     private float mMax = 0;
     private float mPwr = 0;
@@ -69,6 +71,8 @@ public class EmgPowerView extends View {
         //Log.d(TAG, "power = " + mPwr);
         invalidate();
     }
+    public float getPeakMinThresh() { return mPeakMinThresh; }
+    public float getAdjustedRangeMultiplier() {return mAdjustedRangeMultiplier; }
     public float getThreshold() { return mThresh; }
     public void setThreshold(float thresh) { mThresh = thresh; }
     public void setMaxRange(float maxPwr) { mMaxHeightPwr = maxPwr; }
@@ -82,7 +86,10 @@ public class EmgPowerView extends View {
         int paddingBottom = getPaddingBottom();
         int contentHeight = getHeight() - paddingTop - paddingBottom;
 
+        Log.d("Kevin", "p: " + p);
+        Log.d("Kevin", "mMaxHeightPwr: " + mMaxHeightPwr);
         float pwrFrac = Math.max(Math.min(p / mMaxHeightPwr, 1f), 0f);
+        Log.d("Kevin", "Power fraction: " + pwrFrac);
         return (int) (contentHeight * (1-pwrFrac) + paddingTop);
     }
 
@@ -222,10 +229,10 @@ public class EmgPowerView extends View {
                 mTextPaint);
 
         stringHeight = minHeight + mTextDimension;
-        /*if (maxHeight < mTextDimension * 2) {
-            // if bar close to top of screen, move text below it
-            stringHeight = maxHeight + mTextDimension;
-        };*/
+        /*if (minHeight > getHeight() - mTextDimension) {
+            // if minimum bar close to the bottom of screen, move text above it
+            stringHeight = (float) (minHeight - mTextDimension * 0.5);
+        }*/
         canvas.drawText(minDescribeString(),
                 (lineLeft + lineRight) / 2,
                 stringHeight,
