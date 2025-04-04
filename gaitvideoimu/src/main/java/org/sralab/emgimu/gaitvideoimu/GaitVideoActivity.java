@@ -1,9 +1,12 @@
 package org.sralab.emgimu.gaitvideoimu;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.media.MediaPlayer;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -53,10 +56,12 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.zip.GZIPOutputStream;
 
+import org.sralab.emgimu.logging.FirebaseWriter;
+
 import no.nordicsemi.android.nrftoolbox.widget.DividerItemDecoration;
 
 public class GaitVideoActivity extends AppCompatActivity implements CameraCallbacks {
-    private static final String TAG = GaitVideoActivity.class.getSimpleName();
+    private static final String TAG = "PhoneSensorDebuggingGait"; //GaitVideoActivity.class.getSimpleName();
 
     Camera camera;
 
@@ -171,6 +176,7 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
                     if (depthCamera != null)
                         depthCamera.startVideoRecording();
                     if (phoneSensors != null)
+                        Log.d("PhoneSensorDebugging", "Starting phone sensors in gaitVideo");
                         phoneSensors.startRecording();
 
                     startVideoRecordingButton.setEnabled(false);
@@ -184,6 +190,7 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
 
                     if (phoneSensors != null) {
                         curTrial.phoneSensorLog = phoneSensors.getFirebasePath();
+                        Log.d("PhoneSensorDebugging", "Phone sensor log: " + curTrial.phoneSensorLog);
                         phoneSensors.stopRecording();
                     }
                     if (depthCamera != null)
@@ -362,11 +369,17 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
         return uploadFileName;
     }
 
-    public void pushVideoFileToFirebase(File currentFile, long startTime, boolean depth, ArrayList<Long> timestamps) {
+    private boolean isNetworkAvailable() {
+        ConnectivityManager connectivityManager = (ConnectivityManager) this.getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+        return activeNetworkInfo != null && activeNetworkInfo.isConnected();
+    }
 
+    public void pushVideoFileToFirebase(File currentFile, long startTime, boolean depth, ArrayList<Long> timestamps) {
         String simpleFilename = getSimpleFilename(currentFile);
         String firebaseUploadFileName = setupFirebaseFile(simpleFilename);
 
+        // Update trial information regardless of connectivity
         if (depth) {
             curTrial.depthFileName = firebaseUploadFileName;
             curTrial.depthStartTime = startTime;
@@ -375,19 +388,11 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
             } else {
                 curTrial.depthTimestampsRef = null;
             }
-        }
-        else {
+        } else {
             curTrial.fileName = firebaseUploadFileName;
-
-            // Store lots of timestamps
             curTrial.startTime = startTime;
             curTrial.stopTime = new Date().getTime();
-
-            // TODO: this should probably be outside of this function
             curTrial.isEmgEnabled = isEmgEnabled;
-
-            // Store trial
-            // Note: this presumes that the depth video is uploaded first!
             trials.add(curTrial);
 
             if (timestamps != null) {
@@ -395,20 +400,34 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
             } else {
                 curTrial.timestampsRef = null;
             }
-
         }
 
         updateLogger();
-        if (!depth)
-            showVideoStatus("Uploading "  + simpleFilename + "...", "red");
+
+        // Check for network availability before attempting to upload
+        if (!isNetworkAvailable()) {
+            Log.d(TAG, "Network unavailable, skipping upload for " + simpleFilename);
+            if (!depth) {
+                showVideoStatus("Saved locally: " + simpleFilename + " (offline mode)", "gray");
+                clap.start();
+                startVideoRecordingButton.setEnabled(true);
+            }
+            return;
+        }
+
+        // If we're online, proceed with upload
+        if (!depth) {
+            showVideoStatus("Uploading " + simpleFilename + "...", "red");
+        }
 
         StorageReference storageRef = storage.getReference().child(firebaseUploadFileName);
         storageRef.putFile(Uri.fromFile(currentFile))
                 .addOnFailureListener(e -> {
-                    showVideoStatus("Upload "  + simpleFilename + " failed", "failed");
-
-                    if (!depth)
+                    Log.e(TAG, "Upload failed: " + e.getMessage());
+                    if (!depth) {
+                        showVideoStatus("Upload " + simpleFilename + " failed: " + e.getMessage(), "red");
                         startVideoRecordingButton.setEnabled(true);
+                    }
                 })
                 .addOnSuccessListener(taskSnapshot -> {
                     String fileSize = " " + String.valueOf(currentFile.length()/1024) + " KB";
@@ -426,17 +445,17 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
                         e.printStackTrace();
                     }
 
-                    if (!depth)
-                        showVideoStatus("Uploaded video: "  + simpleFilename + ", " + fileSize + " " + videoDuration, "green");
-                    Log.d(TAG, "fileSize = " +fileSize);
-                    Toast.makeText(GaitVideoActivity.this, "Upload "  + simpleFilename + " succeeded!", Toast.LENGTH_SHORT).show();
+                    if (!depth) {
+                        showVideoStatus("Uploaded video: " + simpleFilename + ", " + fileSize + " " + videoDuration, "green");
+                    }
+                    Log.d(TAG, "fileSize = " + fileSize);
+                    Toast.makeText(GaitVideoActivity.this, "Upload " + simpleFilename + " succeeded!", Toast.LENGTH_SHORT).show();
 
                     if (!depth) {
                         clap.start();
                         startVideoRecordingButton.setEnabled(true);
                     }
                 });
-
     }
 
     public String uploadTimestamps(String fileName, ArrayList<Long> timestamps) {

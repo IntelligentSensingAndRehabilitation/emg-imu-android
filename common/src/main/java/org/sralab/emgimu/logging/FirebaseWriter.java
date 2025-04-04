@@ -1,6 +1,8 @@
 package org.sralab.emgimu.logging;
 
 import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.util.Log;
@@ -29,7 +31,7 @@ import java.util.TimeZone;
 import java.util.zip.GZIPOutputStream;
 
 public class FirebaseWriter extends Observable {
-    private static final String TAG = FirebaseWriter.class.getSimpleName();
+    private static final String TAG = "PhoneSensorDebugging"; //FirebaseWriter.class.getSimpleName();
 
     private Context context;
     private Handler handler;
@@ -44,9 +46,11 @@ public class FirebaseWriter extends Observable {
     private OutputStream localWriter;
     private OutputStream dataStream;
     private boolean firstEntry = false;
+    private boolean isOnline = false;
+    private PipedOutputStream pos;
+    private PipedInputStream pis;
 
     public FirebaseWriter(Context context, String suffix, String basepath, String subpath) {
-
         this.context = context;
         this.suffix = suffix;
         if (suffix == null)
@@ -54,22 +58,79 @@ public class FirebaseWriter extends Observable {
         this.basepath = basepath;
         this.subpath = subpath;
 
-        FirebaseAuth mAuth = FirebaseAuth.getInstance();
-        user = mAuth.getCurrentUser(); // Log in performed by main service
+        // Check for internet connectivity first
+        isOnline = isNetworkAvailable();
 
-        if (user == null) {
-            mAuth.addAuthStateListener(firebaseAuth -> {
-                user = firebaseAuth.getCurrentUser();
+        if (isOnline) {
+            // Only try to use Firebase if we're online
+            FirebaseAuth mAuth = FirebaseAuth.getInstance();
+            user = mAuth.getCurrentUser(); // Log in performed by main service
+
+            if (user == null) {
+                mAuth.addAuthStateListener(firebaseAuth -> {
+                    user = firebaseAuth.getCurrentUser();
+                    if (user != null) {
+                        createLog(user);
+                    } else {
+                        // No user but we still want to create a local log
+                        createLocalOnlyLog();
+                    }
+                });
+            } else {
                 createLog(user);
-            });
-        } else
-            createLog(user);
+            }
+        } else {
+            // If offline, only set up local logging
+            createLocalOnlyLog();
+        }
+    }
 
+    private boolean isNetworkAvailable() {
+        ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+        return activeNetworkInfo != null && activeNetworkInfo.isConnected();
+    }
+
+    private void createLocalOnlyLog() {
+        Log.d(TAG, "Creating local-only log due to no internet connection or no Firebase user");
+
+        // File name is UTC
+        TimeZone tz = TimeZone.getTimeZone("UTC");
+        DateFormat df = new SimpleDateFormat("yyyyMMdd-HHmmss'Z'"); // Quoted "Z" to indicate UTC, no timezone offset
+        df.setTimeZone(tz);
+        dateName = df.format(new Date()) + suffix;
+
+        // Set up handler thread for logging
+        HandlerThread t = new HandlerThread("Logging") {};
+        t.start();
+        handler = new Handler(t.getLooper());
+
+        // Set up local file only
+        try {
+            File file = new File(context.getExternalFilesDir("stream_logs"), getLocalFilename());
+            String fileName = file.getAbsolutePath();
+            localWriter = new FileOutputStream(fileName);
+            Log.d(TAG, "Opened: " + fileName);
+
+            localWriter = new GZIPOutputStream(localWriter);
+            localWriter.write("[".getBytes());
+
+            // Set up a local dataStream for consistency with the original code
+            dataStream = localWriter;
+            firstEntry = true;
+
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     void createLog(FirebaseUser user) {
-        if (user == null)
-            throw new RuntimeException("No firebase user");
+        if (user == null) {
+            createLocalOnlyLog();
+            return;
+        }
 
         // File name is UTC
         TimeZone tz = TimeZone.getTimeZone("UTC");
@@ -81,8 +142,8 @@ public class FirebaseWriter extends Observable {
         storageRef = storage.getReference().child(getFilename());
 
         // Create stream objects and use buffers to prevent deadlocks
-        PipedOutputStream pos = new PipedOutputStream();
-        PipedInputStream pis = new PipedInputStream();
+        pos = new PipedOutputStream();
+        pis = new PipedInputStream();
 
         try {
             // Connect streams
@@ -94,6 +155,8 @@ public class FirebaseWriter extends Observable {
             firstEntry = true;
         } catch (IOException e) {
             e.printStackTrace();
+            // If Firebase streaming setup fails, fall back to local only
+            createLocalOnlyLog();
             return;
         }
 
@@ -136,15 +199,20 @@ public class FirebaseWriter extends Observable {
     }
 
     public void close() {
-        Log.d(TAG, "Closing PipedOutputStream");
+        Log.d(TAG, "Closing streams");
         handler.post(() -> {
             try {
                 Log.d(TAG, "Close occurred");
-                dataStream.write("]".getBytes());
-                dataStream.close();
 
-                localWriter.write("]".getBytes());
-                localWriter.close();
+                if (dataStream != null) {
+                    dataStream.write("]".getBytes());
+                    dataStream.close();
+                }
+
+                if (localWriter != null && localWriter != dataStream) {
+                    localWriter.write("]".getBytes());
+                    localWriter.close();
+                }
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -152,7 +220,6 @@ public class FirebaseWriter extends Observable {
     }
 
     public class MsgWriteRunnable implements Runnable {
-
         private String msg;
 
         public MsgWriteRunnable(String msg) {
@@ -162,8 +229,16 @@ public class FirebaseWriter extends Observable {
         @Override
         public void run() {
             try {
-                dataStream.write(msg.getBytes());
-                localWriter.write(msg.getBytes());
+                // Only write to dataStream if it's different from localWriter
+                // (when we're in online mode with Firebase)
+                if (dataStream != null) {
+                    dataStream.write(msg.getBytes());
+                }
+
+                // Always write to local file
+                if (localWriter != null) {
+                    localWriter.write(msg.getBytes());
+                }
             } catch (IOException e) {
                 Log.e(TAG, "Error writing to stream.", e);
             }
@@ -180,6 +255,10 @@ public class FirebaseWriter extends Observable {
     }
 
     private String getFilename() {
+        if (user == null) {
+            return "fallback";  // This should never be used when offline
+        }
+
         if (subpath == null) {
             Log.d(TAG, "No subpath");
             return basepath + "/" + user.getUid() + "/" + dateName + suffix + ".json.gz";
@@ -195,6 +274,10 @@ public class FirebaseWriter extends Observable {
     }
 
     public String getReference() {
-        return storageRef.getPath();
+        return storageRef != null ? storageRef.getPath() : "local-only";
+    }
+
+    public boolean isOnline() {
+        return isOnline;
     }
 }
