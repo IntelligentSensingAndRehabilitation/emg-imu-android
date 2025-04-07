@@ -31,7 +31,7 @@ import java.util.TimeZone;
 import java.util.zip.GZIPOutputStream;
 
 public class FirebaseWriter extends Observable {
-    private static final String TAG = "PhoneSensorDebugging"; //FirebaseWriter.class.getSimpleName();
+    private static final String TAG = FirebaseWriter.class.getSimpleName();
 
     private Context context;
     private Handler handler;
@@ -199,10 +199,8 @@ public class FirebaseWriter extends Observable {
     }
 
     public void close() {
-        Log.d(TAG, "Closing streams");
         handler.post(() -> {
             try {
-                Log.d(TAG, "Close occurred");
 
                 if (dataStream != null) {
                     dataStream.write("]".getBytes());
@@ -260,7 +258,6 @@ public class FirebaseWriter extends Observable {
         }
 
         if (subpath == null) {
-            Log.d(TAG, "No subpath");
             return basepath + "/" + user.getUid() + "/" + dateName + suffix + ".json.gz";
         } else
             return basepath + "/" + user.getUid() + "/" + subpath + "/" + dateName + suffix + ".json.gz";

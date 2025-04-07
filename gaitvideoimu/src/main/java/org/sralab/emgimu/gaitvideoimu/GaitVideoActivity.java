@@ -61,7 +61,7 @@ import org.sralab.emgimu.logging.FirebaseWriter;
 import no.nordicsemi.android.nrftoolbox.widget.DividerItemDecoration;
 
 public class GaitVideoActivity extends AppCompatActivity implements CameraCallbacks {
-    private static final String TAG = "PhoneSensorDebuggingGait"; //GaitVideoActivity.class.getSimpleName();
+    private static final String TAG = GaitVideoActivity.class.getSimpleName();
 
     Camera camera;
 
@@ -176,7 +176,6 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
                     if (depthCamera != null)
                         depthCamera.startVideoRecording();
                     if (phoneSensors != null)
-                        Log.d("PhoneSensorDebugging", "Starting phone sensors in gaitVideo");
                         phoneSensors.startRecording();
 
                     startVideoRecordingButton.setEnabled(false);
@@ -190,7 +189,6 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
 
                     if (phoneSensors != null) {
                         curTrial.phoneSensorLog = phoneSensors.getFirebasePath();
-                        Log.d("PhoneSensorDebugging", "Phone sensor log: " + curTrial.phoneSensorLog);
                         phoneSensors.stopRecording();
                     }
                     if (depthCamera != null)
@@ -232,7 +230,6 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
 
         dvm.getServiceLiveData().observe(this, binder -> {
             if (binder != null) {
-                Log.d(TAG, "Service updated.");
                 long startTime = new Date().getTime();
                 mGameLogger = new FirebaseGameLogger(dvm.getService(), getString(R.string.app_name), startTime);
             } else {
@@ -261,7 +258,6 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
 
     @Override
     public void onResume() {
-        Log.d(TAG, "onResume");
         super.onResume();
         dvm.onResume();
         startBackgroundThread();
@@ -336,7 +332,6 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
         // Check if user is signed in (non-null) and update UI accordingly.
         mUser = mAuth.getCurrentUser();
         if (mUser == null) {
-            Log.d(TAG, "Attempting to log in to firebase");
             mAuth.signInAnonymously()
                     .addOnCompleteListener(task -> {
                         if (task.isSuccessful()) {
