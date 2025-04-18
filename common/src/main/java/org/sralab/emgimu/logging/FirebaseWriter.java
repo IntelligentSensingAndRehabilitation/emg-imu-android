@@ -46,7 +46,6 @@ public class FirebaseWriter extends Observable {
     private OutputStream localWriter;
     private OutputStream dataStream;
     private boolean firstEntry = false;
-    private boolean isOnline = false;
 
     public FirebaseWriter(Context context, String suffix, String basepath, String subpath) {
 
@@ -56,9 +55,6 @@ public class FirebaseWriter extends Observable {
             this.suffix = "";
         this.basepath = basepath;
         this.subpath = subpath;
-
-        // Check for internet connectivity first
-        isOnline = isNetworkAvailable();
 
         FirebaseAuth mAuth = FirebaseAuth.getInstance();
         user = mAuth.getCurrentUser(); // Log in performed by main service
@@ -115,7 +111,7 @@ public class FirebaseWriter extends Observable {
         InputStream logStream = pis;
 
         // only create upload task if online
-        if (isOnline) {
+        if (isNetworkAvailable()) {
             Log.d(TAG, "Creating upload task for " + getReference());
 
             UploadTask uploadTask = storageRef.putStream(logStream);
@@ -156,7 +152,7 @@ public class FirebaseWriter extends Observable {
                 Log.d(TAG, "Close occurred");
 
                 // only close if online
-                if (isOnline) {
+                if (isNetworkAvailable()) {
                     dataStream.write("]".getBytes());
                     dataStream.flush();
                     dataStream.close();
@@ -182,7 +178,7 @@ public class FirebaseWriter extends Observable {
         @Override
         public void run() {
             try {
-                if (isOnline) {
+                if (isNetworkAvailable()) {
                 dataStream.write(msg.getBytes());
                 }
                 localWriter.write(msg.getBytes());
