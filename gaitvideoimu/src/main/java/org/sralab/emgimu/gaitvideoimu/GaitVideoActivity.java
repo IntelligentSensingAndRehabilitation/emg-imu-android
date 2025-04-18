@@ -56,8 +56,6 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.zip.GZIPOutputStream;
 
-import org.sralab.emgimu.logging.FirebaseWriter;
-
 import no.nordicsemi.android.nrftoolbox.widget.DividerItemDecoration;
 
 public class GaitVideoActivity extends AppCompatActivity implements CameraCallbacks {
@@ -230,6 +228,7 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
 
         dvm.getServiceLiveData().observe(this, binder -> {
             if (binder != null) {
+                Log.d(TAG, "Service updated.");
                 long startTime = new Date().getTime();
                 mGameLogger = new FirebaseGameLogger(dvm.getService(), getString(R.string.app_name), startTime);
             } else {
@@ -258,6 +257,7 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
 
     @Override
     public void onResume() {
+        Log.d(TAG, "onResume");
         super.onResume();
         dvm.onResume();
         startBackgroundThread();
@@ -332,6 +332,7 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
         // Check if user is signed in (non-null) and update UI accordingly.
         mUser = mAuth.getCurrentUser();
         if (mUser == null) {
+            Log.d(TAG, "Attempting to log in to firebase");
             mAuth.signInAnonymously()
                     .addOnCompleteListener(task -> {
                         if (task.isSuccessful()) {
@@ -371,10 +372,10 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
     }
 
     public void pushVideoFileToFirebase(File currentFile, long startTime, boolean depth, ArrayList<Long> timestamps) {
+
         String simpleFilename = getSimpleFilename(currentFile);
         String firebaseUploadFileName = setupFirebaseFile(simpleFilename);
 
-        // Update trial information regardless of connectivity
         if (depth) {
             curTrial.depthFileName = firebaseUploadFileName;
             curTrial.depthStartTime = startTime;
@@ -383,11 +384,19 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
             } else {
                 curTrial.depthTimestampsRef = null;
             }
-        } else {
+        }
+        else {
             curTrial.fileName = firebaseUploadFileName;
+
+            // Store lots of timestamps
             curTrial.startTime = startTime;
             curTrial.stopTime = new Date().getTime();
+
+            // TODO: this should probably be outside of this function
             curTrial.isEmgEnabled = isEmgEnabled;
+
+            // Store trial
+            // Note: this presumes that the depth video is uploaded first!
             trials.add(curTrial);
 
             if (timestamps != null) {
@@ -395,11 +404,11 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
             } else {
                 curTrial.timestampsRef = null;
             }
+
         }
 
         updateLogger();
 
-        // Check for network availability before attempting to upload
         if (!isNetworkAvailable()) {
             Log.d(TAG, "Network unavailable, skipping upload for " + simpleFilename);
             if (!depth) {
@@ -410,7 +419,6 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
             return;
         }
 
-        // If we're online, proceed with upload
         if (!depth) {
             showVideoStatus("Uploading " + simpleFilename + "...", "red");
         }
@@ -418,11 +426,10 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
         StorageReference storageRef = storage.getReference().child(firebaseUploadFileName);
         storageRef.putFile(Uri.fromFile(currentFile))
                 .addOnFailureListener(e -> {
-                    Log.e(TAG, "Upload failed: " + e.getMessage());
-                    if (!depth) {
-                        showVideoStatus("Upload " + simpleFilename + " failed: " + e.getMessage(), "red");
+                    showVideoStatus("Upload "  + simpleFilename + " failed: " + e.getMessage(), "red");
+
+                    if (!depth)
                         startVideoRecordingButton.setEnabled(true);
-                    }
                 })
                 .addOnSuccessListener(taskSnapshot -> {
                     String fileSize = " " + String.valueOf(currentFile.length()/1024) + " KB";
@@ -451,6 +458,7 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
                         startVideoRecordingButton.setEnabled(true);
                     }
                 });
+
     }
 
     public String uploadTimestamps(String fileName, ArrayList<Long> timestamps) {
@@ -471,7 +479,6 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
             e.printStackTrace();
         }
 
-
         // Now upload to Firestore
         String temp[] = timestampFileName.split("/");
         String simpleFilename = temp[temp.length - 1];
@@ -480,12 +487,19 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
         File timestampFile = new File(timestampFileName);
 
         StorageReference storageRef = storage.getReference().child(firebaseUploadFileName);
-        storageRef.putFile(Uri.fromFile(timestampFile))
-                .addOnFailureListener(e ->
-                        Log.d(TAG, "Timestamps upload to " + firebaseUploadFileName + " + failed. "  + e.getMessage()))
-                .addOnSuccessListener(taskSnapshot ->
-                    Log.d(TAG, "Timestamps uploaded successfully to " + firebaseUploadFileName)
-                );
+
+        // only upload if online
+        if (isNetworkAvailable()) {
+            storageRef.putFile(Uri.fromFile(timestampFile))
+                    .addOnFailureListener(e ->
+                            Log.d(TAG, "Timestamps upload to " + firebaseUploadFileName + " + failed. " + e.getMessage()))
+                    .addOnSuccessListener(taskSnapshot ->
+                            Log.d(TAG, "Timestamps uploaded successfully to " + firebaseUploadFileName)
+                    );
+        }
+        else {
+            Log.d(TAG, "Timestamps upload to " + firebaseUploadFileName + " failed. No network connection.");
+        }
 
         return firebaseUploadFileName;
     }
@@ -579,20 +593,20 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
         });
     }
 
-   public boolean checkPermissions() {
-       // Explicitly check user permissions
-       if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
-               != PackageManager.PERMISSION_GRANTED &&
-               ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                       != PackageManager.PERMISSION_GRANTED &&
-               ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
-                       != PackageManager.PERMISSION_GRANTED) {
-           ActivityCompat.requestPermissions(
-                   this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS);
-           return false;
-       }
-       return true;
-   }
+    public boolean checkPermissions() {
+        // Explicitly check user permissions
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
+                != PackageManager.PERMISSION_GRANTED &&
+                ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                        != PackageManager.PERMISSION_GRANTED &&
+                ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+                        != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(
+                    this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS);
+            return false;
+        }
+        return true;
+    }
 
     @Override
     public int getDisplayRotation() {
