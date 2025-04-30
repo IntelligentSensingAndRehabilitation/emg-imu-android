@@ -1,6 +1,8 @@
 package org.sralab.emgimu.logging;
 
 import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.util.Log;
@@ -64,7 +66,12 @@ public class FirebaseWriter extends Observable {
             });
         } else
             createLog(user);
+    }
 
+    private boolean isNetworkAvailable() {
+        ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+        return activeNetworkInfo != null && activeNetworkInfo.isConnected();
     }
 
     void createLog(FirebaseUser user) {
@@ -103,22 +110,25 @@ public class FirebaseWriter extends Observable {
 
         InputStream logStream = pis;
 
-        Log.d(TAG, "Creating upload task for " + getReference());
+        // only create upload task if online
+        if (isNetworkAvailable()) {
+            Log.d(TAG, "Creating upload task for " + getReference());
 
-        UploadTask uploadTask = storageRef.putStream(logStream);
-        uploadTask.addOnFailureListener(exception -> {
-            Log.e(TAG, "Failed to upload: " + getReference(), exception);
-            synchronized (this) {
-                this.notify();
-            }
-        }).addOnSuccessListener(taskSnapshot -> {
-            Log.d(TAG, "Upload of log succeeded " + getReference() + " " + taskSnapshot.toString());
-            synchronized (this) {
-                this.notify();
-            }
-            setChanged();
-            notifyObservers();
-        });
+            UploadTask uploadTask = storageRef.putStream(logStream);
+            uploadTask.addOnFailureListener(exception -> {
+                Log.e(TAG, "Failed to upload: " + getReference(), exception);
+                synchronized (this) {
+                    this.notify();
+                }
+            }).addOnSuccessListener(taskSnapshot -> {
+                Log.d(TAG, "Upload of log succeeded " + getReference() + " " + taskSnapshot.toString());
+                synchronized (this) {
+                    this.notify();
+                }
+                setChanged();
+                notifyObservers();
+            });
+        }
 
         try {
             File file = new File(context.getExternalFilesDir("stream_logs"), getLocalFilename());
@@ -139,14 +149,41 @@ public class FirebaseWriter extends Observable {
         Log.d(TAG, "Closing PipedOutputStream");
         handler.post(() -> {
             try {
-                Log.d(TAG, "Close occurred");
-                dataStream.write("]".getBytes());
-                dataStream.close();
+                Log.d(TAG, "Close started");
 
-                localWriter.write("]".getBytes());
-                localWriter.close();
-            } catch (IOException e) {
-                e.printStackTrace();
+                if (dataStream != null) {
+                    try {
+                        dataStream.write("]".getBytes());
+                        dataStream.flush();
+                    } catch (IOException e) {
+                        Log.e(TAG, "Error flushing dataStream", e);
+                    } finally {
+                        try {
+                            dataStream.close();
+                            Log.d(TAG, "dataStream closed");
+                        } catch (IOException e) {
+                            Log.e(TAG, "Error closing dataStream", e);
+                        }
+                    }
+                }
+
+                if (localWriter != null) {
+                    try {
+                        localWriter.write("]".getBytes());
+                        localWriter.flush();
+                    } catch (IOException e) {
+                        Log.e(TAG, "Error flushing localWriter", e);
+                    } finally {
+                        try {
+                            localWriter.close();
+                            Log.d(TAG, "localWriter closed");
+                        } catch (IOException e) {
+                            Log.e(TAG, "Error closing localWriter", e);
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Unexpected error during close", e);
             }
         });
     }
@@ -162,7 +199,9 @@ public class FirebaseWriter extends Observable {
         @Override
         public void run() {
             try {
+                if (isNetworkAvailable()) {
                 dataStream.write(msg.getBytes());
+                }
                 localWriter.write(msg.getBytes());
             } catch (IOException e) {
                 Log.e(TAG, "Error writing to stream.", e);

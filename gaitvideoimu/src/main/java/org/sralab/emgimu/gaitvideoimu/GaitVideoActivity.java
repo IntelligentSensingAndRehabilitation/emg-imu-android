@@ -1,9 +1,12 @@
 package org.sralab.emgimu.gaitvideoimu;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.media.MediaPlayer;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -362,6 +365,12 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
         return uploadFileName;
     }
 
+    private boolean isNetworkAvailable() {
+        ConnectivityManager connectivityManager = (ConnectivityManager) this.getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+        return activeNetworkInfo != null && activeNetworkInfo.isConnected();
+    }
+
     public void pushVideoFileToFirebase(File currentFile, long startTime, boolean depth, ArrayList<Long> timestamps) {
 
         String simpleFilename = getSimpleFilename(currentFile);
@@ -399,13 +408,25 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
         }
 
         updateLogger();
-        if (!depth)
-            showVideoStatus("Uploading "  + simpleFilename + "...", "red");
+
+        if (!isNetworkAvailable()) {
+            Log.d(TAG, "Network unavailable, skipping upload for " + simpleFilename);
+            if (!depth) {
+                showVideoStatus("Saved locally: " + simpleFilename + " (offline mode)", "gray");
+                clap.start();
+                startVideoRecordingButton.setEnabled(true);
+            }
+            return;
+        }
+
+        if (!depth) {
+            showVideoStatus("Uploading " + simpleFilename + "...", "red");
+        }
 
         StorageReference storageRef = storage.getReference().child(firebaseUploadFileName);
         storageRef.putFile(Uri.fromFile(currentFile))
                 .addOnFailureListener(e -> {
-                    showVideoStatus("Upload "  + simpleFilename + " failed", "failed");
+                    showVideoStatus("Upload "  + simpleFilename + " failed: " + e.getMessage(), "red");
 
                     if (!depth)
                         startVideoRecordingButton.setEnabled(true);
@@ -426,10 +447,11 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
                         e.printStackTrace();
                     }
 
-                    if (!depth)
-                        showVideoStatus("Uploaded video: "  + simpleFilename + ", " + fileSize + " " + videoDuration, "green");
-                    Log.d(TAG, "fileSize = " +fileSize);
-                    Toast.makeText(GaitVideoActivity.this, "Upload "  + simpleFilename + " succeeded!", Toast.LENGTH_SHORT).show();
+                    if (!depth) {
+                        showVideoStatus("Uploaded video: " + simpleFilename + ", " + fileSize + " " + videoDuration, "green");
+                    }
+                    Log.d(TAG, "fileSize = " + fileSize);
+                    Toast.makeText(GaitVideoActivity.this, "Upload " + simpleFilename + " succeeded!", Toast.LENGTH_SHORT).show();
 
                     if (!depth) {
                         clap.start();
@@ -457,7 +479,6 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
             e.printStackTrace();
         }
 
-
         // Now upload to Firestore
         String temp[] = timestampFileName.split("/");
         String simpleFilename = temp[temp.length - 1];
@@ -466,12 +487,19 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
         File timestampFile = new File(timestampFileName);
 
         StorageReference storageRef = storage.getReference().child(firebaseUploadFileName);
-        storageRef.putFile(Uri.fromFile(timestampFile))
-                .addOnFailureListener(e ->
-                        Log.d(TAG, "Timestamps upload to " + firebaseUploadFileName + " + failed. "  + e.getMessage()))
-                .addOnSuccessListener(taskSnapshot ->
-                    Log.d(TAG, "Timestamps uploaded successfully to " + firebaseUploadFileName)
-                );
+
+        // only upload if online
+        if (isNetworkAvailable()) {
+            storageRef.putFile(Uri.fromFile(timestampFile))
+                    .addOnFailureListener(e ->
+                            Log.d(TAG, "Timestamps upload to " + firebaseUploadFileName + " + failed. " + e.getMessage()))
+                    .addOnSuccessListener(taskSnapshot ->
+                            Log.d(TAG, "Timestamps uploaded successfully to " + firebaseUploadFileName)
+                    );
+        }
+        else {
+            Log.d(TAG, "Timestamps upload to " + firebaseUploadFileName + " failed. No network connection.");
+        }
 
         return firebaseUploadFileName;
     }
@@ -565,20 +593,20 @@ public class GaitVideoActivity extends AppCompatActivity implements CameraCallba
         });
     }
 
-   public boolean checkPermissions() {
-       // Explicitly check user permissions
-       if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
-               != PackageManager.PERMISSION_GRANTED &&
-               ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                       != PackageManager.PERMISSION_GRANTED &&
-               ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
-                       != PackageManager.PERMISSION_GRANTED) {
-           ActivityCompat.requestPermissions(
-                   this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS);
-           return false;
-       }
-       return true;
-   }
+    public boolean checkPermissions() {
+        // Explicitly check user permissions
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
+                != PackageManager.PERMISSION_GRANTED &&
+                ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                        != PackageManager.PERMISSION_GRANTED &&
+                ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+                        != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(
+                    this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS);
+            return false;
+        }
+        return true;
+    }
 
     @Override
     public int getDisplayRotation() {
