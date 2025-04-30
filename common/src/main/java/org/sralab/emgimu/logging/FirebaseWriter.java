@@ -149,20 +149,41 @@ public class FirebaseWriter extends Observable {
         Log.d(TAG, "Closing PipedOutputStream");
         handler.post(() -> {
             try {
-                Log.d(TAG, "Close occurred");
+                Log.d(TAG, "Close started");
 
-                // only close if online
-                if (isNetworkAvailable()) {
-                    dataStream.write("]".getBytes());
-                    dataStream.flush();
-                    dataStream.close();
+                if (dataStream != null) {
+                    try {
+                        dataStream.write("]".getBytes());
+                        dataStream.flush();
+                    } catch (IOException e) {
+                        Log.e(TAG, "Error flushing dataStream", e);
+                    } finally {
+                        try {
+                            dataStream.close();
+                            Log.d(TAG, "dataStream closed");
+                        } catch (IOException e) {
+                            Log.e(TAG, "Error closing dataStream", e);
+                        }
+                    }
                 }
 
-                localWriter.write("]".getBytes());
-                localWriter.flush();
-                localWriter.close();
-            } catch (IOException e) {
-                e.printStackTrace();
+                if (localWriter != null) {
+                    try {
+                        localWriter.write("]".getBytes());
+                        localWriter.flush();
+                    } catch (IOException e) {
+                        Log.e(TAG, "Error flushing localWriter", e);
+                    } finally {
+                        try {
+                            localWriter.close();
+                            Log.d(TAG, "localWriter closed");
+                        } catch (IOException e) {
+                            Log.e(TAG, "Error closing localWriter", e);
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Unexpected error during close", e);
             }
         });
     }
