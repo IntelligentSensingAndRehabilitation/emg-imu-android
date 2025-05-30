@@ -10,6 +10,7 @@ public class EmgRawMessage {
     public long timestamp;
     public long android_elapsed_nanos;
     public long sensor_timestamp;
+    public long raw_sensor_timestamp;
     public int sensor_counter;
     public int channels;
     public int samples;
@@ -24,7 +25,7 @@ public class EmgRawMessage {
     }
 
     public EmgRawMessage(String bluetoothMac, long timestamp, long android_elapsed_nanos,
-                         long sensor_timestamp, int sensor_counter,
+                         long sensor_timestamp, long raw_sensor_timestamp, int sensor_counter,
                          int channels, int samples, double [][] data) {
         this.bluetoothMac = bluetoothMac;
         this.timestamp = timestamp;
@@ -32,6 +33,7 @@ public class EmgRawMessage {
         this.channels = channels;
         this.samples = samples;
         this.sensor_timestamp = sensor_timestamp;
+        this.raw_sensor_timestamp = raw_sensor_timestamp;
         this.sensor_counter = sensor_counter;
 
         float [] float_data = new float[channels * samples];
@@ -41,7 +43,6 @@ public class EmgRawMessage {
 
         ByteBuffer buf = ByteBuffer.allocate(Float.SIZE / Byte.SIZE * float_data.length);
         buf.asFloatBuffer().put(float_data);
-        String base64_data = Base64.encodeToString(buf.array(), Base64.NO_WRAP);
-        this.data = base64_data;
+        this.data = Base64.encodeToString(buf.array(), Base64.NO_WRAP);
     }
 }
