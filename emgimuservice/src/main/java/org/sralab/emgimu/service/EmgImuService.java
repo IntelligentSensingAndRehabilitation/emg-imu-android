@@ -505,14 +505,22 @@ public class EmgImuService extends Service implements ConnectionObserver {
         } else {
             Log.d(TAG, "User ID: " + mCurrentUser.getUid());
         }
-        FirebaseInstallations.getInstance().getId().addOnSuccessListener(mToken -> {
-            Log.d(TAG, "Received token: " + mToken);
+		
+        try {
+            FirebaseInstallations.getInstance().getId().addOnSuccessListener(mToken -> {
+                Log.d(TAG, "Received token: " + mToken);
 
-            // It can happen that either one is set first
-            if (mToken != null && mCurrentUser != null)
-                storeToken();
+                // It can happen that either one is set first
+                if (mToken != null && mCurrentUser != null)
+                    storeToken();
 
-        });
+            });
+        } catch (IllegalArgumentException argumentException) {
+            Log.d(TAG, "No valid connection to Firebase!");
+        } catch(Exception exception)
+        {
+            Log.d(TAG, "Unrecognized error when attempting to work with Firebase: " + exception.getMessage());
+        }
 
         // Obtain the FirebaseAnalytics instance.
         mFirebaseAnalytics = FirebaseAnalytics.getInstance(this);
