@@ -1,0 +1,271 @@
+{
+  "project_info": {
+    "project_number": "",
+    "firebase_url": "",
+    "project_id": "",
+    "storage_bucket": ""
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:123456789012:android:1234567890123456",
+        "android_client_info": {
+          "package_name": "org.sralab.emgimu"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "org.sralab.emgimu",
+            "certificate_hash": ""
+          }
+        },
+        {
+          "client_id": "",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "org.sralab.emgimu",
+            "certificate_hash": ""
+          }
+        },
+        {
+          "client_id": "",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": ""
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:123456789012:android:1234567890123456",
+        "android_client_info": {
+          "package_name": "org.sralab.emgimu.config"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "org.sralab.emgimu.config",
+            "certificate_hash": ""
+          }
+        },
+        {
+          "client_id": "",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "org.sralab.emgimu.config",
+            "certificate_hash": ""
+          }
+        },
+        {
+          "client_id": "",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": ""
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:123456789012:android:1234567890123456",
+        "android_client_info": {
+          "package_name": "org.sralab.emgimu.service"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "org.sralab.emgimu.service",
+            "certificate_hash": ""
+          }
+        },
+        {
+          "client_id": "",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "org.sralab.emgimu.service",
+            "certificate_hash": ""
+          }
+        },
+        {
+          "client_id": "",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": ""
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:123456789012:android:1234567890123456",
+        "android_client_info": {
+          "package_name": "org.sralab.emgimu.imu_calibration"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "org.sralab.emgimu.streaming",
+            "certificate_hash": ""
+          }
+        },
+        {
+          "client_id": "",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "org.sralab.emgimu.streaming",
+            "certificate_hash": ""
+          }
+        },
+        {
+          "client_id": "",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": ""
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:123456789012:android:1234567890123456",
+        "android_client_info": {
+          "package_name": "org.sralab.fluttercow"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "org.sralab.fluttercow",
+            "certificate_hash": ""
+          }
+        },
+        {
+          "client_id": "",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "org.sralab.fluttercow",
+            "certificate_hash": ""
+          }
+        },
+        {
+          "client_id": "",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": ""
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
