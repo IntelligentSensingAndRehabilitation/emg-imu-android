@@ -1,0 +1,11 @@
+.gradle/
+.idea/
+core/build/
+emgimu/build/
+emgimuservice/build/
+gaitvideoimu/build/
+imu_calibration/build/
+spasticitymonitor/build/
+streaming/build/
+local.properties
+
