@@ -196,7 +196,7 @@ public class EmgImuManager extends BleManager {
     private BluetoothGattCharacteristic mCtsCurrentTimeCharacteristic;
 
     //! Data relating to logging to FireBase
-    private boolean mLogging = true;
+    private boolean mLogging = false;
 
     private String mManufacturer;
     private String mHardwareRevision;
@@ -570,7 +570,15 @@ public class EmgImuManager extends BleManager {
         public void onDeviceReady() {
             //Log.d(TAG, "emgPwr onDeviceReady() got called");
 		    // Complete some of our initialization once we have a device connected
-            fireLogger = new FirebaseEmgLogger(EmgImuManager.this);
+            try {
+                fireLogger = new FirebaseEmgLogger(EmgImuManager.this);
+            }
+            catch (InvalidParameterException exception)
+            {
+                fireLogger = null;
+                String message = "Error configuring EMG logger: " + exception.getMessage();
+                log(Log.ERROR, message);
+            }
 
             if (mLogging) {
                 streamLogger = new FirebaseStreamLogger(EmgImuManager.this, getContext());
@@ -1221,7 +1229,9 @@ public class EmgImuManager extends BleManager {
                  log(Log.VERBOSE, "There are " + number + " records. Preparing firebase log for T0: " + T0);
 
                  // This calls back to firebaseLogReady
-                 fireLogger.prepareLog(T0);
+                 if( fireLogger != null) {
+                     fireLogger.prepareLog(T0);
+                 }
              } else {
                  log(Log.VERBOSE, "No records found");
                  if (successCallback != null)
@@ -1279,18 +1289,21 @@ public class EmgImuManager extends BleManager {
             dt_ms = dt_ms / mRecords.get(0).emgPwr.size();
             log(Log.DEBUG, "Calculated sample period as " + dt_ms + " ms");
         }
-        for (EmgLogRecord r : mRecords) {
-            int i = 0;
-            long timestamp = r.timestamp;
-            for (Integer pwr : r.emgPwr) {
-                fireLogger.addSample(timestamp + (long) (i * dt_ms), pwr);
-                i = i + 1;
+
+        if( fireLogger != null) {
+            for (EmgLogRecord r : mRecords) {
+                int i = 0;
+                long timestamp = r.timestamp;
+                for (Integer pwr : r.emgPwr) {
+                    fireLogger.addSample(timestamp + (long) (i * dt_ms), pwr);
+                    i = i + 1;
+                }
             }
+
+            log(Log.VERBOSE,"Entries added.");
+
+            fireLogger.updateDb();
         }
-
-        log(Log.VERBOSE,"Entries added.");
-
-        fireLogger.updateDb();
 
         // Record analytic data that might be useful
         // Obtain the FirebaseAnalytics instance.
